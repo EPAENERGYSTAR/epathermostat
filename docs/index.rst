@@ -1,22 +1,32 @@
-.. thermostat documentation master file, created by
-   sphinx-quickstart on Mon May 18 15:25:28 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+thermostat
+==========
 
-Welcome to thermostat's documentation!
-======================================
+.. warning::
+   This package is under rapid development, so breaking changes will be
+   introduced regularly!
 
-Contents:
+This package and the savings calculation methods implemented herein are being
+developed in association with the EPA and industry stakeholders to help
+standardize calculations of temperature/run-time savings due to connected
+thermostats.
+
+Installation
+------------
+
+The following command will install the thermostat package into your python
+environment::
+
+   pip install git+git://github.com/impactlab/thermostat.git
+
+Usage
+-----
 
 .. toctree::
    :maxdepth: 2
 
+   tutorial
 
+Licence
+-------
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+MIT
