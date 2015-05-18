@@ -1,8 +1,7 @@
 thermostat
 ==========
 
-Calculate temperature/run-time savings for connected thermostats
-----------------------------------------------------------------
+Calculate temperature/run-time savings for connected thermostats.
 
 Documenation
 ------------
