@@ -1,4 +1,4 @@
-thermostat_id,start_datetime,end_datetime,temperature_in,temperature_setpoint,ss_heat_pump_heating,ss_heat_pump_cooling,ss_heating,auxiliary_heat,emergency_heat,central_ac
+thermostat_id,start_datetime,end_datetime,temperature_in,temperature_setpoint,ss_heat_pump_heating,ss_heat_pump_cooling,auxiliary_heat,emergency_heat,ss_heating,ss_central_ac
 7c5419c4-0001-11e5-a322-1697f925ec7b,2014-01-01T00:00+05:00,2014-01-01T01:00+05:00,25,76,3000,0,,0,,
 7c5419c4-0001-11e5-a322-1697f925ec7b,2014-01-01T01:00+05:00,2014-01-01T02:00+05:00,23.5,76,3600,0,,2000,,
 7c5419c4-0001-11e5-a322-1697f925ec7b,2014-01-01T02:00+05:00,2014-01-01T03:00+05:00,24.5,76,2500,0,,0,,

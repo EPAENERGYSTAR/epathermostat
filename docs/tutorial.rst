@@ -48,10 +48,10 @@ Name                         Description
 :code:`temperature_setpoint` The average thermostat setpoint temperature over the period of the reading.
 :code:`ss_heat_pump_heating` Runtime of single stage heat pump equipment in heating mode.
 :code:`ss_heat_pump_cooling` Runtime of single stage heat pump equipment in cooling mode.
-:code:`ss_heating`           Runtime of non-heat-pump single stage heating equipment.
 :code:`auxiliary_heat`       Runtime of auxiliary heat equipment.
 :code:`emergency_heat`       Runtime of emergency heat equipment.
-:code:`central_ac`           Runtime of central air conditioning equipment.
+:code:`ss_heating`           Runtime of single stage non-heat-pump heating equipment.
+:code:`ss_central_ac`        Runtime of single stage central air conditioning equipment.
 ============================ ===========
 
 - Each row should correspond to a single reading from a thermostat.
@@ -75,5 +75,5 @@ Name                         Description
    - :code:`2`: Single stage heat pump without aux or emergency heat
    - :code:`3`: Single stage non heat pump with single-stage central air conditioning
    - :code:`4`: Single stage non heat pump without central air conditioning
-   - :code:`5`: Single stage central air conditioning w/o central heating
+   - :code:`5`: Single stage central air conditioning without central heating
 
