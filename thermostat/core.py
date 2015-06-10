@@ -1,3 +1,7 @@
+import pandas as pd
+import numpy as np
+
+from datetime import datetime
 
 # tuples of columns are "at least one of"
 EQUIPMENT_TYPE_REQUIRED_COLUMNS = {
@@ -16,6 +20,24 @@ EQUIPMENT_TYPE_DISALLOWED_COLUMNS = {
     3: [],
     4: ["ss_central_ac"],
     5: ["ss_heating"],
+}
+
+EQUIPMENT_TYPE_HEATING_COLUMNS = {
+    0: [],
+    1: ["ss_heat_pump_heating","auxiliary_heat","emergency_heat"],
+    2: ["ss_heat_pump_heating"],
+    3: ["ss_heating"],
+    4: ["ss_heating"],
+    5: [],
+}
+
+EQUIPMENT_TYPE_COOLING_COLUMNS = {
+    0: [],
+    1: ["ss_heat_pump_cooling"],
+    2: ["ss_heat_pump_cooling"],
+    3: ["ss_central_ac"],
+    4: [],
+    5: ["ss_central_ac"],
 }
 
 class Thermostat(object):
@@ -94,4 +116,104 @@ class Thermostat(object):
                                "equipment type {}.").format(column_name,self.equipment_type)
                     raise ValueError(message)
 
+    def get_heating_columns(self):
+        """ Get all data for heating equipment this thermostat controls.
 
+        Returns
+        -------
+        heating_columns : list of pandas.Series
+            All columns representing heating equipment for this thermostat.
+        """
+        heating_column_names = EQUIPMENT_TYPE_HEATING_COLUMNS[self.equipment_type]
+        heating_columns = []
+        for column_name in heating_column_names:
+            column = self.__dict__.get(column_name)
+            if column is not None:
+                heating_columns.append(column)
+        return heating_columns
+
+    def get_cooling_columns(self):
+        """ Get all data for cooling equipment this thermostat controls.
+
+        Returns
+        -------
+        cooling_columns : list of pandas.Series
+            All columns representing cooling equipment for this thermostat.
+        """
+        cooling_column_names = EQUIPMENT_TYPE_COOLING_COLUMNS[self.equipment_type]
+        cooling_columns = []
+        for column_name in cooling_column_names:
+            column = self.__dict__.get(column_name)
+            if column is not None:
+                cooling_columns.append(column)
+        return cooling_columns
+
+    def get_heating_seasons(self, method="simple"):
+        """ Get all data for heating seasons for data associated with this
+        thermostat
+
+        Parameter
+        method : {"simple"}, default "simple"
+            Method by which to find heating seasons.
+             - "simple": groups all heating days (days with >= 1 hour of total
+               heating and no cooling) from the July 1 to June 31 into single
+               heating seasons.
+        """
+
+        # combine columns to get total heating.
+        total_heating = pd.DataFrame(self.get_heating_columns()).sum(axis=0)
+
+        # find all potential heating season ranges
+        start_year = total_heating.index[0].year - 1
+        end_year = total_heating.index[0].year + 1
+        potential_seasons = zip(range(start_year,end_year),range(start_year+1,end_year+1))
+
+        # for each potential season, look for heating days.
+        heating_seasons = []
+        for start_year_,end_year_ in potential_seasons:
+            after_start = np.datetime64(datetime(start_year_,7,1)) <= total_heating.index
+            before_end = total_heating.index <= np.datetime64(datetime(end_year_,7,1))
+            daily_sums = total_heating.groupby(total_heating.index.date).sum()
+            meets_thresholds = np.array([daily_sums[i.date()] >= 3600 for i,total in total_heating.iteritems()])
+            heating_season_days = pd.Series(np.all([after_start, before_end, meets_thresholds]),index=total_heating.index)
+            if any(heating_season_days):
+                heating_season_name = "{}-{} Heating Season".format(start_year_,end_year_)
+                heating_season = (heating_season_days,heating_season_name)
+                heating_seasons.append(heating_season)
+
+        return heating_seasons
+
+    def get_cooling_seasons(self, method="simple"):
+        """ Get all data for cooling seasons for data associated with this
+        thermostat.
+
+        Parameter
+        method : {"simple"}, default "simple"
+            Method by which to find cooling seasons.
+             - "simple": groups all cooling days (days with >= 1 hour of total
+               cooling and no heating) from January 1 to December 31 into
+               single cooling seasons.
+        """
+
+        # combine columns to get total cooling.
+        total_cooling = pd.DataFrame(self.get_cooling_columns()).sum(axis=0)
+
+        # find all potential cooling season ranges
+        start_year = total_cooling.index[0].year
+        end_year = total_cooling.index[0].year
+        potential_seasons = range(start_year,end_year + 1)
+
+        # for each potential season, look for cooling days.
+        cooling_seasons = []
+        for year in potential_seasons:
+            after_start = np.datetime64(datetime(year,1,1)) <= total_cooling.index
+            before_end = total_cooling.index <= np.datetime64(datetime(year + 1,1,1))
+            daily_sums = total_cooling.groupby(total_cooling.index.date).sum()
+            meets_thresholds = np.array([daily_sums[i.date()] >= 3600 for i,total in total_cooling.iteritems()])
+            cooling_season_days = pd.Series(np.all([after_start, before_end, meets_thresholds]),index=total_cooling.index)
+            if any(cooling_season_days):
+                cooling_season_name = "{} Cooling Season".format(year)
+                cooling_season = (cooling_season_days,cooling_season_name)
+                cooling_seasons.append(cooling_season)
+
+        return cooling_seasons
