@@ -4,6 +4,7 @@ import pandas as pd
 from eemeter.consumption import DatetimePeriod
 
 import warnings
+from datetime import timedelta
 
 
 RUNTIME_COLUMNS = [
@@ -81,7 +82,35 @@ def reindex_intervals(interval_df):
     reindexed_df = interval_df.drop(["start_datetime","end_datetime"],1)
     return reindexed_df.set_index(new_index)
 
-def get_hourly_outdoor_temperature(hourly_index,hourly_weather_source):
-    period = DatetimePeriod(hourly_index[0],hourly_index[-1])
+def get_hourly_outdoor_temperature(hourly_index,hourly_weather_source,include_endpoint=True):
+    """
+    Grabs hourly temperature from NOAA.
+
+    Parameters
+    ----------
+    hourly_index : pandas.DatetimeIndex
+        Index to be used to create index of temperature dataframe.
+    include_endpoint : bool, default True
+        Whether or not the final value (hourly_index[-1]) should be truncated
+        from this provided index, resulting in an index of length
+        len(hourly_index) - 1. This is a convenience to help deal with due
+        differences between the way pandas handles creation of indices and the
+        eemeter handles fetching temperatures from DatetimePeriods with start
+        and end dates.
+
+    Results
+    -------
+    out : pandas.Series
+        Temperature data provided by the weather source and indexed by the
+        provided datetime index.
+    """
+    if include_endpoint:
+        start, end = hourly_index[0], hourly_index[-1] + timedelta(seconds=3600)
+    else:
+        start, end = hourly_index[0], hourly_index[-1]
+    period = DatetimePeriod(start,end)
     hourly_temps = hourly_weather_source.hourly_temperatures(period,"degF")
-    return pd.Series(hourly_temps,index=hourly_index[:-1],name="temperature_out")
+    if include_endpoint:
+        return pd.Series(hourly_temps,index=hourly_index,name="temperature_out")
+    else:
+        return pd.Series(hourly_temps,index=hourly_index[:-1],name="temperature_out")
