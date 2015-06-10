@@ -2,6 +2,8 @@ from thermostat import Thermostat
 
 import pandas as pd
 from eemeter.consumption import DatetimePeriod
+from eemeter.location import zipcode_to_tmy3
+from eemeter.weather import ISDWeatherSource
 
 import warnings
 from datetime import timedelta
@@ -44,7 +46,6 @@ def from_csv(metadata_filename,interval_data_filename):
                                     "ss_heating": float,
                                     "ss_central_ac": float},
                                 parse_dates=["start_datetime","end_datetime"])
-
     thermostats = []
     for i, row in metadata.iterrows():
         if row.equipment_type == 0:
@@ -59,7 +60,10 @@ def from_csv(metadata_filename,interval_data_filename):
                     kwargs[column] = intervals[column]
             temperature_in = intervals.temperature_in
             temperature_setpoint = intervals.temperature_setpoint
-            thermostat = Thermostat(row.thermostat_id,row.equipment_type,temperature_in,temperature_setpoint,**kwargs)
+            station = zipcode_to_tmy3(row.zipcode)
+            weather_source = ISDWeatherSource(station,intervals.index[0].year,intervals.index[-1].year)
+            temperature_out = get_hourly_outdoor_temperature(intervals.index,weather_source)
+            thermostat = Thermostat(row.thermostat_id,row.equipment_type,temperature_in,temperature_setpoint,temperature_out,**kwargs)
             thermostats.append(thermostat)
     return thermostats
 

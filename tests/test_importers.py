@@ -158,8 +158,13 @@ def test_import_csv_imports_attributes_correctly(metadata_type_2_filename,interv
     thermostat = thermostats[0]
     assert type(thermostat.temperature_in.index) == pd.DatetimeIndex
     assert type(thermostat.temperature_setpoint.index) == pd.DatetimeIndex
+    assert type(thermostat.temperature_out.index) == pd.DatetimeIndex
     assert type(thermostat.ss_heat_pump_heating.index) == pd.DatetimeIndex
     assert type(thermostat.ss_heat_pump_cooling.index) == pd.DatetimeIndex
+    assert len(thermostat.temperature_in) == len(thermostat.temperature_setpoint)
+    assert len(thermostat.temperature_in) == len(thermostat.temperature_out)
+    assert len(thermostat.temperature_in) == len(thermostat.ss_heat_pump_heating)
+    assert len(thermostat.temperature_in) == len(thermostat.ss_heat_pump_cooling)
     with pytest.raises(AttributeError):
         thermostat.auxiliary_heat
     with pytest.raises(AttributeError):

@@ -21,7 +21,7 @@ EQUIPMENT_TYPE_DISALLOWED_COLUMNS = {
 class Thermostat(object):
 
     def __init__(self,thermostat_id,equipment_type,
-            temperature_in,temperature_setpoint,
+            temperature_in,temperature_setpoint,temperature_out,
             ss_heat_pump_heating=None,
             ss_heat_pump_cooling=None,
             auxiliary_heat=None,
@@ -33,6 +33,7 @@ class Thermostat(object):
         self.equipment_type = equipment_type
         self.temperature_in = temperature_in
         self.temperature_setpoint = temperature_setpoint
+        self.temperature_out = temperature_out
 
         self._match_equipment_type_columns(
                 ss_heat_pump_heating,
