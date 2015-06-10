@@ -92,3 +92,5 @@ class Thermostat(object):
                     message = ("The column '{}' is not allowed for"
                                "equipment type {}.").format(column_name,self.equipment_type)
                     raise ValueError(message)
+
+

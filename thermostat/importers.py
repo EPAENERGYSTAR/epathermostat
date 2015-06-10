@@ -1,5 +1,8 @@
-import pandas as pd
 from thermostat import Thermostat
+
+import pandas as pd
+from eemeter.consumption import DatetimePeriod
+
 import warnings
 
 
@@ -77,3 +80,8 @@ def reindex_intervals(interval_df):
     new_index = interval_df.start_datetime
     reindexed_df = interval_df.drop(["start_datetime","end_datetime"],1)
     return reindexed_df.set_index(new_index)
+
+def get_hourly_outdoor_temperature(hourly_index,hourly_weather_source):
+    period = DatetimePeriod(hourly_index[0],hourly_index[-1])
+    hourly_temps = hourly_weather_source.hourly_temperatures(period,"degF")
+    return pd.Series(hourly_temps,index=hourly_index[:-1],name="temperature_out")
