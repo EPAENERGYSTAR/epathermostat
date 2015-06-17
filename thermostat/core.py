@@ -152,12 +152,23 @@ class Thermostat(object):
         """ Get all data for heating seasons for data associated with this
         thermostat
 
-        Parameter
+        Parameters
+        ----------
         method : {"simple"}, default "simple"
             Method by which to find heating seasons.
              - "simple": groups all heating days (days with >= 1 hour of total
                heating and no cooling) from the July 1 to June 31 into single
                heating seasons.
+
+        Returns
+        -------
+        heating_seasons : list of (pandas.Series,str) tuples
+            List of seasons detected; first element of tuple is season, second
+            is name. Seasons are represented as pandas Series of boolean values,
+            intended to be used as selectors or masks on the thermostat data.
+            A value of True at a particular index indicates inclusion of
+            of the data at that index in the season. Names are of the form
+            "YYYY-YYYY Heating Season"
         """
 
         # combine columns to get total heating.
@@ -190,12 +201,23 @@ class Thermostat(object):
         """ Get all data for cooling seasons for data associated with this
         thermostat.
 
-        Parameter
+        Parameters
+        ----------
         method : {"simple"}, default "simple"
             Method by which to find cooling seasons.
              - "simple": groups all cooling days (days with >= 1 hour of total
                cooling and no heating) from January 1 to December 31 into
                single cooling seasons.
+
+        Returns
+        -------
+        cooling_seasons : list of (pandas.Series,str) tuples
+            List of seasons detected; first element of tuple is season, second
+            is name. Seasons are represented as pandas Series of boolean values,
+            intended to be used as selectors or masks on the thermostat data.
+            A value of True at a particular index indicates inclusion of
+            of the data at that index in the season. Names are of the form
+            "YYYY Cooling Season"
         """
 
         # combine columns to get total cooling.
