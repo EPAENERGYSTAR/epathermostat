@@ -168,7 +168,7 @@ class Thermostat(object):
 
         # find all potential heating season ranges
         start_year = total_heating.index[0].year - 1
-        end_year = total_heating.index[0].year + 1
+        end_year = total_heating.index[-1].year + 1
         potential_seasons = zip(range(start_year,end_year),range(start_year+1,end_year+1))
 
         # for each potential season, look for heating days.
@@ -178,7 +178,7 @@ class Thermostat(object):
             before_end = total_heating.index <= np.datetime64(datetime(end_year_,7,1))
             daily_sums = total_heating.groupby(total_heating.index.date).sum()
             meets_thresholds = np.array([daily_sums[i.date()] >= 3600 for i,total in total_heating.iteritems()])
-            heating_season_days = pd.Series(np.all([after_start, before_end, meets_thresholds]),index=total_heating.index)
+            heating_season_days = pd.Series(after_start & before_end & meets_thresholds,index=total_heating.index)
             if any(heating_season_days):
                 heating_season_name = "{}-{} Heating Season".format(start_year_,end_year_)
                 heating_season = (heating_season_days,heating_season_name)
@@ -206,7 +206,7 @@ class Thermostat(object):
 
         # find all potential cooling season ranges
         start_year = total_cooling.index[0].year
-        end_year = total_cooling.index[0].year
+        end_year = total_cooling.index[-1].year
         potential_seasons = range(start_year,end_year + 1)
 
         # for each potential season, look for cooling days.
@@ -216,7 +216,7 @@ class Thermostat(object):
             before_end = total_cooling.index <= np.datetime64(datetime(year + 1,1,1))
             daily_sums = total_cooling.groupby(total_cooling.index.date).sum()
             meets_thresholds = np.array([daily_sums[i.date()] >= 3600 for i,total in total_cooling.iteritems()])
-            cooling_season_days = pd.Series(np.all([after_start, before_end, meets_thresholds]),index=total_cooling.index)
+            cooling_season_days = pd.Series(after_start & before_end & meets_thresholds,index=total_cooling.index)
             if any(cooling_season_days):
                 cooling_season_name = "{} Cooling Season".format(year)
                 cooling_season = (cooling_season_days,cooling_season_name)
