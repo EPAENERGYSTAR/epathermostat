@@ -161,7 +161,10 @@ class Thermostat(object):
         """
 
         # combine columns to get total heating.
-        total_heating = pd.DataFrame(self.get_heating_columns()).sum(axis=0)
+        heating_columns = self.get_heating_columns()
+        if heating_columns == []:
+            return []
+        total_heating = pd.DataFrame(heating_columns).sum(axis=0)
 
         # find all potential heating season ranges
         start_year = total_heating.index[0].year - 1
@@ -196,7 +199,10 @@ class Thermostat(object):
         """
 
         # combine columns to get total cooling.
-        total_cooling = pd.DataFrame(self.get_cooling_columns()).sum(axis=0)
+        cooling_columns = self.get_cooling_columns()
+        if cooling_columns == []:
+            return []
+        total_cooling = pd.DataFrame(cooling_columns).sum(axis=0)
 
         # find all potential cooling season ranges
         start_year = total_cooling.index[0].year

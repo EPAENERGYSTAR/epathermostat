@@ -69,13 +69,13 @@ def thermostat_type_1_with_heating_season(heating_season_datetimeindex,valid_tem
     return thermostat
 
 @pytest.fixture
-def thermostat_type_1_with_cooling_season(cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+def thermostat_type_1_with_cooling_season(heating_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
     equipment_type = 1
 
-    ss_heat_pump_heating = pd.Series(np.tile(0,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
-    ss_heat_pump_cooling = pd.Series(np.tile(3600,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
-    auxiliary_heat = pd.Series(np.tile(0,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
-    emergency_heat = pd.Series(np.tile(0,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
+    ss_heat_pump_heating = pd.Series(np.tile(0,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    ss_heat_pump_cooling = pd.Series(np.tile(3600,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    auxiliary_heat = pd.Series(np.tile(0,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    emergency_heat = pd.Series(np.tile(0,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
 
     thermostat = Thermostat(valid_thermostat_id,
             equipment_type,
@@ -86,6 +86,34 @@ def thermostat_type_1_with_cooling_season(cooling_season_datetimeindex,valid_tem
             ss_heat_pump_cooling,
             auxiliary_heat,
             emergency_heat)
+    return thermostat
+
+@pytest.fixture
+def thermostat_type_4_with_heating_season(cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+    equipment_type = 4
+
+    ss_heating = pd.Series(np.tile(3600,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
+
+    thermostat = Thermostat(valid_thermostat_id,
+            equipment_type,
+            valid_temperature_in,
+            valid_temperature_setpoint,
+            valid_temperature_out,
+            ss_heating=ss_heating)
+    return thermostat
+
+@pytest.fixture
+def thermostat_type_5_with_cooling_season(cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+    equipment_type = 5
+
+    ss_central_ac = pd.Series(np.tile(3600,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
+
+    thermostat = Thermostat(valid_thermostat_id,
+            equipment_type,
+            valid_temperature_in,
+            valid_temperature_setpoint,
+            valid_temperature_out,
+            ss_central_ac=ss_central_ac)
     return thermostat
 
 def test_thermostat_with_invalid_equipment_type(valid_thermostat_id,invalid_equipment_type):
@@ -127,3 +155,19 @@ def test_thermostat_get_cooling_seasons(thermostat_type_1_with_cooling_season,co
     assert len(cooling_seasons) == 1
     assert cooling_seasons[0][0].shape == cooling_season_datetimeindex.shape
     assert cooling_seasons[0][1] == "2012 Cooling Season"
+
+def test_thermostat_get_cooling_columns_with_no_cooling_columns(thermostat_type_4_with_heating_season):
+    cooling_columns = thermostat_type_4_with_heating_season.get_cooling_columns()
+    assert cooling_columns == []
+
+def test_thermostat_get_cooling_seasons_with_no_cooling_columns(thermostat_type_4_with_heating_season):
+    cooling_seasons = thermostat_type_4_with_heating_season.get_cooling_seasons()
+    assert cooling_seasons == []
+
+def test_thermostat_get_heating_columns_with_no_heating_columns(thermostat_type_5_with_cooling_season):
+    heating_columns = thermostat_type_5_with_cooling_season.get_heating_columns()
+    assert heating_columns == []
+
+def test_thermostat_get_heating_seasons_with_no_heating_columns(thermostat_type_5_with_cooling_season):
+    heating_seasons = thermostat_type_5_with_cooling_season.get_heating_seasons()
+    assert heating_seasons == []
