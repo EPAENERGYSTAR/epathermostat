@@ -29,6 +29,7 @@ MOCK_MODULES = [
     'eemeter',
     'eemeter.consumption',
     'eemeter.weather',
+    'eemeter.location',
 ]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
