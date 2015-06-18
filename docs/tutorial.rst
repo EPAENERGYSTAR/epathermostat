@@ -30,11 +30,6 @@ Thermostat Interval Reading CSV format
 
 See :download:`example <./examples/thermostat_interval_reading_example.csv>`.
 
-.. warning::
-   Please ensure that each thermostat under evaluation is associated with at
-   least 12 consecutive months of data with at least hourly
-   resolution.
-
 Columns
 ~~~~~~~
 

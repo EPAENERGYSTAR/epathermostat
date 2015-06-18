@@ -31,7 +31,7 @@ def from_csv(metadata_filename,interval_data_filename):
 
     Returns
     -------
-    thermostats : list of thermostat objects
+    thermostats : list of thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
     metadata = pd.read_csv(metadata_filename,dtype={"zipcode":str,"equipment_type":int})
@@ -77,7 +77,7 @@ def reindex_intervals(interval_df):
     interval_df : pandas.DataFrame
         DataFrame to be reindexed.
 
-    Results
+    Returns
     -------
     out : pandas.DataFrame
         Data reindexed with a DatetimeIndex
@@ -94,15 +94,18 @@ def get_hourly_outdoor_temperature(hourly_index,hourly_weather_source,include_en
     ----------
     hourly_index : pandas.DatetimeIndex
         Index to be used to create index of temperature dataframe.
+    hourly_weather_source : eemeter.weather.ISDWeatherSource
+        Should give hourly temperatures for the relevant date-time period from
+        a particular weather station.
     include_endpoint : bool, default True
-        Whether or not the final value (hourly_index[-1]) should be truncated
-        from this provided index, resulting in an index of length
-        len(hourly_index) - 1. This is a convenience to help deal with due
+        Whether or not the final value :code:`hourly_index[-1]` should be
+        truncated from this provided index, resulting in an index of length
+        :code:`len(hourly_index) - 1`. This is a convenience to help deal with
         differences between the way pandas handles creation of indices and the
-        eemeter handles fetching temperatures from DatetimePeriods with start
-        and end dates.
+        way eemeter handles fetching temperatures from DatetimePeriods with
+        start and end dates.
 
-    Results
+    Returns
     -------
     out : pandas.Series
         Temperature data provided by the weather source and indexed by the

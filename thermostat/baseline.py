@@ -1,4 +1,4 @@
-def get_cooling_season_baseline(thermostat,cooling_season,method='default'):
+def get_cooling_season_baseline_setpoint(thermostat,cooling_season,method='default'):
     """
     Parameters
     ----------
@@ -8,13 +8,21 @@ def get_cooling_season_baseline(thermostat,cooling_season,method='default'):
         Should be an array of booleans with the same length as the temperature
         setpoint data stored in the given thermostat object. True indicates
         presence in the cooling season.
+    method : {"default"}, default: "default"
+        Method to use in calculation of the baseline.
+        - "default": 10th percentile of cooling season setpoints.
+
+    Returns
+    -------
+    baseline : float
+        The baseline cooling setpoint as determined by the given method.
     """
     if method != 'default':
         raise NotImplementedError
     season_setpoints = thermostat.temperature_setpoint[cooling_season]
     return season_setpoints.quantile(.1)
 
-def get_heating_season_baseline(thermostat,heating_season,method='default'):
+def get_heating_season_baseline_setpoint(thermostat,heating_season,method='default'):
     """
     Parameters
     ----------
@@ -24,6 +32,14 @@ def get_heating_season_baseline(thermostat,heating_season,method='default'):
         Should be an array of booleans with the same length as the temperature
         setpoint data stored in the given thermostat object. True indicates
         presence in the cooling season.
+    method : {"default"}, default: "default"
+        Method to use in calculation of the baseline.
+        - "default": 90th percentile of heating season setpoints.
+
+    Returns
+    -------
+    baseline : float
+        The baseline heating setpoint as determined by the given method.
     """
     if method != 'default':
         raise NotImplementedError

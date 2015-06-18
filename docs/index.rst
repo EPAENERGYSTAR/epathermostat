@@ -26,6 +26,11 @@ Usage
 
    tutorial
 
+.. toctree::
+   :maxdepth: 2
+
+   api
+
 Licence
 -------
 

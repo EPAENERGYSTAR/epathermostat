@@ -10,7 +10,10 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT"):
         Should be an array of booleans with the same length as the temperature
         setpoint data stored in the given thermostat object. True indicates
         presence in the cooling season.
-    method : {"deltaT","hourlysumCDD","dailyavgCDD"} default: "deltaT"
+    method : {"deltaT", "hourlysumCDD", "dailyavgCDD"}, default: "deltaT"
+        The method to use during calculation of demand.
+
+        - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
 
     Returns
     -------
@@ -42,7 +45,10 @@ def get_heating_demand(thermostat,heating_season,method="deltaT"):
         Should be an array of booleans with the same length as the temperature
         setpoint data stored in the given thermostat object. True indicates
         presence in the heating season.
-    method : {"deltaT","hourlysumHDD","dailyavgHDD"} default: "deltaT"
+    method : {"deltaT", "hourlysumHDD", "dailyavgHDD"} default: "deltaT"
+        The method to use during calculation of demand.
+
+        - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
 
     Returns
     -------

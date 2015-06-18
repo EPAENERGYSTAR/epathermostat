@@ -1,5 +1,5 @@
-from thermostat.baseline import get_cooling_season_baseline
-from thermostat.baseline import get_heating_season_baseline
+from thermostat.baseline import get_cooling_season_baseline_setpoint
+from thermostat.baseline import get_heating_season_baseline_setpoint
 from thermostat import Thermostat
 import pytest
 import pandas as pd
@@ -32,7 +32,7 @@ def test_get_cooling_season_baseline(valid_thermostat_id,valid_temperature_in,va
     thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_temperature_in,setpoints,valid_temperature_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
-    baseline = get_cooling_season_baseline(thermostat_type_2,cooling_season)
+    baseline = get_cooling_season_baseline_setpoint(thermostat_type_2,cooling_season)
     assert_allclose(baseline,9.975,rtol=RTOL,atol=ATOL)
 
 def test_get_heating_season_baseline(valid_thermostat_id,valid_temperature_in,valid_temperature_out,valid_datetimeindex):
@@ -42,5 +42,5 @@ def test_get_heating_season_baseline(valid_thermostat_id,valid_temperature_in,va
     thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_temperature_in,setpoints,valid_temperature_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
-    baseline = get_heating_season_baseline(thermostat_type_2,heating_season)
+    baseline = get_heating_season_baseline_setpoint(thermostat_type_2,heating_season)
     assert_allclose(baseline,89.775,rtol=RTOL,atol=ATOL)

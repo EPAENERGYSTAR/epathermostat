@@ -41,6 +41,77 @@ EQUIPMENT_TYPE_COOLING_COLUMNS = {
 }
 
 class Thermostat(object):
+    """ Main thermostat data container. Each parameter which contains
+    timeseries data should be a pandas.Series with a datetimeIndex, and that
+    each index should be equivalent.
+
+    Parameters
+    ----------
+    thermostat_id : object
+        An identifier for the thermostat. Can be anything, but should be
+        identifying (e.g. an ID provided by the manufacturer).
+    equipment_type : {0,1,2,3,4,5}
+        - :code:`0`: Other - e.g. multi-zone multi-stage, modulating. Note: module will
+          not output savings data for this type.
+        - :code:`1`: Single stage heat pump with aux and/or emergency heat
+        - :code:`2`: Single stage heat pump without aux or emergency heat
+        - :code:`3`: Single stage non heat pump with single-stage central air conditioning
+        - :code:`4`: Single stage non heat pump without central air conditioning
+        - :code:`5`: Single stage central air conditioning without central heating
+    temperature_in : pandas.Series
+        Contains internal temperature data in degrees Fahrenheit (F),
+        with resolution of at least 0.5F.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    temperature_setpoint : pandas.Series
+        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
+        with resolution of at least 0.5F.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    temperature_out : pandas.Series
+        Contains outdoor temperature (setpoint) data as observed by a relevant
+        weather station in degrees Fahrenheit (F), with resolution of at least
+        0.5F.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    ss_heat_pump_heating : pandas.Series,
+        Heating run times for a single single-stage heat pump controlled by the
+        thermostat, measured in seconds. No datapoint should exceed 3600 s,
+        which would indicate over an hour of heating within one hour.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    ss_heat_pump_cooling : pandas.Series,
+        Cooling run times for a single single-stage heat pump controlled by the
+        thermostat, measured in seconds. No datapoint should exceed 3600 s,
+        which would indicate over an hour of heating within one hour.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    auxiliary_heat : pandas.Series,
+        Auxiliary heat run times for equipment controlled by the
+        thermostat, measured in seconds. No datapoint should exceed 3600 s,
+        which would indicate over an hour of heating within one hour.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    emergency_heat : pandas.Series,
+        Emergency heat run times for equipment controlled by the
+        thermostat, measured in seconds. No datapoint should exceed 3600 s,
+        which would indicate over an hour of heating within one hour.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    ss_heating : pandas.Series,
+        Heating run times for single-stage heating equipment controlled by the
+        thermostat, measured in seconds. No datapoint should exceed 3600 s,
+        which would indicate over an hour of heating within one hour.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    ss_central_ac : pandas.Series):
+        Cooling run times for single-stage central air conditioning equipment
+        controlled by the thermostat, measured in seconds. No datapoint should
+        exceed 3600 s, which would indicate over an hour of heating within one
+        hour.
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
+    """
 
     def __init__(self,thermostat_id,equipment_type,
             temperature_in,temperature_setpoint,temperature_out,
@@ -154,15 +225,15 @@ class Thermostat(object):
 
         Parameters
         ----------
-        method : {"simple"}, default "simple"
+        method : {"simple"}, default: "simple"
             Method by which to find heating seasons.
-             - "simple": groups all heating days (days with >= 1 hour of total
-               heating and no cooling) from the July 1 to June 31 into single
-               heating seasons.
+            - "simple": groups all heating days (days with >= 1 hour of total
+            heating and no cooling) from the July 1 to June 31 into single
+            heating seasons.
 
         Returns
         -------
-        heating_seasons : list of (pandas.Series,str) tuples
+        heating_seasons : list of (pandas.Series, str) tuples
             List of seasons detected; first element of tuple is season, second
             is name. Seasons are represented as pandas Series of boolean values,
             intended to be used as selectors or masks on the thermostat data.
@@ -216,11 +287,11 @@ class Thermostat(object):
 
         Parameters
         ----------
-        method : {"simple"}, default "simple"
+        method : {"simple"}, default: "simple"
             Method by which to find cooling seasons.
-             - "simple": groups all cooling days (days with >= 1 hour of total
-               cooling and no heating) from January 1 to December 31 into
-               single cooling seasons.
+            - "simple": groups all cooling days (days with >= 1 hour of total
+            cooling and no heating) from January 1 to December 31 into
+            single cooling seasons.
 
         Returns
         -------
