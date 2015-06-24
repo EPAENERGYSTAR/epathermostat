@@ -21,18 +21,27 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
           - \Delta T_{\\text{base cool}}` where
           :math:`\Delta T_{\\text{daily avg}} =
           \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
-        - "hourlysumCDD": :math:`\\text{daily CDD} = \sum_{i=1}^{24} CDH_i`
-          where :math:`CDH_i = \Delta T_i - \Delta T_{\\text{base cool}}`
+        - "hourlysumCDD": :math:`\\text{daily CDD} = \sum_{i=1}^{24} \\text{CDH}_i`
+          where :math:`\\text{CDH}_i = \Delta T_i - \Delta T_{\\text{base cool}}`
     column_name : str
         The name of the column for which to calculate demand estimates which use
         runtime to optimize CDD base temperature ("hourlysumCDD" and
-        "dailyavgCDD").
+        "dailyavgCDD"). Ignored for "deltaT" method.
 
     Returns
     -------
     demand : pd.Series
         Demand at each hour in the heating season as calculated using one of
         the supported methods.
+    deltaT_base_estimate : float
+        Estimate of :math:`\Delta T_{\\text{base cool}}`. Only output for
+        "hourlysumCDD" and "dailyavgCDD".
+    alpha_estimate : float
+        Estimate of linear runtime response to demand. Only output for
+        "hourlysumCDD" and "dailyavgCDD".
+    mean_squared_error : float
+        Mean squared error in runtime estimates. Only output for "hourlysumCDD"
+        and "dailyavgCDD".
     """
     season_temp_in = thermostat.temperature_in[cooling_season]
     season_temp_out = thermostat.temperature_out[cooling_season]
@@ -100,18 +109,27 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
           - \Delta T_{\\text{base heat}}` where
           :math:`\Delta T_{\\text{daily avg}} =
           \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
-        - "hourlysumHDD": :math:`\\text{daily HDD} = \sum_{i=1}^{24} HDH_i`
-          where :math:`HDH_i = \Delta T_i - \Delta T_{\\text{base heat}}`
+        - "hourlysumHDD": :math:`\\text{daily HDD} = \sum_{i=1}^{24} \\text{HDH}_i`
+          where :math:`\\text{HDH}_i = \Delta T_i - \Delta T_{\\text{base heat}}`
     column_name : str
         The name of the column for which to calculate demand estimates which use
         runtime to optimize HDD base temperature ("hourlysumHDD" and
-        "dailyavgHDD").
+        "dailyavgHDD"). Ignored for "deltaT" method.
 
     Returns
     -------
     demand : pd.Series
         Demand at each hour in the heating season as calculated using one of
         the supported methods.
+    deltaT_base_estimate : float
+        Estimate of :math:`\Delta T_{\\text{base heat}}`. Only output for
+        "hourlysumHDD" and "dailyavgHDD".
+    alpha_estimate : float
+        Estimate of linear runtime response to demand. Only output for
+        "hourlysumHDD" and "dailyavgHDD".
+    mean_squared_error : float
+        Mean squared error in runtime estimates. Only output for "hourlysumHDD"
+        and "dailyavgHDD".
     """
     season_temp_in = thermostat.temperature_in[heating_season]
     season_temp_out = thermostat.temperature_out[heating_season]
