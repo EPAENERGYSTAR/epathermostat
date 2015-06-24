@@ -13,10 +13,16 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
         Should be an array of booleans with the same length as the temperature
         setpoint data stored in the given thermostat object. True indicates
         presence in the cooling season.
-    method : {"deltaT", "hourlysumCDD", "dailyavgCDD"}, default: "deltaT"
+    method : {"deltaT", "dailyavgCDD", "hourlysumCDD"}, default: "deltaT"
         The method to use during calculation of demand.
 
         - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
+        - "dailyavgCDD": :math:`\\text{daily CDD} = \Delta T_{\\text{daily avg}}
+          - \Delta T_{\\text{base cool}}` where
+          :math:`\Delta T_{\\text{daily avg}} =
+          \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
+        - "hourlysumCDD": :math:`\\text{daily CDD} = \sum_{i=1}^{24} CDH_i`
+          where :math:`CDH_i = \Delta T_i - \Delta T_{\\text{base cool}}`
     column_name : str
         The name of the column for which to calculate demand estimates which use
         runtime to optimize CDD base temperature ("hourlysumCDD" and
@@ -90,6 +96,12 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
         The method to use during calculation of demand.
 
         - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
+        - "dailyavgHDD": :math:`\\text{daily HDD} = \Delta T_{\\text{daily avg}}
+          - \Delta T_{\\text{base heat}}` where
+          :math:`\Delta T_{\\text{daily avg}} =
+          \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
+        - "hourlysumHDD": :math:`\\text{daily HDD} = \sum_{i=1}^{24} HDH_i`
+          where :math:`HDH_i = \Delta T_i - \Delta T_{\\text{base heat}}`
     column_name : str
         The name of the column for which to calculate demand estimates which use
         runtime to optimize HDD base temperature ("hourlysumHDD" and
