@@ -61,6 +61,8 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
     else:
         raise NotImplementedError
 
+    index = pd.to_datetime([day for day, _ in season_deltaT.groupby(season_deltaT.index.date)])
+
     cooling_column = thermostat.__dict__.get(column_name)
     cooling_runtime = cooling_column[cooling_season]
 
@@ -88,7 +90,7 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
     cdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
     mean_squared_error = np.mean((errors)**2)
 
-    return pd.Series(cdd, index=cooling_season.resample('D').index), deltaT_base_estimate, alpha_estimate, mean_squared_error
+    return pd.Series(cdd, index=index), deltaT_base_estimate, alpha_estimate, mean_squared_error
 
 def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=None):
     """
@@ -149,6 +151,8 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
     else:
         raise NotImplementedError
 
+    index = pd.to_datetime([day for day, _ in season_deltaT.groupby(season_deltaT.index.date)])
+
     heating_column = thermostat.__dict__.get(column_name)
     heating_runtime = heating_column[heating_season]
 
@@ -176,4 +180,4 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
     hdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
     mean_squared_error = np.mean((errors)**2)
 
-    return pd.Series(hdd, index=heating_season.resample('D').index), deltaT_base_estimate, alpha_estimate, mean_squared_error
+    return pd.Series(hdd, index=index), deltaT_base_estimate, alpha_estimate, mean_squared_error
