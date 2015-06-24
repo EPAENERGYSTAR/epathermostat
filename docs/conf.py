@@ -32,6 +32,7 @@ MOCK_MODULES = [
     'eemeter.location',
     'scipy',
     'scipy.optimize',
+    'scipy.stats',
 ]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 

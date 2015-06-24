@@ -1,4 +1,5 @@
 import pytest
+
 from thermostat.demand import get_cooling_demand
 from thermostat.demand import get_heating_demand
 
@@ -51,7 +52,7 @@ def test_get_heating_demand_deltaT(valid_thermostat_id,valid_temperature_setpoin
     deltaT = get_heating_demand(thermostat_type_2,heating_season,method="deltaT")
     assert_allclose(deltaT,np.tile(20,(400,)),rtol=RTOL,atol=ATOL)
 
-def test_get_cooling_demand_dailyavgCDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_cooling_demand_dailyavgCDD(valid_thermostat_id,valid_temperature_setpoint,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
 
@@ -76,7 +77,7 @@ def test_get_cooling_demand_dailyavgCDD(valid_thermostat_id,valid_datetimeindex)
     assert_allclose(alpha_estimate, daily_alpha, rtol=RTOL, atol=ATOL)
     assert error < 50000
 
-def test_get_heating_demand_dailyavgHDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_heating_demand_dailyavgHDD(valid_thermostat_id,valid_temperature_setpoint,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
 
@@ -101,7 +102,7 @@ def test_get_heating_demand_dailyavgHDD(valid_thermostat_id,valid_datetimeindex)
     assert_allclose(alpha_estimate, daily_alpha, rtol=RTOL, atol=ATOL)
     assert error < 50000
 
-def test_get_cooling_demand_hourlysumCDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_cooling_demand_hourlysumCDD(valid_thermostat_id,valid_temperature_setpoint,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
 
@@ -125,7 +126,7 @@ def test_get_cooling_demand_hourlysumCDD(valid_thermostat_id,valid_datetimeindex
     assert_allclose(alpha_estimate, 555.918, rtol=0.01, atol=0.01)
     assert error < 550000
 
-def test_get_heating_demand_hourlysumHDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_heating_demand_hourlysumHDD(valid_thermostat_id,valid_temperature_setpoint,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
 
