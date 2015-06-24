@@ -1,4 +1,7 @@
-def get_cooling_season_baseline_setpoint(thermostat,cooling_season,method='default'):
+import pandas as pd
+import numpy as np
+
+def get_cooling_season_baseline_setpoints(thermostat,cooling_season,method='default'):
     """
     Parameters
     ----------
@@ -20,9 +23,10 @@ def get_cooling_season_baseline_setpoint(thermostat,cooling_season,method='defau
     if method != 'default':
         raise NotImplementedError
     season_setpoints = thermostat.temperature_setpoint[cooling_season]
-    return season_setpoints.quantile(.1)
+    setpoint = season_setpoints.quantile(.1)
+    return pd.Series(np.tile(setpoint,cooling_season.shape),index=cooling_season.index)
 
-def get_heating_season_baseline_setpoint(thermostat,heating_season,method='default'):
+def get_heating_season_baseline_setpoints(thermostat,heating_season,method='default'):
     """
     Parameters
     ----------
@@ -44,4 +48,5 @@ def get_heating_season_baseline_setpoint(thermostat,heating_season,method='defau
     if method != 'default':
         raise NotImplementedError
     season_setpoints = thermostat.temperature_setpoint[heating_season]
-    return season_setpoints.quantile(.9)
+    setpoint = season_setpoints.quantile(.9)
+    return pd.Series(np.tile(setpoint,heating_season.shape),index=heating_season.index)
