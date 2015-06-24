@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
 
@@ -87,7 +88,7 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
     cdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
     mean_squared_error = np.mean((errors)**2)
 
-    return cdd, deltaT_base_estimate, alpha_estimate, mean_squared_error
+    return pd.Series(cdd, index=cooling_season.resample('D').index), deltaT_base_estimate, alpha_estimate, mean_squared_error
 
 def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=None):
     """
@@ -175,4 +176,4 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
     hdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
     mean_squared_error = np.mean((errors)**2)
 
-    return hdd, deltaT_base_estimate, alpha_estimate, mean_squared_error
+    return pd.Series(hdd, index=heating_season.resample('D').index), deltaT_base_estimate, alpha_estimate, mean_squared_error
