@@ -13,10 +13,12 @@ def runtime_regression(hourly_runtime,daily_demand):
         A daily demand measure for each day in the heating or cooling season.
     """
     daily_runtime = np.array([runtimes.sum() for day, runtimes in hourly_runtime.groupby(hourly_runtime.index.date)])
-    x = daily_demand.values[:,np.newaxis]
+    x_1 = daily_demand.values[:,np.newaxis]
+    x_0 = np.tile(1,x_1.shape)
+    x = np.concatenate((x_1,x_0),axis=1)
     y = daily_runtime
     results = lstsq(x,y) # model: y = a*x
-    alpha = results[0][0]
+    slope,intercept = results[0]
     mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
-    return alpha, mean_sq_err
+    return slope, intercept, mean_sq_err
 

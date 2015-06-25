@@ -40,10 +40,11 @@ def test_runtime_regression_cooling(valid_thermostat_id,valid_temperature_setpoi
 
     daily_cooling_demand, _, _, _ = get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD",column_name="ss_heat_pump_cooling")
     hourly_runtime = ss_heat_pump_cooling[cooling_season]
-    alpha, mean_sq_err = runtime_regression(hourly_runtime,daily_cooling_demand)
+    slope,intercept, mean_sq_err = runtime_regression(hourly_runtime,daily_cooling_demand)
 
-    assert_allclose(alpha,476.088,rtol=0.01,atol=0.01)
-    assert_allclose(mean_sq_err,552873.247,rtol=0.01,atol=0.01)
+    assert_allclose(slope,378.032,rtol=0.01,atol=0.01)
+    assert_allclose(intercept,1499.517,rtol=0.01,atol=0.01)
+    assert_allclose(mean_sq_err,466614.949,rtol=0.01,atol=0.01)
 
 def test_runtime_regression_heating(valid_thermostat_id,valid_temperature_setpoint, valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
@@ -63,8 +64,9 @@ def test_runtime_regression_heating(valid_thermostat_id,valid_temperature_setpoi
     daily_heating_demand, _, _, _ = get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD",column_name="ss_heat_pump_heating")
     hourly_runtime = ss_heat_pump_heating[heating_season]
 
-    alpha, mean_sq_err = runtime_regression(hourly_runtime,daily_heating_demand)
+    slope, intercept, mean_sq_err = runtime_regression(hourly_runtime,daily_heating_demand)
 
-    assert_allclose(alpha,476.088,rtol=0.01,atol=0.01)
-    assert_allclose(mean_sq_err,552873.247,rtol=0.01,atol=0.01)
+    assert_allclose(slope,378.032,rtol=0.01,atol=0.01)
+    assert_allclose(intercept,1499.517,rtol=0.01,atol=0.01)
+    assert_allclose(mean_sq_err,466614.949,rtol=0.01,atol=0.01)
 
