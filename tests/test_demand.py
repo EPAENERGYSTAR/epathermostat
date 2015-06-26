@@ -36,7 +36,7 @@ def test_get_cooling_demand_deltaT(valid_thermostat_id,valid_temperature_setpoin
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
     deltaT = get_cooling_demand(thermostat_type_2,cooling_season,method="deltaT")
-    assert_allclose(deltaT,np.tile(-20,(384,)),rtol=RTOL,atol=ATOL)
+    assert_allclose(deltaT,np.tile(-20,(16,)),rtol=RTOL,atol=ATOL)
 
 def test_get_heating_demand_deltaT(valid_thermostat_id,valid_temperature_setpoint,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
@@ -50,7 +50,7 @@ def test_get_heating_demand_deltaT(valid_thermostat_id,valid_temperature_setpoin
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
     deltaT = get_heating_demand(thermostat_type_2,heating_season,method="deltaT")
-    assert_allclose(deltaT,np.tile(20,(384,)),rtol=RTOL,atol=ATOL)
+    assert_allclose(deltaT,np.tile(20,(16,)),rtol=RTOL,atol=ATOL)
 
 def test_get_cooling_demand_dailyavgCDD(valid_thermostat_id,valid_temperature_setpoint,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)

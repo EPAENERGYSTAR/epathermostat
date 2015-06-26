@@ -32,7 +32,7 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
     Returns
     -------
     demand : pd.Series
-        Demand at each hour in the heating season as calculated using one of
+        Daily demand in the heating season as calculated using one of
         the supported methods.
     deltaT_base_estimate : float
         Estimate of :math:`\Delta T_{\\text{base cool}}`. Only output for
@@ -48,20 +48,20 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
     season_temp_out = thermostat.temperature_out[cooling_season]
     season_deltaT = season_temp_in - season_temp_out
 
+    daily_avg_deltaT = np.array([temps.mean() for day, temps in season_deltaT.groupby(season_deltaT.index.date)])
+    index = pd.to_datetime([day for day, _ in season_deltaT.groupby(season_deltaT.index.date)])
+
     if method == "deltaT":
-        return season_deltaT
+        return pd.Series(daily_avg_deltaT, index=index)
     elif method == "dailyavgCDD":
-        daily_avg_deltaT = np.array([-temps.mean() for day, temps in season_deltaT.groupby(season_deltaT.index.date)])
         def calc_cdd(deltaT_base):
-            return np.maximum(daily_avg_deltaT - deltaT_base,0)
+            return np.maximum(-daily_avg_deltaT - deltaT_base,0)
     elif method == "hourlysumCDD":
         def calc_cdd(deltaT_base):
             hourly_cdd = (-season_deltaT - deltaT_base).apply(lambda x: np.maximum(x,0))
             return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(season_deltaT.index.date)])
     else:
         raise NotImplementedError
-
-    index = pd.to_datetime([day for day, _ in season_deltaT.groupby(season_deltaT.index.date)])
 
     cooling_column = thermostat.__dict__.get(column_name)
     cooling_runtime = cooling_column[cooling_season]
@@ -122,7 +122,7 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
     Returns
     -------
     demand : pd.Series
-        Demand at each hour in the heating season as calculated using one of
+        Daily demand in the heating season as calculated using one of
         the supported methods.
     deltaT_base_estimate : float
         Estimate of :math:`\Delta T_{\\text{base heat}}`. Only output for
@@ -138,10 +138,12 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
     season_temp_out = thermostat.temperature_out[heating_season]
     season_deltaT = season_temp_in - season_temp_out
 
+    daily_avg_deltaT = np.array([temps.mean() for day, temps in season_deltaT.groupby(season_deltaT.index.date)])
+    index = pd.to_datetime([day for day, _ in season_deltaT.groupby(season_deltaT.index.date)])
+
     if method == "deltaT":
-        return season_deltaT
+        return pd.Series(daily_avg_deltaT, index=index)
     elif method == "dailyavgHDD":
-        daily_avg_deltaT = np.array([temps.mean() for day, temps in season_deltaT.groupby(season_deltaT.index.date)])
         def calc_hdd(deltaT_base):
             return np.maximum(daily_avg_deltaT - deltaT_base,0)
     elif method == "hourlysumHDD":
@@ -150,8 +152,6 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
             return np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(season_deltaT.index.date)])
     else:
         raise NotImplementedError
-
-    index = pd.to_datetime([day for day, _ in season_deltaT.groupby(season_deltaT.index.date)])
 
     heating_column = thermostat.__dict__.get(column_name)
     heating_runtime = heating_column[heating_season]
