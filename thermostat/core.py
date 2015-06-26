@@ -24,7 +24,7 @@ EQUIPMENT_TYPE_DISALLOWED_COLUMNS = {
 
 EQUIPMENT_TYPE_HEATING_COLUMNS = {
     0: [],
-    1: ["ss_heat_pump_heating","auxiliary_heat","emergency_heat"],
+    1: ["ss_heat_pump_heating"],
     2: ["ss_heat_pump_heating"],
     3: ["ss_heating"],
     4: ["ss_heating"],
@@ -38,6 +38,15 @@ EQUIPMENT_TYPE_COOLING_COLUMNS = {
     3: ["ss_central_ac"],
     4: [],
     5: ["ss_central_ac"],
+}
+
+EQUIPMENT_TYPE_RESISTANCE_HEAT_COLUMNS = {
+    0: [],
+    1: ["auxiliary_heat","emergency_heat"],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
 }
 
 class Thermostat(object):
@@ -219,6 +228,24 @@ class Thermostat(object):
                 cooling_columns.append(column)
         return cooling_columns
 
+    def get_resistance_heat_columns(self):
+        """ Get all data for resistance heating equipment this thermostat
+        controls.
+
+        Returns
+        -------
+        rh_columns : list of pandas.Series
+            All columns representing resistance heating equipment for this
+            thermostat.
+        """
+        rh_column_names = EQUIPMENT_TYPE_RESISTANCE_HEAT_COLUMNS[self.equipment_type]
+        rh_columns = []
+        for column_name in rh_column_names:
+            column = self.__dict__.get(column_name)
+            if column is not None:
+                rh_columns.append(column)
+        return rh_columns
+
     def get_heating_seasons(self, method="simple"):
         """ Get all data for heating seasons for data associated with this
         thermostat
@@ -227,9 +254,10 @@ class Thermostat(object):
         ----------
         method : {"simple"}, default: "simple"
             Method by which to find heating seasons.
+
             - "simple": groups all heating days (days with >= 1 hour of total
-            heating and no cooling) from the July 1 to June 31 into single
-            heating seasons.
+              heating and no cooling) from the July 1 to June 31 into single
+              heating seasons.
 
         Returns
         -------
@@ -295,9 +323,10 @@ class Thermostat(object):
         ----------
         method : {"simple"}, default: "simple"
             Method by which to find cooling seasons.
+
             - "simple": groups all cooling days (days with >= 1 hour of total
-            cooling and no heating) from January 1 to December 31 into
-            single cooling seasons.
+              cooling and no heating) from January 1 to December 31 into
+              single cooling seasons.
 
         Returns
         -------

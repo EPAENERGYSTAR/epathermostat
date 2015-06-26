@@ -165,7 +165,7 @@ def test_thermostat_attributes(thermostat_type_0):
 
 def test_thermostat_get_heating_columns(thermostat_type_1_with_heating_season,heating_season_datetimeindex):
     heating_columns = thermostat_type_1_with_heating_season.get_heating_columns()
-    assert len(heating_columns) == 3
+    assert len(heating_columns) == 1
     for heating_column in heating_columns:
         assert heating_column.index.shape == heating_season_datetimeindex.shape
         assert type(heating_column.index) == pd.DatetimeIndex
@@ -176,6 +176,13 @@ def test_thermostat_get_cooling_columns(thermostat_type_1_with_cooling_season,co
     for cooling_column in cooling_columns:
         assert cooling_column.index.shape == cooling_season_datetimeindex.shape
         assert type(cooling_column.index) == pd.DatetimeIndex
+
+def test_thermostat_get_resistance_heat_columns(thermostat_type_1_with_heating_season,heating_season_datetimeindex):
+    rh_columns = thermostat_type_1_with_heating_season.get_resistance_heat_columns()
+    assert len(rh_columns) == 2
+    for rh_column in rh_columns:
+        assert rh_column.index.shape == heating_season_datetimeindex.shape
+        assert type(rh_column.index) == pd.DatetimeIndex
 
 def test_thermostat_get_heating_seasons(thermostat_type_1_with_heating_season,heating_season_datetimeindex):
     heating_seasons = thermostat_type_1_with_heating_season.get_heating_seasons()
