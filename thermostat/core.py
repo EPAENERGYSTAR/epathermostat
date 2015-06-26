@@ -260,19 +260,25 @@ class Thermostat(object):
         end_year = total_heating.index[-1].year + 1
         potential_seasons = zip(range(start_year,end_year),range(start_year+1,end_year+1))
 
+        # compute inclusion thresholds
+        daily_heating_sums = total_heating.groupby(total_heating.index.date).sum()
+        meets_heating_thresholds = np.array([daily_heating_sums[i.date()] >= 3600 for i,total in total_heating.iteritems()])
+
+        daily_heating_counts = total_heating.groupby(total_heating.index.date).count()
+        day_is_complete = np.array([daily_heating_counts[i.date()] == 24 for i,total in total_heating.iteritems()])
+
+        if total_cooling is None:
+            meets_cooling_thresholds = True
+        else:
+            daily_cooling_sums = total_cooling.groupby(total_cooling.index.date).sum()
+            meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] < 3600 for i,total in total_cooling.iteritems()])
+
         # for each potential season, look for heating days.
         heating_seasons = []
         for start_year_,end_year_ in potential_seasons:
             after_start = np.datetime64(datetime(start_year_,7,1)) <= total_heating.index
             before_end = total_heating.index <= np.datetime64(datetime(end_year_,7,1))
-            daily_heating_sums = total_heating.groupby(total_heating.index.date).sum()
-            meets_heating_thresholds = np.array([daily_heating_sums[i.date()] >= 3600 for i,total in total_heating.iteritems()])
-            if total_cooling is None:
-                meets_cooling_thresholds = True
-            else:
-                daily_cooling_sums = total_cooling.groupby(total_cooling.index.date).sum()
-                meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] < 3600 for i,total in total_cooling.iteritems()])
-            inclusion = after_start & before_end & meets_heating_thresholds & meets_cooling_thresholds
+            inclusion = after_start & before_end & meets_heating_thresholds & meets_cooling_thresholds & day_is_complete
             heating_season_days = pd.Series(inclusion,index=total_heating.index)
             if any(heating_season_days):
                 heating_season_name = "{}-{} Heating Season".format(start_year_,end_year_)
@@ -322,19 +328,25 @@ class Thermostat(object):
         end_year = total_cooling.index[-1].year
         potential_seasons = range(start_year,end_year + 1)
 
+        # compute inclusion thresholds
+        daily_cooling_sums = total_cooling.groupby(total_cooling.index.date).sum()
+        meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] >= 3600 for i,total in total_cooling.iteritems()])
+
+        daily_cooling_counts = total_cooling.groupby(total_cooling.index.date).count()
+        day_is_complete = np.array([daily_cooling_counts[i.date()] == 24 for i,total in total_cooling.iteritems()])
+
+        if total_heating is None:
+            meets_heating_thresholds = True
+        else:
+            daily_heating_sums = total_heating.groupby(total_heating.index.date).sum()
+            meets_heating_thresholds = np.array([daily_heating_sums[i.date()] < 3600 for i,total in total_heating.iteritems()])
+
         # for each potential season, look for cooling days.
         cooling_seasons = []
         for year in potential_seasons:
             after_start = np.datetime64(datetime(year,1,1)) <= total_cooling.index
             before_end = total_cooling.index <= np.datetime64(datetime(year + 1,1,1))
-            daily_cooling_sums = total_cooling.groupby(total_cooling.index.date).sum()
-            meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] >= 3600 for i,total in total_cooling.iteritems()])
-            if total_heating is None:
-                meets_heating_thresholds = True
-            else:
-                daily_heating_sums = total_heating.groupby(total_heating.index.date).sum()
-                meets_heating_thresholds = np.array([daily_heating_sums[i.date()] < 3600 for i,total in total_heating.iteritems()])
-            inclusion = after_start & before_end & meets_cooling_thresholds & meets_heating_thresholds
+            inclusion = after_start & before_end & meets_cooling_thresholds & meets_heating_thresholds & day_is_complete
             cooling_season_days = pd.Series(inclusion,index=total_cooling.index)
             if any(cooling_season_days):
                 cooling_season_name = "{} Cooling Season".format(year)
