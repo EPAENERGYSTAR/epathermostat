@@ -90,8 +90,8 @@ def get_cooling_season_baseline_cooling_demand(thermostat,cooling_season,baselin
 
     Returns
     -------
-    baseline_cdd : pandas.Series
-        A series containing daily :math:`CDD_{\\text{base}}` for the cooling season.
+    baseline_cooling_demand : pandas.Series
+        A series containing baseline daily heating demand for the cooling season.
     """
     temp_baseline = baseline_setpoint.iloc[0] # assumes all are the same
     season_temp_out = thermostat.temperature_out[cooling_season]
@@ -143,8 +143,8 @@ def get_heating_season_baseline_heating_demand(thermostat,heating_season,baselin
 
     Returns
     -------
-    baseline_hdd : pandas.Series
-        A series containing daily :math:`HDD_{\\text{base}}` for the heating season.
+    baseline_heating_demand : pandas.Series
+        A series containing baseline daily heating demand for the heating season.
     """
     temp_baseline = baseline_setpoint.iloc[0] # assumes all are the same
     season_temp_out = thermostat.temperature_out[heating_season]
