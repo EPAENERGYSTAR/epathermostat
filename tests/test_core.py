@@ -5,6 +5,8 @@ import numpy as np
 
 import pytest
 
+from numpy.testing import assert_allclose
+
 @pytest.fixture(params=[0])
 def valid_equipment_type(request):
     return request.param
@@ -219,3 +221,13 @@ def test_thermostat_get_cooling_seasons_ignores_simultaneous_heating_cooling(the
 def test_thermostat_get_heating_seasons_ignores_simultaneous_heating_cooling(thermostat_type_2_with_heating_and_cooling_season):
     heating_seasons = thermostat_type_2_with_heating_and_cooling_season.get_heating_seasons()
     assert heating_seasons == []
+
+def test_thermostat_get_heating_season_total_runtime(thermostat_type_1_with_heating_season):
+    heating_season,_ = thermostat_type_1_with_heating_season.get_heating_seasons()[0]
+    heating_runtime = thermostat_type_1_with_heating_season.get_heating_season_total_runtime(heating_season)
+    assert_allclose(heating_runtime,345600,rtol=1e-3,atol=1e-3)
+
+def test_thermostat_get_cooling_season_total_runtime(thermostat_type_1_with_cooling_season):
+    cooling_season,_ = thermostat_type_1_with_cooling_season.get_cooling_seasons()[0]
+    cooling_runtime = thermostat_type_1_with_cooling_season.get_cooling_season_total_runtime(cooling_season)
+    assert_allclose(cooling_runtime,345600,rtol=1e-3,atol=1e-3)

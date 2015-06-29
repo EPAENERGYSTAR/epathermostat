@@ -383,3 +383,17 @@ class Thermostat(object):
                 cooling_seasons.append(cooling_season)
 
         return cooling_seasons
+
+    def get_heating_season_total_runtime(self,heating_season):
+        heating_columns = self.get_heating_columns()
+        runtimes = []
+        for column in heating_columns:
+            runtimes.append(column[heating_season].sum())
+        return runtimes
+
+    def get_cooling_season_total_runtime(self,cooling_season):
+        cooling_columns = self.get_cooling_columns()
+        runtimes = []
+        for column in cooling_columns:
+            runtimes.append(column[cooling_season].sum())
+        return runtimes
