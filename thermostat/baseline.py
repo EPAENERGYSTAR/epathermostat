@@ -99,7 +99,7 @@ def get_cooling_season_baseline_cooling_demand(thermostat,cooling_season,baselin
     index = pd.to_datetime([day for day,_ in season_temp_out.groupby(season_temp_out.index.date)])
     daily_temp_out = np.array([temps.mean() for day, temps in season_temp_out.groupby(season_temp_out.index.date)])
 
-    if method == "dailyT":
+    if method == "deltaT":
         demand = daily_temp_out - temp_baseline
     elif method == "dailyavgCDD":
         demand = np.maximum(daily_temp_out - temp_baseline - deltaT_base,0)
@@ -152,7 +152,7 @@ def get_heating_season_baseline_heating_demand(thermostat,heating_season,baselin
     index = pd.to_datetime([day for day,_ in season_temp_out.groupby(season_temp_out.index.date)])
     daily_temp_out = np.array([temps.mean() for day, temps in season_temp_out.groupby(season_temp_out.index.date)])
 
-    if method == "dailyT":
+    if method == "deltaT":
         demand = temp_baseline - daily_temp_out
     elif method == "dailyavgHDD":
         demand = np.maximum(temp_baseline - daily_temp_out - deltaT_base,0)

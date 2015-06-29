@@ -55,10 +55,10 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
         return pd.Series(daily_avg_deltaT, index=index)
     elif method == "dailyavgCDD":
         def calc_cdd(deltaT_base):
-            return np.maximum(-daily_avg_deltaT - deltaT_base,0)
+            return np.maximum(deltaT_base - daily_avg_deltaT,0)
     elif method == "hourlysumCDD":
         def calc_cdd(deltaT_base):
-            hourly_cdd = (-season_deltaT - deltaT_base).apply(lambda x: np.maximum(x,0))
+            hourly_cdd = (deltaT_base - season_deltaT).apply(lambda x: np.maximum(x,0))
             return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(season_deltaT.index.date)])
     else:
         raise NotImplementedError
