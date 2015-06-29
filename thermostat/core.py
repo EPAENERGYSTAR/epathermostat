@@ -385,6 +385,19 @@ class Thermostat(object):
         return cooling_seasons
 
     def get_heating_season_total_runtime(self,heating_season):
+        """
+        Seasonal heating times for a particular heating season
+
+        Parameters
+        ----------
+        heating_season : pd.Series
+            Boolean array indicating presence in heating season.
+
+        Returns
+        -------
+        runtimes : list of int
+            Runtimes for each heating column in the order returned by self.get_heating_columns()
+        """
         heating_columns = self.get_heating_columns()
         runtimes = []
         for column in heating_columns:
@@ -392,6 +405,19 @@ class Thermostat(object):
         return runtimes
 
     def get_cooling_season_total_runtime(self,cooling_season):
+        """
+        Seasonal cooling times for a particular cooling season
+
+        Parameters
+        ----------
+        cooling_season : pd.Series
+            Boolean array indicating presence in cooling season.
+
+        Returns
+        -------
+        runtimes : list of int
+            Runtimes for each cooling column in the order returned by self.get_cooling_columns()
+        """
         cooling_columns = self.get_cooling_columns()
         runtimes = []
         for column in cooling_columns:
