@@ -1,14 +1,17 @@
 from thermostat import Thermostat
 from thermostat.metrics import calculate_epa_draft_rccs_field_savings_metrics
+from thermostat.metrics import seasonal_metrics_to_csv
 
 import pytest
 from uuid import uuid4
 import pandas as pd
 import numpy as np
+import tempfile
 
 from numpy.testing import assert_allclose
 
-def test_calculate_epa_draft_rccs_field_savings_metrics_type1():
+@pytest.fixture
+def thermostat_type_1():
     valid_thermostat_id = uuid4()
     valid_datetimeindex = pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=800)
     valid_zipcode = "01234"
@@ -46,7 +49,10 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type1():
     thermostat_type_1 = Thermostat(valid_thermostat_id,1,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling,
             emergency_heat=emergency_heat,auxiliary_heat=auxiliary_heat)
+    return thermostat_type_1
 
+
+def test_calculate_epa_draft_rccs_field_savings_metrics_type1(thermostat_type_1):
     seasonal_metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat_type_1)
 
     cooling_2012 = seasonal_metrics["2012 Cooling Season"]
@@ -55,8 +61,8 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type1():
     assert cooling_2012["ct_identifier"] is not None
     assert heating_2011_12["ct_identifier"] is not None
 
-    assert cooling_2012["zipcode"] == valid_zipcode
-    assert heating_2011_12["zipcode"] == valid_zipcode
+    assert cooling_2012["zipcode"] == thermostat_type_1.zipcode
+    assert heating_2011_12["zipcode"] == thermostat_type_1.zipcode
 
     assert cooling_2012["equipment_type"] == 1
     assert heating_2011_12["equipment_type"] == 1
@@ -248,3 +254,13 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type2():
     for low,high in [(i,i+5) for i in range(0,60,5)]:
         label = "rhu_{:02d}F_to_{:02d}F".format(low,high)
         assert heating_2011_12[label] is None
+
+def test_seasonal_metrics_to_csv(thermostat_type_1):
+    fd, fname = tempfile.mkstemp()
+    seasonal_metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat_type_1)
+    seasonal_metrics_to_csv(seasonal_metrics,fname)
+    with open(fname,'r') as f:
+        lines = f.readlines()
+        assert len(lines) == 3
+        for line in lines:
+            assert len(line.split(',')) == 54

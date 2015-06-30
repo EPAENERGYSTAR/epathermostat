@@ -10,6 +10,8 @@ from thermostat.savings import get_total_baseline_cooling_runtime
 from thermostat.savings import get_total_baseline_heating_runtime
 from thermostat.savings import get_seasonal_percent_savings
 
+import pandas as pd
+
 def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
     """ Calculates metrics for connected thermostat savings as defined by
     the draft specification defined by the EPA and stakeholders during early
@@ -219,3 +221,11 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
         seasonal_metrics[season_name] = outputs
 
     return seasonal_metrics
+
+def seasonal_metrics_to_csv(seasonal_metrics,filepath):
+    rows = []
+    for season_name, metrics in seasonal_metrics.iteritems():
+        rows.append(dict(metrics.items() + {"season":season_name}.items()))
+
+    df = pd.DataFrame(rows)
+    df.to_csv(filepath,index=False)
