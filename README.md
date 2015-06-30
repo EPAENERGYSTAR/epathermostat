@@ -1,7 +1,8 @@
-thermostat
-==========
+Connected Thermostat draft field savings metrics module
+=======================================================
 
-Calculate temperature/run-time savings for connected thermostats.
+Calculate temperature/run-time savings for connected thermostats using this
+package.
 
 Documenation
 ------------
