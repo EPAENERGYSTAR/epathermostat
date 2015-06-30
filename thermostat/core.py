@@ -426,3 +426,37 @@ class Thermostat(object):
         for column in cooling_columns:
             runtimes.append(column[cooling_season].sum())
         return runtimes
+
+    def get_resistance_heat_utilization(self,heating_season,bin_step=5):
+        """ Calculates resistance heat utilization metrics in temperature
+        bins between 0 and 60 degrees Fahrenheit.
+
+        Parameters
+        ----------
+        heating_season : pandas.Series
+            Heating season for which to calculate resistance heat utilization.
+        bin_step : int, default: 5
+            Step size of temperature bins.
+
+        Returns
+        -------
+        RHUs : numpy.array or None
+            Resistance heat utilization for each temperature bin, ordered
+            ascending by temperature bin. Returns None if the thermostat does
+            not control the appropriate equipment
+        """
+        bin_step = 5
+        resistance_heat_columns = self.get_resistance_heat_columns()
+        if self.equipment_type == 1 and len(resistance_heat_columns) == 2:
+            RHUs = []
+            temperature_bins = [(i,i+5)for i in range(0,60,5)]
+            for low_temp,high_temp in temperature_bins:
+                temp_bin = self.temperature_out[low_temp <= self.temperature_out] < high_temp
+                R_heat = self.ss_heat_pump_heating.sum()
+                R_aux = self.auxiliary_heat.sum()
+                R_emg = self.emergency_heat.sum()
+                rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
+                RHUs.append(rhu)
+            return np.array(RHUs)
+        else:
+            return None

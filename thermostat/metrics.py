@@ -208,6 +208,14 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
         outputs["seasonal_avoided_runtime_dailyavgHDD"] = seasonal_avoided_runtime_dailyavgHDD
         outputs["seasonal_avoided_runtime_hourlysumHDD"] = seasonal_avoided_runtime_hourlysumHDD
 
+        rhus = thermostat.get_resistance_heat_utilization(heating_season)
+        if rhus is None:
+            for low, high in [(i,i+5) for i in range(0,60,5)]:
+                outputs["rhu_{:02d}F_to_{:02d}F".format(low,high)] = None
+        else:
+            for rhu, (low, high) in zip(rhus,[(i,i+5) for i in range(0,60,5)]):
+                outputs["rhu_{:02d}F_to_{:02d}F".format(low,high)] = rhu
+
         seasonal_metrics[season_name] = outputs
 
     return seasonal_metrics

@@ -92,6 +92,28 @@ def thermostat_type_1_with_heating_season(valid_thermostat_id,valid_zipcode,heat
     return thermostat
 
 @pytest.fixture
+def thermostat_type_1_with_heating_season_emg_aux(valid_thermostat_id,valid_zipcode,heating_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+    equipment_type = 1
+
+    ss_heat_pump_heating = pd.Series(np.tile(3600,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    ss_heat_pump_cooling = pd.Series(np.tile(0,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    auxiliary_heat = pd.Series(np.tile(10,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    emergency_heat = pd.Series(np.tile(20,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
+    temp_in = pd.Series(np.linspace(0,60,num=heating_season_datetimeindex.shape[0]),index=heating_season_datetimeindex)
+
+    thermostat = Thermostat(valid_thermostat_id,
+            equipment_type,
+            valid_zipcode,
+            valid_temperature_in,
+            valid_temperature_setpoint,
+            temp_in,
+            ss_heat_pump_heating,
+            ss_heat_pump_cooling,
+            auxiliary_heat,
+            emergency_heat)
+    return thermostat
+
+@pytest.fixture
 def thermostat_type_1_with_cooling_season(valid_thermostat_id,valid_zipcode,cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
     equipment_type = 1
 
@@ -240,3 +262,8 @@ def test_thermostat_get_cooling_season_total_runtime(thermostat_type_1_with_cool
     cooling_season,_ = thermostat_type_1_with_cooling_season.get_cooling_seasons()[0]
     cooling_runtime = thermostat_type_1_with_cooling_season.get_cooling_season_total_runtime(cooling_season)
     assert_allclose(cooling_runtime,345600,rtol=1e-3,atol=1e-3)
+
+def test_thermostat_get_resistance_heat_utilization(thermostat_type_1_with_heating_season_emg_aux):
+    heating_season,_ = thermostat_type_1_with_heating_season_emg_aux.get_heating_seasons()[0]
+    rhus = thermostat_type_1_with_heating_season_emg_aux.get_resistance_heat_utilization(heating_season)
+    assert_allclose(rhus,np.tile(0.008287,(12,)),rtol=1e-3,atol=1e-3)
