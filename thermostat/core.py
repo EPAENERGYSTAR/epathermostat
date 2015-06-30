@@ -501,11 +501,15 @@ class Thermostat(object):
             meets_heating_thresholds = np.array([daily_heating_sums[i.date()] > 0 for i,total in total_heating.iteritems()])
 
         # completeness
-        daily_cooling_counts = total_cooling.groupby(total_cooling.index.date).count()
-        day_is_incomplete = np.array([daily_cooling_counts[i.date()] != 24 for i,total in total_cooling.iteritems()])
+        if "Cooling" in season_name:
+            daily_cooling_counts = total_cooling.groupby(total_cooling.index.date).count()
+            day_is_incomplete = np.array([daily_cooling_counts[i.date()] != 24 for i,total in total_cooling.iteritems()])
+        elif "Heating" in season_name:
+            daily_heating_counts = total_heating.groupby(total_heating.index.date).count()
+            day_is_incomplete = np.array([daily_heating_counts[i.date()] != 24 for i,total in total_heating.iteritems()])
 
         has_both = pd.Series(meets_heating_thresholds & meets_cooling_thresholds & after_start & before_end, index=self.temperature_in.index)
-        is_incomplete = pd.Series(meets_heating_thresholds & meets_cooling_thresholds & after_start & before_end, index=self.temperature_in.index)
+        is_incomplete = pd.Series(after_start & before_end & day_is_incomplete, index=self.temperature_in.index)
 
         n_days_both = sum(has_both.groupby(has_both.index.date).sum() > 0)
         n_days_incomplete = sum(is_incomplete.groupby(is_incomplete.index.date).sum() > 0)
