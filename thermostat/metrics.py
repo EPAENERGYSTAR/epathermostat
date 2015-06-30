@@ -119,6 +119,11 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
         outputs["seasonal_avoided_runtime_dailyavgCDD"] = seasonal_avoided_runtime_dailyavgCDD
         outputs["seasonal_avoided_runtime_hourlysumCDD"] = seasonal_avoided_runtime_hourlysumCDD
 
+        n_days_both, n_days_incomplete = thermostat.get_season_ignored_days(season_name)
+
+        outputs["n_days_both_heating_and_cooling"] = n_days_both
+        outputs["n_days_incomplete"] = n_days_incomplete
+
         seasonal_metrics[season_name] = outputs
 
     for heating_season, season_name in thermostat.get_heating_seasons():
@@ -210,6 +215,12 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
         outputs["seasonal_avoided_runtime_dailyavgHDD"] = seasonal_avoided_runtime_dailyavgHDD
         outputs["seasonal_avoided_runtime_hourlysumHDD"] = seasonal_avoided_runtime_hourlysumHDD
 
+        n_days_both, n_days_incomplete = thermostat.get_season_ignored_days(season_name)
+
+        outputs["n_days_both_heating_and_cooling"] = n_days_both
+        outputs["n_days_incomplete"] = n_days_incomplete
+
+
         rhus = thermostat.get_resistance_heat_utilization(heating_season)
         if rhus is None:
             for low, high in [(i,i+5) for i in range(0,60,5)]:
@@ -225,7 +236,7 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
 def seasonal_metrics_to_csv(seasonal_metrics,filepath):
     rows = []
     for season_name, metrics in seasonal_metrics.iteritems():
-        rows.append(dict(metrics.items() + {"season":season_name}.items()))
+        rows.append(dict(metrics.items() + {"season": season_name}.items()))
 
     df = pd.DataFrame(rows)
     df.to_csv(filepath,index=False)

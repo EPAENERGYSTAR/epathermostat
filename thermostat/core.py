@@ -460,3 +460,53 @@ class Thermostat(object):
             return np.array(RHUs)
         else:
             return None
+
+    def get_season_ignored_days(self,season_name):
+        season_range = None
+        if "Cooling" in season_name:
+            season_range = datetime(int(season_name[:4]),7,1),datetime(int(season_name[:4]) + 1,7,1)
+        elif "Heating" in season_name:
+            season_range = datetime(int(season_name[:4]),1,1),datetime(int(season_name[:4]) + 1,1,1)
+        else:
+            raise NotImplementedError
+
+        # cooling
+        cooling_columns = self.get_cooling_columns()
+        if cooling_columns == []:
+            total_cooling = None
+        else:
+            total_cooling = pd.DataFrame(cooling_columns).sum(axis=0)
+            after_start = np.datetime64(season_range[0]) <= total_cooling.index
+            before_end = total_cooling.index <= np.datetime64(season_range[1])
+
+        if total_cooling is None:
+            meets_cooling_thresholds = False
+        else:
+            daily_cooling_sums = total_cooling.groupby(total_cooling.index.date).sum()
+            meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] > 0 for i,total in total_cooling.iteritems()])
+
+        # heating
+        heating_columns = self.get_heating_columns()
+        if heating_columns == []:
+            total_heating = None
+        else:
+            total_heating = pd.DataFrame(heating_columns).sum(axis=0)
+            after_start = np.datetime64(season_range[0]) <= total_heating.index
+            before_end = total_heating.index <= np.datetime64(season_range[1])
+
+        if total_heating is None:
+            meets_heating_thresholds = False
+        else:
+            daily_heating_sums = total_heating.groupby(total_heating.index.date).sum()
+            meets_heating_thresholds = np.array([daily_heating_sums[i.date()] > 0 for i,total in total_heating.iteritems()])
+
+        # completeness
+        daily_cooling_counts = total_cooling.groupby(total_cooling.index.date).count()
+        day_is_incomplete = np.array([daily_cooling_counts[i.date()] != 24 for i,total in total_cooling.iteritems()])
+
+        has_both = pd.Series(meets_heating_thresholds & meets_cooling_thresholds & after_start & before_end, index=self.temperature_in.index)
+        is_incomplete = pd.Series(meets_heating_thresholds & meets_cooling_thresholds & after_start & before_end, index=self.temperature_in.index)
+
+        n_days_both = sum(has_both.groupby(has_both.index.date).sum() > 0)
+        n_days_incomplete = sum(is_incomplete.groupby(is_incomplete.index.date).sum() > 0)
+        return n_days_both, n_days_incomplete

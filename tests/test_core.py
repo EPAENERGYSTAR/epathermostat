@@ -267,3 +267,9 @@ def test_thermostat_get_resistance_heat_utilization(thermostat_type_1_with_heati
     heating_season,_ = thermostat_type_1_with_heating_season_emg_aux.get_heating_seasons()[0]
     rhus = thermostat_type_1_with_heating_season_emg_aux.get_resistance_heat_utilization(heating_season)
     assert_allclose(rhus,np.tile(0.008287,(12,)),rtol=1e-3,atol=1e-3)
+
+def test_get_season_ignored_days(thermostat_type_1_with_heating_season):
+    _,season_name = thermostat_type_1_with_heating_season.get_heating_seasons()[0]
+    n_days_both, n_days_incomplete = thermostat_type_1_with_heating_season.get_season_ignored_days(season_name)
+    assert n_days_both == 0
+    assert n_days_incomplete == 0

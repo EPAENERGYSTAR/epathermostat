@@ -102,6 +102,9 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type1(thermostat_type_1)
     assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],38400,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],38400,rtol=1e-3,atol=1e-3)
 
+    assert_allclose(cooling_2012["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
+
     assert_allclose(heating_2011_12["slope_deltaT"],480.0,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["slope_dailyavgHDD"],480.0,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["slope_hourlysumHDD"],480.0,rtol=1e-3,atol=1e-3)
@@ -133,6 +136,10 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type1(thermostat_type_1)
     assert_allclose(heating_2011_12["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["seasonal_avoided_runtime_dailyavgHDD"],38400,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["seasonal_avoided_runtime_hourlysumHDD"],38400,rtol=1e-3,atol=1e-3)
+
+    assert_allclose(heating_2011_12["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
+    assert_allclose(heating_2011_12["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
+
 
     for low,high in [(i,i+5) for i in range(0,60,5)]:
         label = "rhu_{:02d}F_to_{:02d}F".format(low,high)
@@ -219,6 +226,9 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type2():
     assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],38400,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],38400,rtol=1e-3,atol=1e-3)
 
+    assert_allclose(cooling_2012["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
+
     assert_allclose(heating_2011_12["slope_deltaT"],480.0,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["slope_dailyavgHDD"],480.0,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["slope_hourlysumHDD"],480.0,rtol=1e-3,atol=1e-3)
@@ -251,6 +261,9 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type2():
     assert_allclose(heating_2011_12["seasonal_avoided_runtime_dailyavgHDD"],38400,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["seasonal_avoided_runtime_hourlysumHDD"],38400,rtol=1e-3,atol=1e-3)
 
+    assert_allclose(heating_2011_12["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
+    assert_allclose(heating_2011_12["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
+
     for low,high in [(i,i+5) for i in range(0,60,5)]:
         label = "rhu_{:02d}F_to_{:02d}F".format(low,high)
         assert heating_2011_12[label] is None
@@ -263,4 +276,4 @@ def test_seasonal_metrics_to_csv(thermostat_type_1):
         lines = f.readlines()
         assert len(lines) == 3
         for line in lines:
-            assert len(line.split(',')) == 54
+            assert len(line.split(',')) == 56
