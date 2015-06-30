@@ -113,3 +113,66 @@ Name                         Description
    - :code:`4`: Single stage non heat pump without central air conditioning
    - :code:`5`: Single stage central air conditioning without central heating
 
+Output data
+===========
+
+=============================================== =========================================
+Name                                            Description
+----------------------------------------------- -----------------------------------------
+:code:`actual_daily_runtime`                    
+:code:`actual_seasonal_runtime`                 
+:code:`baseline_comfort_temperature`            
+:code:`baseline_daily_runtime_dailyavgCDD`      
+:code:`baseline_daily_runtime_dailyavgHDD`
+:code:`baseline_daily_runtime_deltaT`
+:code:`baseline_daily_runtime_hourlysumCDD`
+:code:`baseline_daily_runtime_hourlysumHDD`
+:code:`baseline_seasonal_runtime_dailyavgCDD`
+:code:`baseline_seasonal_runtime_dailyavgHDD`
+:code:`baseline_seasonal_runtime_deltaT`
+:code:`baseline_seasonal_runtime_hourlysumCDD`
+:code:`baseline_seasonal_runtime_hourlysumHDD`
+:code:`ct_identifier`                           Unique identifier for thermostat
+:code:`equipment_type`
+:code:`intercept_dailyavgCDD`
+:code:`intercept_dailyavgHDD`
+:code:`intercept_deltaT`
+:code:`intercept_hourlysumCDD`
+:code:`intercept_hourlysumHDD`
+:code:`mean_squared_error_dailyavgCDD`
+:code:`mean_squared_error_dailyavgHDD`
+:code:`mean_squared_error_deltaT`
+:code:`mean_squared_error_hourlysumCDD`
+:code:`mean_squared_error_hourlysumHDD`
+:code:`n_days_both_heating_and_cooling`
+:code:`n_days_incomplete`
+:code:`rhu_00F_to_05F`
+:code:`rhu_05F_to_10F`
+:code:`rhu_10F_to_15F`
+:code:`rhu_15F_to_20F`
+:code:`rhu_20F_to_25F`
+:code:`rhu_25F_to_30F`
+:code:`rhu_30F_to_35F`
+:code:`rhu_35F_to_40F`
+:code:`rhu_40F_to_45F`
+:code:`rhu_45F_to_50F`
+:code:`rhu_50F_to_55F`
+:code:`rhu_55F_to_60F`
+:code:`season`                                  Name of the heating or cooling season
+:code:`seasonal_avoided_runtime_dailyavgCDD`
+:code:`seasonal_avoided_runtime_dailyavgHDD`
+:code:`seasonal_avoided_runtime_deltaT`
+:code:`seasonal_avoided_runtime_hourlysumCDD`
+:code:`seasonal_avoided_runtime_hourlysumHDD`
+:code:`seasonal_savings_dailyavgCDD`
+:code:`seasonal_savings_dailyavgHDD`
+:code:`seasonal_savings_deltaT`
+:code:`seasonal_savings_hourlysumCDD`
+:code:`seasonal_savings_hourlysumHDD`
+:code:`slope_dailyavgCDD`
+:code:`slope_dailyavgHDD`
+:code:`slope_deltaT`
+:code:`slope_hourlysumCDD`
+:code:`slope_hourlysumHDD`
+:code:`zipcode`
+=============================================== =========================================
