@@ -1,3 +1,44 @@
+Quickstart
+==========
+
+Load thermostat data (see input file format below).
+
+.. code-block:: python
+
+    import sys
+    import os
+    from os.path import expanduser
+    from thermostat.importers import from_csv
+    from thermostat.metrics import calculate_epa_draft_rccs_field_savings_metrics
+    from thermostat.metrics import seasonal_metrics_to_csv
+
+    data_dir = os.path.join(expanduser("~"),"Downloads/")
+
+    thermostats = from_csv(os.path.join(data_dir,"thermostat_metadata.csv"),
+                           os.path.join(data_dir,"thermostat_interval_data.csv"))
+
+Now you may iterate through thermostats and calculate savings metrics for each.
+
+.. code-block:: python
+
+    for thermostat in thermostats:
+        metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat)
+        filepath = os.path.join(data_dir,"thermostat_{}_output.csv".format(thermostat.thermostat_id))
+        seasonal_metrics_to_csv(metrics,filepath)
+
+**Note**: During the data loading step, you may see a warning that the weather cache is
+disabled. You can safely ignore that warning, but if you wish to load a large
+amount of data, it will load much more quickly if you use the weather cache.
+
+To enable the weather cache, set the following environment variable to the
+database of your choice (the example uses sqlite) by supplying a database url
+
+.. code-block:: bash
+
+    export EEMETER_WEATHER_CACHE_DATABASE_URL=sqlite:////path/to/db.sqlite
+
+
+
 Input data
 ==========
 
