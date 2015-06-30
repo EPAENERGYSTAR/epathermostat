@@ -109,9 +109,9 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
         outputs["seasonal_savings_dailyavgCDD"] = seasonal_savings_dailyavgCDD
         outputs["seasonal_savings_hourlysumCDD"] = seasonal_savings_hourlysumCDD
 
-        seasonal_avoided_runtime_deltaT = daily_avoided_runtime_deltaT.mean()
-        seasonal_avoided_runtime_dailyavgCDD = daily_avoided_runtime_dailyavgCDD.mean()
-        seasonal_avoided_runtime_hourlysumCDD = daily_avoided_runtime_hourlysumCDD.mean()
+        seasonal_avoided_runtime_deltaT = daily_avoided_runtime_deltaT.sum()
+        seasonal_avoided_runtime_dailyavgCDD = daily_avoided_runtime_dailyavgCDD.sum()
+        seasonal_avoided_runtime_hourlysumCDD = daily_avoided_runtime_hourlysumCDD.sum()
 
         outputs["seasonal_avoided_runtime_deltaT"] = seasonal_avoided_runtime_deltaT
         outputs["seasonal_avoided_runtime_dailyavgCDD"] = seasonal_avoided_runtime_dailyavgCDD
@@ -127,6 +127,86 @@ def calculate_epa_draft_rccs_field_savings_metrics(thermostat):
 
         baseline_setpoints = get_heating_season_baseline_setpoints(thermostat,heating_season)
         outputs["baseline_comfort_temperature"] = baseline_setpoints.iloc[0]
+
+        # calculate demand metrics
+        demand_deltaT = get_heating_demand(thermostat, heating_season, method="deltaT")
+        demand_dailyavgHDD, deltaT_base_est_dailyavgHDD, alpha_est_dailyavgHDD, mean_sq_err_dailyavgHDD = \
+                get_heating_demand(thermostat, heating_season, method="dailyavgHDD")
+        demand_hourlysumHDD, deltaT_base_est_hourlysumHDD, alpha_est_hourlysumHDD, mean_sq_err_hourlysumHDD = \
+                get_heating_demand(thermostat, heating_season, method="hourlysumHDD")
+
+        # take first column
+        hourly_runtime = thermostat.get_heating_columns()[0][heating_season]
+
+        # run regressions
+        slope_deltaT, intercept_deltaT, mean_sq_err_deltaT = runtime_regression(hourly_runtime, demand_deltaT)
+        slope_dailyavgHDD, intercept_dailyavgHDD, mean_sq_err_dailyavgHDD = runtime_regression(hourly_runtime, demand_dailyavgHDD)
+        slope_hourlysumHDD, intercept_hourlysumHDD, mean_sq_err_hourlysumHDD = runtime_regression(hourly_runtime, demand_hourlysumHDD)
+
+        outputs["slope_deltaT"] = slope_deltaT
+        outputs["slope_dailyavgHDD"] = slope_dailyavgHDD
+        outputs["slope_hourlysumHDD"] = slope_hourlysumHDD
+
+        outputs["intercept_deltaT"] = intercept_deltaT
+        outputs["intercept_dailyavgHDD"] = intercept_dailyavgHDD
+        outputs["intercept_hourlysumHDD"] = intercept_hourlysumHDD
+
+        outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
+        outputs["mean_squared_error_dailyavgHDD"] = mean_sq_err_dailyavgHDD
+        outputs["mean_squared_error_hourlysumHDD"] = mean_sq_err_hourlysumHDD
+
+        actual_seasonal_runtime = thermostat.get_heating_season_total_runtime(heating_season)[0]
+        n_days = heating_season.sum() / 24
+        actual_daily_runtime = actual_seasonal_runtime / n_days
+
+        outputs["actual_daily_runtime"] = actual_daily_runtime
+        outputs["actual_seasonal_runtime"] = actual_seasonal_runtime
+
+        demand_baseline_deltaT = get_heating_season_baseline_heating_demand(
+                thermostat,heating_season,baseline_setpoints,method="deltaT")
+        demand_baseline_dailyavgHDD = get_heating_season_baseline_heating_demand(
+                thermostat,heating_season,baseline_setpoints,deltaT_base_est_dailyavgHDD,method="dailyavgHDD")
+        demand_baseline_hourlysumHDD = get_heating_season_baseline_heating_demand(
+                thermostat,heating_season,baseline_setpoints,deltaT_base_est_hourlysumHDD,method="hourlysumHDD")
+
+        daily_avoided_runtime_deltaT = get_daily_avoided_runtime(slope_deltaT,demand_deltaT,demand_baseline_deltaT)
+        daily_avoided_runtime_dailyavgHDD = get_daily_avoided_runtime(slope_dailyavgHDD,demand_dailyavgHDD,demand_baseline_dailyavgHDD)
+        daily_avoided_runtime_hourlysumHDD = get_daily_avoided_runtime(slope_hourlysumHDD,demand_hourlysumHDD,demand_baseline_hourlysumHDD)
+
+        baseline_seasonal_runtime_deltaT = \
+                get_total_baseline_heating_runtime(thermostat,heating_season,daily_avoided_runtime_deltaT)
+        baseline_seasonal_runtime_dailyavgHDD = \
+                get_total_baseline_heating_runtime(thermostat,heating_season,daily_avoided_runtime_dailyavgHDD)
+        baseline_seasonal_runtime_hourlysumHDD = \
+                get_total_baseline_heating_runtime(thermostat,heating_season,daily_avoided_runtime_hourlysumHDD)
+
+        outputs["baseline_seasonal_runtime_deltaT"] = baseline_seasonal_runtime_deltaT
+        outputs["baseline_seasonal_runtime_dailyavgHDD"] = baseline_seasonal_runtime_dailyavgHDD
+        outputs["baseline_seasonal_runtime_hourlysumHDD"] = baseline_seasonal_runtime_hourlysumHDD
+
+        baseline_daily_runtime_deltaT = baseline_seasonal_runtime_deltaT / n_days
+        baseline_daily_runtime_dailyavgHDD = baseline_seasonal_runtime_dailyavgHDD / n_days
+        baseline_daily_runtime_hourlysumHDD = baseline_seasonal_runtime_hourlysumHDD / n_days
+
+        outputs["baseline_daily_runtime_deltaT"] = baseline_daily_runtime_deltaT
+        outputs["baseline_daily_runtime_dailyavgHDD"] = baseline_daily_runtime_dailyavgHDD
+        outputs["baseline_daily_runtime_hourlysumHDD"] = baseline_daily_runtime_hourlysumHDD
+
+        seasonal_savings_deltaT = get_seasonal_percent_savings(baseline_seasonal_runtime_deltaT,daily_avoided_runtime_deltaT)
+        seasonal_savings_dailyavgHDD = get_seasonal_percent_savings(baseline_seasonal_runtime_dailyavgHDD,daily_avoided_runtime_dailyavgHDD)
+        seasonal_savings_hourlysumHDD = get_seasonal_percent_savings(baseline_seasonal_runtime_hourlysumHDD,daily_avoided_runtime_hourlysumHDD)
+
+        outputs["seasonal_savings_deltaT"] = seasonal_savings_deltaT
+        outputs["seasonal_savings_dailyavgHDD"] = seasonal_savings_dailyavgHDD
+        outputs["seasonal_savings_hourlysumHDD"] = seasonal_savings_hourlysumHDD
+
+        seasonal_avoided_runtime_deltaT = daily_avoided_runtime_deltaT.sum()
+        seasonal_avoided_runtime_dailyavgHDD = daily_avoided_runtime_dailyavgHDD.sum()
+        seasonal_avoided_runtime_hourlysumHDD = daily_avoided_runtime_hourlysumHDD.sum()
+
+        outputs["seasonal_avoided_runtime_deltaT"] = seasonal_avoided_runtime_deltaT
+        outputs["seasonal_avoided_runtime_dailyavgHDD"] = seasonal_avoided_runtime_dailyavgHDD
+        outputs["seasonal_avoided_runtime_hourlysumHDD"] = seasonal_avoided_runtime_hourlysumHDD
 
         seasonal_metrics[season_name] = outputs
 
