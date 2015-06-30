@@ -302,7 +302,7 @@ class Thermostat(object):
             meets_cooling_thresholds = True
         else:
             daily_cooling_sums = total_cooling.groupby(total_cooling.index.date).sum()
-            meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] < 3600 for i,total in total_cooling.iteritems()])
+            meets_cooling_thresholds = np.array([daily_cooling_sums[i.date()] <= 0 for i,total in total_cooling.iteritems()])
 
         # for each potential season, look for heating days.
         heating_seasons = []
@@ -371,7 +371,7 @@ class Thermostat(object):
             meets_heating_thresholds = True
         else:
             daily_heating_sums = total_heating.groupby(total_heating.index.date).sum()
-            meets_heating_thresholds = np.array([daily_heating_sums[i.date()] < 3600 for i,total in total_heating.iteritems()])
+            meets_heating_thresholds = np.array([daily_heating_sums[i.date()] <= 0 for i,total in total_heating.iteritems()])
 
         # for each potential season, look for cooling days.
         cooling_seasons = []

@@ -64,37 +64,37 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type1():
     assert_allclose(cooling_2012["baseline_comfort_temperature"],65,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["baseline_comfort_temperature"],75,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["slope_deltaT"],-428.494,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["slope_dailyavgCDD"],428.494,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["slope_deltaT"],-480,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["slope_dailyavgCDD"],480,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["slope_hourlysumCDD"],480.0,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["intercept_deltaT"],842.191,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["intercept_deltaT"],0,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["intercept_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["intercept_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["mean_squared_error_deltaT"],121426.673,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["mean_squared_error_dailyavgCDD"],121426.673,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["mean_squared_error_deltaT"],0,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["mean_squared_error_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["mean_squared_error_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_deltaT"],83577.981,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_dailyavgCDD"],112212.498,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_hourlysumCDD"],80000.0,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_seasonal_runtime_deltaT"],75260.150,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_seasonal_runtime_dailyavgCDD"],75260.150,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_seasonal_runtime_hourlysumCDD"],75260.150,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["actual_seasonal_runtime"],120000,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["actual_seasonal_runtime"],113660.150,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["baseline_daily_runtime_deltaT"],4916.351,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_dailyavgCDD"],6600.735,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_hourlysumCDD"],4705.882,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_daily_runtime_deltaT"],4703.759,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_daily_runtime_dailyavgCDD"],4703.759,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_daily_runtime_hourlysumCDD"],4703.759,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["actual_daily_runtime"],7058.823,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["actual_daily_runtime"],7103.759,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["seasonal_savings_deltaT"],0.435,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_dailyavgCDD"],0.069,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_hourlysumCDD"],0.5,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_savings_deltaT"],0.510,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_savings_dailyavgCDD"],0.510,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_savings_hourlysumCDD"],0.510,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_deltaT"],36422.018,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],7787.501,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],40000,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],38400,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],38400,rtol=1e-3,atol=1e-3)
 
     assert_allclose(heating_2011_12["slope_deltaT"],480.0,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["slope_dailyavgHDD"],480.0,rtol=1e-3,atol=1e-3)
@@ -181,37 +181,37 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type2():
     assert_allclose(cooling_2012["baseline_comfort_temperature"],65,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["baseline_comfort_temperature"],75,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["slope_deltaT"],-428.494,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["slope_dailyavgCDD"],428.494,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["slope_deltaT"],-480,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["slope_dailyavgCDD"],480,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["slope_hourlysumCDD"],480.0,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["intercept_deltaT"],842.191,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["intercept_deltaT"],0,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["intercept_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["intercept_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["mean_squared_error_deltaT"],121426.673,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["mean_squared_error_dailyavgCDD"],121426.673,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["mean_squared_error_deltaT"],0,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["mean_squared_error_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
     assert_allclose(cooling_2012["mean_squared_error_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_deltaT"],83577.981,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_dailyavgCDD"],112212.498,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_hourlysumCDD"],80000.0,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_seasonal_runtime_deltaT"],75260.150,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_seasonal_runtime_dailyavgCDD"],75260.150,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_seasonal_runtime_hourlysumCDD"],75260.150,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["actual_seasonal_runtime"],120000,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["actual_seasonal_runtime"],113660.150,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["baseline_daily_runtime_deltaT"],4916.351,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_dailyavgCDD"],6600.735,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_hourlysumCDD"],4705.882,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_daily_runtime_deltaT"],4703.759,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_daily_runtime_dailyavgCDD"],4703.759,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["baseline_daily_runtime_hourlysumCDD"],4703.759,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["actual_daily_runtime"],7058.823,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["actual_daily_runtime"],7103.759,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["seasonal_savings_deltaT"],0.435,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_dailyavgCDD"],0.069,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_hourlysumCDD"],0.5,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_savings_deltaT"],0.510,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_savings_dailyavgCDD"],0.510,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_savings_hourlysumCDD"],0.510,rtol=1e-3,atol=1e-3)
 
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_deltaT"],36422.018,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],7787.501,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],40000,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],38400,rtol=1e-3,atol=1e-3)
+    assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],38400,rtol=1e-3,atol=1e-3)
 
     assert_allclose(heating_2011_12["slope_deltaT"],480.0,rtol=1e-3,atol=1e-3)
     assert_allclose(heating_2011_12["slope_dailyavgHDD"],480.0,rtol=1e-3,atol=1e-3)
