@@ -38,7 +38,7 @@ def test_runtime_regression_cooling(valid_thermostat_id,valid_temperature_setpoi
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
 
-    daily_cooling_demand, _, _, _ = get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD",column_name="ss_heat_pump_cooling")
+    daily_cooling_demand, _, _, _ = get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD")
     hourly_runtime = ss_heat_pump_cooling[cooling_season]
     slope,intercept, mean_sq_err = runtime_regression(hourly_runtime,daily_cooling_demand)
 
@@ -61,7 +61,7 @@ def test_runtime_regression_heating(valid_thermostat_id,valid_temperature_setpoi
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
 
-    daily_heating_demand, _, _, _ = get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD",column_name="ss_heat_pump_heating")
+    daily_heating_demand, _, _, _ = get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD")
     hourly_runtime = ss_heat_pump_heating[heating_season]
 
     slope, intercept, mean_sq_err = runtime_regression(hourly_runtime,daily_heating_demand)

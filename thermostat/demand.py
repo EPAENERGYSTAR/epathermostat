@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
 
-def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=None):
+def get_cooling_demand(thermostat,cooling_season,method="deltaT"):
     """
     Calculates a measure of cooling demand.
 
@@ -24,10 +24,6 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
           \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
         - "hourlysumCDD": :math:`\\text{daily CDD} = \sum_{i=1}^{24} \\text{CDH}_i`
           where :math:`\\text{CDH}_i = \Delta T_i - \Delta T_{\\text{base cool}}`
-    column_name : str
-        The name of the column for which to calculate demand estimates which use
-        runtime to optimize CDD base temperature ("hourlysumCDD" and
-        "dailyavgCDD"). Ignored for "deltaT" method.
 
     Returns
     -------
@@ -63,7 +59,7 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
     else:
         raise NotImplementedError
 
-    cooling_column = thermostat.__dict__.get(column_name)
+    cooling_column = thermostat.get_cooling_columns()[0]
     cooling_runtime = cooling_column[cooling_season]
 
     # calculate daily runtimes by taking the average hourly then multiplying by 24
@@ -92,7 +88,7 @@ def get_cooling_demand(thermostat,cooling_season,method="deltaT",column_name=Non
 
     return pd.Series(cdd, index=index), deltaT_base_estimate, alpha_estimate, mean_squared_error
 
-def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=None):
+def get_heating_demand(thermostat,heating_season,method="deltaT"):
     """
     Calculates a measure of heating demand.
 
@@ -114,10 +110,6 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
           \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
         - "hourlysumHDD": :math:`\\text{daily HDD} = \sum_{i=1}^{24} \\text{HDH}_i`
           where :math:`\\text{HDH}_i = \Delta T_i - \Delta T_{\\text{base heat}}`
-    column_name : str
-        The name of the column for which to calculate demand estimates which use
-        runtime to optimize HDD base temperature ("hourlysumHDD" and
-        "dailyavgHDD"). Ignored for "deltaT" method.
 
     Returns
     -------
@@ -153,7 +145,7 @@ def get_heating_demand(thermostat,heating_season,method="deltaT",column_name=Non
     else:
         raise NotImplementedError
 
-    heating_column = thermostat.__dict__.get(column_name)
+    heating_column = thermostat.get_heating_columns()[0]
     heating_runtime = heating_column[heating_season]
 
     # calculate daily runtimes by taking the average hourly then multiplying by 24

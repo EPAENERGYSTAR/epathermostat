@@ -43,3 +43,12 @@ thermostat.regression
     :undoc-members:
     :inherited-members:
     :show-inheritance:
+
+thermostat.savings
+------------------
+
+.. automodule:: thermostat.savings
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:

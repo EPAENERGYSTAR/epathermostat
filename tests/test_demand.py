@@ -67,7 +67,7 @@ def test_get_cooling_demand_dailyavgCDD(valid_thermostat_id,valid_temperature_se
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
     dailyavgCDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD",column_name="ss_heat_pump_cooling")
+            get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD")
 
     assert_allclose(dailyavgCDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
                                          13.295, 13.897, 14.498, 15.100, 15.701,
@@ -92,7 +92,7 @@ def test_get_heating_demand_dailyavgHDD(valid_thermostat_id,valid_temperature_se
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
     dailyavgHDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD",column_name="ss_heat_pump_heating")
+            get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD")
 
     assert_allclose(dailyavgHDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
                                          13.295, 13.897, 14.498, 15.100, 15.701,
@@ -117,7 +117,7 @@ def test_get_cooling_demand_hourlysumCDD(valid_thermostat_id,valid_temperature_s
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
     hourlysumCDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_cooling_demand(thermostat_type_2,cooling_season,method="hourlysumCDD",column_name="ss_heat_pump_cooling")
+            get_cooling_demand(thermostat_type_2,cooling_season,method="hourlysumCDD")
 
     assert_allclose(hourlysumCDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
                                           13.295, 13.897, 14.498, 15.100, 15.701,
@@ -142,7 +142,7 @@ def test_get_heating_demand_hourlysumHDD(valid_thermostat_id,valid_temperature_s
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
     hourlysumHDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_heating_demand(thermostat_type_2,heating_season,method="hourlysumHDD",column_name="ss_heat_pump_heating")
+            get_heating_demand(thermostat_type_2,heating_season,method="hourlysumHDD")
 
     assert_allclose(hourlysumHDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
                                           13.295, 13.897, 14.498, 15.100, 15.701,
