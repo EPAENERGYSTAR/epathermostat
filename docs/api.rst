@@ -52,3 +52,12 @@ thermostat.savings
     :undoc-members:
     :inherited-members:
     :show-inheritance:
+
+thermostat.metrics
+------------------
+
+.. automodule:: thermostat.metrics
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:

@@ -67,6 +67,8 @@ class Thermostat(object):
         - :code:`3`: Single stage non heat pump with single-stage central air conditioning
         - :code:`4`: Single stage non heat pump without central air conditioning
         - :code:`5`: Single stage central air conditioning without central heating
+    zipcode : str
+        Installation ZIP code for the thermostat.
     temperature_in : pandas.Series
         Contains internal temperature data in degrees Fahrenheit (F),
         with resolution of at least 0.5F.
@@ -122,7 +124,7 @@ class Thermostat(object):
         :code:`freq='H'`).
     """
 
-    def __init__(self,thermostat_id,equipment_type,
+    def __init__(self,thermostat_id,equipment_type,zipcode,
             temperature_in,temperature_setpoint,temperature_out,
             ss_heat_pump_heating=None,
             ss_heat_pump_cooling=None,
@@ -133,6 +135,7 @@ class Thermostat(object):
 
         self.thermostat_id = thermostat_id
         self.equipment_type = equipment_type
+        self.zipcode = zipcode
         self.temperature_in = temperature_in
         self.temperature_setpoint = temperature_setpoint
         self.temperature_out = temperature_out

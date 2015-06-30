@@ -23,10 +23,14 @@ def valid_thermostat_id():
     return "10912098123"
 
 @pytest.fixture
+def valid_zipcode():
+    return "01234"
+
+@pytest.fixture
 def valid_datetimeindex():
     return pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=400)
 
-def test_get_daily_avoided_runtime_cooling_deltaT(valid_thermostat_id,valid_datetimeindex):
+def test_get_daily_avoided_runtime_cooling_deltaT(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(65,(400,)),index=valid_datetimeindex)
@@ -36,7 +40,7 @@ def test_get_daily_avoided_runtime_cooling_deltaT(valid_thermostat_id,valid_date
     ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
@@ -53,7 +57,7 @@ def test_get_daily_avoided_runtime_cooling_deltaT(valid_thermostat_id,valid_date
     assert_allclose(avoided_runtime,np.tile(2400,(16,)),rtol=1e-3,atol=1e-3)
 
 
-def test_get_daily_avoided_runtime_heating_deltaT(valid_thermostat_id,valid_datetimeindex):
+def test_get_daily_avoided_runtime_heating_deltaT(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(75,(400,)),index=valid_datetimeindex)
@@ -63,7 +67,7 @@ def test_get_daily_avoided_runtime_heating_deltaT(valid_thermostat_id,valid_date
     ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
@@ -78,7 +82,7 @@ def test_get_daily_avoided_runtime_heating_deltaT(valid_thermostat_id,valid_date
 
     assert_allclose(avoided_runtime,np.tile(2400,(16,)),rtol=1e-3,atol=1e-3)
 
-def test_get_daily_avoided_runtime_dailyavgCDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_daily_avoided_runtime_dailyavgCDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(65,(400,)),index=valid_datetimeindex)
@@ -88,7 +92,7 @@ def test_get_daily_avoided_runtime_dailyavgCDD(valid_thermostat_id,valid_datetim
     ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
@@ -104,7 +108,7 @@ def test_get_daily_avoided_runtime_dailyavgCDD(valid_thermostat_id,valid_datetim
 
     assert_allclose(avoided_runtime,np.tile(2400,(16,)),rtol=1e-3,atol=1e-3)
 
-def test_get_daily_avoided_runtime_dailyavgHDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_daily_avoided_runtime_dailyavgHDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(75,(400,)),index=valid_datetimeindex)
@@ -114,7 +118,7 @@ def test_get_daily_avoided_runtime_dailyavgHDD(valid_thermostat_id,valid_datetim
     ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
@@ -130,7 +134,7 @@ def test_get_daily_avoided_runtime_dailyavgHDD(valid_thermostat_id,valid_datetim
 
     assert_allclose(avoided_runtime,np.tile(2400,(16,)),rtol=1e-3,atol=1e-3)
 
-def test_get_daily_avoided_runtime_hourlysumCDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_daily_avoided_runtime_hourlysumCDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(65,(400,)),index=valid_datetimeindex)
@@ -140,7 +144,7 @@ def test_get_daily_avoided_runtime_hourlysumCDD(valid_thermostat_id,valid_dateti
     ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
@@ -156,7 +160,7 @@ def test_get_daily_avoided_runtime_hourlysumCDD(valid_thermostat_id,valid_dateti
 
     assert_allclose(avoided_runtime,np.tile(2400,(16,)),rtol=1e-3,atol=1e-3)
 
-def test_get_daily_avoided_runtime_hourlysumHDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_daily_avoided_runtime_hourlysumHDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(75,(400,)),index=valid_datetimeindex)
@@ -166,7 +170,7 @@ def test_get_daily_avoided_runtime_hourlysumHDD(valid_thermostat_id,valid_dateti
     ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
@@ -182,7 +186,7 @@ def test_get_daily_avoided_runtime_hourlysumHDD(valid_thermostat_id,valid_dateti
 
     assert_allclose(avoided_runtime,np.tile(2400,(16,)),rtol=1e-3,atol=1e-3)
 
-def test_get_total_baseline_runtime_dailyavgCDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_total_baseline_runtime_dailyavgCDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(65,(400,)),index=valid_datetimeindex)
@@ -192,7 +196,7 @@ def test_get_total_baseline_runtime_dailyavgCDD(valid_thermostat_id,valid_dateti
     ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
@@ -211,7 +215,7 @@ def test_get_total_baseline_runtime_dailyavgCDD(valid_thermostat_id,valid_dateti
 
     assert_allclose(total_baseline_cooling_runtime,75260.150,rtol=1e-3,atol=1e-3)
 
-def test_get_total_baseline_runtime_dailyavgHDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_total_baseline_runtime_dailyavgHDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(75,(400,)),index=valid_datetimeindex)
@@ -221,7 +225,7 @@ def test_get_total_baseline_runtime_dailyavgHDD(valid_thermostat_id,valid_dateti
     ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     heating_season, name = thermostat_type_2.get_heating_seasons()[0]
@@ -240,7 +244,7 @@ def test_get_total_baseline_runtime_dailyavgHDD(valid_thermostat_id,valid_dateti
 
     assert_allclose(total_baseline_heating_runtime,75260.150,rtol=1e-3,atol=1e-3)
 
-def test_get_seasonal_percent_savings_dailyavgCDD(valid_thermostat_id,valid_datetimeindex):
+def test_get_seasonal_percent_savings_dailyavgCDD(valid_thermostat_id,valid_zipcode,valid_datetimeindex):
     temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
     temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
     setpoints = pd.Series(np.tile(65,(400,)),index=valid_datetimeindex)
@@ -250,7 +254,7 @@ def test_get_seasonal_percent_savings_dailyavgCDD(valid_thermostat_id,valid_date
     ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
     ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,temp_in,setpoints,temp_out,
+    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
             ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
 
     cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]

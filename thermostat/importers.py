@@ -63,7 +63,7 @@ def from_csv(metadata_filename,interval_data_filename):
             station = zipcode_to_tmy3(row.zipcode)
             weather_source = ISDWeatherSource(station,intervals.index[0].year,intervals.index[-1].year)
             temperature_out = get_hourly_outdoor_temperature(intervals.index,weather_source)
-            thermostat = Thermostat(row.thermostat_id,row.equipment_type,temperature_in,temperature_setpoint,temperature_out,**kwargs)
+            thermostat = Thermostat(row.thermostat_id,row.equipment_type,row.zipcode,temperature_in,temperature_setpoint,temperature_out,**kwargs)
             thermostats.append(thermostat)
     return thermostats
 

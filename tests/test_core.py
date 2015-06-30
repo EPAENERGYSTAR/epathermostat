@@ -20,6 +20,10 @@ def valid_thermostat_id():
     return "10912098123"
 
 @pytest.fixture
+def valid_zipcode():
+    return "01234"
+
+@pytest.fixture
 def valid_datetimeindex():
     return pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=96)
 
@@ -52,9 +56,9 @@ def full_year_temperature_out(full_year_datetimeindex):
     return pd.Series(np.zeros(full_year_datetimeindex.shape),index=full_year_datetimeindex)
 
 @pytest.fixture
-def thermostat_type_0(valid_thermostat_id, valid_equipment_type,
+def thermostat_type_0(valid_thermostat_id, valid_equipment_type, valid_zipcode,
         valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
-    thermostat = Thermostat(valid_thermostat_id,valid_equipment_type,
+    thermostat = Thermostat(valid_thermostat_id,valid_equipment_type, valid_zipcode,
             valid_temperature_in,valid_temperature_setpoint,valid_temperature_out)
     return thermostat
 
@@ -67,7 +71,7 @@ def cooling_season_datetimeindex():
     return pd.DatetimeIndex(start="2012-06-01T00:00:00",freq='H',periods=96)
 
 @pytest.fixture
-def thermostat_type_1_with_heating_season(valid_thermostat_id,heating_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+def thermostat_type_1_with_heating_season(valid_thermostat_id,valid_zipcode,heating_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
     equipment_type = 1
 
     ss_heat_pump_heating = pd.Series(np.tile(3600,heating_season_datetimeindex.shape),index=heating_season_datetimeindex)
@@ -77,6 +81,7 @@ def thermostat_type_1_with_heating_season(valid_thermostat_id,heating_season_dat
 
     thermostat = Thermostat(valid_thermostat_id,
             equipment_type,
+            valid_zipcode,
             valid_temperature_in,
             valid_temperature_setpoint,
             valid_temperature_out,
@@ -87,7 +92,7 @@ def thermostat_type_1_with_heating_season(valid_thermostat_id,heating_season_dat
     return thermostat
 
 @pytest.fixture
-def thermostat_type_1_with_cooling_season(valid_thermostat_id,cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+def thermostat_type_1_with_cooling_season(valid_thermostat_id,valid_zipcode,cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
     equipment_type = 1
 
     ss_heat_pump_heating = pd.Series(np.tile(0,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
@@ -97,6 +102,7 @@ def thermostat_type_1_with_cooling_season(valid_thermostat_id,cooling_season_dat
 
     thermostat = Thermostat(valid_thermostat_id,
             equipment_type,
+            valid_zipcode,
             valid_temperature_in,
             valid_temperature_setpoint,
             valid_temperature_out,
@@ -107,7 +113,7 @@ def thermostat_type_1_with_cooling_season(valid_thermostat_id,cooling_season_dat
     return thermostat
 
 @pytest.fixture
-def thermostat_type_2_with_heating_and_cooling_season(valid_thermostat_id,full_year_datetimeindex,
+def thermostat_type_2_with_heating_and_cooling_season(valid_thermostat_id,valid_zipcode,full_year_datetimeindex,
         full_year_temperature_in,full_year_temperature_setpoint,full_year_temperature_out):
     equipment_type = 2
 
@@ -116,6 +122,7 @@ def thermostat_type_2_with_heating_and_cooling_season(valid_thermostat_id,full_y
 
     thermostat = Thermostat(valid_thermostat_id,
             equipment_type,
+            valid_zipcode,
             full_year_temperature_in,
             full_year_temperature_setpoint,
             full_year_temperature_out,
@@ -124,13 +131,14 @@ def thermostat_type_2_with_heating_and_cooling_season(valid_thermostat_id,full_y
     return thermostat
 
 @pytest.fixture
-def thermostat_type_4_with_heating_season(cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+def thermostat_type_4_with_heating_season(valid_zipcode,cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
     equipment_type = 4
 
     ss_heating = pd.Series(np.tile(3600,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
 
     thermostat = Thermostat(valid_thermostat_id,
             equipment_type,
+            valid_zipcode,
             valid_temperature_in,
             valid_temperature_setpoint,
             valid_temperature_out,
@@ -138,13 +146,14 @@ def thermostat_type_4_with_heating_season(cooling_season_datetimeindex,valid_tem
     return thermostat
 
 @pytest.fixture
-def thermostat_type_5_with_cooling_season(cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
+def thermostat_type_5_with_cooling_season(valid_zipcode,cooling_season_datetimeindex,valid_temperature_in,valid_temperature_setpoint,valid_temperature_out):
     equipment_type = 5
 
     ss_central_ac = pd.Series(np.tile(3600,cooling_season_datetimeindex.shape),index=cooling_season_datetimeindex)
 
     thermostat = Thermostat(valid_thermostat_id,
             equipment_type,
+            valid_zipcode,
             valid_temperature_in,
             valid_temperature_setpoint,
             valid_temperature_out,
@@ -153,10 +162,10 @@ def thermostat_type_5_with_cooling_season(cooling_season_datetimeindex,valid_tem
 
 def test_thermostat_with_invalid_equipment_type(valid_thermostat_id,invalid_equipment_type):
     with pytest.raises(ValueError):
-        thermostat = Thermostat(valid_thermostat_id,invalid_equipment_type,None,None,None)
+        thermostat = Thermostat(valid_thermostat_id,invalid_equipment_type,None,None,None,None)
 
 def test_thermostat_with_valid_equipment_type(valid_thermostat_id,valid_equipment_type):
-    thermostat = Thermostat(valid_thermostat_id,valid_equipment_type,None,None,None)
+    thermostat = Thermostat(valid_thermostat_id,valid_equipment_type,None,None,None,None)
     assert thermostat.equipment_type == valid_equipment_type
 
 def test_thermostat_attributes(thermostat_type_0):
