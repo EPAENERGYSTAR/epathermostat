@@ -90,12 +90,18 @@ Name                         Description
 :code:`ss_central_ac`        Runtime of single stage central air conditioning equipment.
 ============================ ===========
 
-- Each row should correspond to a single reading from a thermostat.
+- Each row should correspond to a single hourly reading from a thermostat.
 - Nulls should be specified by leaving the field blank.
-- Runtimes should be specified in seconds.
+- Runtimes should be specified in seconds and should be less than or equal to
+  3600 s.
 - Datetimes should be specified in the ISO 8601 combined date and time format.
-  (e.g. :code:`2015-05-19T07:31:23+00:00`)
+  (e.g. :code:`2015-05-19T07:00:00+00:00`)
 - All temperatures should be specified in °F (to the nearest 0.5°F).
+- *Important*: Datetimes **must** be in consecutive hourly intervals. All data
+  for which 24 hours of data (in hourly increments) is not available will be
+  ignored in heating and cooling season runtime/demand regressions. Unexpected
+  behavior may occur if this is not the case, as the module currently lacks a
+  complete set of data quality checks for this property in the input data.
 
 
 .. [#] Will be used for matching with a weather station that provides external
