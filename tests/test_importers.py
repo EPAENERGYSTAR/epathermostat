@@ -201,7 +201,7 @@ def test_get_hourly_outdoor_temperature_without_endpoint(hourly_datetime_index,h
     outdoor_temperatures = get_hourly_outdoor_temperature(hourly_datetime_index,hourly_weather_source,include_endpoint=False)
     assert type(outdoor_temperatures.index) == pd.DatetimeIndex
     assert outdoor_temperatures.index[0] == hourly_datetime_index[0]
-    assert len(outdoor_temperatures.index) + 1  == len(hourly_datetime_index)
+    assert len(outdoor_temperatures.index)  == len(hourly_datetime_index)
     assert sum(pd.isnull(outdoor_temperatures)) < 2 * (len(hourly_datetime_index) / 24.)
     for temp in outdoor_temperatures:
         if not pd.isnull(temp):
