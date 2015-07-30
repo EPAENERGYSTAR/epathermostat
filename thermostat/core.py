@@ -277,14 +277,14 @@ class Thermostat(object):
         heating_columns = self.get_heating_columns()
         if heating_columns == []:
             return []
-        total_heating = pd.DataFrame(heating_columns).sum(axis=0)
+        total_heating = heating_columns[0]
 
         # need cooling so that we exclude heating days which also have cooling
         cooling_columns = self.get_cooling_columns()
         if cooling_columns == []:
             total_cooling = None
         else:
-            total_cooling = pd.DataFrame(cooling_columns).sum(axis=0)
+            total_cooling = cooling_columns[0]
 
         # find all potential heating season ranges
         start_year = total_heating.index[0].year - 1
@@ -346,14 +346,14 @@ class Thermostat(object):
         cooling_columns = self.get_cooling_columns()
         if cooling_columns == []:
             return []
-        total_cooling = pd.DataFrame(cooling_columns).sum(axis=0)
+        total_cooling = cooling_columns[0]
 
         # need heating so that we exclude cooling days which also have heating
         heating_columns = self.get_heating_columns()
         if heating_columns == []:
             total_heating = None
         else:
-            total_heating = pd.DataFrame(heating_columns).sum(axis=0)
+            total_heating = heating_columns[0]
 
         # find all potential cooling season ranges
         start_year = total_cooling.index[0].year
@@ -475,7 +475,7 @@ class Thermostat(object):
         if cooling_columns == []:
             total_cooling = None
         else:
-            total_cooling = pd.DataFrame(cooling_columns).sum(axis=0)
+            total_cooling = cooling_columns[0]
             after_start = np.datetime64(season_range[0]) <= total_cooling.index
             before_end = total_cooling.index <= np.datetime64(season_range[1])
 
@@ -490,7 +490,7 @@ class Thermostat(object):
         if heating_columns == []:
             total_heating = None
         else:
-            total_heating = pd.DataFrame(heating_columns).sum(axis=0)
+            total_heating = heating_columns[0]
             after_start = np.datetime64(season_range[0]) <= total_heating.index
             before_end = total_heating.index <= np.datetime64(season_range[1])
 

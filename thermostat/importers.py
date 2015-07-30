@@ -1,6 +1,7 @@
 from thermostat import Thermostat
 
 import pandas as pd
+import numpy as np
 from eemeter.consumption import DatetimePeriod
 from eemeter.location import zipcode_to_tmy3
 from eemeter.weather import ISDWeatherSource
@@ -111,13 +112,6 @@ def get_hourly_outdoor_temperature(hourly_index,hourly_weather_source,include_en
         Temperature data provided by the weather source and indexed by the
         provided datetime index.
     """
-    if include_endpoint:
-        start, end = hourly_index[0], hourly_index[-1] + timedelta(seconds=3600)
-    else:
-        start, end = hourly_index[0], hourly_index[-1]
-    period = DatetimePeriod(start,end)
-    hourly_temps = hourly_weather_source.hourly_temperatures(period,"degF")
-    if include_endpoint:
-        return pd.Series(hourly_temps,index=hourly_index,name="temperature_out")
-    else:
-        return pd.Series(hourly_temps,index=hourly_index[:-1],name="temperature_out")
+    hourly_temps = [hourly_weather_source.data.get(dt.strftime("%Y%m%d%H"),np.nan)
+            for dt in hourly_index]
+    return pd.Series(hourly_temps,index=hourly_index,name="temperature_out")
