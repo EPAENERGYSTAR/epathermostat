@@ -35,5 +35,5 @@ MIT
 Contact
 -------
 
-Please feel free to reach out to phil at theimpactlab.co for questions or support
-concerns.
+Please feel free to reach out to phil at theimpactlab.co with questions or for
+technical support.
