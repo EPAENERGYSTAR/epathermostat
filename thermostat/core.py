@@ -376,7 +376,7 @@ class Thermostat(object):
         # for each potential season, look for cooling days.
         cooling_seasons = []
         for year in potential_seasons:
-            after_start = np.datetime64(datetime(year,1,1)) <= total_cooling.index
+            after_start = total_cooling.index >= np.datetime64(datetime(year,1,1))
             before_end = total_cooling.index <= np.datetime64(datetime(year + 1,1,1))
             inclusion = after_start & before_end & meets_cooling_thresholds & meets_heating_thresholds & day_is_complete
             cooling_season_days = pd.Series(inclusion,index=total_cooling.index)
