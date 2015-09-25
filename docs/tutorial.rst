@@ -22,11 +22,11 @@ Now you may iterate through thermostats and calculate savings metrics for each.
 
     seasonal_metrics = []
     for thermostat in thermostats:
-        outputs = thermostat.calculate_epa_draft_rccs_field_savings_metrics(thermostat)
+        outputs = thermostat.calculate_epa_draft_rccs_field_savings_metrics()
         seasonal_metrics.extend(outputs)
 
     filepath = os.path.join(data_dir, "thermostat_module_example_output.csv")
-    seasonal_metrics_to_csv(metrics, filepath)
+    seasonal_metrics_to_csv(seasonal_metrics, filepath)
 
 **Note**: During the data loading step, you may see a warning that the weather cache is
 disabled. You can safely ignore that warning, but if you wish to load a large
