@@ -9,10 +9,9 @@ Load thermostat data (see input file format below).
     import os
     from os.path import expanduser
     from thermostat.importers import from_csv
-    from thermostat.metrics import calculate_epa_draft_rccs_field_savings_metrics
-    from thermostat.metrics import seasonal_metrics_to_csv
+    from thermostat.exporters import seasonal_metrics_to_csv
 
-    data_dir = os.path.join(expanduser("~"),"Downloads/")
+    data_dir = os.path.join(expanduser("~"),"Downloads")
 
     thermostats = from_csv(os.path.join(data_dir,"metadata_example.csv"),
                            os.path.join(data_dir,"interval_data_example.csv"))
@@ -21,10 +20,13 @@ Now you may iterate through thermostats and calculate savings metrics for each.
 
 .. code-block:: python
 
+    seasonal_metrics = []
     for thermostat in thermostats:
-        metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat)
-        filepath = os.path.join(data_dir,"thermostat_{}_output.csv".format(thermostat.thermostat_id))
-        seasonal_metrics_to_csv(metrics,filepath)
+        outputs = thermostat.calculate_epa_draft_rccs_field_savings_metrics(thermostat)
+        seasonal_metrics.extend(outputs)
+
+    filepath = os.path.join(data_dir, "thermostat_module_example_output.csv")
+    seasonal_metrics_to_csv(metrics, filepath)
 
 **Note**: During the data loading step, you may see a warning that the weather cache is
 disabled. You can safely ignore that warning, but if you wish to load a large
@@ -37,7 +39,7 @@ database of your choice (the example uses sqlite) by supplying a database url
 
     export EEMETER_WEATHER_CACHE_DATABASE_URL=sqlite:////path/to/db.sqlite
 
-
+For more information, see `EE-Meter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
 
 Input data
 ==========

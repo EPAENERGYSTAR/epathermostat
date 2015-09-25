@@ -30,6 +30,7 @@ MOCK_MODULES = [
     'eemeter.consumption',
     'eemeter.weather',
     'eemeter.location',
+    'eemeter.evaluation',
     'scipy',
     'scipy.optimize',
     'scipy.stats',
