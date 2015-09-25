@@ -1,279 +1,119 @@
 from thermostat import Thermostat
-from thermostat.metrics import calculate_epa_draft_rccs_field_savings_metrics
-from thermostat.metrics import seasonal_metrics_to_csv
+from thermostat.importers import from_csv
+from thermostat.util.testing import get_data_path
+from thermostat.exporters import seasonal_metrics_to_csv
 
-import pytest
-from uuid import uuid4
 import pandas as pd
 import numpy as np
-import tempfile
-
 from numpy.testing import assert_allclose
 
+import tempfile
+
+import pytest
+
+RTOL = 1e-3
+ATOL = 1e-3
+
+@pytest.fixture(params=["metadata.csv"])
+def metadata_filename(request):
+    return get_data_path(request.param)
+
+@pytest.fixture(params=["interval_data.csv"])
+def interval_data_filename(request):
+    return get_data_path(request.param)
+
 @pytest.fixture
-def thermostat_type_1():
-    valid_thermostat_id = uuid4()
-    valid_datetimeindex = pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=800)
-    valid_zipcode = "01234"
-
-    hourly_alpha = 20
-    daily_alpha = hourly_alpha * 24
-
-    #cooling season
-    temp_in_cool = np.tile(70,(400,))
-    temp_out_cool = np.linspace(80,90,num=400)
-    setpoints_cool = np.tile(65,(400,))
-    ss_heat_pump_cooling_cool = np.maximum((temp_out_cool - temp_in_cool) * hourly_alpha,0)
-    ss_heat_pump_heating_cool = np.tile(0,(400,))
-    emergency_heat_cool = np.tile(0,(400,))
-    auxiliary_heat_cool = np.tile(0,(400,))
-
-    # heating_season
-    temp_in_heat = np.tile(70,(400,))
-    temp_out_heat = np.linspace(60,50,num=400)
-    setpoints_heat = np.tile(75,(400,))
-    ss_heat_pump_cooling_heat = np.tile(0,(400,))
-    ss_heat_pump_heating_heat = np.maximum((temp_in_heat - temp_out_heat) * hourly_alpha,0)
-    emergency_heat_heat = np.tile(20,(400,))
-    auxiliary_heat_heat = np.tile(10,(400,))
-
-    # combine heating and cooling seasons.
-    temp_in = pd.Series(np.concatenate((temp_in_cool,temp_in_heat)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.concatenate((temp_out_cool,temp_out_heat)),index=valid_datetimeindex)
-    setpoints = pd.Series(np.concatenate((setpoints_cool,setpoints_heat)),index=valid_datetimeindex)
-    ss_heat_pump_cooling = pd.Series(np.concatenate((ss_heat_pump_cooling_cool,ss_heat_pump_cooling_heat)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.concatenate((ss_heat_pump_heating_cool,ss_heat_pump_heating_heat)),index=valid_datetimeindex)
-    emergency_heat = pd.Series(np.concatenate((emergency_heat_cool,emergency_heat_heat)),index=valid_datetimeindex)
-    auxiliary_heat = pd.Series(np.concatenate((auxiliary_heat_cool,auxiliary_heat_heat)),index=valid_datetimeindex)
-
-    thermostat_type_1 = Thermostat(valid_thermostat_id,1,valid_zipcode,temp_in,setpoints,temp_out,
-            ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling,
-            emergency_heat=emergency_heat,auxiliary_heat=auxiliary_heat)
-    return thermostat_type_1
-
-
-def test_calculate_epa_draft_rccs_field_savings_metrics_type1(thermostat_type_1):
-    seasonal_metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat_type_1)
-
-    cooling_2012 = seasonal_metrics["2012 Cooling Season"]
-    heating_2011_12 = seasonal_metrics["2011-2012 Heating Season"]
-
-    assert cooling_2012["ct_identifier"] is not None
-    assert heating_2011_12["ct_identifier"] is not None
-
-    assert cooling_2012["zipcode"] == thermostat_type_1.zipcode
-    assert heating_2011_12["zipcode"] == thermostat_type_1.zipcode
-
-    assert cooling_2012["equipment_type"] == 1
-    assert heating_2011_12["equipment_type"] == 1
-
-    assert_allclose(cooling_2012["baseline_comfort_temperature"],65,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_comfort_temperature"],75,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["slope_deltaT"],-480,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["slope_dailyavgCDD"],480,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["slope_hourlysumCDD"],480.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["intercept_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["intercept_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["intercept_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["mean_squared_error_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["mean_squared_error_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["mean_squared_error_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_deltaT"],75260.150,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_dailyavgCDD"],75260.150,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_hourlysumCDD"],75260.150,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["actual_seasonal_runtime"],113660.150,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["baseline_daily_runtime_deltaT"],4703.759,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_dailyavgCDD"],4703.759,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_hourlysumCDD"],4703.759,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["actual_daily_runtime"],7103.759,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["seasonal_savings_deltaT"],0.510,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_dailyavgCDD"],0.510,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_hourlysumCDD"],0.510,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],38400,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["slope_deltaT"],480.0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["slope_dailyavgHDD"],480.0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["slope_hourlysumHDD"],480.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["intercept_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["intercept_dailyavgHDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["intercept_hourlysumHDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["mean_squared_error_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["mean_squared_error_dailyavgHDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["mean_squared_error_hourlysumHDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["baseline_seasonal_runtime_deltaT"],76800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_seasonal_runtime_dailyavgHDD"],76800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_seasonal_runtime_hourlysumHDD"],76800,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["actual_seasonal_runtime"],115200.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["baseline_daily_runtime_deltaT"],4800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_daily_runtime_dailyavgHDD"],4800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_daily_runtime_hourlysumHDD"],4800,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["actual_daily_runtime"],7200.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["seasonal_savings_deltaT"],0.5,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_savings_dailyavgHDD"],0.5,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_savings_hourlysumHDD"],0.5,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_avoided_runtime_dailyavgHDD"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_avoided_runtime_hourlysumHDD"],38400,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
-
-
-    for low,high in [(i,i+5) for i in range(0,60,5)]:
-        label = "rhu_{:02d}F_to_{:02d}F".format(low,high)
-        assert_allclose(heating_2011_12[label],0.0937,rtol=1e-3,atol=1e-3)
-
-def test_calculate_epa_draft_rccs_field_savings_metrics_type2():
-    valid_thermostat_id = uuid4()
-    valid_datetimeindex = pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=800)
-    valid_zipcode = "01234"
-
-    hourly_alpha = 20
-    daily_alpha = hourly_alpha * 24
-
-    #cooling season
-    temp_in_cool = np.tile(70,(400,))
-    temp_out_cool = np.linspace(80,90,num=400)
-    setpoints_cool = np.tile(65,(400,))
-    ss_heat_pump_cooling_cool = np.maximum((temp_out_cool - temp_in_cool) * hourly_alpha,0)
-    ss_heat_pump_heating_cool = np.tile(0,(400,))
-
-    # heating_season
-    temp_in_heat = np.tile(70,(400,))
-    temp_out_heat = np.linspace(60,50,num=400)
-    setpoints_heat = np.tile(75,(400,))
-    ss_heat_pump_cooling_heat = np.tile(0,(400,))
-    ss_heat_pump_heating_heat = np.maximum((temp_in_heat - temp_out_heat) * hourly_alpha,0)
-
-    # combine heating and cooling seasons.
-    temp_in = pd.Series(np.concatenate((temp_in_cool,temp_in_heat)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.concatenate((temp_out_cool,temp_out_heat)),index=valid_datetimeindex)
-    setpoints = pd.Series(np.concatenate((setpoints_cool,setpoints_heat)),index=valid_datetimeindex)
-    ss_heat_pump_cooling = pd.Series(np.concatenate((ss_heat_pump_cooling_cool,ss_heat_pump_cooling_heat)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.concatenate((ss_heat_pump_heating_cool,ss_heat_pump_heating_heat)),index=valid_datetimeindex)
-
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,setpoints,temp_out,
-            ss_heat_pump_heating=ss_heat_pump_heating,ss_heat_pump_cooling=ss_heat_pump_cooling)
-
-    seasonal_metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat_type_2)
-
-    cooling_2012 = seasonal_metrics["2012 Cooling Season"]
-    heating_2011_12 = seasonal_metrics["2011-2012 Heating Season"]
-
-    assert cooling_2012["ct_identifier"] is not None
-    assert heating_2011_12["ct_identifier"] is not None
-
-    assert cooling_2012["zipcode"] == valid_zipcode
-    assert heating_2011_12["zipcode"] == valid_zipcode
-
-    assert cooling_2012["equipment_type"] == 2
-    assert heating_2011_12["equipment_type"] == 2
-
-    assert_allclose(cooling_2012["baseline_comfort_temperature"],65,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_comfort_temperature"],75,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["slope_deltaT"],-480,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["slope_dailyavgCDD"],480,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["slope_hourlysumCDD"],480.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["intercept_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["intercept_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["intercept_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["mean_squared_error_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["mean_squared_error_dailyavgCDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["mean_squared_error_hourlysumCDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_deltaT"],75260.150,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_dailyavgCDD"],75260.150,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_seasonal_runtime_hourlysumCDD"],75260.150,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["actual_seasonal_runtime"],113660.150,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["baseline_daily_runtime_deltaT"],4703.759,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_dailyavgCDD"],4703.759,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["baseline_daily_runtime_hourlysumCDD"],4703.759,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["actual_daily_runtime"],7103.759,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["seasonal_savings_deltaT"],0.510,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_dailyavgCDD"],0.510,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_savings_hourlysumCDD"],0.510,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_dailyavgCDD"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["seasonal_avoided_runtime_hourlysumCDD"],38400,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(cooling_2012["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(cooling_2012["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["slope_deltaT"],480.0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["slope_dailyavgHDD"],480.0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["slope_hourlysumHDD"],480.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["intercept_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["intercept_dailyavgHDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["intercept_hourlysumHDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["mean_squared_error_deltaT"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["mean_squared_error_dailyavgHDD"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["mean_squared_error_hourlysumHDD"],0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["baseline_seasonal_runtime_deltaT"],76800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_seasonal_runtime_dailyavgHDD"],76800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_seasonal_runtime_hourlysumHDD"],76800,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["actual_seasonal_runtime"],115200.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["baseline_daily_runtime_deltaT"],4800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_daily_runtime_dailyavgHDD"],4800,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["baseline_daily_runtime_hourlysumHDD"],4800,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["actual_daily_runtime"],7200.0,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["seasonal_savings_deltaT"],0.5,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_savings_dailyavgHDD"],0.5,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_savings_hourlysumHDD"],0.5,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["seasonal_avoided_runtime_deltaT"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_avoided_runtime_dailyavgHDD"],38400,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["seasonal_avoided_runtime_hourlysumHDD"],38400,rtol=1e-3,atol=1e-3)
-
-    assert_allclose(heating_2011_12["n_days_both_heating_and_cooling"],0,rtol=1e-3,atol=1e-3)
-    assert_allclose(heating_2011_12["n_days_incomplete"],0,rtol=1e-3,atol=1e-3)
-
-    for low,high in [(i,i+5) for i in range(0,60,5)]:
-        label = "rhu_{:02d}F_to_{:02d}F".format(low,high)
-        assert heating_2011_12[label] is None
-
-def test_seasonal_metrics_to_csv(thermostat_type_1):
+def thermostat(metadata_filename, interval_data_filename):
+    thermostats = from_csv(metadata_filename, interval_data_filename)
+    return thermostats[0]
+
+def test_calculate_epa_draft_rccs_field_savings_metrics(thermostat):
+    seasonal_metrics = thermostat.calculate_epa_draft_rccs_field_savings_metrics()
+
+    assert len(seasonal_metrics) == 9
+
+    cooling_season_outputs = seasonal_metrics[0]
+    assert cooling_season_outputs['season_name'] == '2011 Cooling'
+    assert cooling_season_outputs['ct_identifier'] == 'test'
+    assert cooling_season_outputs['zipcode'] =='91104'
+
+    assert_allclose(cooling_season_outputs['n_days_both_heating_and_cooling'], 65, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['seasonal_avoided_runtime_hourlysumCDD'], 232130.832, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['deltaT_base_est_hourlysumCDD'], -0.770, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_daily_runtime_hourlysumCDD'], 4795.954, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_daily_runtime_deltaT'], 14116.412, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_seasonal_runtime_deltaT'], 564656.51, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_seasonal_runtime_hourlysumCDD'], 191838.167, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['mean_squared_error_deltaT'], 1058435.360, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['alpha_est_hourlysumCDD'], 2635.493, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['mean_sq_err_dailyavgCDD'], 985500.273, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['seasonal_avoided_runtime_deltaT'], -140687.510, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['slope_deltaT'], -2405.618, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['actual_seasonal_runtime'], 423969.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_daily_runtime_dailyavgCDD'], 13840.645, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['seasonal_savings_deltaT'], -0.249, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_seasonal_runtime_dailyavgCDD'], 553625.819, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['seasonal_savings_dailyavgCDD'], -0.234, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['deltaT_base_est_dailyavgCDD'], 0.243, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['equipment_type'], 1, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['alpha_est_dailyavgCDD'], 2306.649, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['n_days_incomplete'], 4, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['seasonal_avoided_runtime_dailyavgCDD'], -129656.819, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['baseline_comfort_temperature'], 75.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['mean_sq_err_hourlysumCDD'], 1220265.285, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['seasonal_savings_hourlysumCDD'], 1.210, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['actual_daily_runtime'], 10599.225, rtol=RTOL, atol=ATOL)
+
+    heating_season_outputs = seasonal_metrics[4]
+
+    assert heating_season_outputs['season_name'] == '2010-2011 Heating'
+    assert heating_season_outputs['ct_identifier'] == 'test'
+    assert heating_season_outputs['zipcode'] == '91104'
+    assert_allclose(heating_season_outputs['seasonal_avoided_runtime_dailyavgHDD'], 412533.647, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['seasonal_savings_hourlysumHDD'], 0.437, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_seasonal_runtime_hourlysumHDD'], 1797180.271, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_30F_to_35F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_20F_to_25F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['seasonal_savings_dailyavgHDD'], 0.189, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_25F_to_30F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_daily_runtime_deltaT'], 15513.253, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_seasonal_runtime_deltaT'], 2171855.459, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['mean_sq_err_hourlysumHDD'], 882030.507, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['mean_squared_error_deltaT'], 369356.647, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_00F_to_05F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['seasonal_avoided_runtime_deltaT'], 412250.540, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_daily_runtime_dailyavgHDD'], 15511.231, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_45F_to_50F'], 0.032, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['seasonal_avoided_runtime_hourlysumHDD'], 786925.728, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_40F_to_45F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['slope_deltaT'], 2400.482, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['actual_seasonal_runtime'], 2584106.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_35F_to_40F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['alpha_est_hourlysumHDD'], 2582.295, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['deltaT_base_est_dailyavgHDD'], -0.001, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['mean_sq_err_dailyavgHDD'], 369354.946, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_05F_to_10F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['seasonal_savings_deltaT'], 0.189, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_50F_to_55F'], 0.032, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['alpha_est_dailyavgHDD'], 2400.238, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_55F_to_60F'], 0.0214, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_10F_to_15F'], 0.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['equipment_type'], 1, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['n_days_incomplete'], 2, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_seasonal_runtime_dailyavgHDD'], 2171572.352, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_comfort_temperature'], 66.0, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['deltaT_base_est_hourlysumHDD'], 0.428, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['baseline_daily_runtime_hourlysumHDD'], 12837.002, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['n_days_both_heating_and_heating'], 22, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['actual_daily_runtime'], 18457.900, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['rhu_15F_to_20F'], 0.0, rtol=RTOL, atol=ATOL)
+
+def test_seasonal_metrics_to_csv(thermostat):
     fd, fname = tempfile.mkstemp()
-    seasonal_metrics = calculate_epa_draft_rccs_field_savings_metrics(thermostat_type_1)
-    seasonal_metrics_to_csv(seasonal_metrics,fname)
+    seasonal_metrics = thermostat.calculate_epa_draft_rccs_field_savings_metrics()
+    seasonal_metrics_to_csv(seasonal_metrics, fname)
     with open(fname,'r') as f:
         lines = f.readlines()
-        assert len(lines) == 3
+        assert len(lines) == 10
         for line in lines:
             assert len(line.split(',')) == 56

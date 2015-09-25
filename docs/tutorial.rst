@@ -14,8 +14,8 @@ Load thermostat data (see input file format below).
 
     data_dir = os.path.join(expanduser("~"),"Downloads/")
 
-    thermostats = from_csv(os.path.join(data_dir,"thermostat_metadata.csv"),
-                           os.path.join(data_dir,"thermostat_interval_data.csv"))
+    thermostats = from_csv(os.path.join(data_dir,"metadata_example.csv"),
+                           os.path.join(data_dir,"interval_data_example.csv"))
 
 Now you may iterate through thermostats and calculate savings metrics for each.
 
@@ -50,7 +50,7 @@ metadata csv by the :code:`thermostat_id` column.
 Thermostat Summary Metadata CSV format
 --------------------------------------
 
-See :download:`example <./examples/thermostat_metadata_example.csv>`
+See :download:`example <./examples/metadata_example.csv>`.
 
 Columns
 ~~~~~~~
@@ -61,15 +61,16 @@ Name                   Description
 :code:`thermostat_id`  A uniquely identifying marker for the thermostat.
 :code:`zipcode`        The ZIP code in which the thermostat is installed [#]_.
 :code:`equipment_type` The type of controlled HVAC heating and cooling equipment. [#]_
+:code:`utc_offset`     The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
 ====================== ===========
 
  - Each row should correspond to a single thermostat.
  - Nulls should be specified by leaving the field blank.
 
-Thermostat Interval Reading CSV format
+Thermostat Interval Data CSV format
 --------------------------------------
 
-See :download:`example <./examples/thermostat_interval_reading_example.csv>`.
+See :download:`example <./examples/interval_data_example.csv>`.
 
 Columns
 ~~~~~~~
@@ -77,32 +78,25 @@ Columns
 ============================ ===========
 Name                         Description
 ---------------------------- -----------
-:code:`thermostat_id`        A uniquely identifying marker for the thermostat.
-:code:`start_datetime`       The date and time at the start of the reading period.
-:code:`end_datetime`         The date and time at the end of the reading period.
-:code:`temperature_in`       The average conditioned space temperature over the period of the reading.
-:code:`temperature_setpoint` The average thermostat setpoint temperature over the period of the reading.
-:code:`ss_heat_pump_heating` Runtime of single stage heat pump equipment in heating mode.
-:code:`ss_heat_pump_cooling` Runtime of single stage heat pump equipment in cooling mode.
-:code:`auxiliary_heat`       Runtime of auxiliary heat equipment.
-:code:`emergency_heat`       Runtime of emergency heat equipment.
-:code:`ss_heating`           Runtime of single stage non-heat-pump heating equipment.
-:code:`ss_central_ac`        Runtime of single stage central air conditioning equipment.
+:code:`thermostat_id`        Uniquely identifying marker for the thermostat.
+:code:`date`                 Date of this set of readings. (YYYY-MM-DD).
+:code:`cool_runtime`         Runtime of cooling equipment (seconds, daily).
+:code:`heat_runtime`         Runtime of heating equipment (seconds, daily).
+:code:`auxiliary_heat`       Runtime of auxiliary heat equipment (seconds, daily).
+:code:`emergency_heat`       Runtime of emergency heat equipment (seconds, daily).
+:code:`temp_in_HH`           Hourly average conditioned space temperature over the period of the reading (HH=00-23).
+:code:`heating_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
+:code:`cooling_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
 ============================ ===========
 
 - Each row should correspond to a single hourly reading from a thermostat.
 - Nulls should be specified by leaving the field blank.
 - Runtimes should be specified in seconds and should be less than or equal to
-  3600 s.
-- Datetimes should be specified in the ISO 8601 combined date and time format.
-  (e.g. :code:`2015-05-19T07:00:00+00:00`)
+  86400 s (1 day).
+- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
-- *Important*: Datetimes **must** be in consecutive hourly intervals. All data
-  for which 24 hours of data (in hourly increments) is not available will be
-  ignored in heating and cooling season runtime/demand regressions. Unexpected
-  behavior may occur if this is not the case, as the module currently lacks a
-  complete set of data quality checks for this property in the input data.
-
+- If no distinction is made between heating and cooling setpoint, set both
+  equal to the single setpoint.
 
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
@@ -125,10 +119,10 @@ Output data
 =============================================== =========================================
 Name                                            Description
 ----------------------------------------------- -----------------------------------------
-:code:`actual_daily_runtime`                    
-:code:`actual_seasonal_runtime`                 
-:code:`baseline_comfort_temperature`            
-:code:`baseline_daily_runtime_dailyavgCDD`      
+:code:`actual_daily_runtime`
+:code:`actual_seasonal_runtime`
+:code:`baseline_comfort_temperature`
+:code:`baseline_daily_runtime_dailyavgCDD`
 :code:`baseline_daily_runtime_dailyavgHDD`
 :code:`baseline_daily_runtime_deltaT`
 :code:`baseline_daily_runtime_hourlysumCDD`
