@@ -26,28 +26,10 @@ thermostat.baseline
     :inherited-members:
     :show-inheritance:
 
-thermostat.demand
------------------
-
-.. automodule:: thermostat.demand
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-
 thermostat.regression
 ---------------------
 
 .. automodule:: thermostat.regression
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-
-thermostat.savings
-------------------
-
-.. automodule:: thermostat.savings
     :members:
     :undoc-members:
     :inherited-members:
