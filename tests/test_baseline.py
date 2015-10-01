@@ -66,7 +66,7 @@ def test_get_heating_season_baseline_deltaT(thermostat, heating_season):
 def test_get_cooling_season_baseline_dailyavgCDD(thermostat, cooling_season):
 
     baseline = thermostat.get_baseline_cooling_demand(cooling_season, 0.243, method="dailyavgCDD")
-    assert_allclose(baseline.mean(), 3.189, rtol=1e-3, atol=1e-3)
+    assert_allclose(baseline.mean(), 3.558, rtol=1e-3, atol=1e-3)
 
     baseline = thermostat.get_baseline_cooling_demand(cooling_season, 0, method="dailyavgCDD")
     assert_allclose(baseline.mean(), 3.371, rtol=1e-3, atol=1e-3)
@@ -82,7 +82,7 @@ def test_get_heating_season_baseline_dailyavgHDD(thermostat, heating_season):
 def test_get_cooling_season_baseline_hourlysumCDD(thermostat, cooling_season):
 
     baseline = thermostat.get_baseline_cooling_demand(cooling_season, -0.770, method="hourlysumCDD")
-    assert_allclose(baseline.mean(), 6.223, rtol=1e-3, atol=1e-3)
+    assert_allclose(baseline.mean(), 5.376, rtol=1e-3, atol=1e-3)
 
     baseline = thermostat.get_baseline_cooling_demand(cooling_season, 0, method="hourlysumCDD")
     assert_allclose(baseline.mean(), 5.78, rtol=1e-3, atol=1e-3)

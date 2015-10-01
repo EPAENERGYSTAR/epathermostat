@@ -333,10 +333,10 @@ class Thermostat(object):
             return pd.Series(daily_avg_deltaT, index=daily_index)
         elif method == "dailyavgCDD":
             def calc_cdd(deltaT_base):
-                return np.maximum(deltaT_base - daily_avg_deltaT,0)
+                return np.maximum(deltaT_base - daily_avg_deltaT, 0)
         elif method == "hourlysumCDD":
             def calc_cdd(deltaT_base):
-                hourly_cdd = (deltaT_base - season_deltaT).apply(lambda x: np.maximum(x,0))
+                hourly_cdd = (deltaT_base - season_deltaT).apply(lambda x: np.maximum(x, 0))
                 return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(season_deltaT.index.date)])
         else:
             raise NotImplementedError
@@ -531,9 +531,9 @@ class Thermostat(object):
         if method == "deltaT":
             demand = daily_temp_out - temp_baseline
         elif method == "dailyavgCDD":
-            demand = np.maximum(daily_temp_out - temp_baseline - deltaT_base, 0)
+            demand = np.maximum(deltaT_base - (temp_baseline - daily_temp_out), 0)
         elif method == "hourlysumCDD":
-            hourly_cdd = (hourly_temp_out - temp_baseline - deltaT_base).apply(lambda x: np.maximum(x, 0))
+            hourly_cdd = (deltaT_base - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
             demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
         else:
             raise NotImplementedError
@@ -711,10 +711,8 @@ class Thermostat(object):
                     method="hourlysumCDD")
 
             daily_avoided_runtime_deltaT = get_daily_avoided_runtime(
-                    -slope_deltaT, -demand_deltaT, demand_baseline_deltaT)
-            daily_avoided_runtime_dailyavgCDD = get_daily_avoided_runtime(
-                    alpha_est_dailyavgCDD, demand_dailyavgCDD,
-                    demand_baseline_dailyavgCDD)
+                    slope_deltaT, -demand_deltaT, demand_baseline_deltaT)
+            daily_avoided_runtime_dailyavgCDD = get_daily_avoided_runtime( alpha_est_dailyavgCDD, demand_dailyavgCDD, demand_baseline_dailyavgCDD)
             daily_avoided_runtime_hourlysumCDD = get_daily_avoided_runtime(
                     alpha_est_hourlysumCDD, demand_hourlysumCDD,
                     demand_baseline_hourlysumCDD)
