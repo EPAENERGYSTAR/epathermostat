@@ -2,22 +2,14 @@ from thermostat import Thermostat
 
 import pandas as pd
 import numpy as np
-from eemeter.consumption import DatetimePeriod
-from eemeter.location import zipcode_to_tmy3
+from eemeter.location import zipcode_to_station
 from eemeter.weather import ISDWeatherSource
+from eemeter.evaluation import Period
 
 import warnings
+from datetime import datetime
 from datetime import timedelta
-
-
-RUNTIME_COLUMNS = [
-    "ss_heat_pump_heating",
-    "ss_heat_pump_cooling",
-    "auxiliary_heat",
-    "emergency_heat",
-    "ss_heating",
-    "ss_central_ac",
-]
+import dateutil.parser
 
 def from_csv(metadata_filename,interval_data_filename):
     """
@@ -35,83 +27,71 @@ def from_csv(metadata_filename,interval_data_filename):
     thermostats : list of thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
-    metadata = pd.read_csv(metadata_filename,dtype={"zipcode":str,"equipment_type":int})
-    interval_data = pd.read_csv(interval_data_filename,
-                                dtype={
-                                    "temperature_in": float,
-                                    "temperature_setpoint": float,
-                                    "ss_heat_pump_heating": float,
-                                    "ss_heat_pump_cooling": float,
-                                    "auxiliary_heat": float,
-                                    "emergency_heat": float,
-                                    "ss_heating": float,
-                                    "ss_central_ac": float},
-                                parse_dates=["start_datetime","end_datetime"])
+    metadata = pd.read_csv(metadata_filename,
+            dtype={"thermostat_id": str, "zipcode": str, "utc_offset": str, "equipment_type": int })
+    interval_data = pd.read_csv(interval_data_filename)
+
+
     thermostats = []
     for i, row in metadata.iterrows():
+
+        # make sure this thermostat type is supported.
         if row.equipment_type == 0:
             warnings.warn("Skipping import of thermostat controlling equipment"
-                          " of unsupported type.")
-        else:
-            intervals = interval_data[interval_data.thermostat_id == row.thermostat_id]
-            intervals = reindex_intervals(intervals)
-            kwargs = {}
-            for column in RUNTIME_COLUMNS:
-                if not all(pd.isnull(intervals[column])):
-                    kwargs[column] = intervals[column]
-            temperature_in = intervals.temperature_in
-            temperature_setpoint = intervals.temperature_setpoint
-            station = zipcode_to_tmy3(row.zipcode)
-            weather_source = ISDWeatherSource(station,intervals.index[0].year,intervals.index[-1].year)
-            temperature_out = get_hourly_outdoor_temperature(intervals.index,weather_source)
-            thermostat = Thermostat(row.thermostat_id,row.equipment_type,row.zipcode,temperature_in,temperature_setpoint,temperature_out,**kwargs)
-            thermostats.append(thermostat)
+                          " of unsupported type. (id={})".format(row.thermostat_id))
+            continue
+
+        # filter by thermostat id
+        days = interval_data[interval_data.thermostat_id == row.thermostat_id]
+
+        # load indices
+        dates = pd.to_datetime(days["date"])
+        daily_index = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0], freq="D")
+        hourly_index = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0] * 24, freq="H")
+
+        # raise an error if dates are not aligned
+        if not all(dates == daily_index):
+            message("Dates provided for thermostat_id={} may contain some "
+                    "which are out of order, missing, or duplicated.".format(row.thermostat_id))
+            raise ValueError(message)
+
+        # load hourly time series values
+        temp_in = pd.Series(get_hourly_block(days, "temp_in"), hourly_index)
+        cooling_setpoint = pd.Series(get_hourly_block(days, "cooling_setpoint"), hourly_index)
+        heating_setpoint = pd.Series(get_hourly_block(days, "heating_setpoint"), hourly_index)
+
+        # load outdoor temperatures
+        station = zipcode_to_station(row.zipcode)
+        ws_hourly = ISDWeatherSource(station, daily_index[0].year, daily_index[-1].year)
+        utc_offset = dateutil.parser.parse("2000-01-01T00:00:00" + row.utc_offset).tzinfo.utcoffset(None)
+        temp_out = pd.Series(get_outdoor_temperatures(daily_index, ws_hourly, utc_offset), hourly_index)
+
+        # load daily time series values
+        cool_runtime = pd.Series(days["cool_runtime"].values, daily_index)
+        heat_runtime = pd.Series(days["heat_runtime"].values, daily_index)
+        auxiliary_heat_runtime = pd.Series(days["auxiliary_heat_runtime"].values, daily_index)
+        emergency_heat_runtime = pd.Series(days["emergency_heat_runtime"].values, daily_index)
+
+        # create thermostat instance
+        thermostat = Thermostat(row.thermostat_id, row.equipment_type, row.zipcode,
+                temp_in, temp_out, cooling_setpoint, heating_setpoint,
+                cool_runtime, heat_runtime, auxiliary_heat_runtime,
+                emergency_heat_runtime)
+
+        thermostats.append(thermostat)
+
     return thermostats
 
-def reindex_intervals(interval_df):
-    """
-    Takes a dataframe of intervals for a particular thermostat and
-    reindexes using a DatetimeIndex
+def get_hourly_block(df, prefix):
+    columns = ["{}_{:02d}".format(prefix, i) for i in range(24)]
+    values = df[columns].values
+    return values.reshape((values.shape[0] * values.shape[1],))
 
-    Parameters
-    ----------
-    interval_df : pandas.DataFrame
-        DataFrame to be reindexed.
-
-    Returns
-    -------
-    out : pandas.DataFrame
-        Data reindexed with a DatetimeIndex
-    """
-    new_index = interval_df.start_datetime
-    reindexed_df = interval_df.drop(["start_datetime","end_datetime"],1)
-    return reindexed_df.set_index(new_index)
-
-def get_hourly_outdoor_temperature(hourly_index,hourly_weather_source,include_endpoint=True):
-    """
-    Grabs hourly temperature from NOAA.
-
-    Parameters
-    ----------
-    hourly_index : pandas.DatetimeIndex
-        Index to be used to create index of temperature dataframe.
-    hourly_weather_source : eemeter.weather.ISDWeatherSource
-        Should give hourly temperatures for the relevant date-time period from
-        a particular weather station.
-    include_endpoint : bool, default True
-        Whether or not the final value :code:`hourly_index[-1]` should be
-        truncated from this provided index, resulting in an index of length
-        :code:`len(hourly_index) - 1`. This is a convenience to help deal with
-        differences between the way pandas handles creation of indices and the
-        way eemeter handles fetching temperatures from DatetimePeriods with
-        start and end dates.
-
-    Returns
-    -------
-    out : pandas.Series
-        Temperature data provided by the weather source and indexed by the
-        provided datetime index.
-    """
-    hourly_temps = [hourly_weather_source.data.get(dt.strftime("%Y%m%d%H"),np.nan)
-            for dt in hourly_index]
-    return pd.Series(hourly_temps,index=hourly_index,name="temperature_out")
+def get_outdoor_temperatures(dates, ws_hourly, utc_offset):
+    all_temps = []
+    for date in dates:
+        date = date - utc_offset
+        period = Period(date, date + timedelta(days=1))
+        temps = ws_hourly.hourly_temperatures(period, "degF")
+        all_temps.append(temps)
+    return np.array(all_temps).reshape(dates.shape[0] * 24)

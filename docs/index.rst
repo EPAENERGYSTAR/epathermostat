@@ -27,7 +27,7 @@ Usage
 
    api
 
-Licence
+License
 -------
 
 MIT

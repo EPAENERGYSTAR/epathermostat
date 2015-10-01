@@ -1,157 +1,80 @@
-import pytest
+from thermostat.core import Thermostat
+from thermostat.importers import from_csv
+from thermostat.util.testing import get_data_path
 
-from thermostat.demand import get_cooling_demand
-from thermostat.demand import get_heating_demand
-
-from thermostat import Thermostat
-
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from numpy.testing import assert_allclose
 
-RTOL = 1e-6
-ATOL = 1e-6
+import pytest
+
+RTOL = 1e-3
+ATOL = 1e-3
+
+@pytest.fixture(params=["metadata.csv"])
+def metadata_filename(request):
+    return get_data_path(request.param)
+
+@pytest.fixture(params=["interval_data.csv"])
+def interval_data_filename(request):
+    return get_data_path(request.param)
 
 @pytest.fixture
-def valid_thermostat_id():
-    return "10912098123"
+def thermostat(metadata_filename, interval_data_filename):
+    thermostats = from_csv(metadata_filename, interval_data_filename)
+    return thermostats[0]
 
 @pytest.fixture
-def valid_zipcode():
-    return "01234"
+def heating_season(thermostat):
+    return thermostat.get_heating_seasons()[0]
 
 @pytest.fixture
-def valid_datetimeindex():
-    return pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=400)
+def cooling_season(thermostat):
+    return thermostat.get_cooling_seasons()[0]
 
-@pytest.fixture
-def valid_temperature_setpoint(valid_datetimeindex):
-    return pd.Series(np.zeros((400,)),index=valid_datetimeindex)
+def test_get_cooling_demand_deltaT(thermostat, cooling_season):
 
-def test_get_cooling_demand_deltaT(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.tile(90,(400,)),index=valid_datetimeindex)
+    deltaT = thermostat.get_cooling_demand(cooling_season, method="deltaT")
+    assert_allclose(deltaT.mean(), -4.352, rtol=RTOL, atol=ATOL)
 
-    ss_heat_pump_cooling = pd.Series(np.tile(3600,(400,)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
+def test_get_cooling_demand_dailyavgCDD(thermostat, cooling_season):
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
-
-    cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
-    deltaT = get_cooling_demand(thermostat_type_2,cooling_season,method="deltaT")
-    assert_allclose(deltaT,np.tile(-20,(16,)),rtol=RTOL,atol=ATOL)
-
-def test_get_heating_demand_deltaT(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.tile(50,(400,)),index=valid_datetimeindex)
-
-    ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.tile(3600,(400,)),index=valid_datetimeindex)
-
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
-
-    heating_season, name = thermostat_type_2.get_heating_seasons()[0]
-    deltaT = get_heating_demand(thermostat_type_2,heating_season,method="deltaT")
-    assert_allclose(deltaT,np.tile(20,(16,)),rtol=RTOL,atol=ATOL)
-
-def test_get_cooling_demand_dailyavgCDD(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
-
-    hourly_alpha = 20
-    daily_alpha = hourly_alpha * 24
-
-    ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
-
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
-
-    cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
     dailyavgCDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD")
+            thermostat.get_cooling_demand(cooling_season, method="dailyavgCDD")
+    assert_allclose(dailyavgCDD.mean(), 4.595, rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, 0.243, rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, 2306.649, rtol=RTOL, atol=ATOL)
+    assert_allclose(error, 985500.273, rtol=RTOL, atol=ATOL)
 
-    assert_allclose(dailyavgCDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
-                                         13.295, 13.897, 14.498, 15.100, 15.701,
-                                         16.303, 16.904, 17.506, 18.107, 18.709,
-                                         19.310], rtol=0.01, atol=0.01)
-    assert_allclose(deltaT_base_estimate, 70, rtol=1, atol=.01)
-    assert_allclose(alpha_estimate, daily_alpha, rtol=RTOL, atol=ATOL)
-    assert error < 50000
+def test_get_cooling_demand_hourlysumCDD(thermostat, cooling_season):
 
-def test_get_heating_demand_dailyavgHDD(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
-
-    hourly_alpha = 20
-    daily_alpha = hourly_alpha * 24
-
-    ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
-
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
-
-    heating_season, name = thermostat_type_2.get_heating_seasons()[0]
-    dailyavgHDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD")
-
-    assert_allclose(dailyavgHDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
-                                         13.295, 13.897, 14.498, 15.100, 15.701,
-                                         16.303, 16.904, 17.506, 18.107, 18.709,
-                                         19.310], rtol=0.01, atol=0.01)
-    assert_allclose(deltaT_base_estimate, 70, rtol=1, atol=.01)
-    assert_allclose(alpha_estimate, daily_alpha, rtol=RTOL, atol=ATOL)
-    assert error < 50000
-
-def test_get_cooling_demand_hourlysumCDD(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
-
-    hourly_alpha = 20
-    daily_alpha = 24 * hourly_alpha
-
-    ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
-
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
-
-    cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
     hourlysumCDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_cooling_demand(thermostat_type_2,cooling_season,method="hourlysumCDD")
+            thermostat.get_cooling_demand(cooling_season, method="hourlysumCDD")
+    assert_allclose(hourlysumCDD.mean(), 4.021, rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, -0.770, rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, 2635.493, rtol=RTOL, atol=ATOL)
+    assert_allclose(error, 1220265.285, rtol=RTOL, atol=ATOL)
 
-    assert_allclose(hourlysumCDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
-                                          13.295, 13.897, 14.498, 15.100, 15.701,
-                                          16.303, 16.904, 17.506, 18.107, 18.709,
-                                          19.310], rtol=0.01, atol=0.01)
-    assert_allclose(deltaT_base_estimate, 70, rtol=1, atol=.01)
-    assert_allclose(alpha_estimate, daily_alpha, rtol=0.01, atol=0.01)
-    assert error < 550000
+def test_get_heating_demand_deltaT(thermostat, heating_season):
 
-def test_get_heating_demand_hourlysumHDD(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
+    deltaT = thermostat.get_heating_demand(heating_season, method="deltaT")
+    assert_allclose(deltaT.mean(), 7.689, rtol=RTOL, atol=ATOL)
 
-    hourly_alpha = 20
-    daily_alpha = 24 * hourly_alpha
+def test_get_heating_demand_dailyavgHDD(thermostat, heating_season):
 
-    ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
+    dailyavgHDD, deltaT_base_estimate, alpha_estimate, error = \
+            thermostat.get_heating_demand(heating_season, method="dailyavgHDD")
+    assert_allclose(dailyavgHDD.mean(), 7.690, rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, -0.001, rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, 2400.239, rtol=RTOL, atol=ATOL)
+    assert_allclose(error, 369354.946, rtol=RTOL, atol=ATOL)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
+def test_get_heating_demand_hourlysumHDD(thermostat, heating_season):
 
-    heating_season, name = thermostat_type_2.get_heating_seasons()[0]
     hourlysumHDD, deltaT_base_estimate, alpha_estimate, error = \
-            get_heating_demand(thermostat_type_2,heating_season,method="hourlysumHDD")
-
-    assert_allclose(hourlysumHDD.values,[ 10.288, 10.889, 11.491, 12.092, 12.694,
-                                          13.295, 13.897, 14.498, 15.100, 15.701,
-                                          16.303, 16.904, 17.506, 18.107, 18.709,
-                                          19.310], rtol=0.01, atol=0.01)
-    assert_allclose(deltaT_base_estimate, 70, rtol=1, atol=.01)
-    assert_allclose(alpha_estimate, daily_alpha, rtol=0.01, atol=0.01)
-    assert error < 550000
+            thermostat.get_heating_demand(heating_season, method="hourlysumHDD")
+    assert_allclose(hourlysumHDD.mean(), 7.148, rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, 0.428, rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, 2582.295, rtol=RTOL, atol=ATOL)
+    assert_allclose(error, 882030.507, rtol=RTOL, atol=ATOL)

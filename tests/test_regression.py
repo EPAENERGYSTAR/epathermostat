@@ -1,76 +1,56 @@
-import pytest
-
+from thermostat.core import Thermostat
+from thermostat.importers import from_csv
+from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
-from thermostat.demand import get_cooling_demand
-from thermostat.demand import get_heating_demand
-
-from thermostat import Thermostat
 
 import pandas as pd
 import numpy as np
-
 from numpy.testing import assert_allclose
 
-@pytest.fixture
-def valid_thermostat_id():
-    return "10912098123"
+import pytest
+
+RTOL = 1e-3
+ATOL = 1e-3
+
+@pytest.fixture(params=["metadata.csv"])
+def metadata_filename(request):
+    return get_data_path(request.param)
+
+@pytest.fixture(params=["interval_data.csv"])
+def interval_data_filename(request):
+    return get_data_path(request.param)
 
 @pytest.fixture
-def valid_zipcode():
-    return "10912098123"
+def thermostat(metadata_filename, interval_data_filename):
+    thermostats = from_csv(metadata_filename, interval_data_filename)
+    return thermostats[0]
 
 @pytest.fixture
-def valid_datetimeindex():
-    return pd.DatetimeIndex(start="2012-01-01T00:00:00",freq='H',periods=400)
+def heating_season(thermostat):
+    return thermostat.get_heating_seasons()[0]
 
 @pytest.fixture
-def valid_temperature_setpoint(valid_datetimeindex):
-    return pd.Series(np.zeros((400,)),index=valid_datetimeindex)
+def cooling_season(thermostat):
+    return thermostat.get_cooling_seasons()[0]
 
-def test_runtime_regression_cooling(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint,valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.linspace(80,90,num=400),index=valid_datetimeindex)
+@pytest.fixture
+def heating_demand_deltaT(thermostat, heating_season):
+    return thermostat.get_heating_demand(heating_season, method="deltaT")
 
-    hourly_alpha = 20
-    daily_alpha = hourly_alpha * 24
+@pytest.fixture
+def cooling_demand_deltaT(thermostat, cooling_season):
+    return thermostat.get_cooling_demand(cooling_season, method="deltaT")
 
-    ss_heat_pump_cooling = pd.Series(np.maximum((temp_out - temp_in) * hourly_alpha,0),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
+def test_runtime_regression_heating(thermostat, heating_season, heating_demand_deltaT):
+    daily_runtime = thermostat.heat_runtime[heating_season.daily].values
+    slope, mean_sq_err = runtime_regression(daily_runtime, heating_demand_deltaT)
 
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
+    assert_allclose(slope, 2400.482, rtol=RTOL, atol=ATOL)
+    assert_allclose(mean_sq_err, 369356.647, rtol=RTOL, atol=ATOL)
 
-    cooling_season, name = thermostat_type_2.get_cooling_seasons()[0]
+def test_runtime_regression_cooling(thermostat, cooling_season, cooling_demand_deltaT):
+    daily_runtime = thermostat.cool_runtime[cooling_season.daily].values
+    slope, mean_sq_err = runtime_regression(daily_runtime, cooling_demand_deltaT)
 
-    daily_cooling_demand, _, _, _ = get_cooling_demand(thermostat_type_2,cooling_season,method="dailyavgCDD")
-    hourly_runtime = ss_heat_pump_cooling[cooling_season]
-    slope,intercept, mean_sq_err = runtime_regression(hourly_runtime,daily_cooling_demand)
-
-    assert_allclose(slope,daily_alpha,rtol=0.01,atol=0.01)
-    assert_allclose(intercept,0,rtol=0.01,atol=0.01)
-    assert_allclose(mean_sq_err,0,rtol=0.01,atol=0.01)
-
-def test_runtime_regression_heating(valid_thermostat_id,valid_zipcode,valid_temperature_setpoint, valid_datetimeindex):
-    temp_in = pd.Series(np.tile(70,(400,)),index=valid_datetimeindex)
-    temp_out = pd.Series(np.linspace(60,50,num=400),index=valid_datetimeindex)
-
-    hourly_alpha = 20
-    daily_alpha = hourly_alpha * 24
-
-    ss_heat_pump_cooling = pd.Series(np.tile(0,(400,)),index=valid_datetimeindex)
-    ss_heat_pump_heating = pd.Series(np.maximum((temp_in - temp_out) * hourly_alpha,0),index=valid_datetimeindex)
-
-    thermostat_type_2 = Thermostat(valid_thermostat_id,2,valid_zipcode,temp_in,valid_temperature_setpoint,temp_out,
-            ss_heat_pump_cooling=ss_heat_pump_cooling,ss_heat_pump_heating=ss_heat_pump_heating)
-
-    heating_season, name = thermostat_type_2.get_heating_seasons()[0]
-
-    daily_heating_demand, _, _, _ = get_heating_demand(thermostat_type_2,heating_season,method="dailyavgHDD")
-    hourly_runtime = ss_heat_pump_heating[heating_season]
-
-    slope, intercept, mean_sq_err = runtime_regression(hourly_runtime,daily_heating_demand)
-
-    assert_allclose(slope,daily_alpha,rtol=0.01,atol=0.01)
-    assert_allclose(intercept,0,rtol=0.01,atol=0.01)
-    assert_allclose(mean_sq_err,0,rtol=0.01,atol=0.01)
-
+    assert_allclose(slope, -2405.618, rtol=RTOL, atol=ATOL)
+    assert_allclose(mean_sq_err, 1058435.360, rtol=RTOL, atol=ATOL)
