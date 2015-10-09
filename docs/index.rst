@@ -12,7 +12,7 @@ Installation
 The following command will install the thermostat package into your python
 environment::
 
-   pip install git+git://github.com/impactlab/thermostat.git
+   pip install thermostat
 
 Usage
 -----
@@ -35,5 +35,5 @@ MIT
 Contact
 -------
 
-Please feel free to reach out to phil at theimpactlab.co for questions or support
-concerns.
+Please feel free to reach out to phil at theimpactlab.co with questions or for
+technical support.

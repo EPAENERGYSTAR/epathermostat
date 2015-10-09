@@ -68,6 +68,8 @@ Name                   Description
 
  - Each row should correspond to a single thermostat.
  - Nulls should be specified by leaving the field blank.
+ - All data for a particular thermostat in the corresponding interval data
+   CSV must use the SAME UTC offset provided here in the metadata.
 
 Thermostat Interval Data CSV format
 --------------------------------------
@@ -99,6 +101,8 @@ Name                         Description
 - All temperatures should be specified in °F (to the nearest 0.5°F).
 - If no distinction is made between heating and cooling setpoint, set both
   equal to the single setpoint.
+- All runtime data MUST have the same UTC offset, as provided in the
+  corresponding metadata file.
 
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
