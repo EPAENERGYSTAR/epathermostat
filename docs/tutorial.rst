@@ -156,8 +156,7 @@ mean_sq_err_hourlysumCDD
 mean_sq_err_hourlysumHDD
 mean_squared_error_deltaT
 n_days_both_heating_and_cooling
-n_days_both_heating_and_heating
-n_days_incomplete
+n_days_insufficient_data
 rhu_00F_to_05F
 rhu_05F_to_10F
 rhu_10F_to_15F
