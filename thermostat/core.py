@@ -281,8 +281,8 @@ class Thermostat(object):
         null_cooling = pd.isnull(self.cool_runtime)
 
         n_both = (in_range & has_heating & has_cooling).sum()
-        n_incomplete = (in_range & (null_heating | null_cooling)).sum()
-        return n_both, n_incomplete
+        n_days_insufficient = (in_range & (null_heating | null_cooling)).sum()
+        return n_both, n_days_insufficient
 
 
     ##################### DEMAND ################################
@@ -761,10 +761,10 @@ class Thermostat(object):
             outputs["seasonal_avoided_runtime_dailyavgCDD"] = seasonal_avoided_runtime_dailyavgCDD
             outputs["seasonal_avoided_runtime_hourlysumCDD"] = seasonal_avoided_runtime_hourlysumCDD
 
-            n_days_both, n_days_incomplete = self.get_season_ignored_days(cooling_season)
+            n_days_both, n_days_insufficient_data = self.get_season_ignored_days(cooling_season)
 
             outputs["n_days_both_heating_and_cooling"] = n_days_both
-            outputs["n_days_incomplete"] = n_days_incomplete
+            outputs["n_days_insufficient_data"] = n_days_insufficient_data
 
             outputs["season_name"] = cooling_season.name
 
@@ -877,10 +877,10 @@ class Thermostat(object):
             outputs["seasonal_avoided_runtime_dailyavgHDD"] = seasonal_avoided_runtime_dailyavgHDD
             outputs["seasonal_avoided_runtime_hourlysumHDD"] = seasonal_avoided_runtime_hourlysumHDD
 
-            n_days_both, n_days_incomplete = self.get_season_ignored_days(heating_season)
+            n_days_both, n_days_insufficient_data = self.get_season_ignored_days(heating_season)
 
-            outputs["n_days_both_heating_and_heating"] = n_days_both
-            outputs["n_days_incomplete"] = n_days_incomplete
+            outputs["n_days_both_heating_and_cooling"] = n_days_both
+            outputs["n_days_insufficient_data"] = n_days_insufficient_data
 
             rhus = self.get_resistance_heat_utilization_bins(heating_season)
             if rhus is None:

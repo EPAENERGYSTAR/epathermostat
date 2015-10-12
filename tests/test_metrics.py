@@ -39,7 +39,7 @@ def test_calculate_epa_draft_rccs_field_savings_metrics(thermostat):
 
     assert_allclose(cooling_season_outputs['equipment_type'], 1, rtol=RTOL, atol=ATOL)
     assert_allclose(cooling_season_outputs['n_days_both_heating_and_cooling'], 65, rtol=RTOL, atol=ATOL)
-    assert_allclose(cooling_season_outputs['n_days_incomplete'], 4, rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['n_days_insufficient_data'], 4, rtol=RTOL, atol=ATOL)
 
     assert_allclose(cooling_season_outputs['slope_deltaT'], -2405.618, rtol=RTOL, atol=ATOL)
     assert_allclose(cooling_season_outputs['alpha_est_dailyavgCDD'], 2306.649, rtol=RTOL, atol=ATOL)
@@ -107,12 +107,12 @@ def test_calculate_epa_draft_rccs_field_savings_metrics(thermostat):
     assert_allclose(heating_season_outputs['rhu_55F_to_60F'], 0.0214, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['rhu_10F_to_15F'], 0.0, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['equipment_type'], 1, rtol=RTOL, atol=ATOL)
-    assert_allclose(heating_season_outputs['n_days_incomplete'], 2, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['n_days_insufficient_data'], 2, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['baseline_seasonal_runtime_dailyavgHDD'], 2171572.352, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['baseline_comfort_temperature'], 66.0, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['deltaT_base_est_hourlysumHDD'], 0.428, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['baseline_daily_runtime_hourlysumHDD'], 12837.002, rtol=RTOL, atol=ATOL)
-    assert_allclose(heating_season_outputs['n_days_both_heating_and_heating'], 22, rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['n_days_both_heating_and_cooling'], 22, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['actual_daily_runtime'], 18457.900, rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['rhu_15F_to_20F'], 0.0, rtol=RTOL, atol=ATOL)
 
@@ -124,4 +124,4 @@ def test_seasonal_metrics_to_csv(thermostat):
         lines = f.readlines()
         assert len(lines) == 10
         for line in lines:
-            assert len(line.split(',')) == 56
+            assert len(line.split(',')) == 55
