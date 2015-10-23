@@ -21,10 +21,16 @@ def runtime_regression(daily_runtime, daily_demand):
     mean_sq_err : float
         The mean squared error of the regession.
     """
+    if daily_demand.shape[0] == 0 and daily_runtime.shape[0] == 0:
+        return np.nan, np.nan
+
     x = daily_demand.values[:,np.newaxis]
     y = daily_runtime
     results = lstsq(x, y) # model: y = a*x
     slope = results[0][0]
-    mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
+    if daily_demand.shape[0] > 1 and daily_runtime.shape[0] > 1:
+        mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
+    else:
+        mean_sq_err = np.nan
     return slope, mean_sq_err
 
