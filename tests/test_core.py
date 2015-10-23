@@ -103,7 +103,7 @@ def test_thermostat_type_2_get_heating_season_ignored_days(thermostat_type_2, he
     assert (21, 0) == thermostat_type_2.get_season_ignored_days(heating_season_type_2)
 
 def test_thermostat_type_2_get_cooling_season_ignored_days(thermostat_type_2, cooling_season_type_2):
-    assert (21, 0) == thermostat_type_2.get_season_ignored_days(cooling_season_type_2)
+    assert (50, 2) == thermostat_type_2.get_season_ignored_days(cooling_season_type_2)
 
 def test_thermostat_type_3_get_heating_season_ignored_days(thermostat_type_3, heating_season_type_3):
     assert (32, 5) == thermostat_type_3.get_season_ignored_days(heating_season_type_3)
