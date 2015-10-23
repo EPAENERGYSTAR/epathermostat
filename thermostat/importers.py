@@ -12,7 +12,7 @@ from datetime import timedelta
 import dateutil.parser
 import os
 
-def from_csv(metadata_filename):
+def from_csv(metadata_filename, verbose=False):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -34,6 +34,8 @@ def from_csv(metadata_filename):
 
     thermostats = []
     for i, row in metadata.iterrows():
+        if verbose:
+            print("Importing thermostat {}".format(row.thermostat_id))
 
         # make sure this thermostat type is supported.
         if row.equipment_type not in [1,2,3,4,5]:
