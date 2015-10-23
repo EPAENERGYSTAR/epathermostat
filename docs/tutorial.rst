@@ -49,22 +49,23 @@ specify thermostat summary metadata (e.g. unique identifiers, location, etc.).
 Another CSV (or CSVs) should contain runtime information, linked to the
 metadata csv by the :code:`thermostat_id` column.
 
+Example files :download:`here <./examples/examples.zip>`.
+
 Thermostat Summary Metadata CSV format
 --------------------------------------
-
-See :download:`example <./examples/metadata_example.csv>`.
 
 Columns
 ~~~~~~~
 
-====================== ===========
-Name                   Description
----------------------- -----------
-:code:`thermostat_id`  A uniquely identifying marker for the thermostat.
-:code:`zipcode`        The ZIP code in which the thermostat is installed [#]_.
-:code:`equipment_type` The type of controlled HVAC heating and cooling equipment. [#]_
-:code:`utc_offset`     The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
-====================== ===========
+============================== ===========
+Name                           Description
+------------------------------ -----------
+:code:`thermostat_id`          A uniquely identifying marker for the thermostat.
+:code:`equipment_type`         The type of controlled HVAC heating and cooling equipment. [#]_
+:code:`zipcode`                The ZIP code in which the thermostat is installed [#]_.
+:code:`utc_offset`             The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
+:code:`interval_data_filename` The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
+============================== ===========
 
  - Each row should correspond to a single thermostat.
  - Nulls should be specified by leaving the field blank.
@@ -86,8 +87,8 @@ Name                         Description
 :code:`date`                 Date of this set of readings. (YYYY-MM-DD).
 :code:`cool_runtime`         Runtime of cooling equipment (seconds, daily).
 :code:`heat_runtime`         Runtime of heating equipment (seconds, daily).
-:code:`auxiliary_heat`       Runtime of auxiliary heat equipment (seconds, daily).
-:code:`emergency_heat`       Runtime of emergency heat equipment (seconds, daily).
+:code:`auxiliary_heat_HH`    Hourly runtime of auxiliary heat equipment (seconds, hourly).
+:code:`emergency_heat_HH`    Hourly runtime of emergency heat equipment (seconds, hourly).
 :code:`temp_in_HH`           Hourly average conditioned space temperature over the period of the reading (HH=00-23).
 :code:`heating_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
 :code:`cooling_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
@@ -104,11 +105,6 @@ Name                         Description
 - All runtime data MUST have the same UTC offset, as provided in the
   corresponding metadata file.
 
-.. [#] Will be used for matching with a weather station that provides external
-   dry-bulb temperature data. This temperature data will be used to determine
-   the bounds of the heating and cooling season over which metrics will be
-   computed.
-
 .. [#] Options for :code:`equipment_type`:
 
    - :code:`0`: Other – e.g. multi-zone multi-stage, modulating. Note: module will
@@ -118,6 +114,11 @@ Name                         Description
    - :code:`3`: Single stage non heat pump with single-stage central air conditioning
    - :code:`4`: Single stage non heat pump without central air conditioning
    - :code:`5`: Single stage central air conditioning without central heating
+
+.. [#] Will be used for matching with a weather station that provides external
+   dry-bulb temperature data. This temperature data will be used to determine
+   the bounds of the heating and cooling season over which metrics will be
+   computed.
 
 Output data
 ===========
@@ -131,33 +132,32 @@ actual_daily_runtime
 actual_seasonal_runtime
 alpha_est_dailyavgCDD
 alpha_est_dailyavgHDD
-alpha_est_hourlysumCDD
-alpha_est_hourlysumHDD
+alpha_est_hourlyavgCDD
+alpha_est_hourlyavgHDD
 baseline_comfort_temperature
 baseline_daily_runtime_dailyavgCDD
 baseline_daily_runtime_dailyavgHDD
 baseline_daily_runtime_deltaT
-baseline_daily_runtime_hourlysumCDD
-baseline_daily_runtime_hourlysumHDD
+baseline_daily_runtime_hourlyavgCDD
+baseline_daily_runtime_hourlyavgHDD
 baseline_seasonal_runtime_dailyavgCDD
 baseline_seasonal_runtime_dailyavgHDD
 baseline_seasonal_runtime_deltaT
-baseline_seasonal_runtime_hourlysumCDD
-baseline_seasonal_runtime_hourlysumHDD
+baseline_seasonal_runtime_hourlyavgCDD
+baseline_seasonal_runtime_hourlyavgHDD
 ct_identifier                                   Unique identifier for thermostat
 deltaT_base_est_dailyavgCDD
 deltaT_base_est_dailyavgHDD
-deltaT_base_est_hourlysumCDD
-deltaT_base_est_hourlysumHDD
+deltaT_base_est_hourlyavgCDD
+deltaT_base_est_hourlyavgHDD
 equipment_type
 mean_sq_err_dailyavgCDD
 mean_sq_err_dailyavgHDD
-mean_sq_err_hourlysumCDD
-mean_sq_err_hourlysumHDD
+mean_sq_err_hourlyavgCDD
+mean_sq_err_hourlyavgHDD
 mean_squared_error_deltaT
 n_days_both_heating_and_cooling
-n_days_both_heating_and_heating
-n_days_incomplete
+n_days_insufficient_data
 rhu_00F_to_05F
 rhu_05F_to_10F
 rhu_10F_to_15F
@@ -174,13 +174,13 @@ season_name
 seasonal_avoided_runtime_dailyavgCDD
 seasonal_avoided_runtime_dailyavgHDD
 seasonal_avoided_runtime_deltaT
-seasonal_avoided_runtime_hourlysumCDD
-seasonal_avoided_runtime_hourlysumHDD
+seasonal_avoided_runtime_hourlyavgCDD
+seasonal_avoided_runtime_hourlyavgHDD
 seasonal_savings_dailyavgCDD
 seasonal_savings_dailyavgHDD
 seasonal_savings_deltaT
-seasonal_savings_hourlysumCDD
-seasonal_savings_hourlysumHDD
+seasonal_savings_hourlyavgCDD
+seasonal_savings_hourlyavgHDD
 slope_deltaT
 zipcode
 =============================================== =========================================

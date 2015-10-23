@@ -1,8 +1,23 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
 
 version = __import__('thermostat').get_version()
 
 long_description = "Calculate connected thermostat temperature/run-time savings."
+
+class PyTest(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import subprocess
+        import sys
+        errno = subprocess.call([sys.executable, 'runtests.py', '--runslow', '--cov-report', 'term-missing', '--cov', 'thermostat'  ])
+        raise SystemExit(errno)
+
 
 setup(name='thermostat',
     version=version,
@@ -17,7 +32,8 @@ setup(name='thermostat',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
-    keywords='thermostat savings',
+    cmdclass = {'test': PyTest},
+    keywords='thermostat savings EPA',
     packages=find_packages(),
     install_requires=[
         'eemeter',

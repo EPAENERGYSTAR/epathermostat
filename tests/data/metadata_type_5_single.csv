@@ -1,0 +1,2 @@
+thermostat_id,equipment_type,zipcode,utc_offset,interval_data_filename
+064ec4bc-5317-4ab1-a1e7-a214d1acd74a,5,33155,-7,thermostat_064ec4bc-5317-4ab1-a1e7-a214d1acd74a.csv

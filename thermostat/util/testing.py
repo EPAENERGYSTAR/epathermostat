@@ -8,4 +8,4 @@ def get_data_path(f=''):
     # get our callers file
     _, filename, _, _, _, _ = inspect.getouterframes(inspect.currentframe())[1]
     base_dir = os.path.abspath(os.path.dirname(filename))
-    return os.path.join(base_dir, 'data', f)
+    return os.path.join(base_dir, f)

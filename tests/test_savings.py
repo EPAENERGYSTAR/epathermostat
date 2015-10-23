@@ -1,154 +1,63 @@
-from thermostat import Thermostat
-from thermostat.importers import from_csv
-from thermostat.util.testing import get_data_path
 from thermostat.savings import get_daily_avoided_runtime
 from thermostat.savings import get_seasonal_percent_savings
-from thermostat.regression import runtime_regression
 
-import pandas as pd
 import numpy as np
 
 from numpy.testing import assert_allclose
 
 import pytest
 
+from fixtures.thermostats import thermostat_type_1
+from fixtures.thermostats import heating_season_type_1
+from fixtures.thermostats import cooling_season_type_1
+from fixtures.thermostats import heating_demand_deltaT_type_1
+from fixtures.thermostats import cooling_demand_deltaT_type_1
+from fixtures.thermostats import baseline_heating_demand_deltaT_type_1
+from fixtures.thermostats import baseline_cooling_demand_deltaT_type_1
+from fixtures.thermostats import daily_avoided_heating_runtime_deltaT_type_1
+from fixtures.thermostats import daily_avoided_cooling_runtime_deltaT_type_1
+
+from fixtures.thermostats import heating_season_type_1_data
+from fixtures.thermostats import cooling_season_type_1_data
+
 RTOL = 1e-3
 ATOL = 1e-3
 
-@pytest.fixture(params=["metadata.csv"])
-def metadata_filename(request):
-    return get_data_path(request.param)
+@pytest.fixture(params=[
+    (10, 1, np.tile(10,(3,)), np.tile(0,(3,))),
+    ])
+def avoided_runtime_fixture(request):
+    return request.param
 
-@pytest.fixture(params=["interval_data.csv"])
-def interval_data_filename(request):
-    return get_data_path(request.param)
+@pytest.fixture(params=[
+    (.2, 100, np.tile(1, (20,))),
+    (.2, 100, np.concatenate((np.tile(2, (10,)), np.tile(np.nan,(10,))))),
+    ])
+def seasonal_percent_savings_fixture(request):
+    return request.param
 
-@pytest.fixture
-def thermostat(metadata_filename, interval_data_filename):
-    thermostats = from_csv(metadata_filename, interval_data_filename)
-    return thermostats[0]
+def test_get_daily_avoided_runtime(avoided_runtime_fixture):
+    avoided_runtime_mean, alpha, demand_baseline, demand = avoided_runtime_fixture
+    avoided_runtime = get_daily_avoided_runtime(alpha, demand, demand_baseline)
+    assert_allclose(avoided_runtime.mean(), avoided_runtime_mean, rtol=RTOL, atol=ATOL)
 
-@pytest.fixture
-def heating_season(thermostat):
-    return thermostat.get_heating_seasons()[0]
+def test_get_seasonal_percent_savings(seasonal_percent_savings_fixture):
+    percent_savings, baseline, avoided = seasonal_percent_savings_fixture
+    savings = get_seasonal_percent_savings(baseline, avoided)
+    assert_allclose(savings, percent_savings, rtol=RTOL, atol=ATOL)
 
-@pytest.fixture
-def heating_baseline_setpoint(thermostat, heating_season):
-    return thermostat.get_heating_season_baseline_setpoint(heating_season)
+def test_get_total_baseline_cooling_runtime(thermostat_type_1, cooling_season_type_1,
+        daily_avoided_cooling_runtime_deltaT_type_1, cooling_season_type_1_data):
 
-@pytest.fixture
-def heating_demand_deltaT(thermostat, heating_season):
-    return thermostat.get_heating_demand(heating_season, method="deltaT")
+    total_baseline = thermostat_type_1.get_total_baseline_cooling_runtime(
+            cooling_season_type_1, daily_avoided_cooling_runtime_deltaT_type_1)
 
-@pytest.fixture
-def heating_regression_slope_deltaT(thermostat, heating_season,
-        heating_demand_deltaT):
-    daily_runtime = thermostat.heat_runtime[heating_season.daily]
-    slope, _ = runtime_regression(daily_runtime, heating_demand_deltaT)
-    return slope
+    assert_allclose(total_baseline, cooling_season_type_1_data["total_baseline"], rtol=RTOL, atol=ATOL)
 
-@pytest.fixture
-def baseline_heating_demand_deltaT(thermostat, heating_season,
-        heating_baseline_setpoint):
-    return thermostat.get_baseline_heating_demand(heating_season,
-            heating_baseline_setpoint, method="deltaT")
+def test_get_total_baseline_heating_runtime(thermostat_type_1, heating_season_type_1,
+        daily_avoided_heating_runtime_deltaT_type_1, heating_season_type_1_data):
 
-@pytest.fixture
-def daily_avoided_heating_runtime_deltaT(thermostat,
-        heating_regression_slope_deltaT, heating_demand_deltaT,
-        baseline_heating_demand_deltaT):
-    return get_daily_avoided_runtime(heating_regression_slope_deltaT,
-            heating_demand_deltaT, baseline_heating_demand_deltaT)
+    total_baseline = thermostat_type_1.get_total_baseline_heating_runtime(
+            heating_season_type_1, daily_avoided_heating_runtime_deltaT_type_1)
 
-@pytest.fixture
-def total_baseline_heating_runtime_deltaT(thermostat,
-        heating_season, daily_avoided_heating_runtime_deltaT):
-    return thermostat.get_total_baseline_heating_runtime(heating_season,
-            daily_avoided_heating_runtime_deltaT)
-
-@pytest.fixture
-def cooling_season(thermostat):
-    return thermostat.get_cooling_seasons()[0]
-
-@pytest.fixture
-def cooling_baseline_setpoint(thermostat, cooling_season):
-    return thermostat.get_cooling_season_baseline_setpoint(cooling_season)
-
-@pytest.fixture
-def cooling_demand_deltaT(thermostat, cooling_season):
-    return thermostat.get_cooling_demand(cooling_season, method="deltaT")
-
-@pytest.fixture
-def cooling_regression_slope_deltaT(thermostat, cooling_season,
-        cooling_demand_deltaT):
-    daily_runtime = thermostat.cool_runtime[cooling_season.daily]
-    slope, _ = runtime_regression(daily_runtime, cooling_demand_deltaT)
-    return slope
-
-@pytest.fixture
-def baseline_cooling_demand_deltaT(thermostat, cooling_season,
-        cooling_baseline_setpoint):
-    return thermostat.get_baseline_cooling_demand(cooling_season,
-            cooling_baseline_setpoint, method="deltaT")
-
-@pytest.fixture
-def daily_avoided_cooling_runtime_deltaT(thermostat,
-        cooling_regression_slope_deltaT, cooling_demand_deltaT,
-        baseline_cooling_demand_deltaT):
-    return get_daily_avoided_runtime(cooling_regression_slope_deltaT,
-            -cooling_demand_deltaT, baseline_cooling_demand_deltaT)
-
-@pytest.fixture
-def total_baseline_cooling_runtime_deltaT(thermostat,
-        cooling_season, daily_avoided_cooling_runtime_deltaT):
-    return thermostat.get_total_baseline_cooling_runtime(cooling_season,
-            daily_avoided_cooling_runtime_deltaT)
-
-def test_get_daily_avoided_runtime_cooling_deltaT(
-        cooling_regression_slope_deltaT, cooling_demand_deltaT,
-        baseline_cooling_demand_deltaT):
-
-    # note the sign change on cooling demand for delta T
-    avoided_runtime = get_daily_avoided_runtime(
-            cooling_regression_slope_deltaT, -cooling_demand_deltaT,
-            baseline_cooling_demand_deltaT)
-
-    assert_allclose(avoided_runtime.mean(), 3517.187, rtol=RTOL, atol=ATOL)
-
-def test_get_daily_avoided_runtime_heating_deltaT(
-        heating_regression_slope_deltaT, heating_demand_deltaT,
-        baseline_heating_demand_deltaT):
-
-    avoided_runtime = get_daily_avoided_runtime(
-            heating_regression_slope_deltaT, heating_demand_deltaT,
-            baseline_heating_demand_deltaT)
-
-    assert_allclose(avoided_runtime.mean(), 2944.646, rtol=RTOL, atol=ATOL)
-
-def test_get_total_baseline_cooling_runtime(thermostat, cooling_season,
-        daily_avoided_cooling_runtime_deltaT):
-    total_baseline = thermostat.get_total_baseline_cooling_runtime(
-            cooling_season, daily_avoided_cooling_runtime_deltaT)
-
-    assert_allclose(total_baseline, 283281.489, rtol=RTOL, atol=ATOL)
-
-def test_get_total_baseline_heating_runtime(thermostat, heating_season,
-        daily_avoided_heating_runtime_deltaT):
-    total_baseline = thermostat.get_total_baseline_heating_runtime(
-            heating_season, daily_avoided_heating_runtime_deltaT)
-
-    assert_allclose(total_baseline, 2171855.459, rtol=RTOL, atol=ATOL)
-
-def test_get_seasonal_percent_savings_cooling(total_baseline_cooling_runtime_deltaT,
-        daily_avoided_cooling_runtime_deltaT):
-    savings = get_seasonal_percent_savings(
-            total_baseline_cooling_runtime_deltaT,
-            daily_avoided_cooling_runtime_deltaT)
-    assert_allclose(savings, 0.496, rtol=RTOL, atol=ATOL)
-
-def test_get_seasonal_percent_savings_heating(total_baseline_heating_runtime_deltaT,
-        daily_avoided_heating_runtime_deltaT):
-    savings = get_seasonal_percent_savings(
-            total_baseline_heating_runtime_deltaT,
-            daily_avoided_heating_runtime_deltaT)
-    assert_allclose(savings, 0.189, rtol=RTOL, atol=ATOL)
+    assert_allclose(total_baseline, heating_season_type_1_data["total_baseline"], rtol=RTOL, atol=ATOL)

@@ -1,80 +1,57 @@
-from thermostat.core import Thermostat
-from thermostat.importers import from_csv
-from thermostat.util.testing import get_data_path
 
-import numpy as np
 import pandas as pd
-
+import numpy as np
 from numpy.testing import assert_allclose
 
 import pytest
 
+from fixtures.thermostats import thermostat_type_1
+from fixtures.thermostats import heating_season_type_1
+from fixtures.thermostats import cooling_season_type_1
+from fixtures.thermostats import heating_season_type_1_data
+from fixtures.thermostats import cooling_season_type_1_data
+
 RTOL = 1e-3
 ATOL = 1e-3
 
-@pytest.fixture(params=["metadata.csv"])
-def metadata_filename(request):
-    return get_data_path(request.param)
+def test_get_cooling_demand_deltaT(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
+    deltaT = thermostat_type_1.get_cooling_demand(cooling_season_type_1, method="deltaT")
+    assert_allclose(deltaT.mean(), cooling_season_type_1_data["demand_deltaT_mean"], rtol=RTOL, atol=ATOL)
 
-@pytest.fixture(params=["interval_data.csv"])
-def interval_data_filename(request):
-    return get_data_path(request.param)
+def test_get_heating_demand_deltaT(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
+    deltaT = thermostat_type_1.get_heating_demand(heating_season_type_1, method="deltaT")
+    assert_allclose(deltaT.mean(), heating_season_type_1_data["demand_deltaT_mean"], rtol=RTOL, atol=ATOL)
 
-@pytest.fixture
-def thermostat(metadata_filename, interval_data_filename):
-    thermostats = from_csv(metadata_filename, interval_data_filename)
-    return thermostats[0]
 
-@pytest.fixture
-def heating_season(thermostat):
-    return thermostat.get_heating_seasons()[0]
-
-@pytest.fixture
-def cooling_season(thermostat):
-    return thermostat.get_cooling_seasons()[0]
-
-def test_get_cooling_demand_deltaT(thermostat, cooling_season):
-
-    deltaT = thermostat.get_cooling_demand(cooling_season, method="deltaT")
-    assert_allclose(deltaT.mean(), -4.352, rtol=RTOL, atol=ATOL)
-
-def test_get_cooling_demand_dailyavgCDD(thermostat, cooling_season):
-
+def test_get_cooling_demand_dailyavgCDD(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
     dailyavgCDD, deltaT_base_estimate, alpha_estimate, error = \
-            thermostat.get_cooling_demand(cooling_season, method="dailyavgCDD")
-    assert_allclose(dailyavgCDD.mean(), 4.595, rtol=RTOL, atol=ATOL)
-    assert_allclose(deltaT_base_estimate, 0.243, rtol=RTOL, atol=ATOL)
-    assert_allclose(alpha_estimate, 2306.649, rtol=RTOL, atol=ATOL)
-    assert_allclose(error, 985500.273, rtol=RTOL, atol=ATOL)
+            thermostat_type_1.get_cooling_demand(cooling_season_type_1, method="dailyavgCDD")
+    assert_allclose(dailyavgCDD.mean(), cooling_season_type_1_data["demand_dailyavgCDD_mean"], rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, cooling_season_type_1_data["demand_dailyavgCDD_base"], rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, cooling_season_type_1_data["demand_dailyavgCDD_alpha"], rtol=RTOL, atol=ATOL)
+    assert_allclose(error, cooling_season_type_1_data["demand_dailyavgCDD_error"], rtol=RTOL, atol=ATOL)
 
-def test_get_cooling_demand_hourlysumCDD(thermostat, cooling_season):
-
-    hourlysumCDD, deltaT_base_estimate, alpha_estimate, error = \
-            thermostat.get_cooling_demand(cooling_season, method="hourlysumCDD")
-    assert_allclose(hourlysumCDD.mean(), 4.021, rtol=RTOL, atol=ATOL)
-    assert_allclose(deltaT_base_estimate, -0.770, rtol=RTOL, atol=ATOL)
-    assert_allclose(alpha_estimate, 2635.493, rtol=RTOL, atol=ATOL)
-    assert_allclose(error, 1220265.285, rtol=RTOL, atol=ATOL)
-
-def test_get_heating_demand_deltaT(thermostat, heating_season):
-
-    deltaT = thermostat.get_heating_demand(heating_season, method="deltaT")
-    assert_allclose(deltaT.mean(), 7.689, rtol=RTOL, atol=ATOL)
-
-def test_get_heating_demand_dailyavgHDD(thermostat, heating_season):
-
+def test_get_heating_demand_dailyavgHDD(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
     dailyavgHDD, deltaT_base_estimate, alpha_estimate, error = \
-            thermostat.get_heating_demand(heating_season, method="dailyavgHDD")
-    assert_allclose(dailyavgHDD.mean(), 7.690, rtol=RTOL, atol=ATOL)
-    assert_allclose(deltaT_base_estimate, -0.001, rtol=RTOL, atol=ATOL)
-    assert_allclose(alpha_estimate, 2400.239, rtol=RTOL, atol=ATOL)
-    assert_allclose(error, 369354.946, rtol=RTOL, atol=ATOL)
+            thermostat_type_1.get_heating_demand(heating_season_type_1, method="dailyavgHDD")
+    assert_allclose(dailyavgHDD.mean(), heating_season_type_1_data["demand_dailyavgHDD_mean"], rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, heating_season_type_1_data["demand_dailyavgHDD_base"], rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, heating_season_type_1_data["demand_dailyavgHDD_alpha"], rtol=RTOL, atol=ATOL)
+    assert_allclose(error, heating_season_type_1_data["demand_dailyavgHDD_error"], rtol=RTOL, atol=ATOL)
 
-def test_get_heating_demand_hourlysumHDD(thermostat, heating_season):
 
-    hourlysumHDD, deltaT_base_estimate, alpha_estimate, error = \
-            thermostat.get_heating_demand(heating_season, method="hourlysumHDD")
-    assert_allclose(hourlysumHDD.mean(), 7.148, rtol=RTOL, atol=ATOL)
-    assert_allclose(deltaT_base_estimate, 0.428, rtol=RTOL, atol=ATOL)
-    assert_allclose(alpha_estimate, 2582.295, rtol=RTOL, atol=ATOL)
-    assert_allclose(error, 882030.507, rtol=RTOL, atol=ATOL)
+def test_get_cooling_demand_hourlyavgCDD(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
+    hourlyavgCDD, deltaT_base_estimate, alpha_estimate, error = \
+            thermostat_type_1.get_cooling_demand(cooling_season_type_1, method="hourlyavgCDD")
+    assert_allclose(hourlyavgCDD.mean(), cooling_season_type_1_data["demand_hourlyavgCDD_mean"], rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, cooling_season_type_1_data["demand_hourlyavgCDD_base"], rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, cooling_season_type_1_data["demand_hourlyavgCDD_alpha"], rtol=RTOL, atol=ATOL)
+    assert_allclose(error, cooling_season_type_1_data["demand_hourlyavgCDD_error"], rtol=RTOL, atol=ATOL)
+
+def test_get_heating_demand_hourlyavgHDD(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
+    hourlyavgHDD, deltaT_base_estimate, alpha_estimate, error = \
+            thermostat_type_1.get_heating_demand(heating_season_type_1, method="hourlyavgHDD")
+    assert_allclose(hourlyavgHDD.mean(), heating_season_type_1_data["demand_hourlyavgHDD_mean"], rtol=RTOL, atol=ATOL)
+    assert_allclose(deltaT_base_estimate, heating_season_type_1_data["demand_hourlyavgHDD_base"], rtol=RTOL, atol=ATOL)
+    assert_allclose(alpha_estimate, heating_season_type_1_data["demand_hourlyavgHDD_alpha"], rtol=RTOL, atol=ATOL)
+    assert_allclose(error, heating_season_type_1_data["demand_hourlyavgHDD_error"], rtol=RTOL, atol=ATOL)

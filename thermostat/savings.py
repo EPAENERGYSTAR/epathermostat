@@ -1,3 +1,5 @@
+import numpy as np
+
 def get_daily_avoided_runtime(alpha, demand, demand_baseline):
     """ Calculate avoided runtime from an estimate of alpha, demand and demand
     baseline for heating or cooling seasons. Expects the sign of demand to be
@@ -36,7 +38,7 @@ def get_seasonal_percent_savings(total_baseline_runtime, daily_avoided_runtime):
         savings} = \\frac{\\text{seasonal avoided runtime}}{\\text{baseline
         seasonal runtime}}`. Returned as a decimal.
     """
-    total_avoided_runtime = daily_avoided_runtime.sum()
+    total_avoided_runtime = np.nansum(daily_avoided_runtime)
 
-    seasonal_percent_savings = total_avoided_runtime / total_baseline_runtime
+    seasonal_percent_savings = total_avoided_runtime / float(total_baseline_runtime)
     return seasonal_percent_savings

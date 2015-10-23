@@ -1,4 +1,3 @@
-from thermostat.core import Thermostat
 from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
@@ -12,45 +11,24 @@ import pytest
 RTOL = 1e-3
 ATOL = 1e-3
 
-@pytest.fixture(params=["metadata.csv"])
-def metadata_filename(request):
-    return get_data_path(request.param)
+from fixtures.thermostats import thermostat_type_1
+from fixtures.thermostats import heating_season_type_1
+from fixtures.thermostats import cooling_season_type_1
+from fixtures.thermostats import heating_demand_deltaT_type_1
+from fixtures.thermostats import cooling_demand_deltaT_type_1
+from fixtures.thermostats import heating_daily_runtime_type_1
+from fixtures.thermostats import cooling_daily_runtime_type_1
+from fixtures.thermostats import heating_season_type_1_data
+from fixtures.thermostats import cooling_season_type_1_data
 
-@pytest.fixture(params=["interval_data.csv"])
-def interval_data_filename(request):
-    return get_data_path(request.param)
+def test_runtime_regression_heating(heating_daily_runtime_type_1, heating_demand_deltaT_type_1, heating_season_type_1_data):
+    slope, mean_sq_err = runtime_regression(heating_daily_runtime_type_1, heating_demand_deltaT_type_1)
 
-@pytest.fixture
-def thermostat(metadata_filename, interval_data_filename):
-    thermostats = from_csv(metadata_filename, interval_data_filename)
-    return thermostats[0]
+    assert_allclose(slope, heating_season_type_1_data["regression_slope"], rtol=RTOL, atol=ATOL)
+    assert_allclose(mean_sq_err, heating_season_type_1_data["regression_mean_sq_error"], rtol=RTOL, atol=ATOL)
 
-@pytest.fixture
-def heating_season(thermostat):
-    return thermostat.get_heating_seasons()[0]
+def test_runtime_regression_cooling(cooling_daily_runtime_type_1, cooling_demand_deltaT_type_1, cooling_season_type_1_data):
+    slope, mean_sq_err = runtime_regression(cooling_daily_runtime_type_1, cooling_demand_deltaT_type_1)
 
-@pytest.fixture
-def cooling_season(thermostat):
-    return thermostat.get_cooling_seasons()[0]
-
-@pytest.fixture
-def heating_demand_deltaT(thermostat, heating_season):
-    return thermostat.get_heating_demand(heating_season, method="deltaT")
-
-@pytest.fixture
-def cooling_demand_deltaT(thermostat, cooling_season):
-    return thermostat.get_cooling_demand(cooling_season, method="deltaT")
-
-def test_runtime_regression_heating(thermostat, heating_season, heating_demand_deltaT):
-    daily_runtime = thermostat.heat_runtime[heating_season.daily].values
-    slope, mean_sq_err = runtime_regression(daily_runtime, heating_demand_deltaT)
-
-    assert_allclose(slope, 2400.482, rtol=RTOL, atol=ATOL)
-    assert_allclose(mean_sq_err, 369356.647, rtol=RTOL, atol=ATOL)
-
-def test_runtime_regression_cooling(thermostat, cooling_season, cooling_demand_deltaT):
-    daily_runtime = thermostat.cool_runtime[cooling_season.daily].values
-    slope, mean_sq_err = runtime_regression(daily_runtime, cooling_demand_deltaT)
-
-    assert_allclose(slope, -2405.618, rtol=RTOL, atol=ATOL)
-    assert_allclose(mean_sq_err, 1058435.360, rtol=RTOL, atol=ATOL)
+    assert_allclose(slope, cooling_season_type_1_data["regression_slope"], rtol=RTOL, atol=ATOL)
+    assert_allclose(mean_sq_err, cooling_season_type_1_data["regression_mean_sq_error"], rtol=RTOL, atol=ATOL)
