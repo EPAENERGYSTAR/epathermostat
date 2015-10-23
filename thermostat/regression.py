@@ -22,8 +22,6 @@ def runtime_regression(daily_runtime, daily_demand):
         The mean squared error of the regession.
     """
     x = daily_demand.values[:,np.newaxis]
-    # x_0 = np.tile(1, x_1.shape)
-    # x = np.concatenate((x_1,x_0), axis=1)
     y = daily_runtime
     results = lstsq(x, y) # model: y = a*x
     slope = results[0][0]

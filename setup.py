@@ -17,7 +17,7 @@ setup(name='thermostat',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
-    keywords='thermostat savings',
+    keywords='thermostat savings EPA',
     packages=find_packages(),
     install_requires=[
         'eemeter',
