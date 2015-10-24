@@ -207,5 +207,12 @@ def test_seasonal_metrics_to_csv(seasonal_metrics_type_1):
     with open(fname,'r') as f:
         lines = f.readlines()
         assert len(lines) == 10
+        column_heads = lines[0].split(',')
+        assert column_heads[0] == "ct_identifier"
+        assert column_heads[1] == "equipment_type"
+        assert column_heads[2] == "season_name"
+        assert column_heads[3] == "station"
+        assert column_heads[4] == "zipcode"
+        assert column_heads[55].strip() == "rhu_55F_to_60F"
         for line in lines:
             assert len(line.split(',')) == 56
