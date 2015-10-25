@@ -131,7 +131,8 @@ Name                         Description
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
    the bounds of the heating and cooling season over which metrics will be
-   computed.
+   computed. For more information on the mapping between ZIP codes and
+   weather stations, please see the `eemeter.location <http://eemeter.readthedocs.org/en/latest/eemeter.html#module-eemeter.location>`_ package.
 
 Output data
 ===========
