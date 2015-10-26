@@ -1,7 +1,14 @@
 Quickstart
 ==========
 
-Load thermostat data (see input file format below).
+First, check to make sure you are on the most recent version of the package.
+
+.. code-block:: python
+
+    import thermostat;thermostat.get_version()
+    >>> '0.2.2'
+
+Import the necessary methods and set a directory for finding and storing data.
 
 .. code-block:: python
 
@@ -13,10 +20,22 @@ Load thermostat data (see input file format below).
 
     data_dir = os.path.join(expanduser("~"),"Downloads")
 
-    # This line will take more than a few minutes, even if the weather cache
-    # is enabled. Loading thermostats involves downloading hourly weather data
-    # from a remote source (NCDC).
-    thermostats = from_csv(os.path.join(data_dir,"examples/metadata.csv"), verbose=True)
+After importing the package methods, load the example thermostat data
+(see input file format below).
+This line will take more than a few minutes, even if the weather cache
+is enabled (more information below). This is because loading thermostat data
+involves downloading hourly weather data from a remote source - in this case,
+the NCDC.
+
+There is fabricated data from 35 thermostats in the example file, including one
+from each Building America, IECC, and CEC climate zone.
+
+The data for this step can be downloaded :download:`here <./examples/examples.zip>`.
+
+.. code-block:: python
+
+    metadata_filename = os.path.join(data_dir,"examples/metadata.csv")
+    thermostats = from_csv(metadata_filename, verbose=True)
 
 To calculate savings metrics, iterate through thermostats and save the results.
 
@@ -27,8 +46,11 @@ To calculate savings metrics, iterate through thermostats and save the results.
         outputs = thermostat.calculate_epa_draft_rccs_field_savings_metrics()
         seasonal_metrics.extend(outputs)
 
-    filepath = os.path.join(data_dir, "thermostat_module_example_output.csv")
-    seasonal_metrics_to_csv(seasonal_metrics, filepath)
+    output_filename = os.path.join(data_dir, "thermostat_example_output.csv")
+    seasonal_metrics_to_csv(seasonal_metrics, output_filename)
+
+The output CSV will be saved in your data directory and should very nearly
+match the output CSV provided in the example data.
 
 **Note**: During the data loading step, you may see a warning that the weather
 cache is disabled. You can safely ignore that warning, but if you wish to load
