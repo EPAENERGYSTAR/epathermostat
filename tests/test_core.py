@@ -4,6 +4,8 @@ from thermostat.util.testing import get_data_path
 import numpy as np
 import pandas as pd
 
+from datetime import datetime
+
 import pytest
 
 from fixtures.thermostats import thermostat_type_1
@@ -67,8 +69,8 @@ def test_thermostat_heating_season_attributes(heating_season_type_1):
     assert isinstance(heating_season_type_1.hourly, pd.Series)
     assert heating_season_type_1.daily.shape == (1461,)
     assert heating_season_type_1.hourly.shape == (35064,)
-    assert isinstance(heating_season_type_1.start_date, np.datetime64)
-    assert isinstance(heating_season_type_1.end_date, np.datetime64)
+    assert isinstance(heating_season_type_1.start_date, datetime)
+    assert isinstance(heating_season_type_1.end_date, datetime)
 
 def test_thermostat_cooling_season_attributes(cooling_season_type_1):
 
@@ -77,8 +79,8 @@ def test_thermostat_cooling_season_attributes(cooling_season_type_1):
     assert isinstance(cooling_season_type_1.hourly, pd.Series)
     assert cooling_season_type_1.daily.shape == (1461,)
     assert cooling_season_type_1.hourly.shape == (35064,)
-    assert isinstance(cooling_season_type_1.start_date, np.datetime64)
-    assert isinstance(cooling_season_type_1.end_date, np.datetime64)
+    assert isinstance(cooling_season_type_1.start_date, datetime)
+    assert isinstance(cooling_season_type_1.end_date, datetime)
 
 def test_thermostat_type_1_get_resistance_heat_utilization_bins(thermostat_type_1,
         heating_season_type_1):

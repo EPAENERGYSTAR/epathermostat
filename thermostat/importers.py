@@ -20,8 +20,8 @@ def from_csv(metadata_filename, verbose=False):
     ----------
     metadata_filename : str
         Path to a file containing the thermostat metadata.
-    interval_data_filename : str
-        Path to a file containing the thermostat interval readings.
+    verbose : boolean
+        Set to True to output a more detailed log of import activity.
 
     Returns
     -------

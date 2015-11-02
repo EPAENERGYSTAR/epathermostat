@@ -8,6 +8,8 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         "season_name",
         "station",
         "zipcode",
+        "n_days_in_season",
+        "n_days_in_season_range",
         "n_days_both_heating_and_cooling",
         "n_days_insufficient_data",
         "slope_deltaT",
