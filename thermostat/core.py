@@ -211,8 +211,10 @@ class Thermostat(object):
         self._protect_heating()
 
         # find all potential heating season ranges
-        start_year = self.heat_runtime.index[0].year - 1
-        end_year = self.heat_runtime.index[-1].year + 1
+        data_start_date = np.datetime64(self.heat_runtime.index[0])
+        data_end_date = np.datetime64(self.heat_runtime.index[-1])
+        start_year = data_start_date.item().year - 1
+        end_year = data_end_date.item().year + 1
         potential_seasons = zip(range(start_year, end_year), range(start_year + 1, end_year + 1))
 
         # compute inclusion thresholds
@@ -228,8 +230,10 @@ class Thermostat(object):
         # for each potential season, look for heating days.
         seasons = []
         for start_year_, end_year_ in potential_seasons:
-            start_date = np.datetime64(datetime(start_year_, 7, 1))
-            end_date = np.datetime64(datetime(end_year_, 7, 1))
+            season_start_date = np.datetime64(datetime(start_year_, 7, 1))
+            season_end_date = np.datetime64(datetime(end_year_, 7, 1))
+            start_date = max(season_start_date, data_start_date).item()
+            end_date = min(season_end_date, data_end_date).item()
             in_range = self._get_range_boolean(self.heat_runtime.index,
                     start_date, end_date)
             inclusion_daily = pd.Series(in_range & meets_thresholds,
@@ -273,8 +277,10 @@ class Thermostat(object):
         self._protect_cooling()
 
         # find all potential cooling season ranges
-        start_year = self.cool_runtime.index[0].year
-        end_year = self.cool_runtime.index[-1].year
+        data_start_date = np.datetime64(self.cool_runtime.index[0])
+        data_end_date = np.datetime64(self.cool_runtime.index[-1])
+        start_year = data_start_date.item().year
+        end_year = data_end_date.item().year
         potential_seasons = range(start_year, end_year + 1)
 
         # compute inclusion thresholds
@@ -288,8 +294,10 @@ class Thermostat(object):
         # for each potential season, look for cooling days.
         seasons = []
         for year in potential_seasons:
-            start_date = np.datetime64(datetime(year, 1, 1))
-            end_date = np.datetime64(datetime(year + 1, 1, 1))
+            season_start_date = np.datetime64(datetime(year, 1, 1))
+            season_end_date = np.datetime64(datetime(year + 1, 1, 1))
+            start_date = max(season_start_date, data_start_date).item()
+            end_date = min(season_end_date, data_end_date).item()
             in_range = self._get_range_boolean(self.cool_runtime.index,
                     start_date, end_date)
             inclusion_daily = pd.Series(in_range & meets_thresholds,
@@ -383,6 +391,12 @@ class Thermostat(object):
         n_days_insufficient = (in_range & (null_heating | null_cooling)).sum()
         return n_both, n_days_insufficient
 
+
+    def get_season_n_days(self, season):
+        return int(season.daily.sum())
+
+    def get_season_n_days_in_range(self, season):
+        return (season.end_date - season.start_date).days
 
     ##################### DEMAND ################################
 
@@ -754,6 +768,7 @@ class Thermostat(object):
 
         return total_actual_runtime - total_avoided_runtime
 
+
     ###################### Metrics #################################
 
     def calculate_epa_draft_rccs_field_savings_metrics(self):
@@ -876,9 +891,13 @@ class Thermostat(object):
                 outputs["seasonal_avoided_runtime_hourlyavgCDD"] = seasonal_avoided_runtime_hourlyavgCDD
 
                 n_days_both, n_days_insufficient_data = self.get_season_ignored_days(cooling_season)
+                n_days_in_season = self.get_season_n_days(cooling_season)
+                n_days_in_season_range = self.get_season_n_days_in_range(cooling_season)
 
                 outputs["n_days_both_heating_and_cooling"] = n_days_both
                 outputs["n_days_insufficient_data"] = n_days_insufficient_data
+                outputs["n_days_in_season"] = n_days_in_season
+                outputs["n_days_in_season_range"] = n_days_in_season_range
 
                 outputs["season_name"] = cooling_season.name
 
@@ -995,9 +1014,13 @@ class Thermostat(object):
                 outputs["seasonal_avoided_runtime_hourlyavgHDD"] = seasonal_avoided_runtime_hourlyavgHDD
 
                 n_days_both, n_days_insufficient_data = self.get_season_ignored_days(heating_season)
+                n_days_in_season = self.get_season_n_days(heating_season)
+                n_days_in_season_range = self.get_season_n_days_in_range(heating_season)
 
                 outputs["n_days_both_heating_and_cooling"] = n_days_both
                 outputs["n_days_insufficient_data"] = n_days_insufficient_data
+                outputs["n_days_in_season"] = n_days_in_season
+                outputs["n_days_in_season_range"] = n_days_in_season_range
 
                 if self.equipment_type in AUX_EMERG_EQUIPMENT_TYPES:
                     rhus = self.get_resistance_heat_utilization_bins(heating_season)
