@@ -25,14 +25,13 @@ def from_csv(metadata_filename, verbose=False):
 
     Returns
     -------
-    thermostats : list of thermostat.Thermostat objects
+    thermostats : iterator over thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
     metadata = pd.read_csv(metadata_filename,
             dtype={"thermostat_id": str, "zipcode": str, "utc_offset": str, "equipment_type": int, "interval_data_filename": str})
 
 
-    thermostats = []
     for i, row in metadata.iterrows():
         if verbose:
             print("Importing thermostat {}".format(row.thermostat_id))
@@ -46,11 +45,14 @@ def from_csv(metadata_filename, verbose=False):
         interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
         thermostat = get_single_thermostat(
-                row.thermostat_id, row.zipcode, row.equipment_type, row.utc_offset, interval_data_filename )
+                row.thermostat_id,
+                row.zipcode,
+                row.equipment_type,
+                row.utc_offset,
+                interval_data_filename
+        )
 
-        thermostats.append(thermostat)
-
-    return thermostats
+        yield thermostat
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, interval_data_filename):
     df = pd.read_csv(interval_data_filename)

@@ -8,27 +8,27 @@ import pytest
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
-    return thermostats[0]
+    return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_2_single.csv"])
 def thermostat_type_2(request):
     thermostats = from_csv(get_data_path(request.param))
-    return thermostats[0]
+    return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_3_single.csv"])
 def thermostat_type_3(request):
     thermostats = from_csv(get_data_path(request.param))
-    return thermostats[0]
+    return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_4_single.csv"])
 def thermostat_type_4(request):
     thermostats = from_csv(get_data_path(request.param))
-    return thermostats[0]
+    return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_5_single.csv"])
 def thermostat_type_5(request):
     thermostats = from_csv(get_data_path(request.param))
-    return thermostats[0]
+    return next(thermostats)
 
 @pytest.fixture(scope="session")
 def heating_season_type_1(thermostat_type_1):
