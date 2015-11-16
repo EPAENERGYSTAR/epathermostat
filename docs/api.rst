@@ -35,3 +35,21 @@ thermostat.regression
     :undoc-members:
     :inherited-members:
     :show-inheritance:
+
+thermostat.stats
+----------------
+
+.. automodule:: thermostat.stats
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+thermostat.parallel
+-------------------
+
+.. automodule:: thermostat.parallel
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:

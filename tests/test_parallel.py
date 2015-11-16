@@ -2,6 +2,7 @@ from thermostat.parallel import schedule_batches
 
 import os
 import tempfile
+import zipfile
 from uuid import uuid4
 
 import numpy as np
@@ -60,13 +61,36 @@ def metadata_filename():
         "interval_data_filename": interval_data_filenames,
     }, columns=columns)
 
-    _, fname = tempfile.mkstemp()
-    df.to_csv(fname, index=False)
-    return fname
+
+    temp_dir = tempfile.mkdtemp()
+    metadata_filename = os.path.join(temp_dir, "metadata.csv")
+    df.to_csv(metadata_filename, index=False)
+
+    for interval_data_filename in df.interval_data_filename:
+        fname = os.path.join(temp_dir, interval_data_filename)
+        with open(fname, 'w') as f :
+            f.write("INTERVAL DATA FILE CONTENT")
+
+    return metadata_filename
 
 def test_schedule_batches_metadata_only(metadata_filename):
+
     batches = schedule_batches(metadata_filename, 5)
-    import pdb;pdb.set_trace()
+
+    assert len(batches) == 5
+    assert sum([len(b) for b in batches]) == 100
+    assert isinstance(batches[0], pd.DataFrame)
 
 def test_schedule_batches_zip_files(metadata_filename):
-    batches = schedule_batches(metadata_filename, 5, True)
+
+    with pytest.raises(ValueError):
+        schedule_batches(metadata_filename, 5, True)
+
+    temp_dir = tempfile.mkdtemp()
+    batch_zipfile_names = schedule_batches(metadata_filename, 5, True, temp_dir)
+
+    assert len(batch_zipfile_names) == 5
+    assert isinstance(batch_zipfile_names[0], str)
+
+    with zipfile.ZipFile(batch_zipfile_names[0]) as zf:
+        assert len(zf.infolist()) == 21

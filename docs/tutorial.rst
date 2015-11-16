@@ -47,7 +47,7 @@ To calculate savings metrics, iterate through thermostats and save the results.
         seasonal_metrics.extend(outputs)
 
     output_filename = os.path.join(data_dir, "thermostat_example_output.csv")
-    seasonal_metrics_to_csv(seasonal_metrics, output_filename)
+    metrics_df = seasonal_metrics_to_csv(seasonal_metrics, filepath)
 
 The output CSV will be saved in your data directory and should very nearly
 match the output CSV provided in the example data.
@@ -219,3 +219,28 @@ Name                                                    Description
 :code:`rhu_50F_to_55F`                                  Resistance heat utilization for hourly temperature bin :math:`50 \leq T < 55`
 :code:`rhu_55F_to_60F`                                  Resistance heat utilization for hourly temperature bin :math:`55 \leq T < 60`
 ======================================================= =========================================
+
+Computing summary statistics
+============================
+
+Once you have obtained output dataframes from running the modules on your data,
+to compute summary statistics for the module, use the stats module. The
+example below works with the output file from the initial above and can be
+modified to use your data.
+
+Some additional imports.
+
+.. code-block:: python
+
+    from thermostat.stats import compute_summary_statistics
+    from thermostat.stats import summary_statistics_to_csv
+
+Compute statistics across all thermostats and save to file. CSV will have 1 row
+and 584 columns.
+
+.. code-block:: python
+
+    stats = compute_summary_statistics(metrics_df, "all_thermostats")
+
+    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
+    stats_df = summary_statistics_to_csv([stats], stats_filepath)
