@@ -82,6 +82,9 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
 
     if zip_files:
 
+        if not os.path.exists(batches_dir):
+            os.makedirs(batches_dir)
+
         batch_zipfile_names = []
         for i, batch_df in enumerate(batch_dfs):
 

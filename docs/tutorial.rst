@@ -220,15 +220,17 @@ Name                                                    Description
 :code:`rhu_55F_to_60F`                                  Resistance heat utilization for hourly temperature bin :math:`55 \leq T < 60`
 ======================================================= =========================================
 
+
+
 Computing summary statistics
 ============================
 
-Once you have obtained output dataframes from running the modules on your data,
-to compute summary statistics for the module, use the stats module. The
-example below works with the output file from the initial above and can be
-modified to use your data.
+Once you have obtained output for each individual thermostat in your dataset,
+use the stats module to compute summary statistics, which are formatted for
+submission to the EPA. The example below works with the output file from the
+tutorial above and can be modified to use your data.
 
-Some additional imports.
+(Some additional imports.)
 
 .. code-block:: python
 
@@ -244,3 +246,24 @@ and 584 columns.
 
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
     stats_df = summary_statistics_to_csv([stats], stats_filepath)
+
+
+Batch Scheduling
+================
+
+As some vendors have large numbers of thermostats, the following fuctions
+assist in batch scheduling. For example, to create 10 batches, do the following:
+
+(More imports.)
+
+.. code-block:: python
+
+    from thermostat.parallel import schedule_batches
+
+Create a directory in which to save zipped batches, then save them there and
+keep track of the filenames.
+
+.. code-block:: python
+
+    directory = os.path.join(data_dir, "thermostat_batches")
+    batch_zipfile_names = schedule_batches(metadata_filename, 10, True, directory)

@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import scipy.stats
 
 from collections import OrderedDict
 
@@ -117,10 +116,9 @@ def compute_summary_statistics(df, label):
 
         # calculate quantiles
         stats["{}_mean".format(column_name)] = np.nanmean(column)
-        stats["{}_sem".format(column_name)] = scipy.stats.sem(column)
+        stats["{}_sem".format(column_name)] = np.nanstd(column) / (column.count() ** .5)
         for quantile in quantiles:
-            q_val = np.percentile(column, quantile)
-            stats["{}_q{}".format(column_name, quantile)] = q_val
+            stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
 
     return stats
 
