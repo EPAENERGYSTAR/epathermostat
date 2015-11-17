@@ -6,7 +6,7 @@ First, check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.5'
+    '0.2.6'
 
 Import the necessary methods and set a directory for finding and storing data.
 
@@ -47,7 +47,7 @@ To calculate savings metrics, iterate through thermostats and save the results.
         seasonal_metrics.extend(outputs)
 
     output_filename = os.path.join(data_dir, "thermostat_example_output.csv")
-    seasonal_metrics_to_csv(seasonal_metrics, output_filename)
+    metrics_df = seasonal_metrics_to_csv(seasonal_metrics, filepath)
 
 The output CSV will be saved in your data directory and should very nearly
 match the output CSV provided in the example data.
@@ -219,3 +219,51 @@ Name                                                    Description
 :code:`rhu_50F_to_55F`                                  Resistance heat utilization for hourly temperature bin :math:`50 \leq T < 55`
 :code:`rhu_55F_to_60F`                                  Resistance heat utilization for hourly temperature bin :math:`55 \leq T < 60`
 ======================================================= =========================================
+
+
+
+Computing summary statistics
+============================
+
+Once you have obtained output for each individual thermostat in your dataset,
+use the stats module to compute summary statistics, which are formatted for
+submission to the EPA. The example below works with the output file from the
+tutorial above and can be modified to use your data.
+
+(Some additional imports.)
+
+.. code-block:: python
+
+    from thermostat.stats import compute_summary_statistics
+    from thermostat.stats import summary_statistics_to_csv
+
+Compute statistics across all thermostats and save to file. CSV will have 1 row
+and 584 columns.
+
+.. code-block:: python
+
+    stats = compute_summary_statistics(metrics_df, "all_thermostats")
+
+    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
+    stats_df = summary_statistics_to_csv([stats], stats_filepath)
+
+
+Batch Scheduling
+================
+
+As some vendors have large numbers of thermostats, the following fuctions
+assist in batch scheduling. For example, to create 10 batches, do the following:
+
+(More imports.)
+
+.. code-block:: python
+
+    from thermostat.parallel import schedule_batches
+
+Create a directory in which to save zipped batches, then save them there and
+keep track of the filenames.
+
+.. code-block:: python
+
+    directory = os.path.join(data_dir, "thermostat_batches")
+    batch_zipfile_names = schedule_batches(metadata_filename, 10, True, directory)

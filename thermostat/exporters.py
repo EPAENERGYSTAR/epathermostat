@@ -1,6 +1,22 @@
 import pandas as pd
 
 def seasonal_metrics_to_csv(seasonal_metrics, filepath):
+    """ Writes seasonal metrics outputs to the file specified.
+
+    Parameters
+    ----------
+    seaonal_metrics : list of dict
+        list of outputs from the function
+        `thermostat.calculate_epa_draft_rccs_field_savings_metrics()`
+    filepath : str
+        filepath specification for location of output CSV file.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        DataFrame containing data output to CSV.
+
+    """
 
     columns = [
         "ct_identifier",
@@ -62,4 +78,7 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         "rhu_50F_to_55F",
         "rhu_55F_to_60F"
     ]
-    pd.DataFrame(seasonal_metrics).to_csv(filepath, index=False, columns=columns)
+
+    output_dataframe = pd.DataFrame(seasonal_metrics, columns=columns)
+    output_dataframe.to_csv(filepath, index=False, columns=columns)
+    return output_dataframe
