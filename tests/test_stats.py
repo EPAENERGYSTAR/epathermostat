@@ -1,7 +1,10 @@
 from thermostat.stats import combine_output_dataframes
 from thermostat.stats import compute_summary_statistics
+from thermostat.stats import summary_statistics_to_csv
 
 from scipy.stats import norm, randint
+
+import tempfile
 
 import pandas as pd
 
@@ -152,5 +155,17 @@ def test_combine_output_dataframes(dataframes):
     assert combined.shape == (20, 58)
 
 def test_compute_summary_statistics(combined_dataframe):
-    summary_statistics = compute_summary_statistics(combined_dataframe)
-    assert len(summary_statistics) == 11 * 53
+    summary_statistics = compute_summary_statistics(combined_dataframe, "label")
+    assert len(summary_statistics) == 11 * 53 + 1 # plus one for the label
+    assert summary_statistics["label"] == "label"
+
+def test_summary_statistics_to_csv(combined_dataframe):
+    summary_statistics = compute_summary_statistics(combined_dataframe, "label")
+
+    _, fname = tempfile.mkstemp()
+    stats_df = summary_statistics_to_csv([summary_statistics], fname)
+    assert isinstance(stats_df, pd.DataFrame)
+
+    with open(fname, 'r') as f:
+        columns = f.readline().split(",")
+        assert len(columns) == 11 * 53 + 1

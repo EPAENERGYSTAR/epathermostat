@@ -202,8 +202,14 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_5(thermostat_type_5
     assert len(seasonal_metrics_type_5) == 4
 
 def test_seasonal_metrics_to_csv(seasonal_metrics_type_1):
+
     fd, fname = tempfile.mkstemp()
-    seasonal_metrics_to_csv(seasonal_metrics_type_1, fname)
+    df = seasonal_metrics_to_csv(seasonal_metrics_type_1, fname)
+
+    assert isinstance(df, pd.DataFrame)
+    assert df.columns[0] == "ct_identifier"
+    assert df.columns[1] == "equipment_type"
+
     with open(fname,'r') as f:
         lines = f.readlines()
         assert len(lines) == 10
@@ -216,3 +222,4 @@ def test_seasonal_metrics_to_csv(seasonal_metrics_type_1):
         assert column_heads[57].strip() == "rhu_55F_to_60F"
         for line in lines:
             assert len(line.split(',')) == 58
+
