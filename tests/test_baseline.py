@@ -27,13 +27,11 @@ def test_get_heating_season_baseline_setpoint(thermostat_type_1, heating_season_
 def test_get_cooling_season_baseline_deltaT(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
 
     baseline = thermostat_type_1.get_baseline_cooling_demand(cooling_season_type_1, method="deltaT")
-
     assert_allclose(baseline.mean(), cooling_season_type_1_data["baseline_demand_deltaT_mean"], rtol=RTOL, atol=ATOL)
 
 def test_get_heating_season_baseline_deltaT(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
 
     baseline = thermostat_type_1.get_baseline_heating_demand(heating_season_type_1, method="deltaT")
-
     assert_allclose(baseline.mean(), heating_season_type_1_data["baseline_demand_deltaT_mean"], rtol=RTOL, atol=ATOL)
 
 def test_get_cooling_season_baseline_dailyavgCDD(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):

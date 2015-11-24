@@ -62,6 +62,14 @@ def test_thermostat_type_5_get_cooling_seasons(thermostat_type_5):
     cooling_seasons = thermostat_type_5.get_cooling_seasons()
     assert len(cooling_seasons) == 4
 
+def test_thermostat_type_1_get_heating_seasons_with_params(thermostat_type_1):
+    heating_seasons = thermostat_type_1.get_heating_seasons(min_seconds_heating=0, max_seconds_cooling=0)
+    assert len(heating_seasons) == 5
+
+def test_thermostat_type_1_get_cooling_seasons_with_params(thermostat_type_1):
+    heating_seasons = thermostat_type_1.get_cooling_seasons(min_seconds_cooling=0, max_seconds_heating=0)
+    assert len(heating_seasons) == 4
+
 def test_thermostat_heating_season_attributes(heating_season_type_1):
 
     assert isinstance(heating_season_type_1.name, str)
