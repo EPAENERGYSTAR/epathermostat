@@ -182,7 +182,8 @@ class Thermostat(object):
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
-    def get_heating_seasons(self, method="year_mid_to_mid"):
+    def get_heating_seasons(self, method="year_mid_to_mid",
+            min_seconds_heating=3600, max_seconds_cooling=0):
         """ Get all data for heating seasons for data associated with this
         thermostat
 
@@ -194,6 +195,12 @@ class Thermostat(object):
             - "year_mid_to_mid": groups all heating days (days with >= 1 hour of total
               heating and no cooling) from July 1 to June 31 (inclusive) into single
               heating seasons. May overlap with cooling seasons.
+        min_seconds_heating : int, default 3600
+            Number of seconds of heating runtime per day required for inclusion in season.
+        max_seconds_cooling : int, default 0
+            Number of seconds of cooling runtime per day beyond which for day is
+            considered part of a shoulder season (and is therefore not part of
+            the heating season).
 
         Returns
         -------
@@ -218,10 +225,10 @@ class Thermostat(object):
         potential_seasons = zip(range(start_year, end_year), range(start_year + 1, end_year + 1))
 
         # compute inclusion thresholds
-        meets_heating_thresholds = self.heat_runtime >= 3600
+        meets_heating_thresholds = self.heat_runtime >= min_seconds_heating
 
         if self.equipment_type in COOLING_EQUIPMENT_TYPES:
-            meets_cooling_thresholds = self.cool_runtime == 0
+            meets_cooling_thresholds = self.cool_runtime <= max_seconds_cooling
         else:
             meets_cooling_thresholds = True
 
@@ -248,7 +255,8 @@ class Thermostat(object):
 
         return seasons
 
-    def get_cooling_seasons(self, method="year_end_to_end"):
+    def get_cooling_seasons(self, method="year_end_to_end",
+            min_seconds_cooling=3600, max_seconds_heating=0):
         """ Get all data for cooling seasons for data associated with this
         thermostat.
 
@@ -260,6 +268,12 @@ class Thermostat(object):
             - "year_end_to_end": groups all cooling days (days with >= 1 hour of total
               cooling and no heating) from January 1 to December 31 into
               single cooling seasons.
+        min_seconds_cooling : int, default 3600
+            Number of seconds of cooling runtime per day required for inclusion in season.
+        max_seconds_heating : int, default 0
+            Number of seconds of heating runtime per day beyond which for day is
+            considered part of a shoulder season (and is therefore not part of
+            the cooling season).
 
         Returns
         -------
@@ -285,10 +299,11 @@ class Thermostat(object):
 
         # compute inclusion thresholds
         if self.equipment_type in HEATING_EQUIPMENT_TYPES:
-            meets_heating_thresholds = self.heat_runtime == 0
+            meets_heating_thresholds = self.heat_runtime <= max_seconds_heating
         else:
             meets_heating_thresholds = True
-        meets_cooling_thresholds = self.cool_runtime >= 3600
+
+        meets_cooling_thresholds = self.cool_runtime >= min_seconds_cooling
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
         # for each potential season, look for cooling days.
@@ -564,7 +579,7 @@ class Thermostat(object):
 
     ################## BASELINING ##########################
 
-    def get_cooling_season_baseline_setpoint(self, cooling_season, method='tenth_percentile'):
+    def get_cooling_season_baseline_setpoint(self, cooling_season, method='tenth_percentile', source='cooling_setpoint'):
         """ Calculate the cooling season baseline setpoint (comfort temperature).
 
         Parameters
@@ -574,8 +589,10 @@ class Thermostat(object):
         method : {"tenth_percentile"}, default: "tenth_percentile"
             Method to use in calculation of the baseline.
 
-            - "tenth_percentile": 10th percentile of cooling season cooling
-              setpoints.
+            - "tenth_percentile": 10th percentile of source temperature.
+              (Either cooling setpoint or temperature in).
+        source : {"cooling_setpoint", "temperature_in"}, default "cooling_setpoint"
+            The source of temperatures to use in baseline calculation.
 
         Returns
         -------
@@ -586,12 +603,20 @@ class Thermostat(object):
 
         self._protect_cooling()
 
-        if method != 'tenth_percentile':
+        if method == 'tenth_percentile':
+
+            if source == 'cooling_setpoint':
+                return self.cooling_setpoint[cooling_season.hourly].quantile(.1)
+            elif source == 'temperature_in':
+                return self.temperature_in[cooling_season.hourly].quantile(.1)
+            else:
+                raise NotImplementedError
+
+        else:
             raise NotImplementedError
-        return self.cooling_setpoint[cooling_season.hourly].quantile(.1)
 
 
-    def get_heating_season_baseline_setpoint(self, heating_season, method='ninetieth_percentile'):
+    def get_heating_season_baseline_setpoint(self, heating_season, method='ninetieth_percentile', source='heating_setpoint'):
         """ Calculate the heating season baseline setpoint (comfort temperature).
 
         Parameters
@@ -601,8 +626,10 @@ class Thermostat(object):
         method : {"ninetieth_percentile"}, default: "ninetieth_percentile"
             Method to use in calculation of the baseline.
 
-            - "ninetieth_percentile": 90th percentile of heating season
-              heating setpoints.
+            - "ninetieth_percentile": 90th percentile of source temperature.
+              (Either heating setpoint or indoor temperature).
+        source : {"heating_setpoint", "temperature_in"}, default "heating_setpoint"
+            The source of temperatures to use in baseline calculation.
 
         Returns
         -------
@@ -613,9 +640,17 @@ class Thermostat(object):
 
         self._protect_heating()
 
-        if method != 'ninetieth_percentile':
+        if method == 'ninetieth_percentile':
+
+            if source == 'heating_setpoint':
+                return self.heating_setpoint[heating_season.hourly].quantile(.9)
+            elif source == 'temperature_in':
+                return self.temperature_in[heating_season.hourly].quantile(.9)
+            else:
+                raise NotImplementedError
+
+        else:
             raise NotImplementedError
-        return self.heating_setpoint[heating_season.hourly].quantile(.9)
 
 
     def get_baseline_cooling_demand(self, cooling_season,

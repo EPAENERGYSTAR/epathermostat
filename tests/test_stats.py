@@ -1,12 +1,16 @@
 from thermostat.stats import combine_output_dataframes
 from thermostat.stats import compute_summary_statistics
 from thermostat.stats import summary_statistics_to_csv
+from thermostat.stats import ZipcodeGroupSpec
+from thermostat.stats import compute_summary_statistics_by_zipcode
+from thermostat.stats import compute_summary_statistics_by_weather_station
+from thermostat.stats import compute_summary_statistics_by_zipcode_group
 
 from scipy.stats import norm, randint
+import pandas as pd
 
 import tempfile
-
-import pandas as pd
+from itertools import islice, cycle
 
 import pytest
 
@@ -73,14 +77,20 @@ def get_fake_output_df(n_columns):
     ]
 
     string_placeholder = ["PLACEHOLDER"] * n_columns
-    int_column = randint.rvs(0, 1, size=n_columns)
-    float_column = norm.rvs(size=n_columns)
+    int_column = [i if randint.rvs(0, 30) > 0 else None
+                  for i in randint.rvs(0, 1, size=n_columns)]
+    float_column = [i if randint.rvs(0, 30) > 0 else None
+                    for i in norm.rvs(size=n_columns)]
+    zipcodes = ["01234", "12345", "23456", "34567", "43210", "54321", "65432", "76543"]
+    zipcode_column = [i for i in islice(cycle(zipcodes), None, n_columns)]
+    season_names = ["Cooling 2012", "Heating 2012-2013", "Cooling 2013"]
+    season_name_column = [i for i in islice(cycle(season_names), None, n_columns)]
     data = {
         "ct_identifier": string_placeholder,
         "equipment_type": string_placeholder,
-        "season_name": string_placeholder,
+        "season_name": season_name_column,
         "station": string_placeholder,
-        "zipcode": string_placeholder,
+        "zipcode": zipcode_column,
         "n_days_both_heating_and_cooling": int_column,
         "n_days_insufficient_data": int_column,
         "n_days_in_season": int_column,
@@ -150,22 +160,115 @@ def combined_dataframe():
     df = get_fake_output_df(100)
     return df
 
+@pytest.fixture
+def zipcode_group_spec_csv_filepath():
+    _, fname = tempfile.mkstemp()
+    with open(fname, 'w') as f:
+        file_contents = \
+                "zipcode,group\n" \
+                "01234,group_a\n" \
+                "12345,group_a\n" \
+                "23456,group_a\n" \
+                "43210,group_b\n" \
+                "54321,group_b\n" \
+                "65432,group_c"
+        f.write(file_contents)
+    return fname
+
+@pytest.fixture
+def zipcode_group_spec_dict():
+    dictionary = {
+        "01234": "group_a",
+        "12345": "group_a",
+        "23456": "group_a",
+        "43210": "group_b",
+        "54321": "group_b",
+        "65432": "group_c",
+    }
+    return dictionary
+
+@pytest.fixture
+def zipcode_group_spec():
+    dictionary = {
+        "01234": "group_a",
+        "12345": "group_a",
+        "23456": "group_a",
+        "43210": "group_b",
+        "54321": "group_b",
+        "65432": "group_c",
+    }
+    return ZipcodeGroupSpec(dictionary=dictionary)
+
+@pytest.fixture
+def groups_df():
+    df = pd.DataFrame({
+        "zipcode": [
+            "01234",
+            "12345",
+            "23456",
+            "23456",
+            "43210",
+            "54321",
+            "65432",
+            "76543"],
+        "value": [ 1, 2, 3, 4, 5, 6, 7, 8],
+        }, columns=["zipcode", "value"])
+    return df
+
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
     assert combined.shape == (20, 58)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
-    assert len(summary_statistics) == 11 * 53 + 1 # plus one for the label
-    assert summary_statistics["label"] == "label"
+    assert len(summary_statistics) == 2
+    assert len(summary_statistics[0]) == 12 * 39 + 3
+    assert len(summary_statistics[1]) == 12 * 27 + 3
+    assert summary_statistics[0]["label"] == "label_heating"
 
 def test_summary_statistics_to_csv(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
 
     _, fname = tempfile.mkstemp()
-    stats_df = summary_statistics_to_csv([summary_statistics], fname)
+    stats_df = summary_statistics_to_csv(summary_statistics, fname)
     assert isinstance(stats_df, pd.DataFrame)
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 11 * 53 + 1
+        assert len(columns) == 12 * 53 + 3 # plus two for label + count
+
+def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
+    group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)
+    groups = dict([i for i in group_spec.iter_groups(groups_df)])
+    assert len(groups) == 3
+    assert len(groups["group_a"]) == 4
+    assert len(groups["group_b"]) == 2
+    assert len(groups["group_c"]) == 1
+
+def test_zipcode_group_spec_dict(zipcode_group_spec_dict, groups_df):
+    group_spec = ZipcodeGroupSpec(dictionary=zipcode_group_spec_dict)
+    groups = dict([i for i in group_spec.iter_groups(groups_df)])
+    assert len(groups) == 3
+    assert len(groups["group_a"]) == 4
+    assert len(groups["group_b"]) == 2
+    assert len(groups["group_c"]) == 1
+
+def test_compute_summary_statistics_by_zipcode_group(combined_dataframe, zipcode_group_spec):
+    stats = compute_summary_statistics_by_zipcode_group(combined_dataframe,
+                                                        group_spec=zipcode_group_spec)
+    assert len(stats) == 6
+    assert stats[0]["label"] == "group_a_heating"
+
+def test_compute_summary_statistics_by_zipcode(combined_dataframe):
+    stats = compute_summary_statistics_by_zipcode(combined_dataframe)
+    assert len(stats) == 6
+    assert stats[0]["label"] == "23456_heating"
+
+def test_compute_summary_statistics_by_weather_station(combined_dataframe):
+    stats = compute_summary_statistics_by_weather_station(combined_dataframe)
+    assert len(stats) == 6
+    assert stats[0]["label"] == "722575_heating"
+
+def test_zipcode_group_spec_no_input():
+    with pytest.raises(ValueError):
+        group_spec = ZipcodeGroupSpec()

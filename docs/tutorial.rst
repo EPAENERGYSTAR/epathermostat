@@ -6,7 +6,7 @@ First, check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.6'
+    '0.2.7'
 
 Import the necessary methods and set a directory for finding and storing data.
 
@@ -237,16 +237,21 @@ tutorial above and can be modified to use your data.
     from thermostat.stats import compute_summary_statistics
     from thermostat.stats import summary_statistics_to_csv
 
-Compute statistics across all thermostats and save to file. CSV will have 1 row
-and 584 columns.
+Compute statistics across all thermostats and save to file. CSV will have 2 rows
+and 584 columns (One row each for heating/cooling, one column for each
+summary statistic).
 
 .. code-block:: python
 
     stats = compute_summary_statistics(metrics_df, "all_thermostats")
+    stats.extend(compute_summary_statistics_by_zipcode(combined_dataframe))
+    stats.extend(compute_summary_statistics_by_weather_station(combined_dataframe))
 
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    stats_df = summary_statistics_to_csv([stats], stats_filepath)
+    stats_df = summary_statistics_to_csv(stats, stats_filepath)
 
+Please see the API docs for additional information on computing summary
+statistics.
 
 Batch Scheduling
 ================
