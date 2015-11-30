@@ -1,3 +1,5 @@
+.. _thermostat-api:
+
 API
 ===
 

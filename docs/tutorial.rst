@@ -282,3 +282,8 @@ keep track of the filenames.
 
     directory = os.path.join(data_dir, "thermostat_batches")
     batch_zipfile_names = schedule_batches(metadata_filename, 10, True, directory)
+
+More information
+================
+
+For additional information on package usage, please see the API docs ( :ref:`thermostat-api` ).
