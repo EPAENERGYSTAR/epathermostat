@@ -6,7 +6,7 @@ First, check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.7'
+    '0.2.8'
 
 Import the necessary methods and set a directory for finding and storing data.
 
@@ -70,6 +70,13 @@ location you specify.
 .. code-block:: bash
 
     $ export EEMETER_WEATHER_CACHE_DATABASE_URL=sqlite:////path/to/db.sqlite
+
+You can also do this in python, but it must be done *before loading the package*.
+For example:
+
+.. code-block:: python
+
+    os.environ["EEMETER_WEATHER_CACHE_DATABASE_URL"] = "sqlite:///{}".format(os.path.join(data_dir,"weather_cache.db"))
 
 For more information, see the `eemeter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
 package.
@@ -235,6 +242,9 @@ tutorial above and can be modified to use your data.
 .. code-block:: python
 
     from thermostat.stats import compute_summary_statistics
+    from thermostat.stats import compute_summary_statistics_by_zipcode
+    from thermostat.stats import compute_summary_statistics_by_weather_station
+
     from thermostat.stats import summary_statistics_to_csv
 
 Compute statistics across all thermostats and save to file. CSV will have 2 rows
@@ -244,8 +254,8 @@ summary statistic).
 .. code-block:: python
 
     stats = compute_summary_statistics(metrics_df, "all_thermostats")
-    stats.extend(compute_summary_statistics_by_zipcode(combined_dataframe))
-    stats.extend(compute_summary_statistics_by_weather_station(combined_dataframe))
+    stats.extend(compute_summary_statistics_by_zipcode(metrics_df))
+    stats.extend(compute_summary_statistics_by_weather_station(metrics_df))
 
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
     stats_df = summary_statistics_to_csv(stats, stats_filepath)
