@@ -20,8 +20,10 @@ Import the necessary methods and set a directory for finding and storing data.
 
     data_dir = os.path.join(expanduser("~"), "Downloads")
 
-After importing the package methods, load the example thermostat data
-(see input file format below :ref:`thermostat-input`).
+After importing the package methods, load the example thermostat data.
+
+See :ref:`thermostat-input` for more detailed file format information.
+
 This line will take more than a few minutes, even if the weather cache
 is enabled (more information below). This is because loading thermostat data
 involves downloading hourly weather data from a remote source - in this case,
@@ -50,8 +52,9 @@ To calculate savings metrics, iterate through thermostats and save the results.
     metrics_df = seasonal_metrics_to_csv(seasonal_metrics, filepath)
 
 The output CSV will be saved in your data directory and should very nearly
-match the output CSV provided in the example data. See output file format
-below :ref:`thermostat-output`.
+match the output CSV provided in the example data.
+
+See :ref:`thermostat-output` for more detailed file format information.
 
 **Note**: During the data loading step, you may see a warning that the weather
 cache is disabled. You can safely ignore that warning, but if you wish to load
@@ -142,7 +145,8 @@ keep track of the filenames.
 More information
 ================
 
-For additional information on package usage, please see the API docs ( :ref:`thermostat-api` ).
+For additional information on package usage, please see the
+:ref:`thermostat-api` documentation.
 
 
 .. _thermostat-input:
