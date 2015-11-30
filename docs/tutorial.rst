@@ -21,7 +21,7 @@ Import the necessary methods and set a directory for finding and storing data.
     data_dir = os.path.join(expanduser("~"), "Downloads")
 
 After importing the package methods, load the example thermostat data
-(see input file format below).
+(see input file format below :ref:`thermostat-input`).
 This line will take more than a few minutes, even if the weather cache
 is enabled (more information below). This is because loading thermostat data
 involves downloading hourly weather data from a remote source - in this case,
@@ -50,7 +50,8 @@ To calculate savings metrics, iterate through thermostats and save the results.
     metrics_df = seasonal_metrics_to_csv(seasonal_metrics, filepath)
 
 The output CSV will be saved in your data directory and should very nearly
-match the output CSV provided in the example data.
+match the output CSV provided in the example data. See output file format
+below :ref:`thermostat-output`.
 
 **Note**: During the data loading step, you may see a warning that the weather
 cache is disabled. You can safely ignore that warning, but if you wish to load
@@ -80,6 +81,71 @@ For example:
 
 For more information, see the `eemeter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
 package.
+
+
+Computing summary statistics
+============================
+
+Once you have obtained output for each individual thermostat in your dataset,
+use the stats module to compute summary statistics, which are formatted for
+submission to the EPA. The example below works with the output file from the
+tutorial above and can be modified to use your data.
+
+(Some additional imports.)
+
+.. code-block:: python
+
+    from thermostat.stats import compute_summary_statistics
+    from thermostat.stats import compute_summary_statistics_by_zipcode
+    from thermostat.stats import compute_summary_statistics_by_weather_station
+
+    from thermostat.stats import summary_statistics_to_csv
+
+Compute statistics across all thermostats and save to file. CSV will have 2 rows
+and 584 columns (One row each for heating/cooling, one column for each
+summary statistic).
+
+.. code-block:: python
+
+    # uses the metrics_df created in the Quickstart above.
+    stats = compute_summary_statistics(metrics_df, "all_thermostats")
+    stats.extend(compute_summary_statistics_by_zipcode(metrics_df))
+    stats.extend(compute_summary_statistics_by_weather_station(metrics_df))
+
+    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
+    stats_df = summary_statistics_to_csv(stats, stats_filepath)
+
+Please see the API docs for additional information on computing summary
+statistics.
+
+Batch Scheduling
+================
+
+As some vendors have large numbers of thermostats, the following fuctions
+assist in batch scheduling. For example, to create 10 batches, do the following:
+
+(More imports.)
+
+.. code-block:: python
+
+    from thermostat.parallel import schedule_batches
+
+Create a directory in which to save zipped batches, then save them there and
+keep track of the filenames.
+
+.. code-block:: python
+
+    directory = os.path.join(data_dir, "thermostat_batches")
+    batch_zipfile_names = schedule_batches(metadata_filename, n_batches=10,
+            zip_files=True, batches_dir=directory)
+
+More information
+================
+
+For additional information on package usage, please see the API docs ( :ref:`thermostat-api` ).
+
+
+.. _thermostat-input:
 
 Input data
 ==========
@@ -163,6 +229,9 @@ Name                         Description
    computed. For more information on the mapping between ZIP codes and
    weather stations, please see the `eemeter.location <http://eemeter.readthedocs.org/en/latest/eemeter.html#module-eemeter.location>`_ package.
 
+
+.. _thermostat-output:
+
 Output data
 ===========
 
@@ -228,62 +297,3 @@ Name                                                    Description
 ======================================================= =========================================
 
 
-
-Computing summary statistics
-============================
-
-Once you have obtained output for each individual thermostat in your dataset,
-use the stats module to compute summary statistics, which are formatted for
-submission to the EPA. The example below works with the output file from the
-tutorial above and can be modified to use your data.
-
-(Some additional imports.)
-
-.. code-block:: python
-
-    from thermostat.stats import compute_summary_statistics
-    from thermostat.stats import compute_summary_statistics_by_zipcode
-    from thermostat.stats import compute_summary_statistics_by_weather_station
-
-    from thermostat.stats import summary_statistics_to_csv
-
-Compute statistics across all thermostats and save to file. CSV will have 2 rows
-and 584 columns (One row each for heating/cooling, one column for each
-summary statistic).
-
-.. code-block:: python
-
-    stats = compute_summary_statistics(metrics_df, "all_thermostats")
-    stats.extend(compute_summary_statistics_by_zipcode(metrics_df))
-    stats.extend(compute_summary_statistics_by_weather_station(metrics_df))
-
-    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    stats_df = summary_statistics_to_csv(stats, stats_filepath)
-
-Please see the API docs for additional information on computing summary
-statistics.
-
-Batch Scheduling
-================
-
-As some vendors have large numbers of thermostats, the following fuctions
-assist in batch scheduling. For example, to create 10 batches, do the following:
-
-(More imports.)
-
-.. code-block:: python
-
-    from thermostat.parallel import schedule_batches
-
-Create a directory in which to save zipped batches, then save them there and
-keep track of the filenames.
-
-.. code-block:: python
-
-    directory = os.path.join(data_dir, "thermostat_batches")
-    batch_zipfile_names = schedule_batches(metadata_filename, 10, True, directory)
-
-More information
-================
-
-For additional information on package usage, please see the API docs ( :ref:`thermostat-api` ).
