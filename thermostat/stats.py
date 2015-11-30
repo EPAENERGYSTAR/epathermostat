@@ -200,7 +200,7 @@ class ZipcodeGroupSpec(object):
     ----------
     filepath : str, None
         Path to CSV file containing the columns "zipcode" and "group".
-        Each row should map the zipcode column to a target group. E.g.
+        Each row should map the zipcode column to a target group. E.g.::
 
             zipcode,group
             01234,group_a
@@ -210,14 +210,14 @@ class ZipcodeGroupSpec(object):
             54321,group_b
             65432,group_c
 
-        This creates the following grouping:
+        This creates the following grouping::
 
-            group_a: 01234,12345,23456
-            group_b: 43210,54321
-            group_c: 65432
+        - **group_a**: 01234,12345,23456
+        - **group_b**: 43210,54321
+        - **group_c**: 65432
 
     dictionary : dict, None
-        Dictionary with zipcodes as keys and groups as values. E.g.
+        Dictionary with zipcodes as keys and groups as values. E.g.::
 
             dictionary = {
                 "01234": "group_a",
@@ -230,9 +230,9 @@ class ZipcodeGroupSpec(object):
 
         This creates the following grouping:
 
-            group_a: 01234,12345,23456
-            group_b: 43210,54321
-            group_c: 65432
+        - **group_a**: 01234,12345,23456
+        - **group_b**: 43210,54321
+        - **group_c**: 65432
 
     label : str
         Extra label identifying the grouping method, for use in cases in which
