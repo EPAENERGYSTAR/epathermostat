@@ -18,7 +18,7 @@ Import the necessary methods and set a directory for finding and storing data.
     from thermostat.importers import from_csv
     from thermostat.exporters import seasonal_metrics_to_csv
 
-    data_dir = os.path.join(expanduser("~"),"Downloads")
+    data_dir = os.path.join(expanduser("~"), "Downloads")
 
 After importing the package methods, load the example thermostat data
 (see input file format below).
@@ -34,7 +34,7 @@ The data for this step can be downloaded :download:`here <./examples/examples.zi
 
 .. code-block:: python
 
-    metadata_filename = os.path.join(data_dir,"examples/metadata.csv")
+    metadata_filename = os.path.join(data_dir, "examples/metadata.csv")
     thermostats = from_csv(metadata_filename, verbose=True)
 
 To calculate savings metrics, iterate through thermostats and save the results.
