@@ -56,6 +56,26 @@ def from_csv(metadata_filename, verbose=False):
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, interval_data_filename):
     df = pd.read_csv(interval_data_filename)
+    """ Load a single thermostat directly from an interval data file.
+
+    Parameters
+    ----------
+    thermostat_id : str
+        A unique identifier for the thermostat.
+    zipcode : str
+        The zipcode of the thermostat, e.g. `"01234"`.
+    equipment_type : str
+        The equipment type of the thermostat.
+    utc_offset : str
+        A string representing the UTC offset of the interval data, e.g. `"-0700"`
+    interval_data_filename : str
+        The path to the CSV in which the interval data is stored.
+
+    Returns
+    -------
+    thermostat : thermostat.Thermostat
+        The loaded thermostat object.
+    """
 
     heating, cooling, aux_emerg = _get_equipment_type(equipment_type)
 

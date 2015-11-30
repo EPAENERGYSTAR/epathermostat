@@ -200,7 +200,7 @@ class ZipcodeGroupSpec(object):
     ----------
     filepath : str, None
         Path to CSV file containing the columns "zipcode" and "group".
-        Each row should map the zipcode column to a target group. E.g.
+        Each row should map the zipcode column to a target group. E.g.::
 
             zipcode,group
             01234,group_a
@@ -212,12 +212,12 @@ class ZipcodeGroupSpec(object):
 
         This creates the following grouping:
 
-            group_a: 01234,12345,23456
-            group_b: 43210,54321
-            group_c: 65432
+        - **group_a**: 01234,12345,23456
+        - **group_b**: 43210,54321
+        - **group_c**: 65432
 
     dictionary : dict, None
-        Dictionary with zipcodes as keys and groups as values. E.g.
+        Dictionary with zipcodes as keys and groups as values. E.g.::
 
             dictionary = {
                 "01234": "group_a",
@@ -230,9 +230,9 @@ class ZipcodeGroupSpec(object):
 
         This creates the following grouping:
 
-            group_a: 01234,12345,23456
-            group_b: 43210,54321
-            group_c: 65432
+        - **group_a**: 01234,12345,23456
+        - **group_b**: 43210,54321
+        - **group_c**: 65432
 
     label : str
         Extra label identifying the grouping method, for use in cases in which
@@ -416,9 +416,9 @@ def compute_summary_statistics_by_zipcode_group(df,
 
     Parameters
     ----------
-    filepath : str
+    filepath : str, None
         Path to CSV file containing the columns "zipcode" and "group".
-        Each row should map the zipcode column to a target group. E.g.
+        Each row should map the zipcode column to a target group. E.g.::
 
             zipcode,group
             01234,group_a
@@ -430,12 +430,12 @@ def compute_summary_statistics_by_zipcode_group(df,
 
         This creates the following grouping:
 
-            group_a: 01234,12345,23456
-            group_b: 43210,54321
-            group_c: 65432
+        - **group_a**: 01234,12345,23456
+        - **group_b**: 43210,54321
+        - **group_c**: 65432
 
-    dictionary : dict
-        Dictionary with zipcodes as keys and groups as values. E.g.
+    dictionary : dict, None
+        Dictionary with zipcodes as keys and groups as values. E.g.::
 
             dictionary = {
                 "01234": "group_a",
@@ -448,9 +448,9 @@ def compute_summary_statistics_by_zipcode_group(df,
 
         This creates the following grouping:
 
-            group_a: 01234,12345,23456
-            group_b: 43210,54321
-            group_c: 65432
+        - **group_a**: 01234,12345,23456
+        - **group_b**: 43210,54321
+        - **group_c**: 65432
 
     group_spec : ZipcodeGroupSpec object
         Initialized group spec object containing a zipcode -> group mapping.
@@ -557,6 +557,13 @@ def summary_statistics_to_csv(stats, filepath):
     ----------
     stats : list of dict
         List of outputs from thermostat.stats.compute_summary_statistics()
+    filepath : str
+        Filepath at which to save the suppary statistics
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        A pandas dataframe containing the output data.
 
     """
     quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]

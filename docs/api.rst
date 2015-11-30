@@ -1,3 +1,5 @@
+.. _thermostat-api:
+
 API
 ===
 
@@ -33,7 +35,6 @@ thermostat.regression
 .. automodule:: thermostat.regression
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
 thermostat.stats
@@ -42,7 +43,6 @@ thermostat.stats
 .. automodule:: thermostat.stats
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
 thermostat.parallel
@@ -51,5 +51,4 @@ thermostat.parallel
 .. automodule:: thermostat.parallel
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
