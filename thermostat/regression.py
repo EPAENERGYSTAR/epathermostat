@@ -24,13 +24,18 @@ def runtime_regression(daily_runtime, daily_demand):
     if daily_demand.shape[0] == 0 and daily_runtime.shape[0] == 0:
         return np.nan, np.nan
 
-    x = daily_demand.values[:,np.newaxis]
+    x_1 = daily_demand.values[:,np.newaxis]
+    x_0 = np.tile(1,x_1.shape)
+
+    x = np.concatenate((x_1,x_0),axis=1)
+
     y = daily_runtime
     results = lstsq(x, y) # model: y = a*x
-    slope = results[0][0]
+    slope, intercept = results[0]
+
     if daily_demand.shape[0] > 1 and daily_runtime.shape[0] > 1:
         mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
     else:
         mean_sq_err = np.nan
-    return slope, mean_sq_err
+    return slope, intercept, mean_sq_err
 

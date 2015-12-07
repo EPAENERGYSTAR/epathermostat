@@ -835,10 +835,16 @@ class Thermostat(object):
                 demand_deltaT = self.get_cooling_demand(cooling_season,
                         method="deltaT")
                 daily_runtime = self.cool_runtime[cooling_season.daily]
-                slope_deltaT, mean_sq_err_deltaT = runtime_regression(
-                        daily_runtime, demand_deltaT)
-                outputs["slope_deltaT"] = slope_deltaT
-                outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
+                try:
+                    slope_deltaT, intercept_deltaT, mean_sq_err_deltaT = runtime_regression(
+                            daily_runtime, demand_deltaT)
+                    outputs["slope_deltaT"] = slope_deltaT
+                    outputs["intercept_deltaT"] = intercept_deltaT
+                    outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
+                except ValueError: # too many values to unpack
+                    outputs["slope_deltaT"] = np.nan
+                    outputs["intercept_deltaT"] = np.nan
+                    outputs["mean_squared_error_deltaT"] = np.nan
 
                 # dailyavgCDD
                 demand_dailyavgCDD, deltaT_base_est_dailyavgCDD, \
@@ -956,10 +962,17 @@ class Thermostat(object):
                 # deltaT
                 demand_deltaT = self.get_heating_demand(heating_season, method="deltaT")
                 daily_runtime = self.heat_runtime[heating_season.daily]
-                slope_deltaT, mean_sq_err_deltaT = runtime_regression(
-                        daily_runtime, demand_deltaT)
-                outputs["slope_deltaT"] = slope_deltaT
-                outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
+
+                try:
+                    slope_deltaT, intercept_deltaT, mean_sq_err_deltaT = runtime_regression(
+                            daily_runtime, demand_deltaT)
+                    outputs["slope_deltaT"] = slope_deltaT
+                    outputs["intercept_deltaT"] = intercept_deltaT
+                    outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
+                except ValueError: # too many values to unpack
+                    outputs["slope_deltaT"] = np.nan
+                    outputs["intercept_deltaT"] = np.nan
+                    outputs["mean_squared_error_deltaT"] = np.nan
 
                 # dailyavgHDD
                 demand_dailyavgHDD, deltaT_base_est_dailyavgHDD, \

@@ -38,6 +38,9 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
     assert_allclose(cooling_season_outputs['slope_deltaT'],
             seasonal_metrics_type_1_data['cooling']['slope_deltaT'], rtol=RTOL, atol=ATOL)
 
+    assert_allclose(cooling_season_outputs['intercept_deltaT'],
+            seasonal_metrics_type_1_data['cooling']['intercept_deltaT'], rtol=RTOL, atol=ATOL)
+
     assert_allclose(cooling_season_outputs['alpha_est_dailyavgCDD'],
             seasonal_metrics_type_1_data['cooling']['alpha_est_dailyavgCDD'], rtol=RTOL, atol=ATOL)
     assert_allclose(cooling_season_outputs['alpha_est_hourlyavgCDD'],
@@ -144,6 +147,9 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
 
     assert_allclose(heating_season_outputs['slope_deltaT'],
             seasonal_metrics_type_1_data['heating']['slope_deltaT'], rtol=RTOL, atol=ATOL)
+
+    assert_allclose(heating_season_outputs['intercept_deltaT'],
+            seasonal_metrics_type_1_data['heating']['intercept_deltaT'], rtol=RTOL, atol=ATOL)
 
     assert_allclose(heating_season_outputs['alpha_est_dailyavgHDD'],
             seasonal_metrics_type_1_data['heating']['alpha_est_dailyavgHDD'], rtol=RTOL, atol=ATOL)

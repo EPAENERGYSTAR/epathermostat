@@ -135,12 +135,15 @@ def seasonal_metrics_type_1_data():
 
             'n_days_both_heating_and_cooling': 50,
             'n_days_insufficient_data': 3,
-            'slope_deltaT': -2493.5476191398516,
+
+            'slope_deltaT': -2439.25,
+            'intercept_deltaT': 455.782,
+
             'alpha_est_dailyavgCDD': 2439.2550734667493,
             'alpha_est_hourlyavgCDD': 2586.0199377023241,
             'deltaT_base_est_dailyavgCDD': 0.18685313192145378,
             'deltaT_base_est_hourlyavgCDD': -0.22766268959342667,
-            'mean_squared_error_deltaT': 499623.51031526772,
+            'mean_squared_error_deltaT': 455238.968,
             'mean_sq_err_dailyavgCDD': 455238.96824238711,
             'mean_sq_err_hourlyavgCDD': 967272.69587867765,
             'baseline_comfort_temperature': 73.0,
@@ -148,17 +151,17 @@ def seasonal_metrics_type_1_data():
             'actual_seasonal_runtime': 1225295.0,
             'actual_daily_runtime': 16558.04054054054,
 
-            'baseline_daily_runtime_deltaT': 19932.519425267979,
+            'baseline_daily_runtime_deltaT': 19859.046,
             'baseline_daily_runtime_dailyavgCDD': 13230.890480387623,
             'baseline_daily_runtime_hourlyavgCDD': 11392.382352886532,
-            'baseline_seasonal_runtime_deltaT': 1475006.4374698305,
+            'baseline_seasonal_runtime_deltaT': 1469569.417,
             'baseline_seasonal_runtime_dailyavgCDD': 979085.89554868406,
             'baseline_seasonal_runtime_hourlyavgCDD': 843036.29411360342,
 
-            'seasonal_avoided_runtime_deltaT': -249711.43746983042,
+            'seasonal_avoided_runtime_deltaT': -244274.417,
             'seasonal_avoided_runtime_dailyavgCDD': 246209.10445131591,
             'seasonal_avoided_runtime_hourlyavgCDD': 382258.70588639658,
-            'seasonal_savings_deltaT': -0.16929515094061273,
+            'seasonal_savings_deltaT': -0.166,
             'seasonal_savings_dailyavgCDD': 0.25146833957130926,
             'seasonal_savings_hourlyavgCDD': 0.45343090037222678,
         },
@@ -167,29 +170,30 @@ def seasonal_metrics_type_1_data():
 
             'baseline_comfort_temperature': 69.0,
 
-            'baseline_daily_runtime_deltaT': 46473.103710365394,
+            'baseline_daily_runtime_deltaT': 46890.794,
             'baseline_daily_runtime_dailyavgHDD': 46890.794977101017,
             'baseline_daily_runtime_hourlyavgHDD': 44397.331174985018,
 
-            'baseline_seasonal_runtime_deltaT': 5902084.171216405,
+            'baseline_seasonal_runtime_deltaT': 5955130.963,
             'baseline_seasonal_runtime_dailyavgHDD': 5955130.9620918296,
             'baseline_seasonal_runtime_hourlyavgHDD': 5638461.0592230977,
 
             'actual_daily_runtime': 51509.393700787405,
             'actual_seasonal_runtime': 6541693.0,
 
-            'seasonal_savings_deltaT': 0.10836999443397861,
+            'seasonal_savings_deltaT': 0.098,
             'seasonal_savings_dailyavgHDD': 0.098496916632397943,
             'seasonal_savings_hourlyavgHDD': 0.16019121730023175,
 
-            'seasonal_avoided_runtime_deltaT': 639608.82878359512,
+            'seasonal_avoided_runtime_deltaT': 586562.03,
             'seasonal_avoided_runtime_dailyavgHDD': 586562.03790817072,
             'seasonal_avoided_runtime_hourlyavgHDD': 903231.94077690213,
 
-            'mean_squared_error_deltaT': 33507611.500736412,
+            'mean_squared_error_deltaT': 26320361.186,
             'mean_sq_err_dailyavgHDD': 26320361.186872497,
             'mean_sq_err_hourlyavgHDD': 37740348.35749115,
-            'slope_deltaT': 2028.2691408180342,
+            'slope_deltaT': 1860.051,
+            'intercept_deltaT': 5475.708,
             'alpha_est_dailyavgHDD': 1860.0519991680801,
             'alpha_est_hourlyavgHDD': 1926.1484535747609,
             'deltaT_base_est_dailyavgHDD': -2.9438471466751173,
