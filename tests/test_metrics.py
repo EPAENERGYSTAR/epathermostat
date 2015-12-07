@@ -225,7 +225,6 @@ def test_seasonal_metrics_to_csv(seasonal_metrics_type_1):
         assert column_heads[2] == "season_name"
         assert column_heads[3] == "station"
         assert column_heads[4] == "zipcode"
-        assert column_heads[57].strip() == "rhu_55F_to_60F"
+        assert column_heads[58].strip() == "rhu_55F_to_60F"
         for line in lines:
-            assert len(line.split(',')) == 58
-
+            assert len(line.split(',')) == 59
