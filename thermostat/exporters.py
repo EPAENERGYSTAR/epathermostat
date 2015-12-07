@@ -29,6 +29,7 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         "n_days_both_heating_and_cooling",
         "n_days_insufficient_data",
         "slope_deltaT",
+        "intercept_deltaT",
         "alpha_est_dailyavgCDD",
         "alpha_est_dailyavgHDD",
         "alpha_est_hourlyavgCDD",

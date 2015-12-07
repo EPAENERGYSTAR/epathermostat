@@ -6,7 +6,7 @@ First, check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.10'
+    '0.2.11'
 
 Import the necessary methods and set a directory for finding and storing data.
 
@@ -250,6 +250,7 @@ Name                                                    Description
 :code:`n_days_both_heating_and_cooling`                 Number of days not included in this season's calculations due to presence of both heating and cooling.
 :code:`n_days_insufficient_data`                        Number of days not included in this season's calculations due to missing data.
 :code:`slope_deltaT`                                    Slope found during a linear regression of a deltaT demand measure against runtime.
+:code:`intercept_deltaT`                                Intercept found during a linear regression of a deltaT demand measure against runtime.
 :code:`alpha_est_dailyavgCDD`                           Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
 :code:`alpha_est_dailyavgHDD`                           Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
 :code:`alpha_est_hourlyavgCDD`                          Estimate of alpha from the ratio estimation step of the hourlyavgCDD demand measure.
