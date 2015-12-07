@@ -26,6 +26,7 @@ def get_fake_output_df(n_columns):
         "n_days_in_season",
         "n_days_in_season_range",
         "slope_deltaT",
+        "intercept_deltaT",
         "alpha_est_dailyavgCDD",
         "alpha_est_dailyavgHDD",
         "alpha_est_hourlyavgCDD",
@@ -96,6 +97,7 @@ def get_fake_output_df(n_columns):
         "n_days_in_season": int_column,
         "n_days_in_season_range": int_column,
         "slope_deltaT": float_column,
+        "intercept_deltaT": float_column,
         "alpha_est_dailyavgCDD": float_column,
         "alpha_est_dailyavgHDD": float_column,
         "alpha_est_hourlyavgCDD": float_column,
@@ -217,13 +219,13 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 58)
+    assert combined.shape == (20, 59)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 39 + 3
-    assert len(summary_statistics[1]) == 12 * 27 + 3
+    assert len(summary_statistics[0]) == 12 * 40 + 3
+    assert len(summary_statistics[1]) == 12 * 28 + 3
     assert summary_statistics[0]["label"] == "label_heating"
 
 def test_summary_statistics_to_csv(combined_dataframe):
@@ -235,7 +237,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 53 + 3 # plus two for label + count
+        assert len(columns) == 12 * 54 + 3
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)
