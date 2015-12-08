@@ -34,7 +34,10 @@ def runtime_regression(daily_runtime, daily_demand):
     slope, intercept = results[0]
 
     if daily_demand.shape[0] > 1 and daily_runtime.shape[0] > 1:
-        mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
+        try:
+            mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
+        except IndexError: # index 0 is out of bounds - results[1] == array([])
+            mean_sq_err = np.nan
     else:
         mean_sq_err = np.nan
     return slope, intercept, mean_sq_err
