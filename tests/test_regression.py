@@ -25,6 +25,10 @@ from fixtures.thermostats import cooling_season_type_1_data
     (pd.Series([1,2,3,4,5,6]), pd.Series([2,4,6,8,10,12]), .5, 0, 0),
     (pd.Series([2,4,10,8,6]), pd.Series([1,2,5,4,3]), 2, 0, 0),
     (pd.Series([4,5,6,7]), pd.Series([1,2,3,4]), 1, 3, 0),
+    (pd.Series([4,5,6,np.nan]), pd.Series([1,2,3,4]), np.nan, np.nan, np.nan),
+    (pd.Series([4,2,1]), pd.Series([1,2,1]), -0.50, 3.0, 1.50),
+    (pd.Series([4,2,np.nan]), pd.Series([1,2,1]), np.nan, np.nan, np.nan),
+    (pd.Series([4,2]), pd.Series([1,2]), -2.0, 6.0, np.nan),
     (pd.Series([4]), pd.Series([1]), 2, 2, np.nan),
     ])
 def regression_fixture(request):
