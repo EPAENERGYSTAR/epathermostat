@@ -118,8 +118,18 @@ summary statistic).
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
     stats_df = summary_statistics_to_csv(stats, stats_filepath)
 
-Please see the API docs for additional information on computing summary
-statistics.
+If you need to run compute summary statistics for a custom grouping of
+zipcodes, use the following and provide as a parameter the path to the
+file describing the zipcode groupings. The name of the file can be anything,
+but the format should be CSV as described in the API docs.
+
+.. code-block:: python
+
+    stats.extend(compute_summary_statistics_by_zipcode_group(metrics_df,
+             filename="/path/to/grouping.csv"))
+
+Please see the :ref:`thermostat-api` docs for additional information
+on computing summary statistics.
 
 Batch Scheduling
 ================
@@ -194,7 +204,7 @@ Name                         Description
 :code:`thermostat_id`        Uniquely identifying marker for the thermostat.
 :code:`date`                 Date of this set of readings. (YYYY-MM-DD).
 :code:`cool_runtime`         Daily runtime of cooling equipment (seconds).
-:code:`heat_runtime`         Daily runtime of heating equipment (seconds).
+:code:`heat_runtime`         Daily runtime of heating equipment (seconds). [#]_
 :code:`auxiliary_heat_HH`    Hourly runtime of auxiliary heat equipment (seconds; HH=00-23).
 :code:`emergency_heat_HH`    Hourly runtime of emergency heat equipment (seconds; HH=00-23).
 :code:`temp_in_HH`           Hourly average conditioned space temperature over the period of the reading (seconds; HH=00-23).
@@ -204,6 +214,11 @@ Name                         Description
 
 - Each row should correspond to a single hourly reading from a thermostat.
 - Nulls should be specified by leaving the field blank.
+- Zero values should be specified as 0, rather than as blank.
+- If data is missing for a particular row of one column, data should still be
+  provided for other columns in that row. For example, if runtime is missing
+  for a particular date, please still provide indoor conditioned space
+  temperature and setpoints for that date, if available.
 - Runtimes should be specified in seconds and should be less than or equal to
   86400 s (1 day).
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19`).
@@ -232,6 +247,10 @@ Name                         Description
    the bounds of the heating and cooling season over which metrics will be
    computed. For more information on the mapping between ZIP codes and
    weather stations, please see the `eemeter.location <http://eemeter.readthedocs.org/en/latest/eemeter.html#module-eemeter.location>`_ package.
+
+.. [#] Should not include runtime for auxiliary or emergency heat - this should
+   be provided separately in the columns `emergency_heat_HH` and
+   `auxiliary_heat_HH`.
 
 
 .. _thermostat-output:

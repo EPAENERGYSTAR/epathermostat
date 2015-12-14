@@ -78,16 +78,16 @@ class Thermostat(object):
         both resistance heating and the compressor are running (for heat pump
         systems). No datapoint should exceed 86400 s, which would indicate
         over a day of runtime (impossible).
-        Should be indexed by a pandas.DatetimeIndex with daily frequency (i.e.
-        :code:`freq='D'`).
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
     energency_heat_runtime : pandas.Series,
         Hourly runtimes for emergency heating equipment controlled by the
         thermostat, measured in seconds. Emergency heat runtime is counted when
         resistance heating is running when the compressor is not (for heat pump
         systems). No datapoint should exceed 86400 s, which would indicate
         over a day of runtime (impossible).
-        Should be indexed by a pandas.DatetimeIndex with daily frequency (i.e.
-        :code:`freq='D'`).
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
     """
 
     def __init__(self, thermostat_id, equipment_type, zipcode, station, temperature_in,
