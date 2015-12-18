@@ -8,15 +8,17 @@ First, check to make sure you are on the most recent version of the package.
     >>> import thermostat; thermostat.get_version()
     '0.2.12'
 
-
 .. note::
 
-    For new users of python, we recommend installing and using the free
-    `Anaconda <https://www.continuum.io/downloads>`_ Python distribution, by
+    If you experience issues installing python packages with C extensions, such
+    as `numpy` or `scipy`, we recommend installing and using the free
+    `Anaconda <https://www.continuum.io/downloads>`_ Python distribution by
     Continuum Analytics. It contains many of the numeric and scientific
-    packages used by this package.
+    packages used by this package and has installers for Python 2.7 and 3.5 for
+    Windows, Mac OS X and Linux.
 
-Import the necessary methods and set a directory for finding and storing data.
+Once you have verified a correct installation, import the necessary methods
+and set a directory for finding and storing data.
 
 .. code-block:: python
 
