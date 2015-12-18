@@ -287,7 +287,7 @@ Output data
 Individual thermostat-season
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following columns are an intermediate output for each thermostat season.
+The following columns are a intermediate output generated for each thermostat-season.
 
 Columns
 ```````
@@ -302,8 +302,8 @@ Name                                                    Description
 :code:`zipcode`                                         ZIP code provided in the metadata file.
 :code:`n_days_both_heating_and_cooling`                 Number of days not included in this season's calculations due to presence of both heating and cooling.
 :code:`n_days_insufficient_data`                        Number of days not included in this season's calculations due to missing data.
-:code:`n_days_in_season`                                Number of days included in the season.
-:code:`n_days_in_season_range`                          Number of potential days in the season range (e.g. Jan 1 to Dec 31) = 365
+:code:`n_days_in_season`                                Number of days meeting criteria for season inclusion.
+:code:`n_days_in_season_range`                          Number of potential days in the season range (e.g. Jan 1 to Dec 31 = 365)
 :code:`slope_deltaT`                                    Slope found during a linear regression of a deltaT demand measure against runtime.
 :code:`intercept_deltaT`                                Intercept found during a linear regression of a deltaT demand measure against runtime.
 :code:`alpha_est_dailyavgCDD`                           Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
