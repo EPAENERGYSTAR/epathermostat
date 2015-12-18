@@ -133,12 +133,17 @@ zipcodes, use the following and provide as a parameter the path to the
 file describing the zipcode groupings. The name of the file can be anything,
 but the format should be CSV as described in the API docs.
 
+The Building America Climate Zone to ZIP code grouping can be downloaded
+:download:`here <./resources/Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv>`
+for use in this example, which groups thermostats by ZIP code, and computes
+summary statistics for each ZIP code.
+
 .. code-block:: python
 
     from thermostat.stats import compute_summary_statistics_by_zipcode_group
 
     stats.extend(compute_summary_statistics_by_zipcode_group(metrics_df,
-             filepath="/path/to/grouping.csv"))
+             filepath=os.path.join(data_dir, "Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv")))
 
 Please see the :ref:`thermostat-api` docs for additional information
 on computing summary statistics.
