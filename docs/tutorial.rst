@@ -125,8 +125,10 @@ but the format should be CSV as described in the API docs.
 
 .. code-block:: python
 
+    from thermostat.stats import compute_summary_statistics_by_zipcode_group
+
     stats.extend(compute_summary_statistics_by_zipcode_group(metrics_df,
-             filename="/path/to/grouping.csv"))
+             filepath="/path/to/grouping.csv"))
 
 Please see the :ref:`thermostat-api` docs for additional information
 on computing summary statistics.
