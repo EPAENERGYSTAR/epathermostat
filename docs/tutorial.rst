@@ -8,6 +8,14 @@ First, check to make sure you are on the most recent version of the package.
     >>> import thermostat; thermostat.get_version()
     '0.2.12'
 
+
+.. admonition:: Note on installing python and thermostat package dependencies:
+
+    For new users of python, we recommend installing and using the free
+    `Anaconda <https://www.continuum.io/downloads>`_ Python distribution, by
+    Continuum Analytics. It contains many of the numeric and scientific
+    packages used by this package.
+
 Import the necessary methods and set a directory for finding and storing data.
 
 .. code-block:: python
