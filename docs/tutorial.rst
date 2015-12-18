@@ -1,6 +1,9 @@
 Quickstart
 ==========
 
+Installation
+------------
+
 First, check to make sure you are on the most recent version of the package.
 
 .. code-block:: python
@@ -19,6 +22,9 @@ First, check to make sure you are on the most recent version of the package.
 
 Once you have verified a correct installation, import the necessary methods
 and set a directory for finding and storing data.
+
+Computing individual thermostat-season metrics
+----------------------------------------------
 
 .. code-block:: python
 
@@ -66,38 +72,40 @@ match the output CSV provided in the example data.
 
 See :ref:`thermostat-output` for more detailed file format information.
 
-**Note**: During the data loading step, you may see a warning that the weather
-cache is disabled. You can safely ignore that warning, but if you wish to load
-a large amount of data, it will load much more quickly upon repeated execution
-if you use the weather cache.
+.. note::
 
-To enable the weather cache, set the following environment variable to the
-database of your choice (the example uses sqlite) by supplying a database url.
+    During the data loading step, you may see a warning that the weather
+    cache is disabled. You can safely ignore that warning, but if you wish to load
+    a large amount of data, it will load much more quickly upon repeated execution
+    if you use the weather cache.
 
-The weather cache stores weather locally so that it need only be downloaded
-once.
+    To enable the weather cache, set the following environment variable to the
+    database of your choice (the example uses sqlite) by supplying a database url.
 
-To create a new sqlite database, specify a fully-qualified path to valid
-location for new database file, and the database will be created for you in the
-location you specify.
+    The weather cache stores weather locally so that it need only be downloaded
+    once.
 
-.. code-block:: bash
+    To create a new sqlite database, specify a fully-qualified path to valid
+    location for new database file, and the database will be created for you in the
+    location you specify.
 
-    $ export EEMETER_WEATHER_CACHE_DATABASE_URL=sqlite:////path/to/db.sqlite
+    .. code-block:: bash
 
-You can also do this in python, but it must be done *before loading the package*.
-For example:
+        $ export EEMETER_WEATHER_CACHE_DATABASE_URL=sqlite:////path/to/db.sqlite
 
-.. code-block:: python
+    You can also do this in python, but it must be done *before loading the package*.
+    For example:
 
-    os.environ["EEMETER_WEATHER_CACHE_DATABASE_URL"] = "sqlite:///{}".format(os.path.join(data_dir,"weather_cache.db"))
+    .. code-block:: python
 
-For more information, see the `eemeter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
-package.
+        os.environ["EEMETER_WEATHER_CACHE_DATABASE_URL"] = "sqlite:///{}".format(os.path.join(data_dir,"weather_cache.db"))
+
+    For more information, see the `eemeter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
+    package.
 
 
 Computing summary statistics
-============================
+----------------------------
 
 Once you have obtained output for each individual thermostat in your dataset,
 use the stats module to compute summary statistics, which are formatted for
@@ -133,10 +141,11 @@ zipcodes, use the following and provide as a parameter the path to the
 file describing the zipcode groupings. The name of the file can be anything,
 but the format should be CSV as described in the API docs.
 
-The Building America Climate Zone to ZIP code grouping can be downloaded
-:download:`here <./resources/Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv>`
-for use in this example, which groups thermostats by ZIP code, and computes
-summary statistics for each ZIP code.
+The Building America Climate Zone to ZIP code grouping used in this example
+can be downloaded
+:download:`here <./resources/Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv>`.
+The file maps ZIP codes to Climate Zones. This example computes summary
+statistics for each climate zone using the provided mapping.
 
 .. code-block:: python
 
@@ -149,7 +158,7 @@ Please see the :ref:`thermostat-api` docs for additional information
 on computing summary statistics.
 
 Batch Scheduling
-================
+----------------
 
 As some vendors have large numbers of thermostats, the following fuctions
 assist in batch scheduling. For example, to create 10 batches, do the following:
@@ -170,7 +179,7 @@ keep track of the filenames.
             zip_files=True, batches_dir=directory)
 
 More information
-================
+----------------
 
 For additional information on package usage, please see the
 :ref:`thermostat-api` documentation.
@@ -179,7 +188,7 @@ For additional information on package usage, please see the
 .. _thermostat-input:
 
 Input data
-==========
+----------
 
 Input data should be specified using the following formats. One CSV should
 specify thermostat summary metadata (e.g. unique identifiers, location, etc.).
@@ -189,10 +198,10 @@ metadata csv by the :code:`thermostat_id` column.
 Example files :download:`here <./examples/examples.zip>`.
 
 Thermostat Summary Metadata CSV format
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Columns
-~~~~~~~
+```````
 
 ============================== ===========
 Name                           Description
@@ -210,10 +219,10 @@ Name                           Description
    the *same, single* UTC offset provided in the metadata file.
 
 Thermostat Interval Data CSV format
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Columns
-~~~~~~~
+```````
 
 ============================ ===========
 Name                         Description
@@ -273,7 +282,10 @@ Name                         Description
 .. _thermostat-output:
 
 Output data
-===========
+-----------
+
+Individual thermostat-season
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ======================================================= =========================================
 Name                                                    Description
@@ -337,4 +349,34 @@ Name                                                    Description
 :code:`rhu_55F_to_60F`                                  Resistance heat utilization for hourly temperature bin :math:`55 \leq T < 60`
 ======================================================= =========================================
 
+Summary Statistics
+~~~~~~~~~~~~~~~~~~
 
+For each real- or integer-valued column ("###") from the individual thermostat-season
+output, the following summary statistics are generated.
+
+========================== =========================================
+Name                       Description
+-------------------------- -----------------------------------------
+:code:`###_mean`           Mean
+:code:`###_sem`            Standard Error of the Mean
+:code:`###_10q`            1st decile (10th percentile, q=quantile)
+:code:`###_20q`            2nd decile
+:code:`###_30q`            3rd decile
+:code:`###_40q`            4th decile
+:code:`###_50q`            5th decile
+:code:`###_60q`            6th decile
+:code:`###_70q`            7th decile
+:code:`###_80q`            8th decile
+:code:`###_90q`            9th decile
+========================== =========================================
+
+
+The following general values are also output:
+
+========================== =========================================
+Name                       Description
+-------------------------- -----------------------------------------
+:code:`label`              Label for the summary
+:code:`n_total_seasons`    Number of thermostat-seasons included in summary
+========================== =========================================
