@@ -9,7 +9,7 @@ First, check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.12'
+    '0.2.13'
 
 .. note::
 
