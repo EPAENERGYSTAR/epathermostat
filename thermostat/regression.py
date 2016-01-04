@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.linalg import lstsq
+import pandas as pd
+from scipy.optimize import leastsq
 
 def runtime_regression(daily_runtime, daily_demand):
     """
@@ -21,21 +22,27 @@ def runtime_regression(daily_runtime, daily_demand):
     mean_sq_err : float
         The mean squared error of the regession.
     """
-    if daily_demand.shape[0] == 0 and daily_runtime.shape[0] == 0:
-        return np.nan, np.nan
 
-    x_1 = daily_demand.values[:, np.newaxis]
-    x_0 = np.tile(1, x_1.shape)
+    # drop NA
+    df = pd.DataFrame({"x": daily_demand, "y": daily_runtime}).dropna()
+    x, y = df.x, df.y
 
-    x = np.concatenate((x_1, x_0),axis=1)
+    def model(params):
+        a, b = params
+        return y - (a*x + b)
 
-    y = daily_runtime
-    results = lstsq(x, y) # model: y = a*x + b
-    slope, intercept = results[0]
+    x0 = (1, 0)
 
-    if daily_demand.shape[0] > 2 and daily_runtime.shape[0] > 2:
-        mean_sq_err = results[1][0] / y.shape[0] # convert from sum sq err
-    else:
-        mean_sq_err = np.nan
+    try:
+        results = leastsq(model, x0)
+    except TypeError:
+        # too few data points causes the following TypeError
+        # TypeError: Improper input: N=2 must not exceed M=1
+        return np.nan, np.nan, np.nan
+
+    params = results[0]
+    slope, intercept = params
+    mean_sq_err = np.nanmean(model(params)**2)
+
     return slope, intercept, mean_sq_err
 

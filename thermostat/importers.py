@@ -44,13 +44,25 @@ def from_csv(metadata_filename, verbose=False):
 
         interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
-        thermostat = get_single_thermostat(
-                row.thermostat_id,
-                row.zipcode,
-                row.equipment_type,
-                row.utc_offset,
-                interval_data_filename
-        )
+        try:
+            thermostat = get_single_thermostat(
+                    row.thermostat_id,
+                    row.zipcode,
+                    row.equipment_type,
+                    row.utc_offset,
+                    interval_data_filename
+            )
+        except ValueError:
+            # Could not locate a station for the thermostat. Warn and skip.
+            warnings.warn("Skipping import of thermostat (id={}) for which " \
+                    "a sufficient source of outdoor weather data could not " \
+                    "be located using the given ZIP code ({}). This likely " \
+                    "due to the discrepancy between US Postal Service ZIP " \
+                    "codes (which do not always map well to locations) and " \
+                    "Census Bureau ZCTAs (which usually do). Please supply " \
+                    "a zipcode which corresponds to a US Census Bureau ZCTA." \
+                    .format(row.thermostat_id, row.zipcode))
+            continue
 
         yield thermostat
 
@@ -112,6 +124,12 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, in
 
     # load outdoor temperatures
     station = zipcode_to_station(zipcode)
+
+    if station is None:
+        message = "Could not locate a valid source of outdoor temperature " \
+                "data for ZIP code {}".format(zipcode)
+        raise ValueError(message)
+
     ws_hourly = ISDWeatherSource(station, daily_index[0].year, daily_index[-1].year)
     utc_offset = dateutil.parser.parse("2000-01-01T00:00:00" + utc_offset).tzinfo.utcoffset(None)
     temp_out = pd.Series(_get_outdoor_temperatures(daily_index, ws_hourly, utc_offset), hourly_index)
