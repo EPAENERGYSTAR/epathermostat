@@ -9,7 +9,7 @@ First, check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.13'
+    '0.2.14'
 
 .. note::
 
@@ -102,6 +102,17 @@ See :ref:`thermostat-output` for more detailed file format information.
 
     For more information, see the `eemeter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
     package.
+
+.. note::
+
+    US Census Bureau ZIP Code Tabulation Areas (ZCTA) are used to USPS ZIP
+    codes to outdoor temperature data. If the automatic mapping is unsuccessful
+    for one or more of the ZIP codes in your dataset, the reason is likely to
+    be the discrepancy between "true" USPS ZIP codes and the US Census Bureau
+    ZCTAs. "True" ZIP codes are not used because they do not always map well to
+    location (e.g. P.O. boxes). You may need to first map ZIP codes to ZCTAs,
+    or these thermostats will be skipped. (There are ~32,000 ZCTAs and ~42000
+    ZIP codes).
 
 
 Computing summary statistics
