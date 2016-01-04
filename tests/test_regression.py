@@ -25,33 +25,20 @@ from fixtures.thermostats import cooling_season_type_1_data
     (pd.Series([1,2,3,4,5,6]), pd.Series([2,4,6,8,10,12]), .5, 0, 0),
     (pd.Series([2,4,10,8,6]), pd.Series([1,2,5,4,3]), 2, 0, 0),
     (pd.Series([4,5,6,7]), pd.Series([1,2,3,4]), 1, 3, 0),
-    (pd.Series([4,5,6,np.nan]), pd.Series([1,2,3,4]), np.nan, np.nan, np.nan),
+    (pd.Series([4,5,6,np.nan]), pd.Series([1,2,3,4]), 1, 3, 0),
     (pd.Series([4,2,1]), pd.Series([1,2,1]), -0.50, 3.0, 1.50),
-    (pd.Series([4,2,np.nan]), pd.Series([1,2,1]), np.nan, np.nan, np.nan),
-    (pd.Series([4,2]), pd.Series([1,2]), -2.0, 6.0, np.nan),
-    (pd.Series([4]), pd.Series([1]), 2, 2, np.nan),
+    (pd.Series([4,2,np.nan]), pd.Series([1,2,1]), -2.0, 6.0, 0),
+    (pd.Series([4,2]), pd.Series([1,2]), -2.0, 6.0, 0.0),
+    (pd.Series([4]), pd.Series([1]), np.nan, np.nan, np.nan),
+    (pd.Series([]), pd.Series([]), np.nan, np.nan, np.nan),
     ])
 def regression_fixture(request):
     return request.param
 
-
-@pytest.fixture(params=[
-    (pd.Series([]), pd.Series([]), np.nan, np.nan),
-    ])
-def empty_regression_fixture(request):
-    return request.param
-
-def test_runtime_regression_general(regression_fixture):
+def test_runtime_regression(regression_fixture):
     daily_runtime, daily_demand, slope, intercept, mean_sq_err = regression_fixture
     slope_, intercept_, mean_sq_err_ = runtime_regression(daily_runtime, daily_demand)
 
     assert_allclose(slope_, slope, rtol=RTOL, atol=ATOL)
     assert_allclose(intercept_, intercept, rtol=RTOL, atol=ATOL)
-    assert_allclose(mean_sq_err_, mean_sq_err, rtol=RTOL, atol=ATOL)
-
-def test_runtime_regression_empty(empty_regression_fixture):
-    daily_runtime, daily_demand, slope, mean_sq_err = empty_regression_fixture
-    slope_, mean_sq_err_ = runtime_regression(daily_runtime, daily_demand)
-
-    assert_allclose(slope_, slope, rtol=RTOL, atol=ATOL)
     assert_allclose(mean_sq_err_, mean_sq_err, rtol=RTOL, atol=ATOL)
