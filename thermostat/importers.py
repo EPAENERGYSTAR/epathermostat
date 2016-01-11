@@ -79,7 +79,10 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, in
     equipment_type : str
         The equipment type of the thermostat.
     utc_offset : str
-        A string representing the UTC offset of the interval data, e.g. `"-0700"`
+        A string representing the UTC offset of the interval data, e.g. `"-0700"`.
+        Could also be `"Z"` (UTC), or just `"+7"` (equivalent to `"+0700"`),
+        or any other timezone format recognized by the library
+        method dateutil.parser.parse.
     interval_data_filename : str
         The path to the CSV in which the interval data is stored.
 

@@ -249,7 +249,7 @@ Name                         Description
 :code:`cooling_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (seconds; HH=00-23).
 ============================ ===========
 
-- Each row should correspond to a single hourly reading from a thermostat.
+- Each row should correspond to a single daily reading from a thermostat.
 - Nulls should be specified by leaving the field blank.
 - Zero values should be specified as 0, rather than as blank.
 - If data is missing for a particular row of one column, data should still be
