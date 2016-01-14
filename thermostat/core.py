@@ -426,13 +426,16 @@ class Thermostat(object):
         method : {"deltaT", "dailyavgCDD", "hourlyavgCDD"}, default: "deltaT"
             The method to use during calculation of demand.
 
-            - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
-            - "dailyavgCDD": :math:`\\text{daily CDD} = \Delta T_{\\text{daily avg}}
-              - \Delta T_{\\text{base cool}}` where
-              :math:`\Delta T_{\\text{daily avg}} =
+            - "deltaT": :math:`-\Delta T` where :math:`\Delta T = T_{in} - T_{out}`
+            - "dailyavgCDD": :math:`\\text{daily CDD} = \\text{max} \left(
+              \Delta T_{\\text{base cool}} - \Delta T_{\\text{daily avg}}
+              , 0\\right)`
+              where :math:`\Delta T_{\\text{daily avg}} =
               \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
             - "hourlyavgCDD": :math:`\\text{daily CDD} = \sum_{i=1}^{24} \\text{CDH}_i`
-              where :math:`\\text{CDH}_i = \Delta T_i - \Delta T_{\\text{base cool}}`
+              where :math:`\\text{CDH}_i = \\text{max}\left(
+              \Delta T_{\\text{base cool}} - \Delta T_i, 0\\right)`
+
 
         Returns
         -------
@@ -461,7 +464,7 @@ class Thermostat(object):
         daily_index = cooling_season.daily[cooling_season.daily].index
 
         if method == "deltaT":
-            return pd.Series(daily_avg_deltaT, index=daily_index)
+            return pd.Series(-daily_avg_deltaT, index=daily_index)
         elif method == "dailyavgCDD":
             def calc_cdd(deltaT_base):
                 return np.maximum(deltaT_base - daily_avg_deltaT, 0)
@@ -507,13 +510,16 @@ class Thermostat(object):
         method : {"deltaT", "hourlyavgHDD", "dailyavgHDD"} default: "deltaT"
             The method to use during calculation of demand.
 
-            - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
-            - "dailyavgHDD": :math:`\\text{daily HDD} = \Delta T_{\\text{daily avg}}
-              - \Delta T_{\\text{base heat}}` where
+            - "deltaT": :math:`\Delta T = T_{in} - T_{out}`
+            - "dailyavgHDD": :math:`\\text{daily HDD} = \\text{max}\left(
+              \Delta T_{\\text{daily avg}} - \Delta T_{\\text{base heat}}
+              , 0\\right)` where
               :math:`\Delta T_{\\text{daily avg}} =
               \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
             - "hourlyavgHDD": :math:`\\text{daily HDD} = \sum_{i=1}^{24} \\text{HDH}_i`
-              where :math:`\\text{HDH}_i = \Delta T_i - \Delta T_{\\text{base heat}}`
+              where :math:`\\text{HDH}_i = \\text{max}\left(
+              \Delta T_i - \Delta T_{\\text{base heat}}
+              , 0\\right)`
 
         Returns
         -------
@@ -881,7 +887,7 @@ class Thermostat(object):
                         method="hourlyavgCDD")
 
                 daily_avoided_runtime_deltaT = get_daily_avoided_runtime(
-                        slope_deltaT, -demand_deltaT, demand_baseline_deltaT)
+                        slope_deltaT, demand_deltaT, demand_baseline_deltaT)
                 daily_avoided_runtime_dailyavgCDD = get_daily_avoided_runtime( alpha_est_dailyavgCDD, demand_dailyavgCDD, demand_baseline_dailyavgCDD)
                 daily_avoided_runtime_hourlyavgCDD = get_daily_avoided_runtime(
                         alpha_est_hourlyavgCDD, demand_hourlyavgCDD,

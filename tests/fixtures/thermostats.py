@@ -98,7 +98,7 @@ def cooling_season_type_1_data():
         "baseline_demand_dailyavgCDD_mean": 7.967,
         "baseline_demand_hourlyavgCDD_mean": 8.581,
 
-        "demand_deltaT_mean": -6.601,
+        "demand_deltaT_mean": 6.601,
 
         "demand_dailyavgCDD_mean": 6.788,
         "demand_dailyavgCDD_base": 0.186,
@@ -113,7 +113,7 @@ def cooling_season_type_1_data():
         "regression_slope": -2493.547,
         "regression_mean_sq_error": 499623.510,
 
-        "total_baseline": 1465638.294,
+        "total_baseline": 3810420.575,
     }
     return data
 
@@ -136,7 +136,7 @@ def seasonal_metrics_type_1_data():
             'n_days_both_heating_and_cooling': 50,
             'n_days_insufficient_data': 3,
 
-            'slope_deltaT': -2439.25,
+            'slope_deltaT': 2439.25,
             'intercept_deltaT': 455.782,
 
             'alpha_est_dailyavgCDD': 2439.2550734667493,
@@ -151,17 +151,17 @@ def seasonal_metrics_type_1_data():
             'actual_seasonal_runtime': 1225295.0,
             'actual_daily_runtime': 16558.04054054054,
 
-            'baseline_daily_runtime_deltaT': 19859.046,
+            'baseline_daily_runtime_deltaT': 13257.035,
             'baseline_daily_runtime_dailyavgCDD': 13230.890480387623,
             'baseline_daily_runtime_hourlyavgCDD': 11392.382352886532,
-            'baseline_seasonal_runtime_deltaT': 1469569.417,
+            'baseline_seasonal_runtime_deltaT': 981020.583,
             'baseline_seasonal_runtime_dailyavgCDD': 979085.89554868406,
             'baseline_seasonal_runtime_hourlyavgCDD': 843036.29411360342,
 
-            'seasonal_avoided_runtime_deltaT': -244274.417,
+            'seasonal_avoided_runtime_deltaT': 244274.417,
             'seasonal_avoided_runtime_dailyavgCDD': 246209.10445131591,
             'seasonal_avoided_runtime_hourlyavgCDD': 382258.70588639658,
-            'seasonal_savings_deltaT': -0.166,
+            'seasonal_savings_deltaT': 0.249,
             'seasonal_savings_dailyavgCDD': 0.25146833957130926,
             'seasonal_savings_hourlyavgCDD': 0.45343090037222678,
         },
