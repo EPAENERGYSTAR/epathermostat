@@ -426,15 +426,15 @@ class Thermostat(object):
         method : {"deltaT", "dailyavgCDD", "hourlyavgCDD"}, default: "deltaT"
             The method to use during calculation of demand.
 
-            - "deltaT": :math:`\Delta T = T_{out} - T_{in}`
+            - "deltaT": :math:`-\Delta T` where :math:`\Delta T = T_{in} - T_{out}`
             - "dailyavgCDD": :math:`\\text{daily CDD} = \\text{max} \left(
               \Delta T_{\\text{base cool}} - \Delta T_{\\text{daily avg}}
               , 0\\right)`
               where :math:`\Delta T_{\\text{daily avg}} =
-              \\frac{\sum_{i=1}^{24} -\Delta T_i}{24}`
+              \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
             - "hourlyavgCDD": :math:`\\text{daily CDD} = \sum_{i=1}^{24} \\text{CDH}_i`
               where :math:`\\text{CDH}_i = \\text{max}\left(
-              \Delta T_i - \Delta T_{\\text{base cool}}, 0\\right)`
+              \Delta T_{\\text{base cool}} - \Delta T_i, 0\\right)`
 
 
         Returns
@@ -510,7 +510,7 @@ class Thermostat(object):
         method : {"deltaT", "hourlyavgHDD", "dailyavgHDD"} default: "deltaT"
             The method to use during calculation of demand.
 
-            - "deltaT": :math:`\Delta T = temp_{in} - temp_{out}`
+            - "deltaT": :math:`\Delta T = T_{in} - T_{out}`
             - "dailyavgHDD": :math:`\\text{daily HDD} = \\text{max}\left(
               \Delta T_{\\text{daily avg}} - \Delta T_{\\text{base heat}}
               , 0\\right)` where
