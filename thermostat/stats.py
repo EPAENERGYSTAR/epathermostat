@@ -305,7 +305,7 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
             quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 
             for column_name in season_type_columns:
-                column = season_type_df[column_name]
+                column = season_type_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
 
                 # calculate quantiles
                 season_type_stats["{}_mean".format(column_name)] = np.nanmean(column)
