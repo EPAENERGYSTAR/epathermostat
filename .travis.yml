@@ -1,23 +1,27 @@
+sudo: false
+
 language: python
 python:
   - 2.7
   - 3.4
+  - 3.5
+
 notifications:
   email: false
+
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda2/bin:$PATH
-  - conda install conda=4.0.2
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
+  - conda install --yes conda=4.0.2
+
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy=1.10.2 scipy=0.16.1 pandas=0.17.1
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy pandas
   - pip install .
   - pip install -r travis_requirements.txt
   - pip install coverage coveralls pytest-cov
+
 script:
   - coverage run --source=thermostat setup.py test
 after_success:
