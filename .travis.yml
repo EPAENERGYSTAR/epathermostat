@@ -14,7 +14,7 @@ before_install:
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda2/bin:$PATH
-  - conda install --yes conda=4.0.2
+  - conda update --yes conda
 
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy pandas
@@ -24,5 +24,6 @@ install:
 
 script:
   - coverage run --source=thermostat setup.py test
+
 after_success:
   - coveralls --verbose
