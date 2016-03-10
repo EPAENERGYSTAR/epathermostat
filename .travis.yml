@@ -2,6 +2,11 @@ language: python
 python:
   - 2.7
   - 3.4
+addons:
+  apt:
+    packages:
+      - gfortran
+      - libgfortran3
 notifications:
   email: false
 before_install:
