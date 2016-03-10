@@ -8,6 +8,7 @@ from thermostat.stats import compute_summary_statistics_by_zipcode_group
 
 from scipy.stats import norm, randint
 import pandas as pd
+import numpy as np
 
 import tempfile
 from itertools import islice, cycle
@@ -78,9 +79,9 @@ def get_fake_output_df(n_columns):
     ]
 
     string_placeholder = ["PLACEHOLDER"] * n_columns
-    int_column = [i if randint.rvs(0, 30) > 0 else None
+    int_column = [i if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
                   for i in randint.rvs(0, 1, size=n_columns)]
-    float_column = [i if randint.rvs(0, 30) > 0 else None
+    float_column = [i if randint.rvs(0, 30) > 0 else (None if randint.rvs(0, 2) > 0 else np.inf)
                     for i in norm.rvs(size=n_columns)]
     zipcodes = ["01234", "12345", "23456", "34567", "43210", "54321", "65432", "76543"]
     zipcode_column = [i for i in islice(cycle(zipcodes), None, n_columns)]
@@ -227,6 +228,10 @@ def test_compute_summary_statistics(combined_dataframe):
     assert len(summary_statistics[0]) == 12 * 40 + 3
     assert len(summary_statistics[1]) == 12 * 28 + 3
     assert summary_statistics[0]["label"] == "label_heating"
+    for key, value in summary_statistics[0].items():
+        if key not in ["label"]:
+            assert pd.notnull(value)
+            assert not np.isinf(value)
 
 def test_summary_statistics_to_csv(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
