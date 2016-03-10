@@ -2,11 +2,6 @@ language: python
 python:
   - 2.7
   - 3.4
-addons:
-  apt:
-    packages:
-      - gfortran
-      - libgfortran3
 notifications:
   email: false
 before_install:
@@ -14,7 +9,7 @@ before_install:
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda2/bin:$PATH
-  - conda update --yes conda
+  - conda install conda=4.0.2
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
