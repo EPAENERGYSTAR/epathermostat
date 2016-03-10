@@ -14,7 +14,7 @@ before_install:
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy pandas scipy
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy=1.10.4 scipy=0.17.0 pandas=0.17.1
   - pip install .
   - pip install -r travis_requirements.txt
   - pip install coverage coveralls pytest-cov
