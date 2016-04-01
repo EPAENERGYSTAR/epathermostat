@@ -36,7 +36,7 @@ def get_fake_output_df(n_columns):
         "mean_sq_err_dailyavgHDD",
         "mean_sq_err_hourlyavgCDD",
         "mean_sq_err_hourlyavgHDD",
-        "mean_squared_error_deltaT",
+        "mean_sq_err_deltaT",
         "deltaT_base_est_dailyavgCDD",
         "deltaT_base_est_dailyavgHDD",
         "deltaT_base_est_hourlyavgCDD",
@@ -64,6 +64,10 @@ def get_fake_output_df(n_columns):
         "seasonal_savings_dailyavgHDD",
         "seasonal_savings_hourlyavgCDD",
         "seasonal_savings_hourlyavgHDD",
+        "total_cooling_runtime",
+        "total_heating_runtime",
+        "total_auxiliary_heating_runtime",
+        "total_emergency_heating_runtime",
         "rhu_00F_to_05F",
         "rhu_05F_to_10F",
         "rhu_10F_to_15F",
@@ -107,7 +111,7 @@ def get_fake_output_df(n_columns):
         "mean_sq_err_dailyavgHDD": float_column,
         "mean_sq_err_hourlyavgCDD": float_column,
         "mean_sq_err_hourlyavgHDD": float_column,
-        "mean_squared_error_deltaT": float_column,
+        "mean_sq_err_deltaT": float_column,
         "deltaT_base_est_dailyavgCDD": float_column,
         "deltaT_base_est_dailyavgHDD": float_column,
         "deltaT_base_est_hourlyavgCDD": float_column,
@@ -135,6 +139,10 @@ def get_fake_output_df(n_columns):
         "seasonal_savings_dailyavgHDD": float_column,
         "seasonal_savings_hourlyavgCDD": float_column,
         "seasonal_savings_hourlyavgHDD": float_column,
+        "total_heating_runtime": float_column,
+        "total_cooling_runtime": float_column,
+        "total_auxiliary_heating_runtime": float_column,
+        "total_emergency_heating_runtime": float_column,
         "rhu_00F_to_05F": float_column,
         "rhu_05F_to_10F": float_column,
         "rhu_10F_to_15F": float_column,
@@ -220,13 +228,13 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 59)
+    assert combined.shape == (20, 63)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 40 + 3
-    assert len(summary_statistics[1]) == 12 * 28 + 3
+    assert len(summary_statistics[0]) == 12 * 43 + 3
+    assert len(summary_statistics[1]) == 12 * 29 + 3
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
         if key not in ["label"]:
@@ -242,7 +250,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 54 + 3
+        assert len(columns) == 12 * 58 + 3
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)

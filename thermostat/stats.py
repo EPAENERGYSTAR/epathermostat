@@ -20,7 +20,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     "alpha_est_hourlyavgHDD",
     "mean_sq_err_dailyavgHDD",
     "mean_sq_err_hourlyavgHDD",
-    "mean_squared_error_deltaT",
+    "mean_sq_err_deltaT",
     "deltaT_base_est_dailyavgHDD",
     "deltaT_base_est_hourlyavgHDD",
     "baseline_daily_runtime_deltaT",
@@ -38,6 +38,9 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     "seasonal_savings_deltaT",
     "seasonal_savings_dailyavgHDD",
     "seasonal_savings_hourlyavgHDD",
+    "total_heating_runtime",
+    "total_auxiliary_heating_runtime",
+    "total_emergency_heating_runtime",
     "rhu_00F_to_05F",
     "rhu_05F_to_10F",
     "rhu_10F_to_15F",
@@ -63,7 +66,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     "alpha_est_hourlyavgCDD",
     "mean_sq_err_dailyavgCDD",
     "mean_sq_err_hourlyavgCDD",
-    "mean_squared_error_deltaT",
+    "mean_sq_err_deltaT",
     "deltaT_base_est_dailyavgCDD",
     "deltaT_base_est_hourlyavgCDD",
     "baseline_daily_runtime_deltaT",
@@ -81,6 +84,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     "seasonal_savings_deltaT",
     "seasonal_savings_dailyavgCDD",
     "seasonal_savings_hourlyavgCDD",
+    "total_cooling_runtime",
 ]
 
 REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
@@ -98,7 +102,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     "mean_sq_err_dailyavgHDD",
     "mean_sq_err_hourlyavgCDD",
     "mean_sq_err_hourlyavgHDD",
-    "mean_squared_error_deltaT",
+    "mean_sq_err_deltaT",
     "deltaT_base_est_dailyavgCDD",
     "deltaT_base_est_dailyavgHDD",
     "deltaT_base_est_hourlyavgCDD",
@@ -126,6 +130,10 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     "seasonal_savings_dailyavgHDD",
     "seasonal_savings_hourlyavgCDD",
     "seasonal_savings_hourlyavgHDD",
+    "total_heating_runtime",
+    "total_cooling_runtime",
+    "total_auxiliary_heating_runtime",
+    "total_emergency_heating_runtime",
     "rhu_00F_to_05F",
     "rhu_05F_to_10F",
     "rhu_10F_to_15F",
@@ -293,12 +301,41 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
         target_n = (std * n_std_devs / target_interval) ** 2.
         return target_n
 
+    def _filter_rows(season_type_df):
+        filtered_df_rows = []
+        for i, row in season_type_df.iterrows():
+            if _accept_row(row):
+                filtered_df_rows.append(row)
+        return pd.DataFrame(filtered_df_rows)
+
+    def _accept_row(row):
+        passes_validity_rules = _passes_validity_rules(row)
+        has_physical_deltaT = _has_physical_deltaT(row)
+        has_good_enough_fit = _has_good_enough_fit(row)
+        return passes_validity_rules and has_physical_deltaT and has_good_enough_fit
+
+    def _has_physical_deltaT(row):
+        return -10 <= row.intercept_deltaT <= 50
+
+    def _passes_validity_rules(row):
+        return row.n_days_insufficient_data / row.n_days_in_season_range > 0.05
+
+    def _has_good_enough_fit(row):
+        return True
+
     def _get_season_type_stats(season_type_df, season_type, season_type_columns):
-        n_seasons = season_type_df.shape[0]
+        n_seasons_total = season_type_df.shape[0]
+
+        filtered_season_type_df = _filter_rows(season_type_df)
+
+        n_seasons_kept = filtered_season_type_df.shape[0]
+        n_seasons_discarded = n_seasons_total - n_seasons_kept
 
         season_type_stats = OrderedDict()
         season_type_stats["label"] = "{}_{}".format(label, season_type)
-        season_type_stats["n_seasons"] = n_seasons
+        season_type_stats["n_seasons_total"] = n_seasons
+        season_type_stats["n_seasons_kept"] = n_seasons
+        season_type_stats["n_seasons_discarded"] = n_seasons
 
         if n_seasons > 0:
 

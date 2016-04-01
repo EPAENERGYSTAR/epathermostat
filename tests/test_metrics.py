@@ -51,8 +51,8 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
     assert_allclose(cooling_season_outputs['deltaT_base_est_hourlyavgCDD'],
             seasonal_metrics_type_1_data['cooling']['deltaT_base_est_hourlyavgCDD'], rtol=RTOL, atol=ATOL)
 
-    assert_allclose(cooling_season_outputs['mean_squared_error_deltaT'],
-            seasonal_metrics_type_1_data['cooling']['mean_squared_error_deltaT'], rtol=RTOL, atol=ATOL)
+    assert_allclose(cooling_season_outputs['mean_sq_err_deltaT'],
+            seasonal_metrics_type_1_data['cooling']['mean_sq_err_deltaT'], rtol=RTOL, atol=ATOL)
     assert_allclose(cooling_season_outputs['mean_sq_err_dailyavgCDD'],
             seasonal_metrics_type_1_data['cooling']['mean_sq_err_dailyavgCDD'], rtol=RTOL, atol=ATOL)
     assert_allclose(cooling_season_outputs['mean_sq_err_hourlyavgCDD'],
@@ -93,6 +93,9 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
             seasonal_metrics_type_1_data['cooling']['seasonal_savings_dailyavgCDD'], rtol=RTOL, atol=ATOL)
     assert_allclose(cooling_season_outputs['seasonal_savings_hourlyavgCDD'],
             seasonal_metrics_type_1_data['cooling']['seasonal_savings_hourlyavgCDD'], rtol=RTOL, atol=ATOL)
+
+    assert_allclose(cooling_season_outputs['total_cooling_runtime'],
+            seasonal_metrics_type_1_data['cooling']['total_cooling_runtime'], rtol=RTOL, atol=ATOL)
 
     heating_season_outputs = seasonal_metrics_type_1[4]
 
@@ -138,8 +141,8 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
     assert_allclose(heating_season_outputs['seasonal_savings_hourlyavgHDD'],
             seasonal_metrics_type_1_data['heating']['seasonal_savings_hourlyavgHDD'], rtol=RTOL, atol=ATOL)
 
-    assert_allclose(heating_season_outputs['mean_squared_error_deltaT'],
-            seasonal_metrics_type_1_data['heating']['mean_squared_error_deltaT'], rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['mean_sq_err_deltaT'],
+            seasonal_metrics_type_1_data['heating']['mean_sq_err_deltaT'], rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['mean_sq_err_dailyavgHDD'],
             seasonal_metrics_type_1_data['heating']['mean_sq_err_dailyavgHDD'], rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['mean_sq_err_hourlyavgHDD'],
@@ -165,6 +168,13 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
             seasonal_metrics_type_1_data['heating']['n_days_insufficient_data'], rtol=RTOL, atol=ATOL)
     assert_allclose(heating_season_outputs['n_days_both_heating_and_cooling'],
             seasonal_metrics_type_1_data['heating']['n_days_both_heating_and_cooling'], rtol=RTOL, atol=ATOL)
+
+    assert_allclose(heating_season_outputs['total_heating_runtime'],
+            seasonal_metrics_type_1_data['heating']['total_heating_runtime'], rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['total_auxiliary_heating_runtime'],
+            seasonal_metrics_type_1_data['heating']['total_auxiliary_heating_runtime'], rtol=RTOL, atol=ATOL)
+    assert_allclose(heating_season_outputs['total_emergency_heating_runtime'],
+            seasonal_metrics_type_1_data['heating']['total_emergency_heating_runtime'], rtol=RTOL, atol=ATOL)
 
     assert_allclose(heating_season_outputs['rhu_00F_to_05F'],
             seasonal_metrics_type_1_data['heating']['rhu_00F_to_05F'], rtol=RTOL, atol=ATOL)
@@ -225,6 +235,6 @@ def test_seasonal_metrics_to_csv(seasonal_metrics_type_1):
         assert column_heads[2] == "season_name"
         assert column_heads[3] == "station"
         assert column_heads[4] == "zipcode"
-        assert column_heads[58].strip() == "rhu_55F_to_60F"
+        assert column_heads[62].strip() == "rhu_55F_to_60F"
         for line in lines:
-            assert len(line.split(',')) == 59
+            assert len(line.split(',')) == 63

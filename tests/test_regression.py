@@ -36,9 +36,9 @@ def regression_fixture(request):
     return request.param
 
 def test_runtime_regression(regression_fixture):
-    daily_runtime, daily_demand, slope, intercept, mean_sq_err = regression_fixture
-    slope_, intercept_, mean_sq_err_ = runtime_regression(daily_runtime, daily_demand)
+    daily_runtime, daily_demand, slope, intercept, mse = regression_fixture
+    slope_, intercept_, mse_, rmse_, cvrmse_, mape_, mae_  = runtime_regression(daily_runtime, daily_demand)
 
     assert_allclose(slope_, slope, rtol=RTOL, atol=ATOL)
     assert_allclose(intercept_, intercept, rtol=RTOL, atol=ATOL)
-    assert_allclose(mean_sq_err_, mean_sq_err, rtol=RTOL, atol=ATOL)
+    assert_allclose(mse_, mse, rtol=RTOL, atol=ATOL)
