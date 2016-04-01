@@ -1,4 +1,4 @@
-from thermostat import Thermostat
+from thermostat.core import Thermostat
 
 import pandas as pd
 import numpy as np
@@ -30,7 +30,6 @@ def from_csv(metadata_filename, verbose=False):
     """
     metadata = pd.read_csv(metadata_filename,
             dtype={"thermostat_id": str, "zipcode": str, "utc_offset": str, "equipment_type": int, "interval_data_filename": str})
-
 
     for i, row in metadata.iterrows():
         if verbose:
@@ -67,7 +66,6 @@ def from_csv(metadata_filename, verbose=False):
         yield thermostat
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, interval_data_filename):
-    df = pd.read_csv(interval_data_filename)
     """ Load a single thermostat directly from an interval data file.
 
     Parameters
@@ -91,6 +89,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, in
     thermostat : thermostat.Thermostat
         The loaded thermostat object.
     """
+    df = pd.read_csv(interval_data_filename)
 
     heating, cooling, aux_emerg = _get_equipment_type(equipment_type)
 
