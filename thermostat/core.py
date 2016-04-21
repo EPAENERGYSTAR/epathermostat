@@ -1215,9 +1215,9 @@ class Thermostat(object):
                 outputs["alpha_est_dailyavgHDD"] = alpha_est_dailyavgHDD
                 outputs["mean_sq_err_dailyavgHDD"] = mse_dailyavgHDD
                 outputs["root_mean_sq_err_dailyavgHDD"] = rmse_dailyavgHDD
-                outputs["cv_root_mean_sq_err_dailyavgCDD"] = cvrmse_dailyavgHDD
-                outputs["mean_abs_pct_err_dailyavgCDD"] = mape_dailyavgHDD
-                outputs["mean_abs_err_dailyavgCDD"] = mae_dailyavgHDD
+                outputs["cv_root_mean_sq_err_dailyavgHDD"] = cvrmse_dailyavgHDD
+                outputs["mean_abs_pct_err_dailyavgHDD"] = mape_dailyavgHDD
+                outputs["mean_abs_err_dailyavgHDD"] = mae_dailyavgHDD
 
                 # hourlyavgHDD
                 (
@@ -1237,9 +1237,9 @@ class Thermostat(object):
                 outputs["alpha_est_hourlyavgHDD"] = alpha_est_hourlyavgHDD
                 outputs["mean_sq_err_hourlyavgHDD"] = mse_hourlyavgHDD
                 outputs["root_mean_sq_err_hourlyavgHDD"] = rmse_hourlyavgHDD
-                outputs["cv_root_mean_sq_err_hourlyavgCDD"] = cvrmse_hourlyavgHDD
-                outputs["mean_abs_pct_err_hourlyavgCDD"] = mape_hourlyavgHDD
-                outputs["mean_abs_err_hourlyavgCDD"] = mae_hourlyavgHDD
+                outputs["cv_root_mean_sq_err_hourlyavgHDD"] = cvrmse_hourlyavgHDD
+                outputs["mean_abs_pct_err_hourlyavgHDD"] = mape_hourlyavgHDD
+                outputs["mean_abs_err_hourlyavgHDD"] = mae_hourlyavgHDD
 
                 actual_seasonal_runtime = self.heat_runtime[heating_season.daily].sum()
 

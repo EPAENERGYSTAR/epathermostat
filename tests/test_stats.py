@@ -17,73 +17,123 @@ import pytest
 
 def get_fake_output_df(n_columns):
     columns = [
-        "ct_identifier",
-        "equipment_type",
-        "season_name",
-        "station",
-        "zipcode",
-        "n_days_both_heating_and_cooling",
-        "n_days_insufficient_data",
-        "n_days_in_season",
-        "n_days_in_season_range",
-        "slope_deltaT",
-        "intercept_deltaT",
-        "alpha_est_dailyavgCDD",
-        "alpha_est_dailyavgHDD",
-        "alpha_est_hourlyavgCDD",
-        "alpha_est_hourlyavgHDD",
-        "mean_sq_err_dailyavgCDD",
-        "mean_sq_err_dailyavgHDD",
-        "mean_sq_err_hourlyavgCDD",
-        "mean_sq_err_hourlyavgHDD",
-        "mean_sq_err_deltaT",
-        "deltaT_base_est_dailyavgCDD",
-        "deltaT_base_est_dailyavgHDD",
-        "deltaT_base_est_hourlyavgCDD",
-        "deltaT_base_est_hourlyavgHDD",
-        "baseline_daily_runtime_deltaT",
-        "baseline_daily_runtime_dailyavgCDD",
-        "baseline_daily_runtime_dailyavgHDD",
-        "baseline_daily_runtime_hourlyavgCDD",
-        "baseline_daily_runtime_hourlyavgHDD",
-        "baseline_seasonal_runtime_deltaT",
-        "baseline_seasonal_runtime_dailyavgCDD",
-        "baseline_seasonal_runtime_dailyavgHDD",
-        "baseline_seasonal_runtime_hourlyavgCDD",
-        "baseline_seasonal_runtime_hourlyavgHDD",
-        "baseline_comfort_temperature",
-        "actual_daily_runtime",
-        "actual_seasonal_runtime",
-        "seasonal_avoided_runtime_deltaT",
-        "seasonal_avoided_runtime_dailyavgCDD",
-        "seasonal_avoided_runtime_dailyavgHDD",
-        "seasonal_avoided_runtime_hourlyavgCDD",
-        "seasonal_avoided_runtime_hourlyavgHDD",
-        "seasonal_savings_deltaT",
-        "seasonal_savings_dailyavgCDD",
-        "seasonal_savings_dailyavgHDD",
-        "seasonal_savings_hourlyavgCDD",
-        "seasonal_savings_hourlyavgHDD",
-        "total_cooling_runtime",
-        "total_heating_runtime",
-        "total_auxiliary_heating_runtime",
-        "total_emergency_heating_runtime",
-        "rhu_00F_to_05F",
-        "rhu_05F_to_10F",
-        "rhu_10F_to_15F",
-        "rhu_15F_to_20F",
-        "rhu_20F_to_25F",
-        "rhu_25F_to_30F",
-        "rhu_30F_to_35F",
-        "rhu_35F_to_40F",
-        "rhu_40F_to_45F",
-        "rhu_45F_to_50F",
-        "rhu_50F_to_55F",
-        "rhu_55F_to_60F",
+            'ct_identifier',
+            'equipment_type',
+            'season_name',
+            'station',
+            'zipcode',
+
+            'n_days_in_season_range',
+            'n_days_in_season',
+            'n_days_both_heating_and_cooling',
+            'n_days_insufficient_data',
+
+            'seasonal_savings_dailyavgCDD',
+            'seasonal_savings_dailyavgHDD',
+            'seasonal_savings_deltaT',
+            'seasonal_savings_hourlyavgCDD',
+            'seasonal_savings_hourlyavgHDD',
+
+            'seasonal_avoided_runtime_dailyavgCDD',
+            'seasonal_avoided_runtime_dailyavgHDD',
+            'seasonal_avoided_runtime_deltaT',
+            'seasonal_avoided_runtime_hourlyavgCDD',
+            'seasonal_avoided_runtime_hourlyavgHDD',
+
+            'total_auxiliary_heating_runtime',
+            'total_cooling_runtime',
+            'total_emergency_heating_runtime',
+            'total_heating_runtime',
+
+            'actual_daily_runtime',
+            'actual_seasonal_runtime',
+
+            'baseline_comfort_temperature',
+
+            'baseline_daily_runtime_dailyavgCDD',
+            'baseline_daily_runtime_dailyavgHDD',
+            'baseline_daily_runtime_deltaT',
+            'baseline_daily_runtime_hourlyavgCDD',
+            'baseline_daily_runtime_hourlyavgHDD',
+
+            'baseline_seasonal_runtime_dailyavgCDD',
+            'baseline_seasonal_runtime_dailyavgHDD',
+            'baseline_seasonal_runtime_deltaT',
+            'baseline_seasonal_runtime_hourlyavgCDD',
+            'baseline_seasonal_runtime_hourlyavgHDD',
+
+            'mean_demand_dailyavgCDD',
+            'mean_demand_dailyavgHDD',
+            'mean_demand_deltaT',
+            'mean_demand_hourlyavgCDD',
+            'mean_demand_hourlyavgHDD',
+
+            'mean_demand_baseline_dailyavgCDD',
+            'mean_demand_baseline_dailyavgHDD',
+            'mean_demand_baseline_deltaT',
+            'mean_demand_baseline_hourlyavgCDD',
+            'mean_demand_baseline_hourlyavgHDD',
+
+            'rhu_00F_to_05F',
+            'rhu_05F_to_10F',
+            'rhu_10F_to_15F',
+            'rhu_15F_to_20F',
+            'rhu_20F_to_25F',
+            'rhu_25F_to_30F',
+            'rhu_30F_to_35F',
+            'rhu_35F_to_40F',
+            'rhu_40F_to_45F',
+            'rhu_45F_to_50F',
+            'rhu_50F_to_55F',
+            'rhu_55F_to_60F',
+
+            'slope_deltaT',
+            'alpha_est_dailyavgCDD',
+            'alpha_est_dailyavgHDD',
+            'alpha_est_hourlyavgCDD',
+            'alpha_est_hourlyavgHDD',
+
+            'intercept_deltaT',
+            'deltaT_base_est_dailyavgCDD',
+            'deltaT_base_est_dailyavgHDD',
+            'deltaT_base_est_hourlyavgCDD',
+            'deltaT_base_est_hourlyavgHDD',
+
+            'mean_sq_err_dailyavgCDD',
+            'mean_sq_err_dailyavgHDD',
+            'mean_sq_err_deltaT',
+            'mean_sq_err_hourlyavgCDD',
+            'mean_sq_err_hourlyavgHDD',
+
+            'root_mean_sq_err_dailyavgCDD',
+            'root_mean_sq_err_dailyavgHDD',
+            'root_mean_sq_err_deltaT',
+            'root_mean_sq_err_hourlyavgCDD',
+            'root_mean_sq_err_hourlyavgHDD',
+
+            'cv_root_mean_sq_err_dailyavgCDD',
+            'cv_root_mean_sq_err_dailyavgHDD',
+            'cv_root_mean_sq_err_deltaT',
+            'cv_root_mean_sq_err_hourlyavgCDD',
+            'cv_root_mean_sq_err_hourlyavgHDD',
+
+            'mean_abs_err_dailyavgCDD',
+            'mean_abs_err_dailyavgHDD',
+            'mean_abs_err_deltaT',
+            'mean_abs_err_hourlyavgCDD',
+            'mean_abs_err_hourlyavgHDD',
+
+            'mean_abs_pct_err_dailyavgCDD',
+            'mean_abs_pct_err_dailyavgHDD',
+            'mean_abs_pct_err_deltaT',
+            'mean_abs_pct_err_hourlyavgCDD',
+            'mean_abs_pct_err_hourlyavgHDD',
     ]
 
     string_placeholder = ["PLACEHOLDER"] * n_columns
-    int_column = [1 if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
+    zero_column = [0 if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
+                  for i in randint.rvs(0, 1, size=n_columns)]
+    one_column = [1 if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
                   for i in randint.rvs(0, 1, size=n_columns)]
     float_column = [i if randint.rvs(0, 30) > 0 else (None if randint.rvs(0, 2) > 0 else np.inf)
                     for i in norm.rvs(size=n_columns)]
@@ -97,52 +147,58 @@ def get_fake_output_df(n_columns):
         "season_name": season_name_column,
         "station": string_placeholder,
         "zipcode": zipcode_column,
-        "n_days_both_heating_and_cooling": int_column,
-        "n_days_insufficient_data": int_column,
-        "n_days_in_season": int_column,
-        "n_days_in_season_range": int_column,
-        "slope_deltaT": float_column,
-        "intercept_deltaT": float_column,
-        "alpha_est_dailyavgCDD": float_column,
-        "alpha_est_dailyavgHDD": float_column,
-        "alpha_est_hourlyavgCDD": float_column,
-        "alpha_est_hourlyavgHDD": float_column,
-        "mean_sq_err_dailyavgCDD": float_column,
-        "mean_sq_err_dailyavgHDD": float_column,
-        "mean_sq_err_hourlyavgCDD": float_column,
-        "mean_sq_err_hourlyavgHDD": float_column,
-        "mean_sq_err_deltaT": float_column,
-        "deltaT_base_est_dailyavgCDD": float_column,
-        "deltaT_base_est_dailyavgHDD": float_column,
-        "deltaT_base_est_hourlyavgCDD": float_column,
-        "deltaT_base_est_hourlyavgHDD": float_column,
-        "baseline_daily_runtime_deltaT": float_column,
-        "baseline_daily_runtime_dailyavgCDD": float_column,
-        "baseline_daily_runtime_dailyavgHDD": float_column,
-        "baseline_daily_runtime_hourlyavgCDD": float_column,
-        "baseline_daily_runtime_hourlyavgHDD": float_column,
-        "baseline_seasonal_runtime_deltaT": float_column,
-        "baseline_seasonal_runtime_dailyavgCDD": float_column,
-        "baseline_seasonal_runtime_dailyavgHDD": float_column,
-        "baseline_seasonal_runtime_hourlyavgCDD": float_column,
-        "baseline_seasonal_runtime_hourlyavgHDD": float_column,
-        "baseline_comfort_temperature": float_column,
-        "actual_daily_runtime": float_column,
-        "actual_seasonal_runtime": float_column,
-        "seasonal_avoided_runtime_deltaT": float_column,
-        "seasonal_avoided_runtime_dailyavgCDD": float_column,
-        "seasonal_avoided_runtime_dailyavgHDD": float_column,
-        "seasonal_avoided_runtime_hourlyavgCDD": float_column,
-        "seasonal_avoided_runtime_hourlyavgHDD": float_column,
+
+        "n_days_both_heating_and_cooling": one_column,
+        "n_days_in_season": one_column,
+        "n_days_in_season_range": one_column,
+        "n_days_insufficient_data": zero_column,
+
         "seasonal_savings_deltaT": float_column,
         "seasonal_savings_dailyavgCDD": float_column,
         "seasonal_savings_dailyavgHDD": float_column,
         "seasonal_savings_hourlyavgCDD": float_column,
         "seasonal_savings_hourlyavgHDD": float_column,
+
+        "seasonal_avoided_runtime_deltaT": float_column,
+        "seasonal_avoided_runtime_dailyavgCDD": float_column,
+        "seasonal_avoided_runtime_dailyavgHDD": float_column,
+        "seasonal_avoided_runtime_hourlyavgCDD": float_column,
+        "seasonal_avoided_runtime_hourlyavgHDD": float_column,
+
         "total_heating_runtime": float_column,
         "total_cooling_runtime": float_column,
         "total_auxiliary_heating_runtime": float_column,
         "total_emergency_heating_runtime": float_column,
+
+        "actual_daily_runtime": float_column,
+        "actual_seasonal_runtime": float_column,
+
+        "baseline_comfort_temperature": float_column,
+
+        "baseline_daily_runtime_deltaT": float_column,
+        "baseline_daily_runtime_dailyavgCDD": float_column,
+        "baseline_daily_runtime_dailyavgHDD": float_column,
+        "baseline_daily_runtime_hourlyavgCDD": float_column,
+        "baseline_daily_runtime_hourlyavgHDD": float_column,
+
+        "baseline_seasonal_runtime_deltaT": float_column,
+        "baseline_seasonal_runtime_dailyavgCDD": float_column,
+        "baseline_seasonal_runtime_dailyavgHDD": float_column,
+        "baseline_seasonal_runtime_hourlyavgCDD": float_column,
+        "baseline_seasonal_runtime_hourlyavgHDD": float_column,
+
+        "mean_demand_dailyavgCDD": float_column,
+        "mean_demand_dailyavgHDD": float_column,
+        "mean_demand_deltaT": float_column,
+        "mean_demand_hourlyavgCDD": float_column,
+        "mean_demand_hourlyavgHDD": float_column,
+
+        "mean_demand_baseline_dailyavgCDD": float_column,
+        "mean_demand_baseline_dailyavgHDD": float_column,
+        "mean_demand_baseline_deltaT": float_column,
+        "mean_demand_baseline_hourlyavgCDD": float_column,
+        "mean_demand_baseline_hourlyavgHDD": float_column,
+
         "rhu_00F_to_05F": float_column,
         "rhu_05F_to_10F": float_column,
         "rhu_10F_to_15F": float_column,
@@ -155,6 +211,49 @@ def get_fake_output_df(n_columns):
         "rhu_45F_to_50F": float_column,
         "rhu_50F_to_55F": float_column,
         "rhu_55F_to_60F": float_column,
+
+        "slope_deltaT": float_column,
+        "alpha_est_dailyavgCDD": float_column,
+        "alpha_est_dailyavgHDD": float_column,
+        "alpha_est_hourlyavgCDD": float_column,
+        "alpha_est_hourlyavgHDD": float_column,
+
+        "intercept_deltaT": float_column,
+        "deltaT_base_est_dailyavgCDD": float_column,
+        "deltaT_base_est_dailyavgHDD": float_column,
+        "deltaT_base_est_hourlyavgCDD": float_column,
+        "deltaT_base_est_hourlyavgHDD": float_column,
+
+        "mean_sq_err_dailyavgCDD": float_column,
+        "mean_sq_err_dailyavgHDD": float_column,
+        "mean_sq_err_deltaT": float_column,
+        "mean_sq_err_hourlyavgCDD": float_column,
+        "mean_sq_err_hourlyavgHDD": float_column,
+
+        "root_mean_sq_err_dailyavgCDD": float_column,
+        "root_mean_sq_err_dailyavgHDD": float_column,
+        "root_mean_sq_err_deltaT": float_column,
+        "root_mean_sq_err_hourlyavgCDD": float_column,
+        "root_mean_sq_err_hourlyavgHDD": float_column,
+
+        "cv_root_mean_sq_err_dailyavgCDD": float_column,
+        "cv_root_mean_sq_err_dailyavgHDD": float_column,
+        "cv_root_mean_sq_err_deltaT": float_column,
+        "cv_root_mean_sq_err_hourlyavgCDD": float_column,
+        "cv_root_mean_sq_err_hourlyavgHDD": float_column,
+
+        "mean_abs_err_dailyavgCDD": float_column,
+        "mean_abs_err_dailyavgHDD": float_column,
+        "mean_abs_err_deltaT": float_column,
+        "mean_abs_err_hourlyavgCDD": float_column,
+        "mean_abs_err_hourlyavgHDD": float_column,
+
+        "mean_abs_pct_err_dailyavgCDD": float_column,
+        "mean_abs_pct_err_dailyavgHDD": float_column,
+        "mean_abs_pct_err_deltaT": float_column,
+        "mean_abs_pct_err_hourlyavgCDD": float_column,
+        "mean_abs_pct_err_hourlyavgHDD": float_column,
+
     }
     df = pd.DataFrame(data, columns=columns)
     return df
@@ -228,13 +327,13 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 63)
+    assert combined.shape == (20, 93)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 43 + 5
-    assert len(summary_statistics[1]) == 12 * 29 + 5
+    assert len(summary_statistics[0]) == 12 * 61 + 5
+    assert len(summary_statistics[1]) == 12 * 47 + 5
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
         if key not in ["label"]:
@@ -250,7 +349,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 58 + 5
+        assert len(columns) == 12 * 88 + 5
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)

@@ -10,142 +10,267 @@ from collections import defaultdict
 from warnings import warn
 
 REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
-    "n_days_both_heating_and_cooling",
-    "n_days_insufficient_data",
-    "n_days_in_season",
-    "n_days_in_season_range",
-    "slope_deltaT",
-    "intercept_deltaT",
-    "alpha_est_dailyavgHDD",
-    "alpha_est_hourlyavgHDD",
-    "mean_sq_err_dailyavgHDD",
-    "mean_sq_err_hourlyavgHDD",
-    "mean_sq_err_deltaT",
-    "deltaT_base_est_dailyavgHDD",
-    "deltaT_base_est_hourlyavgHDD",
-    "baseline_daily_runtime_deltaT",
-    "baseline_daily_runtime_dailyavgHDD",
-    "baseline_daily_runtime_hourlyavgHDD",
-    "baseline_seasonal_runtime_deltaT",
-    "baseline_seasonal_runtime_dailyavgHDD",
-    "baseline_seasonal_runtime_hourlyavgHDD",
-    "baseline_comfort_temperature",
-    "actual_daily_runtime",
-    "actual_seasonal_runtime",
-    "seasonal_avoided_runtime_deltaT",
-    "seasonal_avoided_runtime_dailyavgHDD",
-    "seasonal_avoided_runtime_hourlyavgHDD",
-    "seasonal_savings_deltaT",
-    "seasonal_savings_dailyavgHDD",
-    "seasonal_savings_hourlyavgHDD",
-    "total_heating_runtime",
-    "total_auxiliary_heating_runtime",
-    "total_emergency_heating_runtime",
-    "rhu_00F_to_05F",
-    "rhu_05F_to_10F",
-    "rhu_10F_to_15F",
-    "rhu_15F_to_20F",
-    "rhu_20F_to_25F",
-    "rhu_25F_to_30F",
-    "rhu_30F_to_35F",
-    "rhu_35F_to_40F",
-    "rhu_40F_to_45F",
-    "rhu_45F_to_50F",
-    "rhu_50F_to_55F",
-    "rhu_55F_to_60F",
+    'n_days_in_season_range',
+    'n_days_in_season',
+    'n_days_both_heating_and_cooling',
+    'n_days_insufficient_data',
+
+    'seasonal_savings_dailyavgHDD',
+    'seasonal_savings_deltaT',
+    'seasonal_savings_hourlyavgHDD',
+
+    'seasonal_avoided_runtime_dailyavgHDD',
+    'seasonal_avoided_runtime_deltaT',
+    'seasonal_avoided_runtime_hourlyavgHDD',
+
+    'total_auxiliary_heating_runtime',
+    'total_emergency_heating_runtime',
+    'total_heating_runtime',
+
+    'actual_daily_runtime',
+    'actual_seasonal_runtime',
+
+    'baseline_comfort_temperature',
+
+    'baseline_daily_runtime_dailyavgHDD',
+    'baseline_daily_runtime_deltaT',
+    'baseline_daily_runtime_hourlyavgHDD',
+
+    'baseline_seasonal_runtime_dailyavgHDD',
+    'baseline_seasonal_runtime_deltaT',
+    'baseline_seasonal_runtime_hourlyavgHDD',
+
+    'mean_demand_dailyavgHDD',
+    'mean_demand_deltaT',
+    'mean_demand_hourlyavgHDD',
+
+    'mean_demand_baseline_dailyavgHDD',
+    'mean_demand_baseline_deltaT',
+    'mean_demand_baseline_hourlyavgHDD',
+
+    'rhu_00F_to_05F',
+    'rhu_05F_to_10F',
+    'rhu_10F_to_15F',
+    'rhu_15F_to_20F',
+    'rhu_20F_to_25F',
+    'rhu_25F_to_30F',
+    'rhu_30F_to_35F',
+    'rhu_35F_to_40F',
+    'rhu_40F_to_45F',
+    'rhu_45F_to_50F',
+    'rhu_50F_to_55F',
+    'rhu_55F_to_60F',
+
+    'slope_deltaT',
+    'alpha_est_dailyavgHDD',
+    'alpha_est_hourlyavgHDD',
+
+    'intercept_deltaT',
+    'deltaT_base_est_dailyavgHDD',
+    'deltaT_base_est_hourlyavgHDD',
+
+    'mean_sq_err_dailyavgHDD',
+    'mean_sq_err_deltaT',
+    'mean_sq_err_hourlyavgHDD',
+
+    'root_mean_sq_err_dailyavgHDD',
+    'root_mean_sq_err_deltaT',
+    'root_mean_sq_err_hourlyavgHDD',
+
+    'cv_root_mean_sq_err_dailyavgHDD',
+    'cv_root_mean_sq_err_deltaT',
+    'cv_root_mean_sq_err_hourlyavgHDD',
+
+    'mean_abs_err_dailyavgHDD',
+    'mean_abs_err_deltaT',
+    'mean_abs_err_hourlyavgHDD',
+
+    'mean_abs_pct_err_dailyavgHDD',
+    'mean_abs_pct_err_deltaT',
+    'mean_abs_pct_err_hourlyavgHDD',
 ]
 
 REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
-    "n_days_both_heating_and_cooling",
-    "n_days_insufficient_data",
-    "n_days_in_season",
-    "n_days_in_season_range",
-    "slope_deltaT",
-    "intercept_deltaT",
-    "alpha_est_dailyavgCDD",
-    "alpha_est_hourlyavgCDD",
-    "mean_sq_err_dailyavgCDD",
-    "mean_sq_err_hourlyavgCDD",
-    "mean_sq_err_deltaT",
-    "deltaT_base_est_dailyavgCDD",
-    "deltaT_base_est_hourlyavgCDD",
-    "baseline_daily_runtime_deltaT",
-    "baseline_daily_runtime_dailyavgCDD",
-    "baseline_daily_runtime_hourlyavgCDD",
-    "baseline_seasonal_runtime_deltaT",
-    "baseline_seasonal_runtime_dailyavgCDD",
-    "baseline_seasonal_runtime_hourlyavgCDD",
-    "baseline_comfort_temperature",
-    "actual_daily_runtime",
-    "actual_seasonal_runtime",
-    "seasonal_avoided_runtime_deltaT",
-    "seasonal_avoided_runtime_dailyavgCDD",
-    "seasonal_avoided_runtime_hourlyavgCDD",
-    "seasonal_savings_deltaT",
-    "seasonal_savings_dailyavgCDD",
-    "seasonal_savings_hourlyavgCDD",
-    "total_cooling_runtime",
+    'n_days_in_season_range',
+    'n_days_in_season',
+    'n_days_both_heating_and_cooling',
+    'n_days_insufficient_data',
+
+    'seasonal_savings_dailyavgCDD',
+    'seasonal_savings_deltaT',
+    'seasonal_savings_hourlyavgCDD',
+
+    'seasonal_avoided_runtime_dailyavgCDD',
+    'seasonal_avoided_runtime_deltaT',
+    'seasonal_avoided_runtime_hourlyavgCDD',
+
+    'total_cooling_runtime',
+
+    'actual_daily_runtime',
+    'actual_seasonal_runtime',
+
+    'baseline_comfort_temperature',
+
+    'baseline_daily_runtime_dailyavgCDD',
+    'baseline_daily_runtime_deltaT',
+    'baseline_daily_runtime_hourlyavgCDD',
+
+    'baseline_seasonal_runtime_dailyavgCDD',
+    'baseline_seasonal_runtime_deltaT',
+    'baseline_seasonal_runtime_hourlyavgCDD',
+
+    'mean_demand_dailyavgCDD',
+    'mean_demand_deltaT',
+    'mean_demand_hourlyavgCDD',
+
+    'mean_demand_baseline_dailyavgCDD',
+    'mean_demand_baseline_deltaT',
+    'mean_demand_baseline_hourlyavgCDD',
+
+    'slope_deltaT',
+    'alpha_est_dailyavgCDD',
+    'alpha_est_hourlyavgCDD',
+
+    'intercept_deltaT',
+    'deltaT_base_est_dailyavgCDD',
+    'deltaT_base_est_hourlyavgCDD',
+
+    'mean_sq_err_dailyavgCDD',
+    'mean_sq_err_deltaT',
+    'mean_sq_err_hourlyavgCDD',
+
+    'root_mean_sq_err_dailyavgCDD',
+    'root_mean_sq_err_deltaT',
+    'root_mean_sq_err_hourlyavgCDD',
+
+    'cv_root_mean_sq_err_dailyavgCDD',
+    'cv_root_mean_sq_err_deltaT',
+    'cv_root_mean_sq_err_hourlyavgCDD',
+
+    'mean_abs_err_dailyavgCDD',
+    'mean_abs_err_deltaT',
+    'mean_abs_err_hourlyavgCDD',
+
+    'mean_abs_pct_err_dailyavgCDD',
+    'mean_abs_pct_err_deltaT',
+    'mean_abs_pct_err_hourlyavgCDD',
 ]
 
 REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
-    "n_days_both_heating_and_cooling",
-    "n_days_insufficient_data",
-    "n_days_in_season",
-    "n_days_in_season_range",
-    "slope_deltaT",
-    "intercept_deltaT",
-    "alpha_est_dailyavgCDD",
-    "alpha_est_dailyavgHDD",
-    "alpha_est_hourlyavgCDD",
-    "alpha_est_hourlyavgHDD",
-    "mean_sq_err_dailyavgCDD",
-    "mean_sq_err_dailyavgHDD",
-    "mean_sq_err_hourlyavgCDD",
-    "mean_sq_err_hourlyavgHDD",
-    "mean_sq_err_deltaT",
-    "deltaT_base_est_dailyavgCDD",
-    "deltaT_base_est_dailyavgHDD",
-    "deltaT_base_est_hourlyavgCDD",
-    "deltaT_base_est_hourlyavgHDD",
-    "baseline_daily_runtime_deltaT",
-    "baseline_daily_runtime_dailyavgCDD",
-    "baseline_daily_runtime_dailyavgHDD",
-    "baseline_daily_runtime_hourlyavgCDD",
-    "baseline_daily_runtime_hourlyavgHDD",
-    "baseline_seasonal_runtime_deltaT",
-    "baseline_seasonal_runtime_dailyavgCDD",
-    "baseline_seasonal_runtime_dailyavgHDD",
-    "baseline_seasonal_runtime_hourlyavgCDD",
-    "baseline_seasonal_runtime_hourlyavgHDD",
-    "baseline_comfort_temperature",
-    "actual_daily_runtime",
-    "actual_seasonal_runtime",
-    "seasonal_avoided_runtime_deltaT",
-    "seasonal_avoided_runtime_dailyavgCDD",
-    "seasonal_avoided_runtime_dailyavgHDD",
-    "seasonal_avoided_runtime_hourlyavgCDD",
-    "seasonal_avoided_runtime_hourlyavgHDD",
-    "seasonal_savings_deltaT",
-    "seasonal_savings_dailyavgCDD",
-    "seasonal_savings_dailyavgHDD",
-    "seasonal_savings_hourlyavgCDD",
-    "seasonal_savings_hourlyavgHDD",
-    "total_heating_runtime",
-    "total_cooling_runtime",
-    "total_auxiliary_heating_runtime",
-    "total_emergency_heating_runtime",
-    "rhu_00F_to_05F",
-    "rhu_05F_to_10F",
-    "rhu_10F_to_15F",
-    "rhu_15F_to_20F",
-    "rhu_20F_to_25F",
-    "rhu_25F_to_30F",
-    "rhu_30F_to_35F",
-    "rhu_35F_to_40F",
-    "rhu_40F_to_45F",
-    "rhu_45F_to_50F",
-    "rhu_50F_to_55F",
-    "rhu_55F_to_60F",
+    'n_days_in_season_range',
+    'n_days_in_season',
+    'n_days_both_heating_and_cooling',
+    'n_days_insufficient_data',
+
+    'seasonal_savings_dailyavgCDD',
+    'seasonal_savings_dailyavgHDD',
+    'seasonal_savings_deltaT',
+    'seasonal_savings_hourlyavgCDD',
+    'seasonal_savings_hourlyavgHDD',
+
+    'seasonal_avoided_runtime_dailyavgCDD',
+    'seasonal_avoided_runtime_dailyavgHDD',
+    'seasonal_avoided_runtime_deltaT',
+    'seasonal_avoided_runtime_hourlyavgCDD',
+    'seasonal_avoided_runtime_hourlyavgHDD',
+
+    'total_auxiliary_heating_runtime',
+    'total_cooling_runtime',
+    'total_emergency_heating_runtime',
+    'total_heating_runtime',
+
+    'actual_daily_runtime',
+    'actual_seasonal_runtime',
+
+    'baseline_comfort_temperature',
+
+    'baseline_daily_runtime_dailyavgCDD',
+    'baseline_daily_runtime_dailyavgHDD',
+    'baseline_daily_runtime_deltaT',
+    'baseline_daily_runtime_hourlyavgCDD',
+    'baseline_daily_runtime_hourlyavgHDD',
+
+    'baseline_seasonal_runtime_dailyavgCDD',
+    'baseline_seasonal_runtime_dailyavgHDD',
+    'baseline_seasonal_runtime_deltaT',
+    'baseline_seasonal_runtime_hourlyavgCDD',
+    'baseline_seasonal_runtime_hourlyavgHDD',
+
+    'mean_demand_dailyavgCDD',
+    'mean_demand_dailyavgHDD',
+    'mean_demand_deltaT',
+    'mean_demand_hourlyavgCDD',
+    'mean_demand_hourlyavgHDD',
+
+    'mean_demand_baseline_dailyavgCDD',
+    'mean_demand_baseline_dailyavgHDD',
+    'mean_demand_baseline_deltaT',
+    'mean_demand_baseline_hourlyavgCDD',
+    'mean_demand_baseline_hourlyavgHDD',
+
+    'rhu_00F_to_05F',
+    'rhu_05F_to_10F',
+    'rhu_10F_to_15F',
+    'rhu_15F_to_20F',
+    'rhu_20F_to_25F',
+    'rhu_25F_to_30F',
+    'rhu_30F_to_35F',
+    'rhu_35F_to_40F',
+    'rhu_40F_to_45F',
+    'rhu_45F_to_50F',
+    'rhu_50F_to_55F',
+    'rhu_55F_to_60F',
+
+    'slope_deltaT',
+    'alpha_est_dailyavgCDD',
+    'alpha_est_dailyavgHDD',
+    'alpha_est_hourlyavgCDD',
+    'alpha_est_hourlyavgHDD',
+
+    'intercept_deltaT',
+    'deltaT_base_est_dailyavgCDD',
+    'deltaT_base_est_dailyavgHDD',
+    'deltaT_base_est_hourlyavgCDD',
+    'deltaT_base_est_hourlyavgHDD',
+
+    'mean_sq_err_dailyavgCDD',
+    'mean_sq_err_dailyavgHDD',
+    'mean_sq_err_deltaT',
+    'mean_sq_err_hourlyavgCDD',
+    'mean_sq_err_hourlyavgHDD',
+
+    'root_mean_sq_err_dailyavgCDD',
+    'root_mean_sq_err_dailyavgHDD',
+    'root_mean_sq_err_deltaT',
+    'root_mean_sq_err_hourlyavgCDD',
+    'root_mean_sq_err_hourlyavgHDD',
+
+    'cv_root_mean_sq_err_dailyavgCDD',
+    'cv_root_mean_sq_err_dailyavgHDD',
+    'cv_root_mean_sq_err_deltaT',
+    'cv_root_mean_sq_err_hourlyavgCDD',
+    'cv_root_mean_sq_err_hourlyavgHDD',
+
+    'mean_abs_err_dailyavgCDD',
+    'mean_abs_err_dailyavgHDD',
+    'mean_abs_err_deltaT',
+    'mean_abs_err_hourlyavgCDD',
+    'mean_abs_err_hourlyavgHDD',
+
+    'mean_abs_pct_err_dailyavgCDD',
+    'mean_abs_pct_err_dailyavgHDD',
+    'mean_abs_pct_err_deltaT',
+    'mean_abs_pct_err_hourlyavgCDD',
+    'mean_abs_pct_err_hourlyavgHDD',
+]
+
+# Just for reference, not used anywhere
+IGNORED_COLUMNS = [
+    'ct_identifier',
+    'equipment_type',
+    'season_name',
+    'station',
+    'zipcode',
 ]
 
 class ZipcodeGroupSpec(object):
@@ -245,7 +370,9 @@ def combine_output_dataframes(dfs):
     """
     return pd.concat(dfs, ignore_index=True)
 
-def compute_summary_statistics(df, label, statistical_power_target="dailyavg", confidence=.95, ratio=.05):
+def compute_summary_statistics(df, label, target_method="dailyavg",
+        target_error_metric="CVRMSE", target_error_max_value=np.inf,
+        statistical_power_confidence=.95, statistical_power_ratio=.05):
     """ Computes summary statistics for the output dataframe. Computes the
     following statistics for each real-valued or integer valued column in
     the output dataframe: mean, standard error of the mean, and deciles.
@@ -256,11 +383,17 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
         Output for which to compute summary statistics.
     label : str
         Name for this set of thermostat outputs.
-    statistical_power_target : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-        Method for which statistical power extrapolation is desired.
-    confidence : float in range 0 to 1, default .95
+    target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
+        Metric method by which samples will be filtered according to bad fits, and
+        for which statistical power extrapolation is desired.
+    target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
+        Error metric to use when determining thermostat-season inclusion in
+        statistics output.
+    target_error_max_value : float, default np.inf
+        Maximum acceptable value for error metric defined by target_error_metric.
+    statistical_power_confidence : float in range 0 to 1, default .95
         Confidence interval to use in estimated statistical power calculation.
-    ratio : float in range 0 to 1, default .05
+    statistical_power_ratio : float in range 0 to 1, default .05
         Ratio of standard error to mean desired in statistical power calculation.
 
     Returns
@@ -289,49 +422,112 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
 
     """
 
-    if statistical_power_target not in ["dailyavg", "hourlyavg", "deltaT"]:
+    if target_method not in ["dailyavg", "hourlyavg", "deltaT"]:
         message = 'Method not supported - please use one of "dailyavg",' \
                 '"hourlyavg", or "deltaT"'
         raise ValueError(message)
 
-    def _statistical_power_estimate(mean, sem, n):
-        n_std_devs = norm.ppf(1 - (1 - confidence)/2)
+    def _statistical_power_estimate(season_type_stats, season_type):
+
+        if season_type == "heating":
+            if target_method == "deltaT":
+                method = target_method
+            else:
+                method = "{}HDD".format(target_method)
+
+            stat_power_target_mean = "seasonal_savings_{}_mean".format(method)
+            stat_power_target_sem = "seasonal_savings_{}_sem".format(method)
+            stat_power_target_n = "seasonal_savings_{}_n".format(method)
+        else:
+            if target_method == "deltaT":
+                method = target_method
+            else:
+                method = "{}CDD".format(target_method)
+
+            stat_power_target_mean = "seasonal_savings_{}_mean".format(method)
+            stat_power_target_sem = "seasonal_savings_{}_sem".format(method)
+            stat_power_target_n = "seasonal_savings_{}_n".format(method)
+
+        mean = season_type_stats[stat_power_target_mean]
+        sem = season_type_stats[stat_power_target_sem]
+        n = season_type_stats[stat_power_target_n]
+
+        n_std_devs = norm.ppf(1 - (1 - statistical_power_confidence)/2)
         std = sem * (n**.5)
-        target_interval = mean * ratio
+        target_interval = mean * statistical_power_ratio
         target_n = (std * n_std_devs / target_interval) ** 2.
         return target_n
 
-    def _filter_rows(season_type_df):
+    def _filter_rows(season_type_df, season_type):
         filtered_df_rows = []
         for i, row in season_type_df.iterrows():
-            if _accept_row(row):
+            if _accept_row(row, season_type):
                 filtered_df_rows.append(row)
         return pd.DataFrame(filtered_df_rows)
 
-    def _accept_row(row):
+    def _accept_row(row, season_type):
         passes_validity_rules = _passes_validity_rules(row)
-        has_physical_deltaT = _has_physical_deltaT(row)
-        has_good_enough_fit = _has_good_enough_fit(row)
-        return passes_validity_rules and has_physical_deltaT and has_good_enough_fit
-
-    def _has_physical_deltaT(row):
-        return -10 <= row.intercept_deltaT <= 50
+        has_physical_deltaT = _has_physical_deltaT(row, season_type)
+        has_good_enough_fit = _has_good_enough_fit(row, season_type)
+        return (
+            passes_validity_rules
+            and has_physical_deltaT
+            and has_good_enough_fit
+        )
 
     def _passes_validity_rules(row):
         try:
-            pct_insufficient_data= row.n_days_insufficient_data / row.n_days_in_season_range
+            pct_insufficient_data = row.n_days_insufficient_data / row.n_days_in_season_range
         except ZeroDivisionError:
             return False
         else:
             return pct_insufficient_data < 0.05
 
-    def _has_good_enough_fit(row):
-        return True
+    def _has_physical_deltaT(row, season_type):
+        if target_method == "deltaT":
+            column = "intercept_deltaT"
+        else:
+            if season_type == "heating":
+                column = "deltaT_base_est_{}HDD".format(target_method)
+            else:
+                column = "deltaT_base_est_{}CDD".format(target_method)
+
+        return -10 <= row[column] <= 50
+
+    def _has_good_enough_fit(row, season_type):
+        if target_error_metric == "MSE":
+            error_metric_prefix = "mean_sq_err"
+        elif target_error_metric == "RMSE":
+            error_metric_prefix = "root_mean_sq_err"
+        elif target_error_metric == "CVRMSE":
+            error_metric_prefix = "cv_root_mean_sq_err"
+        elif target_error_metric == "MAE":
+            error_metric_prefix = "mean_abs_err"
+        elif target_error_metric == "MAPE":
+            error_metric_prefix = "mean_abs_pct_err"
+        else:
+            message = (
+                'Method {} not supported.'
+                ' Use one of "MSE", "RMSE", "CVRMSE", "MAE", or "MAPE".'
+            ).format(target_error_metric)
+            raise ValueError(message)
+
+        if target_method == "deltaT":
+            method_suffix = "deltaT"
+        else:
+            if season_type == "cooling":
+                method_suffix = "{}CDD".format(target_method)
+            else:
+                method_suffix = "{}HDD".format(target_method)
+
+        column = "{}_{}".format(error_metric_prefix, method_suffix)
+
+        return row[column] < target_error_max_value
 
     def _get_season_type_stats(season_type_df, season_type, season_type_columns):
         n_seasons_total = season_type_df.shape[0]
 
-        filtered_season_type_df = _filter_rows(season_type_df)
+        filtered_season_type_df = _filter_rows(season_type_df, season_type)
 
         n_seasons_kept = filtered_season_type_df.shape[0]
         n_seasons_discarded = n_seasons_total - n_seasons_kept
@@ -356,29 +552,8 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
                 for quantile in quantiles:
                     season_type_stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
 
-            if season_type == "heating":
-                if statistical_power_target == "deltaT":
-                    method = statistical_power_target
-                else:
-                    method = "{}HDD".format(statistical_power_target)
-
-                stat_power_target_mean = "seasonal_savings_{}_mean".format(method)
-                stat_power_target_sem = "seasonal_savings_{}_sem".format(method)
-                stat_power_target_n = "seasonal_savings_{}_n".format(method)
-            else:
-                if statistical_power_target == "deltaT":
-                    method = statistical_power_target
-                else:
-                    method = "{}CDD".format(statistical_power_target)
-
-                stat_power_target_mean = "seasonal_savings_{}_mean".format(method)
-                stat_power_target_sem = "seasonal_savings_{}_sem".format(method)
-                stat_power_target_n = "seasonal_savings_{}_n".format(method)
-
-            season_type_stats["n_enough_statistical_power"] = _statistical_power_estimate(
-                    season_type_stats[stat_power_target_mean],
-                    season_type_stats[stat_power_target_sem],
-                    season_type_stats[stat_power_target_n])
+            season_type_stats["n_enough_statistical_power"] = \
+                    _statistical_power_estimate(season_type_stats, season_type)
 
             return [season_type_stats]
         else:
@@ -397,7 +572,9 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
 
 def compute_summary_statistics_by_zipcode_group(df,
         filepath=None, dictionary=None, group_spec=None,
-        statistical_power_target="dailyavg", confidence=.95, ratio=.05):
+        target_method="dailyavg", target_error_metric="CVRMSE",
+        target_error_max_value=np.inf, statistical_power_confidence=.95,
+        statistical_power_ratio=.05):
     """ Filepath to zipcode -> group mapping. Note that this mapping should
     include all zipcodes that may appear in the raw output file dataframe. Any
     zipcodes which do not appear in the mapping but do occur in the ouput data
@@ -444,11 +621,17 @@ def compute_summary_statistics_by_zipcode_group(df,
 
     group_spec : ZipcodeGroupSpec object
         Initialized group spec object containing a zipcode -> group mapping.
-    statistical_power_target : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-        Method for which statistical power extrapolation is desired.
-    confidence : float in range 0 to 1, default .95
+    target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
+        Metric method by which samples will be filtered according to bad fits, and
+        for which statistical power extrapolation is desired.
+    target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
+        Error metric to use when determining thermostat-season inclusion in
+        statistics output.
+    target_error_max_value : float, default np.inf
+        Maximum acceptable value for error metric defined by target_error_metric.
+    statistical_power_confidence : float in range 0 to 1, default .95
         Confidence interval to use in estimated statistical power calculation.
-    ratio : float in range 0 to 1, default .05
+    statistical_power_ratio : float in range 0 to 1, default .05
         Ratio of standard error to mean desired in statistical power calculation.
 
     Returns
@@ -471,13 +654,15 @@ def compute_summary_statistics_by_zipcode_group(df,
     stats = []
     for label, group_df in group_spec.iter_groups(df):
         stats.extend(compute_summary_statistics(group_df, label,
-                statistical_power_target=statistical_power_target,
-                confidence=confidence,
-                ratio=ratio))
+                target_method=target_method,
+                statistical_power_confidence=statistical_power_confidence,
+                statistical_power_ratio=statistical_power_ratio))
 
     return stats
 
-def compute_summary_statistics_by_zipcode(df, statistical_power_target="dailyavg", confidence=.95, ratio=.05):
+def compute_summary_statistics_by_zipcode(df, target_method="dailyavg",
+        target_error_metric="CVRMSE", target_error_max_value=np.inf,
+        statistical_power_confidence=.95, statistical_power_ratio=.05):
     """ Compute summary statistics for a particular dataframe by zipcode.
 
     Parameters
@@ -485,11 +670,17 @@ def compute_summary_statistics_by_zipcode(df, statistical_power_target="dailyavg
     df : pd.Dataframe
         Contains combined (not yet grouped) output data for all thermostats in
         the sample.
-    statistical_power_target : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-        Method for which statistical power extrapolation is desired.
-    confidence : float in range 0 to 1, default .95
+    target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
+        Metric method by which samples will be filtered according to bad fits, and
+        for which statistical power extrapolation is desired.
+    target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
+        Error metric to use when determining thermostat-season inclusion in
+        statistics output.
+    target_error_max_value : float, default np.inf
+        Maximum acceptable value for error metric defined by target_error_metric.
+    statistical_power_confidence : float in range 0 to 1, default .95
         Confidence interval to use in estimated statistical power calculation.
-    ratio : float in range 0 to 1, default .05
+    statistical_power_ratio : float in range 0 to 1, default .05
         Ratio of standard error to mean desired in statistical power calculation.
 
     Returns
@@ -502,12 +693,14 @@ def compute_summary_statistics_by_zipcode(df, statistical_power_target="dailyavg
     group_spec = ZipcodeGroupSpec(dictionary=zipcode_dict)
 
     stats = compute_summary_statistics_by_zipcode_group(df, group_spec=group_spec,
-            statistical_power_target=statistical_power_target,
-            confidence=confidence,
-            ratio=ratio)
+            target_method=target_method,
+            statistical_power_confidence=statistical_power_confidence,
+            statistical_power_ratio=statistical_power_ratio)
     return stats
 
-def compute_summary_statistics_by_weather_station(df, statistical_power_target="dailyavg", confidence=.95, ratio=.05):
+def compute_summary_statistics_by_weather_station(df, target_method="dailyavg",
+        target_error_metric="CVRMSE", target_error_max_value=np.inf,
+        statistical_power_confidence=.95, statistical_power_ratio=.05):
     """ Compute summary statistics for a particular dataframe by weather
     weather station used to find outdoor temperature data
 
@@ -516,11 +709,17 @@ def compute_summary_statistics_by_weather_station(df, statistical_power_target="
     df : pd.Dataframe
         Contains combined (not yet grouped) output data for all thermostats in
         the sample.
-    statistical_power_target : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-        Method for which statistical power extrapolation is desired.
-    confidence : float in range 0 to 1, default .95
+    target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
+        Metric method by which samples will be filtered according to bad fits, and
+        for which statistical power extrapolation is desired.
+    target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
+        Error metric to use when determining thermostat-season inclusion in
+        statistics output.
+    target_error_max_value : float, default np.inf
+        Maximum acceptable value for error metric defined by target_error_metric.
+    statistical_power_confidence : float in range 0 to 1, default .95
         Confidence interval to use in estimated statistical power calculation.
-    ratio : float in range 0 to 1, default .05
+    statistical_power_ratio : float in range 0 to 1, default .05
         Ratio of standard error to mean desired in statistical power calculation.
 
     Returns
@@ -535,9 +734,9 @@ def compute_summary_statistics_by_weather_station(df, statistical_power_target="
     group_spec = ZipcodeGroupSpec(dictionary=zipcode_dict)
 
     stats = compute_summary_statistics_by_zipcode_group(df, group_spec=group_spec,
-            statistical_power_target=statistical_power_target,
-            confidence=confidence,
-            ratio=ratio)
+            target_method=target_method,
+            statistical_power_confidence=statistical_power_confidence,
+            statistical_power_ratio=statistical_power_ratio)
     return stats
 
 def summary_statistics_to_csv(stats, filepath):
