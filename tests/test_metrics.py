@@ -30,7 +30,7 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
     for key in seasonal_metrics_type_1[0].keys():
         test_value = seasonal_metrics_type_1[0][key]
         target_value = seasonal_metrics_type_1_data[0][key]
-        if isinstance(test_value, str):
+        if isinstance(test_value, six.string_types):
             assert test_value == target_value
         else:
             assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
