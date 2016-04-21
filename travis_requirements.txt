@@ -1,6 +1,6 @@
 eemeter
 numpy
-pandas >= 0.18
+pandas
 python-dateutil
 pytz
 six
