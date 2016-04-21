@@ -4,12 +4,65 @@ Quickstart
 Installation
 ------------
 
-First, check to make sure you are on the most recent version of the package.
+To install the thermostat package for the first time, we highly recommend that
+you create a virtual environment or a conda environment in which to install it.
+You may choose to skip this step, but do so at the risk of corrupting your
+existing python environment. Isolating your python environment will also
+make it easier to debug:
+
+.. code-block:: bash
+
+    # if using virtualenvwrapper (see https://virtualenvwrapper.readthedocs.org/en/latest/install.html)
+    $ mkvirtualenv thermostat
+    (thermostat)$ pip install thermostat
+
+    # if using conda (see note below - conda is distributed with Anaconda)
+    $ conda create --yes --name thermostat pandas
+    (thermostat)$ pip install thermostat
+
+If you already have an environment, use the following:
+
+.. code-block:: bash
+
+    # if using virtualenvwrapper
+    $ workon thermostat
+    (thermostat)$
+
+    # if using conda
+    $ source activate thermostat
+    (thermostat)$
+
+To deactivate the environment when you've finished, use the following:
+
+.. code-block:: bash
+
+    # if using virtualenvwrapper
+    (thermostat)$ deactivate
+    $
+
+    # if using conda
+    (thermostat)$ source deactivate
+    $
+
+Check to make sure you are on the most recent version of the package.
 
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
     '0.2.16'
+
+If you are not on the correct version, you should upgrade:
+
+.. code-block:: bash
+
+    $ pip install thermostat --upgrade
+
+The command above will update dependencies as well. If you wish to skip this,
+use the :code:`--no-deps` flag:
+
+.. code-block:: bash
+
+    $ pip install thermostat --upgrade --no-deps
 
 .. note::
 
@@ -81,7 +134,7 @@ See :ref:`thermostat-output` for more detailed file format information.
     internal calls to fetch the same weather data (i.e. getting outdoor
     temperature data for thermostats that map to the same weather station).
 
-    The weather cache is automtically created at :code:`~/.eemeter/cache`.
+    The weather cache is automtically created at :code:`~/.eemeter/cache/`.
 
     If you wish to change the location of this cache, you can set the
     environment variable as shown below to the path of the existing directory
@@ -90,6 +143,13 @@ See :ref:`thermostat-output` for more detailed file format information.
     .. code-block:: bash
 
         $ export EEMETER_WEATHER_CACHE_DIRECTORY=/path/to/directory
+
+    If you are using virtualenvwrapper, you may find it convenient to put this
+    in your postactivate hook script:
+
+    .. code-block:: bash
+
+        $ echo "export EEMETER_WEATHER_CACHE_DIRECTORY=/path/to/directory" >> ~/.virtualenvs/thermostat/bin/postactivate
 
     You can also do this in python, but it must be done
     *before loading the package*.  For example:
