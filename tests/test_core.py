@@ -224,22 +224,12 @@ def test_thermostat_types_2_3_4_5_get_resistance_heat_utilization_bins(heating_s
 
 
 @pytest.fixture(params=range(2))
-def season_days(request, thermostat_type_1, thermostat_type_2,
-        thermostat_type_3, thermostat_type_4, thermostat_type_5,
-        heating_season_type_1_entire, cooling_season_type_1_entire,
-        heating_season_type_2, cooling_season_type_2,
-        heating_season_type_3, cooling_season_type_3,
-        heating_season_type_4, cooling_season_type_5):
+def season_days(request, thermostat_type_1, heating_season_type_1_entire,
+        cooling_season_type_1_entire):
 
     tests = [
         (thermostat_type_1, heating_season_type_1_entire, 1),
         (thermostat_type_1, cooling_season_type_1_entire, 0),
-        # (thermostat_type_2, heating_season_type_2, 1),
-        # (thermostat_type_2, cooling_season_type_2, 0),
-        # (thermostat_type_3, heating_season_type_3, 1),
-        # (thermostat_type_3, cooling_season_type_3, 0),
-        # (thermostat_type_4, heating_season_type_4, 1),
-        # (thermostat_type_5, cooling_season_type_5, 0),
     ]
 
     return tests[request.param]

@@ -149,7 +149,7 @@ See :ref:`thermostat-output` for more detailed file format information.
 
     .. code-block:: bash
 
-        $ echo "export EEMETER_WEATHER_CACHE_DIRECTORY=/path/to/directory" >> ~/.virtualenvs/thermostat/bin/postactivate
+        $ echo "export EEMETER_WEATHER_CACHE_DIRECTORY=/path/to/directory" >> $WORKON_HOME/thermostat/bin/postactivate
 
     You can also do this in python, but it must be done
     *before loading the package*.  For example:

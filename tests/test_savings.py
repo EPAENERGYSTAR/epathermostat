@@ -7,11 +7,6 @@ from numpy.testing import assert_allclose
 
 import pytest
 
-# from fixtures.thermostats import thermostat_type_1
-# from fixtures.thermostats import heating_season_type_1_entire as heating_season_type_1
-# from fixtures.thermostats import cooling_season_type_1_entire as cooling_season_type_1
-# from fixtures.thermostats import seasonal_metrics_type_1_data
-
 RTOL = 1e-3
 ATOL = 1e-3
 
@@ -37,20 +32,3 @@ def test_get_seasonal_percent_savings(seasonal_percent_savings_fixture):
     percent_savings, baseline, avoided = seasonal_percent_savings_fixture
     savings = get_seasonal_percent_savings(baseline, avoided)
     assert_allclose(savings, percent_savings, rtol=RTOL, atol=ATOL)
-
-#
-# def test_get_total_baseline_cooling_runtime(thermostat_type_1,
-#         cooling_season_type_1, seasonal_metrics_type_1_data):
-#
-#     total_baseline = thermostat_type_1.get_total_baseline_cooling_runtime(
-#             cooling_season_type_1, seasonal_metrics_type_1_data[0][""])
-#
-#     assert_allclose(total_baseline, seasonal_metrics_type_1_data[0]["total_baseline"], rtol=RTOL, atol=ATOL)
-#
-# def test_get_total_baseline_heating_runtime(thermostat_type_1,
-#         heating_season_type_1, seasonal_metrics_type_1_data):
-#
-#     total_baseline = thermostat_type_1.get_total_baseline_heating_runtime(
-#             heating_season_type_1, seasonal_metrics_type_1_data[1][""])
-#
-#     assert_allclose(total_baseline, seasonal_metrics_type_1_data[1]["total_baseline"], rtol=RTOL, atol=ATOL)
