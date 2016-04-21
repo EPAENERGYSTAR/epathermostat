@@ -14,6 +14,7 @@ from fixtures.thermostats import thermostat_type_3
 from fixtures.thermostats import thermostat_type_4
 from fixtures.thermostats import thermostat_type_5
 from fixtures.thermostats import seasonal_metrics_type_1_data
+import six
 
 @pytest.fixture(scope="session")
 def seasonal_metrics_type_1(thermostat_type_1):
@@ -37,7 +38,7 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
     for key in seasonal_metrics_type_1[1].keys():
         test_value = seasonal_metrics_type_1[1][key]
         target_value = seasonal_metrics_type_1_data[1][key]
-        if isinstance(test_value, str):
+        if isinstance(test_value, six.string_types):
             assert test_value == target_value
         else:
             assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
