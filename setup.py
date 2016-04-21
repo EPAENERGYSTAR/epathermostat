@@ -38,5 +38,5 @@ setup(name='thermostat',
     install_requires=[
         'eemeter',
         'pandas',
-        ],
+    ],
 )

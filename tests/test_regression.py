@@ -11,16 +11,6 @@ import pytest
 RTOL = 1e-3
 ATOL = 1e-3
 
-from fixtures.thermostats import thermostat_type_1
-from fixtures.thermostats import heating_season_type_1
-from fixtures.thermostats import cooling_season_type_1
-from fixtures.thermostats import heating_demand_deltaT_type_1
-from fixtures.thermostats import cooling_demand_deltaT_type_1
-from fixtures.thermostats import heating_daily_runtime_type_1
-from fixtures.thermostats import cooling_daily_runtime_type_1
-from fixtures.thermostats import heating_season_type_1_data
-from fixtures.thermostats import cooling_season_type_1_data
-
 @pytest.fixture(params=[
     (pd.Series([1,2,3,4,5,6]), pd.Series([2,4,6,8,10,12]), .5, 0, 0),
     (pd.Series([2,4,10,8,6]), pd.Series([1,2,5,4,3]), 2, 0, 0),

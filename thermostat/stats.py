@@ -318,7 +318,12 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
         return -10 <= row.intercept_deltaT <= 50
 
     def _passes_validity_rules(row):
-        return row.n_days_insufficient_data / row.n_days_in_season_range > 0.05
+        try:
+            pct_insufficient_data= row.n_days_insufficient_data / row.n_days_in_season_range
+        except ZeroDivisionError:
+            return False
+        else:
+            return pct_insufficient_data < 0.05
 
     def _has_good_enough_fit(row):
         return True
@@ -333,11 +338,11 @@ def compute_summary_statistics(df, label, statistical_power_target="dailyavg", c
 
         season_type_stats = OrderedDict()
         season_type_stats["label"] = "{}_{}".format(label, season_type)
-        season_type_stats["n_seasons_total"] = n_seasons
-        season_type_stats["n_seasons_kept"] = n_seasons
-        season_type_stats["n_seasons_discarded"] = n_seasons
+        season_type_stats["n_seasons_total"] = n_seasons_total
+        season_type_stats["n_seasons_kept"] = n_seasons_kept
+        season_type_stats["n_seasons_discarded"] = n_seasons_discarded
 
-        if n_seasons > 0:
+        if n_seasons_total > 0:
 
             quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 
@@ -552,7 +557,13 @@ def summary_statistics_to_csv(stats, filepath):
 
     """
     quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-    columns = ["label", "n_seasons", "n_enough_statistical_power"]
+    columns = [
+        "label",
+        "n_seasons_total",
+        "n_seasons_kept",
+        "n_seasons_discarded",
+        "n_enough_statistical_power"
+    ]
     for column_name in REAL_OR_INTEGER_VALUED_COLUMNS_ALL:
         columns.append("{}_mean".format(column_name))
         columns.append("{}_sem".format(column_name))

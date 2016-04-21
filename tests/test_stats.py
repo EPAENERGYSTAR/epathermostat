@@ -83,7 +83,7 @@ def get_fake_output_df(n_columns):
     ]
 
     string_placeholder = ["PLACEHOLDER"] * n_columns
-    int_column = [i if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
+    int_column = [1 if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
                   for i in randint.rvs(0, 1, size=n_columns)]
     float_column = [i if randint.rvs(0, 30) > 0 else (None if randint.rvs(0, 2) > 0 else np.inf)
                     for i in norm.rvs(size=n_columns)]
@@ -233,8 +233,8 @@ def test_combine_output_dataframes(dataframes):
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 43 + 3
-    assert len(summary_statistics[1]) == 12 * 29 + 3
+    assert len(summary_statistics[0]) == 12 * 43 + 5
+    assert len(summary_statistics[1]) == 12 * 29 + 5
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
         if key not in ["label"]:
@@ -250,7 +250,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 58 + 3
+        assert len(columns) == 12 * 58 + 5
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)
