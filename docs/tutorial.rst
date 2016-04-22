@@ -118,7 +118,7 @@ To calculate savings metrics, iterate through thermostats and save the results.
         seasonal_metrics.extend(outputs)
 
     output_filename = os.path.join(data_dir, "thermostat_example_output.csv")
-    metrics_df = seasonal_metrics_to_csv(seasonal_metrics, filepath)
+    metrics_df = seasonal_metrics_to_csv(seasonal_metrics, output_filename)
 
 The output CSV will be saved in your data directory and should very nearly
 match the output CSV provided in the example data.
