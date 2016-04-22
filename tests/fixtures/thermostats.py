@@ -2,6 +2,10 @@ from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
 from thermostat.savings import get_daily_avoided_runtime
+from thermostat.core import Season
+
+import pandas as pd
+import numpy as np
 
 import pytest
 
@@ -57,6 +61,34 @@ def cooling_season_type_1_end_to_end(thermostat_type_1):
 @pytest.fixture(scope="session")
 def cooling_season_type_1_entire(thermostat_type_1):
     return thermostat_type_1.get_cooling_seasons(method="entire_dataset")[0]
+
+@pytest.fixture(scope="session")
+def cooling_season_type_1_empty(thermostat_type_1):
+    cooling_season = thermostat_type_1.get_cooling_seasons(method="entire_dataset")[0]
+    season = Season(
+        "empty",
+        pd.Series(np.tile(False, cooling_season.daily.shape),
+                  index=cooling_season.daily.index),
+        pd.Series(np.tile(False, cooling_season.hourly.shape),
+                  index=cooling_season.hourly.index),
+        cooling_season.start_date,
+        cooling_season.end_date
+    )
+    return season
+
+@pytest.fixture(scope="session")
+def heating_season_type_1_empty(thermostat_type_1):
+    heating_season = thermostat_type_1.get_heating_seasons(method="entire_dataset")[0]
+    season = Season(
+        "empty",
+        pd.Series(np.tile(False, heating_season.daily.shape),
+                  index=heating_season.daily.index),
+        pd.Series(np.tile(False, heating_season.hourly.shape),
+                  index=heating_season.hourly.index),
+        heating_season.start_date,
+        heating_season.end_date
+    )
+    return season
 
 @pytest.fixture(scope="session")
 def cooling_season_type_2(thermostat_type_2):
@@ -198,41 +230,3 @@ def seasonal_metrics_type_1_data():
         }
     ]
     return data
-
-# @pytest.fixture(scope="session")
-# def heating_demand_deltaT_type_1(thermostat_type_1, heating_season_type_1):
-#     return thermostat_type_1.get_heating_demand(heating_season_type_1, method="deltaT")
-#
-# @pytest.fixture(scope="session")
-# def cooling_demand_deltaT_type_1(thermostat_type_1, cooling_season_type_1):
-#     return thermostat_type_1.get_cooling_demand(cooling_season_type_1, method="deltaT")
-#
-# @pytest.fixture(scope="session")
-# def baseline_heating_demand_deltaT_type_1(thermostat_type_1, heating_season_type_1):
-#     return thermostat_type_1.get_baseline_heating_demand(heating_season_type_1,
-#             70, method="deltaT")
-#
-# @pytest.fixture(scope="session")
-# def baseline_cooling_demand_deltaT_type_1(thermostat_type_1, cooling_season_type_1):
-#     return thermostat_type_1.get_baseline_cooling_demand(cooling_season_type_1,
-#             70, method="deltaT")
-#
-# @pytest.fixture(scope="session")
-# def heating_daily_runtime_type_1(thermostat_type_1, heating_season_type_1):
-#     return thermostat_type_1.heat_runtime[heating_season_type_1.daily].values
-#
-# @pytest.fixture(scope="session")
-# def cooling_daily_runtime_type_1(thermostat_type_1, cooling_season_type_1):
-#     return thermostat_type_1.cool_runtime[cooling_season_type_1.daily].values
-#
-# @pytest.fixture(scope="session")
-# def daily_avoided_cooling_runtime_deltaT_type_1(thermostat_type_1, cooling_demand_deltaT_type_1,
-#         baseline_cooling_demand_deltaT_type_1):
-#     return get_daily_avoided_runtime(-2400,
-#             -cooling_demand_deltaT_type_1, baseline_cooling_demand_deltaT_type_1)
-#
-# @pytest.fixture(scope="session")
-# def daily_avoided_heating_runtime_deltaT_type_1(thermostat_type_1, heating_demand_deltaT_type_1,
-#         baseline_heating_demand_deltaT_type_1):
-#     return get_daily_avoided_runtime(2400,
-#             heating_demand_deltaT_type_1, baseline_heating_demand_deltaT_type_1)

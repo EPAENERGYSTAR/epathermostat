@@ -594,7 +594,12 @@ class Thermostat(object):
             return errors
 
         deltaT_base_starting_guess = 0
-        y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+        try:
+            y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+        except TypeError: # len 0
+            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
+            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
         deltaT_base_estimate = y[0]
 
         cdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
@@ -683,7 +688,13 @@ class Thermostat(object):
             return errors
 
         deltaT_base_starting_guess = 0
-        y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+
+        try:
+            y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+        except TypeError: # len 0
+            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
+            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
         deltaT_base_estimate = y[0]
 
         hdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)

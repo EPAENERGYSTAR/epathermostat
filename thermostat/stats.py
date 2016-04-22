@@ -786,10 +786,9 @@ def compute_summary_statistics_by_zipcode_group(df,
             method = "{}HDD".format(target_method)
         stats.append({
             "label": "national_heating",
-            "national_seasonal_savings_{}_mean_weighted_mean".format(method): heating_mean,
-            "national_seasonal_savings_{}_q50_weighted_mean".format(method): heating_median,
+            "seasonal_savings_{}_mean_national_weighted_mean".format(method): heating_mean,
+            "seasonal_savings_{}_q50_national_weighted_mean".format(method): heating_median,
         })
-
 
         if target_method == "deltaT":
             method = "deltaT"
@@ -797,8 +796,8 @@ def compute_summary_statistics_by_zipcode_group(df,
             method = "{}CDD".format(target_method)
         stats.append({
             "label": "national_cooling",
-            "national_seasonal_savings_{}_mean_weighted_mean".format(method): cooling_mean,
-            "national_seasonal_savings_{}_q50_weighted_mean".format(method): cooling_median,
+            "seasonal_savings_{}_mean_national_weighted_mean".format(method): cooling_mean,
+            "seasonal_savings_{}_q50_national_weighted_mean".format(method): cooling_median,
         })
 
     return stats
