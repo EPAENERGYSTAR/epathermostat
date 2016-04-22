@@ -6,50 +6,67 @@ from numpy.testing import assert_allclose
 import pytest
 
 from fixtures.thermostats import thermostat_type_1
-from fixtures.thermostats import heating_season_type_1
-from fixtures.thermostats import cooling_season_type_1
-from fixtures.thermostats import heating_season_type_1_data
-from fixtures.thermostats import cooling_season_type_1_data
+from fixtures.thermostats import heating_season_type_1_entire
+from fixtures.thermostats import cooling_season_type_1_entire
+from fixtures.thermostats import seasonal_metrics_type_1_data
 
 RTOL = 1e-3
 ATOL = 1e-3
 
-def test_get_cooling_season_baseline_setpoint(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
+@pytest.fixture(params=[
+    ("deltaT", "mean_demand_baseline_deltaT", None),
+    ("dailyavgCDD", "mean_demand_baseline_dailyavgCDD", "deltaT_base_est_dailyavgCDD"),
+    ("hourlyavgCDD", "mean_demand_baseline_hourlyavgCDD", "deltaT_base_est_hourlyavgCDD"),
+    ])
+def cooling_baseline_types(request):
+    return request.param
 
-    baseline = thermostat_type_1.get_cooling_season_baseline_setpoint(cooling_season_type_1)
-    assert_allclose(baseline, cooling_season_type_1_data["baseline_setpoint"], rtol=RTOL, atol=ATOL)
+@pytest.fixture(params=[
+    ("deltaT", "mean_demand_baseline_deltaT", None),
+    ("dailyavgHDD", "mean_demand_baseline_dailyavgHDD", "deltaT_base_est_dailyavgHDD"),
+    ("hourlyavgHDD", "mean_demand_baseline_hourlyavgHDD", "deltaT_base_est_hourlyavgHDD"),
+    ])
+def heating_baseline_types(request):
+    return request.param
 
-def test_get_heating_season_baseline_setpoint(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
 
-    baseline = thermostat_type_1.get_heating_season_baseline_setpoint(heating_season_type_1)
-    assert_allclose(baseline, heating_season_type_1_data["baseline_setpoint"], rtol=RTOL, atol=ATOL)
+def test_get_cooling_season_baseline_setpoint(thermostat_type_1, cooling_season_type_1_entire, seasonal_metrics_type_1_data):
 
-def test_get_cooling_season_baseline_deltaT(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
+    baseline = thermostat_type_1.get_cooling_season_baseline_setpoint(cooling_season_type_1_entire)
+    assert_allclose(baseline, seasonal_metrics_type_1_data[0]["baseline_comfort_temperature"], rtol=RTOL, atol=ATOL)
 
-    baseline = thermostat_type_1.get_baseline_cooling_demand(cooling_season_type_1, method="deltaT")
-    assert_allclose(baseline.mean(), cooling_season_type_1_data["baseline_demand_deltaT_mean"], rtol=RTOL, atol=ATOL)
+def test_get_heating_season_baseline_setpoint(thermostat_type_1, heating_season_type_1_entire, seasonal_metrics_type_1_data):
 
-def test_get_heating_season_baseline_deltaT(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
+    baseline = thermostat_type_1.get_heating_season_baseline_setpoint(heating_season_type_1_entire)
+    assert_allclose(baseline, seasonal_metrics_type_1_data[1]["baseline_comfort_temperature"], rtol=RTOL, atol=ATOL)
 
-    baseline = thermostat_type_1.get_baseline_heating_demand(heating_season_type_1, method="deltaT")
-    assert_allclose(baseline.mean(), heating_season_type_1_data["baseline_demand_deltaT_mean"], rtol=RTOL, atol=ATOL)
 
-def test_get_cooling_season_baseline_dailyavgCDD(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
+def test_get_cooling_season_baseline_deltaT(thermostat_type_1, cooling_season_type_1_entire, seasonal_metrics_type_1_data, cooling_baseline_types):
 
-    baseline = thermostat_type_1.get_baseline_cooling_demand(cooling_season_type_1, 0, method="dailyavgCDD")
-    assert_allclose(baseline.mean(), cooling_season_type_1_data["baseline_demand_dailyavgCDD_mean"], rtol=RTOL, atol=ATOL)
+    demand_method, result_name, deltaT_base_name = cooling_baseline_types
 
-def test_get_heating_season_baseline_dailyavgHDD(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
+    target = seasonal_metrics_type_1_data[0][result_name]
 
-    baseline = thermostat_type_1.get_baseline_heating_demand(heating_season_type_1, 0, method="dailyavgHDD")
-    assert_allclose(baseline.mean(), heating_season_type_1_data["baseline_demand_dailyavgHDD_mean"], rtol=RTOL, atol=ATOL)
+    if deltaT_base_name is None:
+        deltaT_base = None
+    else:
+        deltaT_base = seasonal_metrics_type_1_data[0][deltaT_base_name]
 
-def test_get_cooling_season_baseline_hourlyavgCDD(thermostat_type_1, cooling_season_type_1, cooling_season_type_1_data):
+    baseline = thermostat_type_1.get_baseline_cooling_demand(cooling_season_type_1_entire, deltaT_base, method=demand_method)
 
-    baseline = thermostat_type_1.get_baseline_cooling_demand(cooling_season_type_1, 0, method="hourlyavgCDD")
-    assert_allclose(baseline.mean(), cooling_season_type_1_data["baseline_demand_hourlyavgCDD_mean"], rtol=RTOL, atol=ATOL)
+    assert_allclose(baseline.mean(), target, rtol=RTOL, atol=ATOL)
 
-def test_get_heating_season_baseline_hourlyavgHDD(thermostat_type_1, heating_season_type_1, heating_season_type_1_data):
+def test_get_heating_season_baseline_deltaT(thermostat_type_1, heating_season_type_1_entire, seasonal_metrics_type_1_data, heating_baseline_types):
 
-    baseline = thermostat_type_1.get_baseline_heating_demand(heating_season_type_1, 0, method="hourlyavgHDD")
-    assert_allclose(baseline.mean(), heating_season_type_1_data["baseline_demand_hourlyavgHDD_mean"], rtol=RTOL, atol=ATOL)
+    demand_method, result_name, deltaT_base_name = heating_baseline_types
+
+    if deltaT_base_name is None:
+        deltaT_base = None
+    else:
+        deltaT_base = seasonal_metrics_type_1_data[1][deltaT_base_name]
+
+    baseline = thermostat_type_1.get_baseline_heating_demand(heating_season_type_1_entire, deltaT_base,  method=demand_method)
+
+    target = seasonal_metrics_type_1_data[1][result_name]
+
+    assert_allclose(baseline.mean(), target, rtol=RTOL, atol=ATOL)

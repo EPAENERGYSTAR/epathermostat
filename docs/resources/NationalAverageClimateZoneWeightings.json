@@ -1,0 +1,72 @@
+{
+    "heating": {
+        "Very Cold/Cold": {
+            "components": [
+                "Cold",
+                "Very Cold",
+                "Very-Cold"
+            ],
+            "weight": 0.5484
+        },
+        "Mixed-Humid": {
+            "components": [
+                "Mixed-Humid"
+            ],
+            "weight": 0.3117
+        },
+        "Mixed-Dry/Hot-Dry": {
+            "components": [
+                "Mixed-Dry",
+                "Hot-Dry"
+            ],
+            "weight": 0.0532
+        },
+        "Hot-Humid": {
+            "components": [
+                "Hot-Humid"
+            ],
+            "weight": 0.0492
+        },
+        "Marine": {
+            "components": [
+                "Marine"
+            ],
+            "weight": 0.0357
+        }
+    },
+    "cooling": {
+        "Very Cold/Cold": {
+            "components": [
+                "Cold",
+                "Very Cold",
+                "Very-Cold"
+            ],
+            "weight": 0.0961
+        },
+        "Mixed-Humid": {
+            "components": [
+                "Mixed-Humid"
+            ],
+            "weight": 0.3386
+        },
+        "Mixed-Dry/Hot-Dry": {
+            "components": [
+                "Mixed-Dry",
+                "Hot-Dry"
+            ],
+            "weight": 0.1433
+        },
+        "Hot-Humid": {
+            "components": [
+                "Hot-Humid"
+            ],
+            "weight": 0.4189
+        },
+        "Marine": {
+            "components": [
+                "Marine"
+            ],
+            "weight": 0.0047
+        }
+    }
+}

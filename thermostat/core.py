@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import namedtuple
 
 from thermostat.regression import runtime_regression
@@ -62,30 +62,30 @@ class Thermostat(object):
         :code:`freq='H'`).
     cool_runtime : pandas.Series,
         Daily runtimes for cooling equipment controlled by the thermostat, measured
-        in seconds. No datapoint should exceed 86400 s, which would indicate
+        in minutes. No datapoint should exceed 1440 mins, which would indicate
         over a day of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with daily frequency (i.e.
         :code:`freq='D'`).
     heat_runtime : pandas.Series,
         Daily runtimes for heating equipment controlled by the thermostat, measured
-        in seconds. No datapoint should exceed 86400 s, which would indicate
+        in minutes. No datapoint should exceed 1440 mins, which would indicate
         over a day of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with daily frequency (i.e.
         :code:`freq='D'`).
     auxiliary_heat_runtime : pandas.Series,
         Hourly runtimes for auxiliary heating equipment controlled by the
-        thermostat, measured in seconds. Auxiliary heat runtime is counted when
+        thermostat, measured in minutes. Auxiliary heat runtime is counted when
         both resistance heating and the compressor are running (for heat pump
-        systems). No datapoint should exceed 86400 s, which would indicate
-        over a day of runtime (impossible).
+        systems). No datapoint should exceed 60 mins, which would indicate
+        over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     energency_heat_runtime : pandas.Series,
         Hourly runtimes for emergency heating equipment controlled by the
-        thermostat, measured in seconds. Emergency heat runtime is counted when
+        thermostat, measured in minutes. Emergency heat runtime is counted when
         resistance heating is running when the compressor is not (for heat pump
-        systems). No datapoint should exceed 86400 s, which would indicate
-        over a day of runtime (impossible).
+        systems). No datapoint should exceed 60 mins, which would indicate
+        over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     """
@@ -100,8 +100,8 @@ class Thermostat(object):
         self.zipcode = zipcode
         self.station = station
 
-        self.temperature_in = temperature_in
-        self.temperature_out = temperature_out
+        self.temperature_in = self._interpolate(temperature_in, method="linear")
+        self.temperature_out = self._interpolate(temperature_out, method="linear")
         self.cooling_setpoint = cooling_setpoint
         self.heating_setpoint = heating_setpoint
 
@@ -161,6 +161,11 @@ class Thermostat(object):
                           " or provide columns of 0s".format(self.thermostat_id, self.equipment_type)
                 raise ValueError(message)
 
+    def _interpolate(self, series, method="linear"):
+        if method not in ["linear"]:
+            return series
+        return series.interpolate(method="linear", limit=1, limit_direction="both")
+
     def _protect_heating(self):
         function_name = inspect.stack()[1][3]
         if self.equipment_type not in HEATING_EQUIPMENT_TYPES:
@@ -182,25 +187,29 @@ class Thermostat(object):
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
-    def get_heating_seasons(self, method="year_mid_to_mid",
-            min_seconds_heating=3600, max_seconds_cooling=0):
+    def get_heating_seasons(self, method="entire_dataset",
+            min_minutes_heating=60, max_minutes_cooling=0):
         """ Get all data for heating seasons for data associated with this
         thermostat
 
         Parameters
         ----------
-        method : {"year_mid_to_mid"}, default: "year_mid_to_mid"
+        method : {"entire_dataset", "year_mid_to_mid"}, default: "entire_dataset"
             Method by which to find heating seasons.
 
-            - "year_mid_to_mid": groups all heating days (days with >= 1 hour of total
-              heating and no cooling) from July 1 to June 31 (inclusive) into single
-              heating seasons. May overlap with cooling seasons.
-        min_seconds_heating : int, default 3600
-            Number of seconds of heating runtime per day required for inclusion in season.
-        max_seconds_cooling : int, default 0
-            Number of seconds of cooling runtime per day beyond which for day is
-            considered part of a shoulder season (and is therefore not part of
-            the heating season).
+            - "entire_dataset": all heating days in dataset (days with >= 1
+              hour of heating runtime and no cooling runtime.
+            - "year_mid_to_mid": groups all heating days (days with >= 1 hour
+              of total heating and no cooling) from July 1 to June 30
+              (inclusive) into individual heating seasons. May overlap with
+              cooling seasons.
+        min_minutes_heating : int, default 60
+            Number of minutes of heating runtime per day required for inclusion
+            in season.
+        max_minutes_cooling : int, default 0
+            Number of minutes of cooling runtime per day beyond which for day
+            is considered part of a shoulder season (and is therefore not part
+            of the heating season).
 
         Returns
         -------
@@ -209,69 +218,84 @@ class Thermostat(object):
             is name. Seasons are represented as pandas Series of boolean values,
             intended to be used as selectors or masks on the thermostat data.
             A value of True at a particular index indicates inclusion of
-            of the data at that index in the season. Names are of the form
+            of the data at that index in the season. If method is
+            "entire_dataset", name of season is "All Heating"; if method
+            is "year_mid_to_mid", names of seasons are of the form
             "YYYY-YYYY Heating"
         """
-        if method != "year_mid_to_mid":
+
+        if method not in ["year_mid_to_mid", "entire_dataset"]:
             raise NotImplementedError
 
         self._protect_heating()
 
-        # find all potential heating season ranges
-        data_start_date = np.datetime64(self.heat_runtime.index[0])
-        data_end_date = np.datetime64(self.heat_runtime.index[-1])
-        start_year = data_start_date.item().year - 1
-        end_year = data_end_date.item().year + 1
-        potential_seasons = zip(range(start_year, end_year), range(start_year + 1, end_year + 1))
-
         # compute inclusion thresholds
-        meets_heating_thresholds = self.heat_runtime >= min_seconds_heating
+        meets_heating_thresholds = self.heat_runtime >= min_minutes_heating
 
         if self.equipment_type in COOLING_EQUIPMENT_TYPES:
-            meets_cooling_thresholds = self.cool_runtime <= max_seconds_cooling
+            meets_cooling_thresholds = self.cool_runtime <= max_minutes_cooling
         else:
             meets_cooling_thresholds = True
 
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
-        # for each potential season, look for heating days.
-        seasons = []
-        for start_year_, end_year_ in potential_seasons:
-            season_start_date = np.datetime64(datetime(start_year_, 7, 1))
-            season_end_date = np.datetime64(datetime(end_year_, 7, 1))
-            start_date = max(season_start_date, data_start_date).item()
-            end_date = min(season_end_date, data_end_date).item()
-            in_range = self._get_range_boolean(self.heat_runtime.index,
-                    start_date, end_date)
-            inclusion_daily = pd.Series(in_range & meets_thresholds,
-                    index=self.heat_runtime.index)
+        data_start_date = np.datetime64(self.heat_runtime.index[0])
+        data_end_date = np.datetime64(self.heat_runtime.index[-1])
 
-            if any(inclusion_daily):
-                name = "{}-{} Heating".format(start_year_, end_year_)
-                inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-                season = Season(name, inclusion_daily, inclusion_hourly,
+        if method == "year_mid_to_mid":
+            # find all potential heating season ranges
+            start_year = data_start_date.item().year - 1
+            end_year = data_end_date.item().year + 1
+            potential_seasons = zip(range(start_year, end_year),
+                                    range(start_year + 1, end_year + 1))
+
+            # for each potential season, look for heating days.
+            seasons = []
+            for start_year_, end_year_ in potential_seasons:
+                season_start_date = np.datetime64(datetime(start_year_, 7, 1))
+                season_end_date = np.datetime64(datetime(end_year_, 7, 1))
+                start_date = max(season_start_date, data_start_date).item()
+                end_date = min(season_end_date, data_end_date).item()
+                in_range = self._get_range_boolean(self.heat_runtime.index,
                         start_date, end_date)
-                seasons.append(season)
+                inclusion_daily = pd.Series(in_range & meets_thresholds,
+                        index=self.heat_runtime.index)
 
-        return seasons
+                if any(inclusion_daily):
+                    name = "{}-{} Heating".format(start_year_, end_year_)
+                    inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+                    season = Season(name, inclusion_daily, inclusion_hourly,
+                            start_date, end_date)
+                    seasons.append(season)
 
-    def get_cooling_seasons(self, method="year_end_to_end",
-            min_seconds_cooling=3600, max_seconds_heating=0):
+            return seasons
+        elif method == "entire_dataset":
+            inclusion_daily = pd.Series(meets_thresholds, index=self.heat_runtime.index)
+            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+            season = Season("All Heating", inclusion_daily, inclusion_hourly,
+                    data_start_date, data_end_date)
+            # returned as list for consistency
+            return [season]
+
+    def get_cooling_seasons(self, method="entire_dataset",
+            min_minutes_cooling=60, max_minutes_heating=0):
         """ Get all data for cooling seasons for data associated with this
         thermostat.
 
         Parameters
         ----------
-        method : {"year_end_to_end"}, default: "year_end_to_end"
+        method : {"entire_dataset", "year_end_to_end"}, default: "entire_dataset"
             Method by which to find cooling seasons.
 
-            - "year_end_to_end": groups all cooling days (days with >= 1 hour of total
-              cooling and no heating) from January 1 to December 31 into
-              single cooling seasons.
-        min_seconds_cooling : int, default 3600
-            Number of seconds of cooling runtime per day required for inclusion in season.
-        max_seconds_heating : int, default 0
-            Number of seconds of heating runtime per day beyond which for day is
+            - "entire_dataset": all cooling days in dataset (days with >= 1
+              hour of cooling runtime and no heating runtime.
+            - "year_end_to_end": groups all cooling days (days with >= 1 hour
+              of total cooling and no heating) from January 1 to December 31
+              into individual cooling seasons.
+        min_minutes_cooling : int, default 0
+            Number of minutes of cooling runtime per day required for inclusion in season.
+        max_minutes_heating : int, default 0
+            Number of minutes of heating runtime per day beyond which for day is
             considered part of a shoulder season (and is therefore not part of
             the cooling season).
 
@@ -282,10 +306,12 @@ class Thermostat(object):
             is name. Seasons are represented as pandas Series of boolean
             values, intended to be used as selectors or masks on the thermostat
             data. A value of True at a particular index indicates inclusion of
-            of the data at that index in the season. Names are of the form
+            of the data at that index in the season. If method is
+            "entire_dataset", name of season is "All Cooling"; if method
+            == "year_end_to_end", names of seasons are of the form
             "YYYY Cooling"
         """
-        if method != "year_end_to_end":
+        if method not in ["year_end_to_end", "entire_dataset"]:
             raise NotImplementedError
 
         self._protect_cooling()
@@ -293,39 +319,48 @@ class Thermostat(object):
         # find all potential cooling season ranges
         data_start_date = np.datetime64(self.cool_runtime.index[0])
         data_end_date = np.datetime64(self.cool_runtime.index[-1])
-        start_year = data_start_date.item().year
-        end_year = data_end_date.item().year
-        potential_seasons = range(start_year, end_year + 1)
 
         # compute inclusion thresholds
         if self.equipment_type in HEATING_EQUIPMENT_TYPES:
-            meets_heating_thresholds = self.heat_runtime <= max_seconds_heating
+            meets_heating_thresholds = self.heat_runtime <= max_minutes_heating
         else:
             meets_heating_thresholds = True
 
-        meets_cooling_thresholds = self.cool_runtime >= min_seconds_cooling
+        meets_cooling_thresholds = self.cool_runtime >= min_minutes_cooling
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
-        # for each potential season, look for cooling days.
-        seasons = []
-        for year in potential_seasons:
-            season_start_date = np.datetime64(datetime(year, 1, 1))
-            season_end_date = np.datetime64(datetime(year + 1, 1, 1))
-            start_date = max(season_start_date, data_start_date).item()
-            end_date = min(season_end_date, data_end_date).item()
-            in_range = self._get_range_boolean(self.cool_runtime.index,
-                    start_date, end_date)
-            inclusion_daily = pd.Series(in_range & meets_thresholds,
-                    index=self.cool_runtime.index)
+        if method == "year_end_to_end":
+            start_year = data_start_date.item().year
+            end_year = data_end_date.item().year
+            potential_seasons = range(start_year, end_year + 1)
 
-            if any(inclusion_daily):
-                name = "{} Cooling".format(year)
-                inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-                season = Season(name, inclusion_daily, inclusion_hourly,
+
+            # for each potential season, look for cooling days.
+            seasons = []
+            for year in potential_seasons:
+                season_start_date = np.datetime64(datetime(year, 1, 1))
+                season_end_date = np.datetime64(datetime(year + 1, 1, 1))
+                start_date = max(season_start_date, data_start_date).item()
+                end_date = min(season_end_date, data_end_date).item()
+                in_range = self._get_range_boolean(self.cool_runtime.index,
                         start_date, end_date)
-                seasons.append(season)
+                inclusion_daily = pd.Series(in_range & meets_thresholds,
+                        index=self.cool_runtime.index)
 
-        return seasons
+                if any(inclusion_daily):
+                    name = "{} Cooling".format(year)
+                    inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+                    season = Season(name, inclusion_daily, inclusion_hourly,
+                            start_date, end_date)
+                    seasons.append(season)
+
+            return seasons
+        elif method == "entire_dataset":
+            inclusion_daily = pd.Series(meets_thresholds, index=self.cool_runtime.index)
+            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+            season = Season("All Cooling", inclusion_daily, inclusion_hourly,
+                    data_start_date, data_end_date)
+            return [season]
 
     def _get_range_boolean(self, dt_index, start_date, end_date):
         after_start = dt_index >= start_date
@@ -338,6 +373,70 @@ class Thermostat(object):
                 periods=daily_boolean.index.shape[0] * 24, freq="H")
         hourly_boolean = pd.Series(values, index)
         return hourly_boolean
+
+    def total_heating_runtime(self, season):
+        """ Calculates total heating runtime.
+
+        Parameters
+        ----------
+        season : pandas.Series
+            Season for which to calculate total runtime.
+
+        Returns
+        -------
+        total_runtime : float
+            Total heating runtime.
+        """
+        self._protect_heating()
+        return self.heat_runtime[season.daily].sum()
+
+    def total_auxiliary_heating_runtime(self, season):
+        """ Calculates total auxiliary heating runtime.
+
+        Parameters
+        ----------
+        season : pandas.Series
+            Season for which to calculate total runtime.
+
+        Returns
+        -------
+        total_runtime : float
+            Total auxiliary heating runtime.
+        """
+        self._protect_aux_emerg()
+        return self.auxiliary_heat_runtime[season.hourly].sum()
+
+    def total_emergency_heating_runtime(self, season):
+        """ Calculates total emergency heating runtime.
+
+        Parameters
+        ----------
+        season : pandas.Series
+            Season for which to calculate total runtime.
+
+        Returns
+        -------
+        total_runtime : float
+            Total heating runtime.
+        """
+        self._protect_aux_emerg()
+        return self.emergency_heat_runtime[season.hourly].sum()
+
+    def total_cooling_runtime(self, season):
+        """ Calculates total cooling runtime.
+
+        Parameters
+        ----------
+        season : pandas.Series
+            Season for which to calculate total runtime.
+
+        Returns
+        -------
+        total_runtime : float
+            Total cooling runtime.
+        """
+        self._protect_cooling()
+        return self.cool_runtime[season.daily].sum()
 
     def get_resistance_heat_utilization_bins(self, season):
         """ Calculates resistance heat utilization metrics in temperature
@@ -411,7 +510,11 @@ class Thermostat(object):
         return int(season.daily.sum())
 
     def get_season_n_days_in_range(self, season):
-        return (season.end_date - season.start_date).days
+        delta = (season.end_date - season.start_date)
+        if isinstance(delta, timedelta):
+            return delta.days
+        else:
+            return int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
 
     ##################### DEMAND ################################
 
@@ -491,13 +594,23 @@ class Thermostat(object):
             return errors
 
         deltaT_base_starting_guess = 0
-        y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+        try:
+            y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+        except TypeError: # len 0
+            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
+            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
         deltaT_base_estimate = y[0]
 
         cdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
-        mean_squared_error = np.mean((errors)**2)
+        mse = np.nanmean((errors)**2)
+        rmse = mse ** 0.5
+        mean_daily_runtime = np.nanmean(daily_runtime)
+        cvrmse = rmse / mean_daily_runtime
+        mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
+        mae = np.nanmean(np.absolute(errors))
 
-        return pd.Series(cdd, index=daily_index), deltaT_base_estimate, alpha_estimate, mean_squared_error
+        return pd.Series(cdd, index=daily_index), deltaT_base_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
     def get_heating_demand(self, heating_season, method="deltaT"):
         """
@@ -575,18 +688,40 @@ class Thermostat(object):
             return errors
 
         deltaT_base_starting_guess = 0
-        y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+
+        try:
+            y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+        except TypeError: # len 0
+            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
+            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
         deltaT_base_estimate = y[0]
 
         hdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
-        mean_squared_error = np.mean((errors)**2)
+        mse = np.nanmean((errors)**2)
+        rmse = mse ** 0.5
+        mean_daily_runtime = np.nanmean(daily_runtime)
+        cvrmse = rmse / mean_daily_runtime
+        mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
+        mae = np.nanmean(np.absolute(errors))
 
-        return pd.Series(hdd, index=daily_index), deltaT_base_estimate, alpha_estimate, mean_squared_error
+        return (
+            pd.Series(hdd, index=daily_index),
+            deltaT_base_estimate,
+            alpha_estimate,
+            mse,
+            rmse,
+            cvrmse,
+            mape,
+            mae
+        )
 
     ################## BASELINING ##########################
 
-    def get_cooling_season_baseline_setpoint(self, cooling_season, method='tenth_percentile', source='cooling_setpoint'):
-        """ Calculate the cooling season baseline setpoint (comfort temperature).
+    def get_cooling_season_baseline_setpoint(self, cooling_season,
+            method='tenth_percentile', source='cooling_setpoint'):
+        """ Calculate the cooling season baseline setpoint (comfort
+        temperature).
 
         Parameters
         ----------
@@ -812,10 +947,31 @@ class Thermostat(object):
 
     ###################### Metrics #################################
 
-    def calculate_epa_draft_rccs_field_savings_metrics(self):
+    def calculate_epa_draft_rccs_field_savings_metrics(self,
+            cooling_season_method="entire_dataset",
+            heating_season_method="entire_dataset"):
         """ Calculates metrics for connected thermostat savings as defined by
         the draft specification defined by the EPA and stakeholders during early
         2015.
+
+        Parameters
+        ----------
+        cooling_season_method : {"entire_dataset", "year_end_to_end"}, default: "entire_dataset"
+            Method by which to find cooling seasons.
+
+            - "entire_dataset": all cooling days in dataset (days with >= 1
+              hour of cooling runtime and no heating runtime.
+            - "year_end_to_end": groups all cooling days (days with >= 1 hour of total
+              cooling and no heating) from January 1 to December 31 into
+              individual cooling seasons.
+        heating_season_method : {"entire_dataset", "year_mid_to_mid"}, default: "entire_dataset"
+            Method by which to find cooling seasons.
+
+            - "entire_dataset": all heating days in dataset (days with >= 1
+              hour of heating runtime and no cooling runtime.
+            - "year_mid_to_mid": groups all heating days (days with >= 1 hour
+              of total heating and no cooling) from July 1 to June 30 into
+              individual heating seasons.
 
         Returns
         -------
@@ -825,7 +981,7 @@ class Thermostat(object):
         seasonal_metrics = []
 
         if self.equipment_type in COOLING_EQUIPMENT_TYPES:
-            for cooling_season in self.get_cooling_seasons():
+            for cooling_season in self.get_cooling_seasons(method=cooling_season_method):
                 outputs = {}
                 outputs["ct_identifier"] = self.thermostat_id
                 outputs["zipcode"] = self.zipcode
@@ -841,32 +997,78 @@ class Thermostat(object):
                 demand_deltaT = self.get_cooling_demand(cooling_season,
                         method="deltaT")
                 daily_runtime = self.cool_runtime[cooling_season.daily]
+                outputs["mean_demand_deltaT"] = np.nanmean(demand_deltaT)
+
                 try:
-                    slope_deltaT, intercept_deltaT, mean_sq_err_deltaT = runtime_regression(
-                            daily_runtime, demand_deltaT)
-                    outputs["slope_deltaT"] = slope_deltaT
-                    outputs["intercept_deltaT"] = intercept_deltaT
-                    outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
-                except ValueError: # too many values to unpack
+                    (
+                        slope_deltaT,
+                        intercept_deltaT,
+                        mse_deltaT,
+                        rmse_deltaT,
+                        cvrmse_deltaT,
+                        mape_deltaT,
+                        mae_deltaT,
+                    ) = runtime_regression(daily_runtime, demand_deltaT)
+                except ValueError:    # too many values to unpack
                     outputs["slope_deltaT"] = np.nan
                     outputs["intercept_deltaT"] = np.nan
-                    outputs["mean_squared_error_deltaT"] = np.nan
+                    outputs["mean_sq_err_deltaT"] = np.nan
+                    outputs["root_mean_sq_err_deltaT"] = np.nan
+                    outputs["cv_root_mean_sq_err_deltaT"] = np.nan
+                    outputs["mean_abs_pct_err_deltaT"] = np.nan
+                    outputs["mean_abs_err_deltaT"] = np.nan
+                else:
+                    outputs["slope_deltaT"] = slope_deltaT
+                    outputs["intercept_deltaT"] = intercept_deltaT
+                    outputs["mean_sq_err_deltaT"] = mse_deltaT
+                    outputs["root_mean_sq_err_deltaT"] = rmse_deltaT
+                    outputs["cv_root_mean_sq_err_deltaT"] = cvrmse_deltaT
+                    outputs["mean_abs_pct_err_deltaT"] = mape_deltaT
+                    outputs["mean_abs_err_deltaT"] = mae_deltaT
 
                 # dailyavgCDD
-                demand_dailyavgCDD, deltaT_base_est_dailyavgCDD, \
-                        alpha_est_dailyavgCDD, mean_sq_err_dailyavgCDD = \
-                                self.get_cooling_demand(cooling_season, method="dailyavgCDD")
+                (
+                    demand_dailyavgCDD,
+                    deltaT_base_est_dailyavgCDD,
+                    alpha_est_dailyavgCDD,
+                    mse_dailyavgCDD,
+                    rmse_dailyavgCDD,
+                    cvrmse_dailyavgCDD,
+                    mape_dailyavgCDD,
+                    mae_dailyavgCDD,
+                ) = self.get_cooling_demand(cooling_season,
+                                            method="dailyavgCDD")
+
+                outputs["mean_demand_dailyavgCDD"] = np.nanmean(demand_dailyavgCDD)
                 outputs["deltaT_base_est_dailyavgCDD"] = deltaT_base_est_dailyavgCDD
                 outputs["alpha_est_dailyavgCDD"] = alpha_est_dailyavgCDD
-                outputs["mean_sq_err_dailyavgCDD"] = mean_sq_err_dailyavgCDD
+                outputs["mean_sq_err_dailyavgCDD"] = mse_dailyavgCDD
+                outputs["root_mean_sq_err_dailyavgCDD"] = rmse_dailyavgCDD
+                outputs["cv_root_mean_sq_err_dailyavgCDD"] = cvrmse_dailyavgCDD
+                outputs["mean_abs_pct_err_dailyavgCDD"] = mape_dailyavgCDD
+                outputs["mean_abs_err_dailyavgCDD"] = mae_dailyavgCDD
 
                 # hourlyavgCDD
-                demand_hourlyavgCDD, deltaT_base_est_hourlyavgCDD, \
-                        alpha_est_hourlyavgCDD, mean_sq_err_hourlyavgCDD = \
-                                self.get_cooling_demand(cooling_season, method="hourlyavgCDD")
+                (
+                    demand_hourlyavgCDD,
+                    deltaT_base_est_hourlyavgCDD,
+                    alpha_est_hourlyavgCDD,
+                    mse_hourlyavgCDD,
+                    rmse_hourlyavgCDD,
+                    cvrmse_hourlyavgCDD,
+                    mape_hourlyavgCDD,
+                    mae_hourlyavgCDD,
+                ) = self.get_cooling_demand(cooling_season,
+                                            method="hourlyavgCDD")
+
+                outputs["mean_demand_hourlyavgCDD"] = np.nanmean(demand_hourlyavgCDD)
                 outputs["deltaT_base_est_hourlyavgCDD"] = deltaT_base_est_hourlyavgCDD
                 outputs["alpha_est_hourlyavgCDD"] = alpha_est_hourlyavgCDD
-                outputs["mean_sq_err_hourlyavgCDD"] = mean_sq_err_hourlyavgCDD
+                outputs["mean_sq_err_hourlyavgCDD"] = mse_hourlyavgCDD
+                outputs["root_mean_sq_err_hourlyavgCDD"] = rmse_hourlyavgCDD
+                outputs["cv_root_mean_sq_err_hourlyavgCDD"] = cvrmse_hourlyavgCDD
+                outputs["mean_abs_pct_err_hourlyavgCDD"] = mape_hourlyavgCDD
+                outputs["mean_abs_err_hourlyavgCDD"] = mae_hourlyavgCDD
 
                 actual_seasonal_runtime = self.cool_runtime[cooling_season.daily].sum()
 
@@ -886,12 +1088,19 @@ class Thermostat(object):
                         cooling_season, deltaT_base_est_hourlyavgCDD,
                         method="hourlyavgCDD")
 
+                outputs["mean_demand_baseline_deltaT"] = np.nanmean(demand_baseline_deltaT)
+                outputs["mean_demand_baseline_dailyavgCDD"] = np.nanmean(demand_baseline_dailyavgCDD)
+                outputs["mean_demand_baseline_hourlyavgCDD"] = np.nanmean(demand_baseline_hourlyavgCDD)
+
                 daily_avoided_runtime_deltaT = get_daily_avoided_runtime(
                         slope_deltaT, demand_deltaT, demand_baseline_deltaT)
-                daily_avoided_runtime_dailyavgCDD = get_daily_avoided_runtime( alpha_est_dailyavgCDD, demand_dailyavgCDD, demand_baseline_dailyavgCDD)
+                daily_avoided_runtime_dailyavgCDD = get_daily_avoided_runtime(
+                        alpha_est_dailyavgCDD, demand_dailyavgCDD, demand_baseline_dailyavgCDD)
                 daily_avoided_runtime_hourlyavgCDD = get_daily_avoided_runtime(
                         alpha_est_hourlyavgCDD, demand_hourlyavgCDD,
                         demand_baseline_hourlyavgCDD)
+
+                # TODO add avoided runtime outputs
 
                 baseline_seasonal_runtime_deltaT = \
                         self.get_total_baseline_cooling_runtime(cooling_season,
@@ -946,13 +1155,15 @@ class Thermostat(object):
                 outputs["n_days_in_season"] = n_days_in_season
                 outputs["n_days_in_season_range"] = n_days_in_season_range
 
+                outputs["total_cooling_runtime"] = self.total_cooling_runtime(cooling_season)
+
                 outputs["season_name"] = cooling_season.name
 
                 seasonal_metrics.append(outputs)
 
 
         if self.equipment_type in HEATING_EQUIPMENT_TYPES:
-            for heating_season in self.get_heating_seasons():
+            for heating_season in self.get_heating_seasons(method=heating_season_method):
                 outputs = {}
                 outputs["ct_identifier"] = self.thermostat_id
                 outputs["zipcode"] = self.zipcode
@@ -969,32 +1180,77 @@ class Thermostat(object):
                 demand_deltaT = self.get_heating_demand(heating_season, method="deltaT")
                 daily_runtime = self.heat_runtime[heating_season.daily]
 
+                outputs["mean_demand_deltaT"] = np.nanmean(demand_deltaT)
+
                 try:
-                    slope_deltaT, intercept_deltaT, mean_sq_err_deltaT = runtime_regression(
-                            daily_runtime, demand_deltaT)
-                    outputs["slope_deltaT"] = slope_deltaT
-                    outputs["intercept_deltaT"] = intercept_deltaT
-                    outputs["mean_squared_error_deltaT"] = mean_sq_err_deltaT
+                    (
+                        slope_deltaT,
+                        intercept_deltaT,
+                        mse_deltaT,
+                        rmse_deltaT,
+                        cvrmse_deltaT,
+                        mape_deltaT,
+                        mae_deltaT,
+                    ) = runtime_regression(daily_runtime, demand_deltaT)
                 except ValueError: # too many values to unpack
                     outputs["slope_deltaT"] = np.nan
                     outputs["intercept_deltaT"] = np.nan
-                    outputs["mean_squared_error_deltaT"] = np.nan
+                    outputs["mean_sq_err_deltaT"] = np.nan
+                    outputs["root_mean_sq_err_deltaT"] = np.nan
+                    outputs["cv_root_mean_sq_err_deltaT"] = np.nan
+                    outputs["mean_abs_pct_err_deltaT"] = np.nan
+                    outputs["mean_abs_err_deltaT"] = np.nan
+                else:
+                    outputs["slope_deltaT"] = slope_deltaT
+                    outputs["intercept_deltaT"] = intercept_deltaT
+                    outputs["mean_sq_err_deltaT"] = mse_deltaT
+                    outputs["root_mean_sq_err_deltaT"] = rmse_deltaT
+                    outputs["cv_root_mean_sq_err_deltaT"] = cvrmse_deltaT
+                    outputs["mean_abs_pct_err_deltaT"] = mape_deltaT
+                    outputs["mean_abs_err_deltaT"] = mae_deltaT
 
                 # dailyavgHDD
-                demand_dailyavgHDD, deltaT_base_est_dailyavgHDD, \
-                        alpha_est_dailyavgHDD, mean_sq_err_dailyavgHDD = \
-                            self.get_heating_demand(heating_season, method="dailyavgHDD")
+                (
+                    demand_dailyavgHDD,
+                    deltaT_base_est_dailyavgHDD,
+                    alpha_est_dailyavgHDD,
+                    mse_dailyavgHDD,
+                    rmse_dailyavgHDD,
+                    cvrmse_dailyavgHDD,
+                    mape_dailyavgHDD,
+                    mae_dailyavgHDD,
+                ) = self.get_heating_demand(heating_season,
+                                            method="dailyavgHDD")
+                outputs["mean_demand_dailyavgHDD"] = np.nanmean(demand_dailyavgHDD)
                 outputs["deltaT_base_est_dailyavgHDD"] = deltaT_base_est_dailyavgHDD
                 outputs["alpha_est_dailyavgHDD"] = alpha_est_dailyavgHDD
-                outputs["mean_sq_err_dailyavgHDD"] = mean_sq_err_dailyavgHDD
+                outputs["mean_sq_err_dailyavgHDD"] = mse_dailyavgHDD
+                outputs["root_mean_sq_err_dailyavgHDD"] = rmse_dailyavgHDD
+                outputs["cv_root_mean_sq_err_dailyavgHDD"] = cvrmse_dailyavgHDD
+                outputs["mean_abs_pct_err_dailyavgHDD"] = mape_dailyavgHDD
+                outputs["mean_abs_err_dailyavgHDD"] = mae_dailyavgHDD
 
                 # hourlyavgHDD
-                demand_hourlyavgHDD, deltaT_base_est_hourlyavgHDD, \
-                        alpha_est_hourlyavgHDD, mean_sq_err_hourlyavgHDD = \
-                                self.get_heating_demand(heating_season, method="hourlyavgHDD")
+                (
+                    demand_hourlyavgHDD,
+                    deltaT_base_est_hourlyavgHDD,
+                    alpha_est_hourlyavgHDD,
+                    mse_hourlyavgHDD,
+                    rmse_hourlyavgHDD,
+                    cvrmse_hourlyavgHDD,
+                    mape_hourlyavgHDD,
+                    mae_hourlyavgHDD,
+                ) = self.get_heating_demand(heating_season,
+                                            method="hourlyavgHDD")
+
+                outputs["mean_demand_hourlyavgHDD"] = np.nanmean(demand_hourlyavgHDD)
                 outputs["deltaT_base_est_hourlyavgHDD"] = deltaT_base_est_hourlyavgHDD
                 outputs["alpha_est_hourlyavgHDD"] = alpha_est_hourlyavgHDD
-                outputs["mean_sq_err_hourlyavgHDD"] = mean_sq_err_hourlyavgHDD
+                outputs["mean_sq_err_hourlyavgHDD"] = mse_hourlyavgHDD
+                outputs["root_mean_sq_err_hourlyavgHDD"] = rmse_hourlyavgHDD
+                outputs["cv_root_mean_sq_err_hourlyavgHDD"] = cvrmse_hourlyavgHDD
+                outputs["mean_abs_pct_err_hourlyavgHDD"] = mape_hourlyavgHDD
+                outputs["mean_abs_err_hourlyavgHDD"] = mae_hourlyavgHDD
 
                 actual_seasonal_runtime = self.heat_runtime[heating_season.daily].sum()
 
@@ -1013,6 +1269,10 @@ class Thermostat(object):
                 demand_baseline_hourlyavgHDD = self.get_baseline_heating_demand(
                         heating_season, deltaT_base_est_hourlyavgHDD,
                         method="hourlyavgHDD")
+
+                outputs["mean_demand_baseline_deltaT"] = np.nanmean(demand_baseline_deltaT)
+                outputs["mean_demand_baseline_dailyavgHDD"] = np.nanmean(demand_baseline_dailyavgHDD)
+                outputs["mean_demand_baseline_hourlyavgHDD"] = np.nanmean(demand_baseline_hourlyavgHDD)
 
                 daily_avoided_runtime_deltaT = get_daily_avoided_runtime(
                         slope_deltaT, demand_deltaT, demand_baseline_deltaT)
@@ -1076,7 +1336,13 @@ class Thermostat(object):
                 outputs["n_days_in_season"] = n_days_in_season
                 outputs["n_days_in_season_range"] = n_days_in_season_range
 
+                outputs["total_heating_runtime"] = self.total_heating_runtime(heating_season)
+
                 if self.equipment_type in AUX_EMERG_EQUIPMENT_TYPES:
+
+                    outputs["total_auxiliary_heating_runtime"] = self.total_auxiliary_heating_runtime(heating_season)
+                    outputs["total_emergency_heating_runtime"] = self.total_emergency_heating_runtime(heating_season)
+
                     rhus = self.get_resistance_heat_utilization_bins(heating_season)
                     if rhus is None:
                         for low, high in [(i,i+5) for i in range(0,60,5)]:

@@ -4,12 +4,65 @@ Quickstart
 Installation
 ------------
 
-First, check to make sure you are on the most recent version of the package.
+To install the thermostat package for the first time, we highly recommend that
+you create a virtual environment or a conda environment in which to install it.
+You may choose to skip this step, but do so at the risk of corrupting your
+existing python environment. Isolating your python environment will also
+make it easier to debug:
+
+.. code-block:: bash
+
+    # if using virtualenvwrapper (see https://virtualenvwrapper.readthedocs.org/en/latest/install.html)
+    $ mkvirtualenv thermostat
+    (thermostat)$ pip install thermostat
+
+    # if using conda (see note below - conda is distributed with Anaconda)
+    $ conda create --yes --name thermostat pandas
+    (thermostat)$ pip install thermostat
+
+If you already have an environment, use the following:
+
+.. code-block:: bash
+
+    # if using virtualenvwrapper
+    $ workon thermostat
+    (thermostat)$
+
+    # if using conda
+    $ source activate thermostat
+    (thermostat)$
+
+To deactivate the environment when you've finished, use the following:
+
+.. code-block:: bash
+
+    # if using virtualenvwrapper
+    (thermostat)$ deactivate
+    $
+
+    # if using conda
+    (thermostat)$ source deactivate
+    $
+
+Check to make sure you are on the most recent version of the package.
 
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '0.2.16'
+    '0.3.0'
+
+If you are not on the correct version, you should upgrade:
+
+.. code-block:: bash
+
+    $ pip install thermostat --upgrade
+
+The command above will update dependencies as well. If you wish to skip this,
+use the :code:`--no-deps` flag:
+
+.. code-block:: bash
+
+    $ pip install thermostat --upgrade --no-deps
 
 .. note::
 
@@ -65,7 +118,7 @@ To calculate savings metrics, iterate through thermostats and save the results.
         seasonal_metrics.extend(outputs)
 
     output_filename = os.path.join(data_dir, "thermostat_example_output.csv")
-    metrics_df = seasonal_metrics_to_csv(seasonal_metrics, filepath)
+    metrics_df = seasonal_metrics_to_csv(seasonal_metrics, output_filename)
 
 The output CSV will be saved in your data directory and should very nearly
 match the output CSV provided in the example data.
@@ -74,31 +127,36 @@ See :ref:`thermostat-output` for more detailed file format information.
 
 .. note::
 
-    During the data loading step, you may see a warning that the weather
-    cache is disabled. You can safely ignore that warning, but if you wish to load
-    a large amount of data, it will load much more quickly upon repeated execution
-    if you use the weather cache.
+    The thermostat package depends on the eemeter package for weather data
+    fetching. The eemeter package automatically creates its own cache directory
+    in which it keeps cached versions of weather source data. This speeds up
+    the (generally IO-bound) NOAA weather fetching routine on subsequent
+    internal calls to fetch the same weather data (i.e. getting outdoor
+    temperature data for thermostats that map to the same weather station).
 
-    To enable the weather cache, set the following environment variable to the
-    database of your choice (the example uses sqlite) by supplying a database url.
+    The weather cache is automtically created at :code:`~/.eemeter/cache/`.
 
-    The weather cache stores weather locally so that it need only be downloaded
-    once.
-
-    To create a new sqlite database, specify a fully-qualified path to valid
-    location for new database file, and the database will be created for you in the
-    location you specify.
+    If you wish to change the location of this cache, you can set the
+    environment variable as shown below to the path of the existing directory
+    that you would like to set as the eemeter weather cache:
 
     .. code-block:: bash
 
-        $ export EEMETER_WEATHER_CACHE_DATABASE_URL=sqlite:////path/to/db.sqlite
+        $ export EEMETER_WEATHER_CACHE_DIRECTORY=/path/to/directory
 
-    You can also do this in python, but it must be done *before loading the package*.
-    For example:
+    If you are using virtualenvwrapper, you may find it convenient to put this
+    in your postactivate hook script:
+
+    .. code-block:: bash
+
+        $ echo "export EEMETER_WEATHER_CACHE_DIRECTORY=/path/to/directory" >> $WORKON_HOME/thermostat/bin/postactivate
+
+    You can also do this in python, but it must be done
+    *before loading the package*.  For example:
 
     .. code-block:: python
 
-        os.environ["EEMETER_WEATHER_CACHE_DATABASE_URL"] = "sqlite:///{}".format(os.path.join(data_dir,"weather_cache.db"))
+        os.environ["EEMETER_WEATHER_CACHE_DIRECTORY"] = "/path/to/directory"
 
     For more information, see the `eemeter <http://eemeter.readthedocs.org/en/latest/tutorial.html#caching-weather-data>`_
     package.
@@ -158,12 +216,24 @@ can be downloaded
 The file maps ZIP codes to Climate Zones. This example computes summary
 statistics for each climate zone using the provided mapping.
 
+Should you wish to calculate a national average using a weighted climate zone
+mapping as well, you should use the following weightings, also available for
+download :download:`here <./resources/NationalAverageClimateZoneWeightings.json>`
+
 .. code-block:: python
 
     from thermostat.stats import compute_summary_statistics_by_zipcode_group
 
-    stats.extend(compute_summary_statistics_by_zipcode_group(metrics_df,
-             filepath=os.path.join(data_dir, "Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv")))
+    zipcode_mapping_path = os.path.join(data_dir,
+            "Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv")
+
+    national_weighting_path = os.path.join(data_dir,
+            "NationalAverageClimateZoneWeightings.json")
+
+    summary_statistics = compute_summary_statistics_by_zipcode_group(metrics_df,
+             filepath=zipcode_mapping_path, weights=national_weighting_path)
+
+    stats.extend(summary_statistics)
 
 Please see the :ref:`thermostat-api` docs for additional information
 on computing summary statistics.
@@ -214,15 +284,15 @@ Thermostat Summary Metadata CSV format
 Columns
 ```````
 
-============================== ===========
-Name                           Description
------------------------------- -----------
-:code:`thermostat_id`          A uniquely identifying marker for the thermostat.
-:code:`equipment_type`         The type of controlled HVAC heating and cooling equipment. [#]_
-:code:`zipcode`                The ZIP code in which the thermostat is installed [#]_.
-:code:`utc_offset`             The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
-:code:`interval_data_filename` The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
-============================== ===========
+============================== ================ ===== ===========
+Name                           Data Format      Units Description
+------------------------------ ---------------- ----- -----------
+:code:`thermostat_id`          string           N/A   A uniquely identifying marker for the thermostat.
+:code:`equipment_type`         enum, {0..5}     N/A   The type of controlled HVAC heating and cooling equipment. [#]_
+:code:`zipcode`                string, 5 digits N/A   The ZIP code in which the thermostat is installed [#]_.
+:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
+:code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
+============================== ================ ===== ===========
 
  - Each row should correspond to a single thermostat.
  - Nulls should be specified by leaving the field blank.
@@ -235,19 +305,19 @@ Thermostat Interval Data CSV format
 Columns
 ```````
 
-============================ ===========
-Name                         Description
----------------------------- -----------
-:code:`thermostat_id`        Uniquely identifying marker for the thermostat.
-:code:`date`                 Date of this set of readings. (YYYY-MM-DD).
-:code:`cool_runtime`         Daily runtime of cooling equipment (seconds).
-:code:`heat_runtime`         Daily runtime of heating equipment (seconds). [#]_
-:code:`auxiliary_heat_HH`    Hourly runtime of auxiliary heat equipment (seconds; HH=00-23).
-:code:`emergency_heat_HH`    Hourly runtime of emergency heat equipment (seconds; HH=00-23).
-:code:`temp_in_HH`           Hourly average conditioned space temperature over the period of the reading (seconds; HH=00-23).
-:code:`heating_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (seconds; HH=00-23).
-:code:`cooling_setpoint_HH`  Hourly average thermostat setpoint temperature over the period of the reading (seconds; HH=00-23).
-============================ ===========
+============================ ======================= ======= ===========
+Name                         Data Format             Units    Description
+---------------------------- ----------------------- ------- -----------
+:code:`thermostat_id`        string                  N/A     Uniquely identifying marker for the thermostat.
+:code:`date`                 YYYY-MM-DD (ISO-8601)   N/A     Date of this set of readings.
+:code:`cool_runtime`         decimal or integer      minutes Daily runtime of cooling equipment.
+:code:`heat_runtime`         decimal or integer      minutes Daily runtime of heating equipment. [#]_
+:code:`auxiliary_heat_HH`    decimal or integer      minutes Hourly runtime of auxiliary heat equipment (HH=00-23).
+:code:`emergency_heat_HH`    decimal or integer      minutes Hourly runtime of emergency heat equipment (HH=00-23).
+:code:`temp_in_HH`           decimal, to nearest 0.5 °F      Hourly average conditioned space temperature over the period of the reading (HH=00-23).
+:code:`heating_setpoint_HH`  decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
+:code:`cooling_setpoint_HH`  decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
+============================ ======================= ======= ===========
 
 - Each row should correspond to a single daily reading from a thermostat.
 - Nulls should be specified by leaving the field blank.
@@ -256,8 +326,7 @@ Name                         Description
   provided for other columns in that row. For example, if runtime is missing
   for a particular date, please still provide indoor conditioned space
   temperature and setpoints for that date, if available.
-- Runtimes should be specified in seconds and should be less than or equal to
-  86400 s (1 day).
+- Runtimes should be less than or equal to 1440 min (1 day).
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
 - If no distinction is made between heating and cooling setpoint, set both
@@ -303,69 +372,69 @@ The following columns are a intermediate output generated for each thermostat-se
 Columns
 ```````
 
-======================================================= =========================================
-Name                                                    Description
-------------------------------------------------------- -----------------------------------------
-:code:`ct_identifier`                                   Identifier for thermostat as provided in the metadata file.
-:code:`equipment_type`                                  Equipment type of this thermostat (1, 2, 3, 4, or 5).
-:code:`season_name`                                     Name of the season (e.g. "Heating 2012-2013").
-:code:`station`                                         USAF identifier for station used to fetch hourly temperature data.
-:code:`zipcode`                                         ZIP code provided in the metadata file.
-:code:`n_days_both_heating_and_cooling`                 Number of days not included in this season's calculations due to presence of both heating and cooling.
-:code:`n_days_insufficient_data`                        Number of days not included in this season's calculations due to missing data.
-:code:`n_days_in_season`                                Number of days meeting criteria for season inclusion.
-:code:`n_days_in_season_range`                          Number of potential days in the season range (e.g. Jan 1 to Dec 31 = 365)
-:code:`slope_deltaT`                                    Slope found during a linear regression of a deltaT demand measure against runtime.
-:code:`intercept_deltaT`                                Intercept found during a linear regression of a deltaT demand measure against runtime.
-:code:`alpha_est_dailyavgCDD`                           Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
-:code:`alpha_est_dailyavgHDD`                           Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
-:code:`alpha_est_hourlyavgCDD`                          Estimate of alpha from the ratio estimation step of the hourlyavgCDD demand measure.
-:code:`alpha_est_hourlyavgHDD`                          Estimate of alpha from the ratio estimation step of the hourlyavgHDD demand measure.
-:code:`mean_sq_err_dailyavgCDD`                         Mean squared error for the ratio estimation used during computation of the dailyavgCDD demand measure.
-:code:`mean_sq_err_dailyavgHDD`                         Mean squared error for the ratio estimation used during computation of the dailyavgHDD demand measure.
-:code:`mean_sq_err_hourlyavgCDD`                        Mean squared error for the ratio estimation used during computation of the hourlyavgCDD demand measure.
-:code:`mean_sq_err_hourlyavgHDD`                        Mean squared error for the ratio estimation used during computation of the hourlyavgHDD demand measure.
-:code:`mean_squared_error_deltaT`                       Mean squared error of the linear regression of the deltaT demand measure against runtime (see also slope_deltT).
-:code:`deltaT_base_est_dailyavgCDD`                     DeltaT base for the dailyavgCDD demand measure.
-:code:`deltaT_base_est_dailyavgHDD`                     DeltaT base for the dailyavgHDD demand measure.
-:code:`deltaT_base_est_hourlyavgCDD`                    DeltaT base for the hourlyavgCDD demand measure.
-:code:`deltaT_base_est_hourlyavgHDD`                    DeltaT base for the hourlyavgHDD demand measure.
-:code:`baseline_daily_runtime_deltaT`                   Baseline daily runtime according to the deltaT demand measure.
-:code:`baseline_daily_runtime_dailyavgCDD`              Baseline daily runtime according to the dailyavgCDD demand measure.
-:code:`baseline_daily_runtime_dailyavgHDD`              Baseline daily runtime according to the dailyavgHDD demand measure.
-:code:`baseline_daily_runtime_hourlyavgCDD`             Baseline daily runtime according to the hourlyavgCDD demand measure.
-:code:`baseline_daily_runtime_hourlyavgHDD`             Baseline daily runtime according to the hourlyavgHDD demand measure.
-:code:`baseline_seasonal_runtime_deltaT`                Baseline seasonal runtime according to the deltaT demand measure.
-:code:`baseline_seasonal_runtime_dailyavgCDD`           Baseline seasonal runtime according to the dailyavgCDD demand measure.
-:code:`baseline_seasonal_runtime_dailyavgHDD`           Baseline seasonal runtime according to the dailyavgHDD demand measure.
-:code:`baseline_seasonal_runtime_hourlyavgCDD`          Baseline seasonal runtime according to the hourlyavgCDD demand measure.
-:code:`baseline_seasonal_runtime_hourlyavgHDD`          Baseline seasonal runtime according to the hourlyavgHDD demand measure.
-:code:`baseline_comfort_temperature`                    Baseline comfort temperature as determined by either the (10th percentile or 90th percentile of setpoints)
-:code:`actual_daily_runtime`                            Observed average daily runtime for the season.
-:code:`actual_seasonal_runtime`                         Observed total runtime for the season.
-:code:`seasonal_avoided_runtime_deltaT`                 Seasonal avoided runtime according to the deltaT demand measure.
-:code:`seasonal_avoided_runtime_dailyavgCDD`            Seasonal avoided runtime according to the dailyavgCDD demand measure (Cooling seasons only).
-:code:`seasonal_avoided_runtime_dailyavgHDD`            Seasonal avoided runtime according to the dailyavgHDD demand measure (Heating seasons only).
-:code:`seasonal_avoided_runtime_hourlyavgCDD`           Seasonal avoided runtime according to the hourlyavgCDD demand measure (Cooling seasons only).
-:code:`seasonal_avoided_runtime_hourlyavgHDD`           Seasonal avoided runtime according to the hourlyavgHDD demand measure (Heating seasons only).
-:code:`seasonal_savings_deltaT`                         Seasonal savings according to the deltaT demand measure.
-:code:`seasonal_savings_dailyavgCDD`                    Seasonal savings according to the dailyavgCDD demand measure (Cooling seasons only).
-:code:`seasonal_savings_dailyavgHDD`                    Seasonal savings according to the dailyavgHDD demand measure (Heating seasons only).
-:code:`seasonal_savings_hourlyavgCDD`                   Seasonal savings according to the hourlyavgCDD demand measure (Cooling seasons only).
-:code:`seasonal_savings_hourlyavgHDD`                   Seasonal savings according to the hourlyavgHDD demand measure (Heating seasons only).
-:code:`rhu_00F_to_05F`                                  Resistance heat utilization for hourly temperature bin :math:`0 \leq T < 5`
-:code:`rhu_05F_to_10F`                                  Resistance heat utilization for hourly temperature bin :math:`5 \leq T < 10`
-:code:`rhu_10F_to_15F`                                  Resistance heat utilization for hourly temperature bin :math:`10 \leq T < 15`
-:code:`rhu_15F_to_20F`                                  Resistance heat utilization for hourly temperature bin :math:`15 \leq T < 20`
-:code:`rhu_20F_to_25F`                                  Resistance heat utilization for hourly temperature bin :math:`20 \leq T < 25`
-:code:`rhu_25F_to_30F`                                  Resistance heat utilization for hourly temperature bin :math:`25 \leq T < 30`
-:code:`rhu_30F_to_35F`                                  Resistance heat utilization for hourly temperature bin :math:`30 \leq T < 35`
-:code:`rhu_35F_to_40F`                                  Resistance heat utilization for hourly temperature bin :math:`35 \leq T < 40`
-:code:`rhu_40F_to_45F`                                  Resistance heat utilization for hourly temperature bin :math:`40 \leq T < 45`
-:code:`rhu_45F_to_50F`                                  Resistance heat utilization for hourly temperature bin :math:`45 \leq T < 50`
-:code:`rhu_50F_to_55F`                                  Resistance heat utilization for hourly temperature bin :math:`50 \leq T < 55`
-:code:`rhu_55F_to_60F`                                  Resistance heat utilization for hourly temperature bin :math:`55 \leq T < 60`
-======================================================= =========================================
+======================================================= ================ ======================== ===========
+Name                                                    Data Format      Units                    Description
+------------------------------------------------------- ---------------- ------------------------ -----------
+:code:`ct_identifier`                                   string           N/A                      Identifier for thermostat as provided in the metadata file.
+:code:`equipment_type`                                  enum, {0..5}     N/A                      Equipment type of this thermostat (1, 2, 3, 4, or 5).
+:code:`season_name`                                     string           N/A                      Name of the season (e.g. "Heating 2012-2013").
+:code:`station`                                         string, USAF ID  N/A                      USAF identifier for station used to fetch hourly temperature data.
+:code:`zipcode`                                         string, 5 digits N/A                      ZIP code provided in the metadata file.
+:code:`n_days_both_heating_and_cooling`                 integer          # days                   Number of days not included in this season's calculations due to presence of both heating and cooling.
+:code:`n_days_insufficient_data`                        integer          # days                   Number of days not included in this season's calculations due to missing data.
+:code:`n_days_in_season`                                integer          # days                   Number of days meeting criteria for season inclusion.
+:code:`n_days_in_season_range`                          integer          # days                   Number of potential days in the season range (e.g. Jan 1 to Dec 31 = 365)
+:code:`slope_deltaT`                                    decimal          minutes/Δ°F              Slope found during a linear regression of a deltaT demand measure against runtime.
+:code:`intercept_deltaT`                                decimal          minutes                  Intercept found during a linear regression of a deltaT demand measure against runtime.
+:code:`alpha_est_dailyavgCDD`                           decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
+:code:`alpha_est_dailyavgHDD`                           decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
+:code:`alpha_est_hourlyavgCDD`                          decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the hourlyavgCDD demand measure.
+:code:`alpha_est_hourlyavgHDD`                          decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the hourlyavgHDD demand measure.
+:code:`mean_sq_err_dailyavgCDD`                         decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the dailyavgCDD demand measure.
+:code:`mean_sq_err_dailyavgHDD`                         decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the dailyavgHDD demand measure.
+:code:`mean_sq_err_hourlyavgCDD`                        decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the hourlyavgCDD demand measure.
+:code:`mean_sq_err_hourlyavgHDD`                        decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the hourlyavgHDD demand measure.
+:code:`mean_squared_error_deltaT`                       decimal          :math:`\text{minutes}^2` Mean squared error of the linear regression of the deltaT demand measure against runtime (see also slope_deltT).
+:code:`deltaT_base_est_dailyavgCDD`                     decimal          °F                       DeltaT base for the dailyavgCDD demand measure.
+:code:`deltaT_base_est_dailyavgHDD`                     decimal          °F                       DeltaT base for the dailyavgHDD demand measure.
+:code:`deltaT_base_est_hourlyavgCDD`                    decimal          °F                       DeltaT base for the hourlyavgCDD demand measure.
+:code:`deltaT_base_est_hourlyavgHDD`                    decimal          °F                       DeltaT base for the hourlyavgHDD demand measure.
+:code:`baseline_daily_runtime_deltaT`                   decimal          minutes/day              Baseline daily runtime according to the deltaT demand measure.
+:code:`baseline_daily_runtime_dailyavgCDD`              decimal          minutes/day              Baseline daily runtime according to the dailyavgCDD demand measure.
+:code:`baseline_daily_runtime_dailyavgHDD`              decimal          minutes/day              Baseline daily runtime according to the dailyavgHDD demand measure.
+:code:`baseline_daily_runtime_hourlyavgCDD`             decimal          minutes/day              Baseline daily runtime according to the hourlyavgCDD demand measure.
+:code:`baseline_daily_runtime_hourlyavgHDD`             decimal          minutes/day              Baseline daily runtime according to the hourlyavgHDD demand measure.
+:code:`baseline_seasonal_runtime_deltaT`                decimal          minutes/season           Baseline seasonal runtime according to the deltaT demand measure.
+:code:`baseline_seasonal_runtime_dailyavgCDD`           decimal          minutes/season           Baseline seasonal runtime according to the dailyavgCDD demand measure.
+:code:`baseline_seasonal_runtime_dailyavgHDD`           decimal          minutes/season           Baseline seasonal runtime according to the dailyavgHDD demand measure.
+:code:`baseline_seasonal_runtime_hourlyavgCDD`          decimal          minutes/season           Baseline seasonal runtime according to the hourlyavgCDD demand measure.
+:code:`baseline_seasonal_runtime_hourlyavgHDD`          decimal          minutes/season           Baseline seasonal runtime according to the hourlyavgHDD demand measure.
+:code:`baseline_comfort_temperature`                    decimal          °F                       Baseline comfort temperature as determined by either the (10th percentile or 90th percentile of setpoints)
+:code:`actual_daily_runtime`                            decimal          minutes/day              Observed average daily runtime for the season.
+:code:`actual_seasonal_runtime`                         decimal          minutes/season           Observed total runtime for the season.
+:code:`seasonal_avoided_runtime_deltaT`                 decimal          minutes/season           Seasonal avoided runtime according to the deltaT demand measure.
+:code:`seasonal_avoided_runtime_dailyavgCDD`            decimal          minutes/season           Seasonal avoided runtime according to the dailyavgCDD demand measure (Cooling seasons only).
+:code:`seasonal_avoided_runtime_dailyavgHDD`            decimal          minutes/season           Seasonal avoided runtime according to the dailyavgHDD demand measure (Heating seasons only).
+:code:`seasonal_avoided_runtime_hourlyavgCDD`           decimal          minutes/season           Seasonal avoided runtime according to the hourlyavgCDD demand measure (Cooling seasons only).
+:code:`seasonal_avoided_runtime_hourlyavgHDD`           decimal          minutes/season           Seasonal avoided runtime according to the hourlyavgHDD demand measure (Heating seasons only).
+:code:`seasonal_savings_deltaT`                         decimal          0.0=0%, 1.0=100%         Seasonal savings according to the deltaT demand measure.
+:code:`seasonal_savings_dailyavgCDD`                    decimal          0.0=0%, 1.0=100%         Seasonal savings according to the dailyavgCDD demand measure (Cooling seasons only).
+:code:`seasonal_savings_dailyavgHDD`                    decimal          0.0=0%, 1.0=100%         Seasonal savings according to the dailyavgHDD demand measure (Heating seasons only).
+:code:`seasonal_savings_hourlyavgCDD`                   decimal          0.0=0%, 1.0=100%         Seasonal savings according to the hourlyavgCDD demand measure (Cooling seasons only).
+:code:`seasonal_savings_hourlyavgHDD`                   decimal          0.0=0%, 1.0=100%         Seasonal savings according to the hourlyavgHDD demand measure (Heating seasons only).
+:code:`rhu_00F_to_05F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 5`
+:code:`rhu_05F_to_10F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`5 \leq T_{out} < 10`
+:code:`rhu_10F_to_15F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 15`
+:code:`rhu_15F_to_20F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`15 \leq T_{out} < 20`
+:code:`rhu_20F_to_25F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`20 \leq T_{out} < 25`
+:code:`rhu_25F_to_30F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`25 \leq T_{out} < 30`
+:code:`rhu_30F_to_35F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 35`
+:code:`rhu_35F_to_40F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`35 \leq T_{out} < 40`
+:code:`rhu_40F_to_45F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`40 \leq T_{out} < 45`
+:code:`rhu_45F_to_50F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`45 \leq T_{out} < 50`
+:code:`rhu_50F_to_55F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`50 \leq T_{out} < 55`
+:code:`rhu_55F_to_60F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`55 \leq T_{out} < 60`
+======================================================= ================ ======================== ===========
 
 Summary Statistics
 ~~~~~~~~~~~~~~~~~~
@@ -376,9 +445,9 @@ output, the following summary statistics are generated.
 Columns
 ```````
 
-========================== =========================================
+========================== ===========
 Name                       Description
--------------------------- -----------------------------------------
+-------------------------- -----------
 :code:`###_mean`           Mean
 :code:`###_sem`            Standard Error of the Mean
 :code:`###_10q`            1st decile (10th percentile, q=quantile)
@@ -390,7 +459,7 @@ Name                       Description
 :code:`###_70q`            7th decile
 :code:`###_80q`            8th decile
 :code:`###_90q`            9th decile
-========================== =========================================
+========================== ===========
 
 
 The following general columns are also output:
@@ -398,9 +467,11 @@ The following general columns are also output:
 Columns
 ```````
 
-========================== =========================================
-Name                       Description
--------------------------- -----------------------------------------
-:code:`label`              Label for the summary
-:code:`n_total_seasons`    Number of thermostat-seasons included in summary
-========================== =========================================
+=========================== ===========
+Name                        Description
+--------------------------- -----------
+:code:`label`               Label for the summary
+:code:`n_seasons_total`     Number of thermostat-seasons available for inclusion in summary. Should be the sum of :code:`n_seasons_kept` and :code:`n_seasons_discarded`.
+:code:`n_seasons_kept`      Number of thermostat-seasons actually included in summary.
+:code:`n_seasons_discarded` Number of thermostat-seasons not included in summary because of one or more failed inclusion tests.
+=========================== ===========

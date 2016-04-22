@@ -5,3 +5,5 @@ __pycache__/
 _build
 build/
 dist/
+.ipynb_checkpoints/
+.cache/

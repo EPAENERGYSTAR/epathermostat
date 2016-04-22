@@ -21,6 +21,8 @@ def runtime_regression(daily_runtime, daily_demand):
         The intercept parameter found by the regression to minimize sq error
     mean_sq_err : float
         The mean squared error of the regession.
+    root_mean_sq_err : float
+        The root mean squared error of the regession.
     """
 
     # drop NA
@@ -38,11 +40,14 @@ def runtime_regression(daily_runtime, daily_demand):
     except TypeError:
         # too few data points causes the following TypeError
         # TypeError: Improper input: N=2 must not exceed M=1
-        return np.nan, np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
     params = results[0]
     slope, intercept = params
-    mean_sq_err = np.nanmean(model(params)**2)
+    mse = np.nanmean(model(params)**2)
+    rmse = mse ** 0.5
+    cvrmse = rmse / np.nanmean(y)
+    mape = np.nanmean(np.absolute(model(params) / y))
+    mae = np.nanmean(np.absolute(model(params)))
 
-    return slope, intercept, mean_sq_err
-
+    return slope, intercept, mse, rmse, cvrmse, mape, mae
