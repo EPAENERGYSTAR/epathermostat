@@ -8,6 +8,7 @@ from eemeter.location import _load_zipcode_to_station_index
 from collections import OrderedDict
 from collections import defaultdict
 from warnings import warn
+import json
 
 REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'n_days_in_season_range',
@@ -354,6 +355,7 @@ class ZipcodeGroupSpec(object):
             group_name = group if self.label is None else "{}_{}".format(group, self.label)
             yield group_name, grouped
 
+
 def combine_output_dataframes(dfs):
     """ Combines output dataframes. Useful when combining output from batches.
 
@@ -571,7 +573,7 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
     return stats
 
 def compute_summary_statistics_by_zipcode_group(df,
-        filepath=None, dictionary=None, group_spec=None,
+        filepath=None, dictionary=None, group_spec=None, weights=None,
         target_method="dailyavg", target_error_metric="CVRMSE",
         target_error_max_value=np.inf, statistical_power_confidence=.95,
         statistical_power_ratio=.05):
@@ -621,6 +623,8 @@ def compute_summary_statistics_by_zipcode_group(df,
 
     group_spec : ZipcodeGroupSpec object
         Initialized group spec object containing a zipcode -> group mapping.
+    weights : dict
+        Object containing weightings for heating and cooling, by group.
     target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
         Metric method by which samples will be filtered according to bad fits, and
         for which statistical power extrapolation is desired.
@@ -651,12 +655,151 @@ def compute_summary_statistics_by_zipcode_group(df,
                 "dictionary, or a ZipcodeGroupSpec object"
         raise ValueError(message)
 
+    if weights is not None:
+        with open(weights, 'r') as f:
+            national_weights = json.load(f)
+    else:
+        national_weights = None
+
     stats = []
     for label, group_df in group_spec.iter_groups(df):
-        stats.extend(compute_summary_statistics(group_df, label,
+        summary_statistics = compute_summary_statistics(group_df, label,
                 target_method=target_method,
+                target_error_metric=target_error_metric,
+                target_error_max_value=target_error_max_value,
                 statistical_power_confidence=statistical_power_confidence,
-                statistical_power_ratio=statistical_power_ratio))
+                statistical_power_ratio=statistical_power_ratio)
+        stats.extend(summary_statistics)
+
+    if national_weights is not None:
+
+        heating_groups = { component: key
+                for key, value in national_weights["heating"].items()
+                for component in value["components"]}
+        heating_weights = { key: value["weight"]
+                for key, value in national_weights["heating"].items()}
+
+        cooling_groups = { component: key
+                for key, value in national_weights["cooling"].items()
+                for component in value["components"]}
+        cooling_weights = { key: value["weight"]
+                for key, value in national_weights["cooling"].items()}
+
+        heating_weight_groups = heating_weights.keys()
+        cooling_weight_groups = cooling_weights.keys()
+        heating_values = { wg: {"means":[], "medians": [], "counts": [], "weight": heating_weights[wg]} for wg in heating_weight_groups}
+        cooling_values = { wg: {"means":[], "medians": [], "counts": [], "weight": cooling_weights[wg]} for wg in cooling_weight_groups}
+
+        for stat in stats:
+            label = stat["label"]
+            category = label[-7:]
+            group = label[:-8]
+            count = stat["n_seasons_kept"]
+
+            if category == "heating":
+                if target_method == "deltaT":
+                    method = "deltaT"
+                else:
+                    method = "{}HDD".format(target_method)
+
+                weight_group = heating_groups[group]
+                mean_value = stat["seasonal_savings_{}_mean".format(method)]
+                median_value = stat["seasonal_savings_{}_q50".format(method)]
+                heating_values[weight_group]["means"].append(mean_value)
+                heating_values[weight_group]["medians"].append(median_value)
+                heating_values[weight_group]["counts"].append(count)
+            else:
+                if target_method == "deltaT":
+                    method = "deltaT"
+                else:
+                    method = "{}CDD".format(target_method)
+
+                weight_group = cooling_groups[group]
+                mean_value = stat["seasonal_savings_{}_mean".format(method)]
+                median_value = stat["seasonal_savings_{}_q50".format(method)]
+                cooling_values[weight_group]["means"].append(mean_value)
+                cooling_values[weight_group]["medians"].append(median_value)
+                cooling_values[weight_group]["counts"].append(count)
+
+        national_heating_mean_numerator = 0
+        national_heating_median_numerator = 0
+        national_heating_denominator = 0
+        for values in heating_values.values():
+            if len(values["means"]) == 0:
+                continue
+            mean_numerator = 0
+            median_numerator = 0
+            denominator = 0
+            for median, mean, count in zip(values["means"], values["medians"], values["counts"]):
+                median_numerator += median * count
+                mean_numerator += mean * count
+                denominator += count
+            try:
+                national_heating_mean_numerator += (mean_numerator / denominator) * values["weight"]
+                national_heating_median_numerator += (median_numerator / denominator) * values["weight"]
+                national_heating_denominator += values["weight"]
+            except ZeroDivisionError:
+                pass
+
+        try:
+            heating_mean = (national_heating_mean_numerator / national_heating_denominator)
+        except ZeroDivisionError:
+            heating_mean = np.nan
+        try:
+            heating_median = (national_heating_median_numerator / national_heating_denominator)
+        except ZeroDivisionError:
+            heating_median = np.nan
+
+        national_cooling_mean_numerator = 0
+        national_cooling_median_numerator = 0
+        national_cooling_denominator = 0
+        for values in cooling_values.values():
+            if len(values["means"]) == 0:
+                continue
+            mean_numerator = 0
+            median_numerator = 0
+            denominator = 0
+            for median, mean, count in zip(values["means"], values["medians"], values["counts"]):
+                median_numerator += median * count
+                mean_numerator += mean * count
+                denominator += count
+            try:
+                national_cooling_mean_numerator += (mean_numerator / denominator) * values["weight"]
+                national_cooling_median_numerator += (median_numerator / denominator) * values["weight"]
+                national_cooling_denominator += values["weight"]
+            except ZeroDivisionError:
+                pass
+
+        try:
+            cooling_mean = (national_cooling_mean_numerator / national_cooling_denominator)
+        except ZeroDivisionError:
+            cooling_mean = np.nan
+        try:
+            cooling_median = (national_cooling_median_numerator / national_cooling_denominator)
+        except ZeroDivisionError:
+            cooling_median = np.nan
+
+
+        if target_method == "deltaT":
+            method = "deltaT"
+        else:
+            method = "{}HDD".format(target_method)
+        stats.append({
+            "label": "national_heating",
+            "national_seasonal_savings_{}_mean_weighted_mean".format(method): heating_mean,
+            "national_seasonal_savings_{}_q50_weighted_mean".format(method): heating_median,
+        })
+
+
+        if target_method == "deltaT":
+            method = "deltaT"
+        else:
+            method = "{}CDD".format(target_method)
+        stats.append({
+            "label": "national_cooling",
+            "national_seasonal_savings_{}_mean_weighted_mean".format(method): cooling_mean,
+            "national_seasonal_savings_{}_q50_weighted_mean".format(method): cooling_median,
+        })
 
     return stats
 
@@ -692,8 +835,11 @@ def compute_summary_statistics_by_zipcode(df, target_method="dailyavg",
     zipcode_dict = { z: z for z in _load_zipcode_to_lat_lng_index().keys()}
     group_spec = ZipcodeGroupSpec(dictionary=zipcode_dict)
 
-    stats = compute_summary_statistics_by_zipcode_group(df, group_spec=group_spec,
+    stats = compute_summary_statistics_by_zipcode_group(df,
+            group_spec=group_spec,
             target_method=target_method,
+            target_error_metric=target_error_metric,
+            target_error_max_value=target_error_max_value,
             statistical_power_confidence=statistical_power_confidence,
             statistical_power_ratio=statistical_power_ratio)
     return stats
@@ -735,6 +881,8 @@ def compute_summary_statistics_by_weather_station(df, target_method="dailyavg",
 
     stats = compute_summary_statistics_by_zipcode_group(df, group_spec=group_spec,
             target_method=target_method,
+            target_error_metric=target_error_metric,
+            target_error_max_value=target_error_max_value,
             statistical_power_confidence=statistical_power_confidence,
             statistical_power_ratio=statistical_power_ratio)
     return stats
@@ -769,6 +917,19 @@ def summary_statistics_to_csv(stats, filepath):
         columns.append("{}_n".format(column_name))
         for quantile in quantiles:
             columns.append("{}_q{}".format(column_name, quantile))
+
+    columns += [
+        "seasonal_savings_dailyavgCDD_mean_national_weighted_mean",
+        "seasonal_savings_dailyavgHDD_mean_national_weighted_mean",
+        "seasonal_savings_deltaT_mean_national_weighted_mean",
+        "seasonal_savings_hourlyavgCDD_mean_national_weighted_mean",
+        "seasonal_savings_hourlyavgHDD_mean_national_weighted_mean",
+        "seasonal_savings_dailyavgCDD_q50_national_weighted_mean",
+        "seasonal_savings_dailyavgHDD_q50_national_weighted_mean",
+        "seasonal_savings_deltaT_q50_national_weighted_mean",
+        "seasonal_savings_hourlyavgCDD_q50_national_weighted_mean",
+        "seasonal_savings_hourlyavgHDD_q50_national_weighted_mean",
+    ]
 
     stats_dataframe = pd.DataFrame(stats, columns=columns)
     stats_dataframe.to_csv(filepath, index=False, columns=columns)

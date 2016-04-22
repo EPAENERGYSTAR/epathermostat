@@ -216,12 +216,24 @@ can be downloaded
 The file maps ZIP codes to Climate Zones. This example computes summary
 statistics for each climate zone using the provided mapping.
 
+Should you wish to calculate a national average using a weighted climate zone
+mapping as well, you should use the following weightings, also available for
+download :download:`here <./resources/NationalAverageClimateZoneWeightings.json>`
+
 .. code-block:: python
 
     from thermostat.stats import compute_summary_statistics_by_zipcode_group
 
-    stats.extend(compute_summary_statistics_by_zipcode_group(metrics_df,
-             filepath=os.path.join(data_dir, "Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv")))
+    zipcode_mapping_path = os.path.join(data_dir,
+            "Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv")
+
+    national_weighting_path = os.path.join(data_dir,
+            "NationalAverageClimateZoneWeightings.json")
+
+    summary_statistics = compute_summary_statistics_by_zipcode_group(metrics_df,
+             filepath=zipcode_mapping_path, weights=national_weighting_path)
+
+    stats.extend(summary_statistics)
 
 Please see the :ref:`thermostat-api` docs for additional information
 on computing summary statistics.
