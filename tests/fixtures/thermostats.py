@@ -2,12 +2,44 @@ from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
 from thermostat.savings import get_daily_avoided_runtime
-from thermostat.core import Season
+from thermostat.core import Thermostat, Season
 
 import pandas as pd
 import numpy as np
 
 import pytest
+
+# will be modified, recreate every time by scoping to function
+@pytest.fixture(scope='function')
+def thermostat_template():
+    thermostat_id = "FAKE"
+    equipment_type = 0
+    zipcode = "FAKE"
+    station = "FAKE"
+    temperature_in = pd.Series([])
+    temperature_out = pd.Series([])
+    cooling_setpoint = pd.Series([])
+    heating_setpoint = pd.Series([])
+    cool_runtime = pd.Series([])
+    heat_runtime = pd.Series([])
+    auxiliary_heat_runtime = pd.Series([])
+    emergency_heat_runtime = pd.Series([])
+
+    thermostat = Thermostat(
+        thermostat_id,
+        equipment_type,
+        zipcode,
+        station,
+        temperature_in,
+        temperature_out,
+        cooling_setpoint,
+        heating_setpoint,
+        cool_runtime,
+        heat_runtime,
+        auxiliary_heat_runtime,
+        emergency_heat_runtime
+    )
+    return thermostat
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):

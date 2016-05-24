@@ -747,9 +747,9 @@ class Thermostat(object):
         if method == 'tenth_percentile':
 
             if source == 'cooling_setpoint':
-                return self.cooling_setpoint[cooling_season.hourly].quantile(.1)
+                return self.cooling_setpoint[cooling_season.hourly].dropna().quantile(.1)
             elif source == 'temperature_in':
-                return self.temperature_in[cooling_season.hourly].quantile(.1)
+                return self.temperature_in[cooling_season.hourly].dropna().quantile(.1)
             else:
                 raise NotImplementedError
 
@@ -784,9 +784,9 @@ class Thermostat(object):
         if method == 'ninetieth_percentile':
 
             if source == 'heating_setpoint':
-                return self.heating_setpoint[heating_season.hourly].quantile(.9)
+                return self.heating_setpoint[heating_season.hourly].dropna().quantile(.9)
             elif source == 'temperature_in':
-                return self.temperature_in[heating_season.hourly].quantile(.9)
+                return self.temperature_in[heating_season.hourly].dropna().quantile(.9)
             else:
                 raise NotImplementedError
 
