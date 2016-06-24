@@ -36,7 +36,7 @@ setup(name='thermostat',
     keywords='thermostat savings EPA',
     packages=find_packages(),
     install_requires=[
-        'eemeter',
-        'pandas',
+        'eemeter==0.3.20',
+        'pandas==0.18.1',
     ],
 )
