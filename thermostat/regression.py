@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import leastsq
 
-def runtime_regression(daily_runtime, daily_demand):
+def runtime_regression(daily_runtime, daily_demand, method):
     """
     Least squares regession of runtime against a measure of demand.
 
@@ -29,9 +29,15 @@ def runtime_regression(daily_runtime, daily_demand):
     df = pd.DataFrame({"x": daily_demand, "y": daily_runtime}).dropna()
     x, y = df.x, df.y
 
-    def model(params):
-        a, b = params
-        return y - (a*x + b)
+    if method == "cooling":
+        def model(params):
+            alpha, tau = params
+            return y - (alpha * (x + tau))
+
+    else:
+        def model(params):
+            alpha, tau = params
+            return y - (alpha * (x - tau))
 
     x0 = (1, 0)
 
@@ -43,11 +49,11 @@ def runtime_regression(daily_runtime, daily_demand):
         return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
     params = results[0]
-    slope, intercept = params
+    alpha, tau = params
     mse = np.nanmean(model(params)**2)
     rmse = mse ** 0.5
     cvrmse = rmse / np.nanmean(y)
     mape = np.nanmean(np.absolute(model(params) / y))
     mae = np.nanmean(np.absolute(model(params)))
 
-    return slope, intercept, mse, rmse, cvrmse, mape, mae
+    return alpha, tau, mse, rmse, cvrmse, mape, mae

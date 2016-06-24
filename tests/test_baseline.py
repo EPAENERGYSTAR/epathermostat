@@ -19,16 +19,16 @@ ATOL = 1e-3
 
 @pytest.fixture(params=[
     ("deltaT", "mean_demand_baseline_deltaT", None),
-    ("dailyavgCDD", "mean_demand_baseline_dailyavgCDD", "deltaT_base_est_dailyavgCDD"),
-    ("hourlyavgCDD", "mean_demand_baseline_hourlyavgCDD", "deltaT_base_est_hourlyavgCDD"),
+    ("dailyavgCDD", "mean_demand_baseline_dailyavgCDD", "tau_dailyavgCDD"),
+    ("hourlyavgCDD", "mean_demand_baseline_hourlyavgCDD", "tau_hourlyavgCDD"),
     ])
 def cooling_baseline_types(request):
     return request.param
 
 @pytest.fixture(params=[
     ("deltaT", "mean_demand_baseline_deltaT", None),
-    ("dailyavgHDD", "mean_demand_baseline_dailyavgHDD", "deltaT_base_est_dailyavgHDD"),
-    ("hourlyavgHDD", "mean_demand_baseline_hourlyavgHDD", "deltaT_base_est_hourlyavgHDD"),
+    ("dailyavgHDD", "mean_demand_baseline_dailyavgHDD", "tau_dailyavgHDD"),
+    ("hourlyavgHDD", "mean_demand_baseline_hourlyavgHDD", "tau_hourlyavgHDD"),
     ])
 def heating_baseline_types(request):
     return request.param
