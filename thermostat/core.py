@@ -240,6 +240,17 @@ class Thermostat(object):
 
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
+        # enough temperature_in
+        enough_temp_in = \
+                self.temperature_in.groupby(self.temperature_in.index.date) \
+                .apply(lambda x: x.isnull().sum() <= 2)
+
+        enough_temp_out = \
+                self.temperature_out.groupby(self.temperature_out.index.date) \
+                .apply(lambda x: x.isnull().sum() <= 2)
+
+        meets_thresholds &= enough_temp_in & enough_temp_out
+
         data_start_date = np.datetime64(self.heat_runtime.index[0])
         data_end_date = np.datetime64(self.heat_runtime.index[-1])
 
@@ -329,6 +340,17 @@ class Thermostat(object):
 
         meets_cooling_thresholds = self.cool_runtime >= min_minutes_cooling
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
+
+        # enough temperature_in
+        enough_temp_in = \
+                self.temperature_in.groupby(self.temperature_in.index.date) \
+                .apply(lambda x: x.isnull().sum() <= 2)
+
+        enough_temp_out = \
+                self.temperature_out.groupby(self.temperature_out.index.date) \
+                .apply(lambda x: x.isnull().sum() <= 2)
+
+        meets_thresholds &= enough_temp_in & enough_temp_out
 
         if method == "year_end_to_end":
             start_year = data_start_date.item().year
