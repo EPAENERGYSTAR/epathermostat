@@ -384,21 +384,21 @@ Name                                                    Data Format      Units  
 :code:`n_days_insufficient_data`                        integer          # days                   Number of days not included in this season's calculations due to missing data.
 :code:`n_days_in_season`                                integer          # days                   Number of days meeting criteria for season inclusion.
 :code:`n_days_in_season_range`                          integer          # days                   Number of potential days in the season range (e.g. Jan 1 to Dec 31 = 365)
-:code:`slope_deltaT`                                    decimal          minutes/Δ°F              Slope found during a linear regression of a deltaT demand measure against runtime.
-:code:`intercept_deltaT`                                decimal          minutes                  Intercept found during a linear regression of a deltaT demand measure against runtime.
-:code:`alpha_est_dailyavgCDD`                           decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
-:code:`alpha_est_dailyavgHDD`                           decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
-:code:`alpha_est_hourlyavgCDD`                          decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the hourlyavgCDD demand measure.
-:code:`alpha_est_hourlyavgHDD`                          decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the hourlyavgHDD demand measure.
+:code:`alpha_deltaT`                                    decimal          minutes/Δ°F              Slope found during a linear regression of a deltaT demand measure against runtime.
+:code:`tau_deltaT`                                      decimal          minutes                  Intercept found during a linear regression of a deltaT demand measure against runtime.
+:code:`alpha_dailyavgCDD`                               decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
+:code:`alpha_dailyavgHDD`                               decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the dailyavgCDD demand measure.
+:code:`alpha_hourlyavgCDD`                              decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the hourlyavgCDD demand measure.
+:code:`alpha_hourlyavgHDD`                              decimal          minutes/Δ°F              Estimate of alpha from the ratio estimation step of the hourlyavgHDD demand measure.
 :code:`mean_sq_err_dailyavgCDD`                         decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the dailyavgCDD demand measure.
 :code:`mean_sq_err_dailyavgHDD`                         decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the dailyavgHDD demand measure.
 :code:`mean_sq_err_hourlyavgCDD`                        decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the hourlyavgCDD demand measure.
 :code:`mean_sq_err_hourlyavgHDD`                        decimal          :math:`\text{minutes}^2` Mean squared error for the ratio estimation used during computation of the hourlyavgHDD demand measure.
 :code:`mean_squared_error_deltaT`                       decimal          :math:`\text{minutes}^2` Mean squared error of the linear regression of the deltaT demand measure against runtime (see also slope_deltT).
-:code:`deltaT_base_est_dailyavgCDD`                     decimal          °F                       DeltaT base for the dailyavgCDD demand measure.
-:code:`deltaT_base_est_dailyavgHDD`                     decimal          °F                       DeltaT base for the dailyavgHDD demand measure.
-:code:`deltaT_base_est_hourlyavgCDD`                    decimal          °F                       DeltaT base for the hourlyavgCDD demand measure.
-:code:`deltaT_base_est_hourlyavgHDD`                    decimal          °F                       DeltaT base for the hourlyavgHDD demand measure.
+:code:`tau_dailyavgCDD`                                 decimal          °F                       DeltaT base for the dailyavgCDD demand measure.
+:code:`tau_dailyavgHDD`                                 decimal          °F                       DeltaT base for the dailyavgHDD demand measure.
+:code:`tau_hourlyavgCDD`                                decimal          °F                       DeltaT base for the hourlyavgCDD demand measure.
+:code:`tau_hourlyavgHDD`                                decimal          °F                       DeltaT base for the hourlyavgHDD demand measure.
 :code:`baseline_daily_runtime_deltaT`                   decimal          minutes/day              Baseline daily runtime according to the deltaT demand measure.
 :code:`baseline_daily_runtime_dailyavgCDD`              decimal          minutes/day              Baseline daily runtime according to the dailyavgCDD demand measure.
 :code:`baseline_daily_runtime_dailyavgHDD`              decimal          minutes/day              Baseline daily runtime according to the dailyavgHDD demand measure.
@@ -417,11 +417,11 @@ Name                                                    Data Format      Units  
 :code:`seasonal_avoided_runtime_dailyavgHDD`            decimal          minutes/season           Seasonal avoided runtime according to the dailyavgHDD demand measure (Heating seasons only).
 :code:`seasonal_avoided_runtime_hourlyavgCDD`           decimal          minutes/season           Seasonal avoided runtime according to the hourlyavgCDD demand measure (Cooling seasons only).
 :code:`seasonal_avoided_runtime_hourlyavgHDD`           decimal          minutes/season           Seasonal avoided runtime according to the hourlyavgHDD demand measure (Heating seasons only).
-:code:`seasonal_savings_deltaT`                         decimal          0.0=0%, 1.0=100%         Seasonal savings according to the deltaT demand measure.
-:code:`seasonal_savings_dailyavgCDD`                    decimal          0.0=0%, 1.0=100%         Seasonal savings according to the dailyavgCDD demand measure (Cooling seasons only).
-:code:`seasonal_savings_dailyavgHDD`                    decimal          0.0=0%, 1.0=100%         Seasonal savings according to the dailyavgHDD demand measure (Heating seasons only).
-:code:`seasonal_savings_hourlyavgCDD`                   decimal          0.0=0%, 1.0=100%         Seasonal savings according to the hourlyavgCDD demand measure (Cooling seasons only).
-:code:`seasonal_savings_hourlyavgHDD`                   decimal          0.0=0%, 1.0=100%         Seasonal savings according to the hourlyavgHDD demand measure (Heating seasons only).
+:code:`percent_savings_deltaT`                          decimal          0.0=0%, 1.0=100%         Seasonal savings according to the deltaT demand measure.
+:code:`percent_savings_dailyavgCDD`                     decimal          0.0=0%, 1.0=100%         Seasonal savings according to the dailyavgCDD demand measure (Cooling seasons only).
+:code:`percent_savings_dailyavgHDD`                     decimal          0.0=0%, 1.0=100%         Seasonal savings according to the dailyavgHDD demand measure (Heating seasons only).
+:code:`percent_savings_hourlyavgCDD`                    decimal          0.0=0%, 1.0=100%         Seasonal savings according to the hourlyavgCDD demand measure (Cooling seasons only).
+:code:`percent_savings_hourlyavgHDD`                    decimal          0.0=0%, 1.0=100%         Seasonal savings according to the hourlyavgHDD demand measure (Heating seasons only).
 :code:`rhu_00F_to_05F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 5`
 :code:`rhu_05F_to_10F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`5 \leq T_{out} < 10`
 :code:`rhu_10F_to_15F`                                  decmial          0.0=0%, 1.0=100%         Resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 15`
