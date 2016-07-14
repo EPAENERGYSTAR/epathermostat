@@ -6,32 +6,32 @@
                 "Very Cold",
                 "Very-Cold"
             ],
-            "weight": 0.5484
+            "weight": 0.549
         },
         "Mixed-Humid": {
             "components": [
                 "Mixed-Humid"
             ],
-            "weight": 0.2117
+            "weight": 0.312
         },
         "Mixed-Dry/Hot-Dry": {
             "components": [
                 "Mixed-Dry",
                 "Hot-Dry"
             ],
-            "weight": 0.0532
+            "weight": 0.054
         },
         "Hot-Humid": {
             "components": [
                 "Hot-Humid"
             ],
-            "weight": 0.0492
+            "weight": 0.049
         },
         "Marine": {
             "components": [
                 "Marine"
             ],
-            "weight": 0.0357
+            "weight": 0.036
         }
     },
     "cooling": {
@@ -41,32 +41,32 @@
                 "Very Cold",
                 "Very-Cold"
             ],
-            "weight": 0.0961
+            "weight": 0.096
         },
         "Mixed-Humid": {
             "components": [
                 "Mixed-Humid"
             ],
-            "weight": 0.3386
+            "weight": 0.338
         },
         "Mixed-Dry/Hot-Dry": {
             "components": [
                 "Mixed-Dry",
                 "Hot-Dry"
             ],
-            "weight": 0.1433
+            "weight": 0.143
         },
         "Hot-Humid": {
             "components": [
                 "Hot-Humid"
             ],
-            "weight": 0.4189
+            "weight": 0.418
         },
         "Marine": {
             "components": [
                 "Marine"
             ],
-            "weight": 0.0047
+            "weight": 0.045
         }
     }
 }
