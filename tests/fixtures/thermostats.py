@@ -1,8 +1,7 @@
 from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
-from thermostat.savings import get_daily_avoided_runtime
-from thermostat.core import Thermostat, Season
+from thermostat.core import Thermostat, CoreDaySet
 
 import pandas as pd
 import numpy as np
@@ -67,72 +66,72 @@ def thermostat_type_5(request):
     return next(thermostats)
 
 @pytest.fixture(scope="session")
-def heating_season_type_1_mid_to_mid(thermostat_type_1):
-    return thermostat_type_1.get_heating_seasons(method="year_mid_to_mid")[0]
+def core_heating_day_set_type_1_mid_to_mid(thermostat_type_1):
+    return thermostat_type_1.get_core_heating_days(method="year_mid_to_mid")[0]
 
 @pytest.fixture(scope="session")
-def heating_season_type_1_entire(thermostat_type_1):
-    return thermostat_type_1.get_heating_seasons(method="entire_dataset")[0]
+def core_heating_day_set_type_1_entire(thermostat_type_1):
+    return thermostat_type_1.get_core_heating_days(method="entire_dataset")[0]
 
 @pytest.fixture(scope="session")
-def heating_season_type_2(thermostat_type_2):
-    return thermostat_type_2.get_heating_seasons(method="year_mid_to_mid")[0]
+def core_heating_day_set_type_2(thermostat_type_2):
+    return thermostat_type_2.get_core_heating_days(method="year_mid_to_mid")[0]
 
 @pytest.fixture(scope="session")
-def heating_season_type_3(thermostat_type_3):
-    return thermostat_type_3.get_heating_seasons(method="year_mid_to_mid")[0]
+def core_heating_day_set_type_3(thermostat_type_3):
+    return thermostat_type_3.get_core_heating_days(method="year_mid_to_mid")[0]
 
 @pytest.fixture(scope="session")
-def heating_season_type_4(thermostat_type_4):
-    return thermostat_type_4.get_heating_seasons(method="year_mid_to_mid")[0]
+def core_heating_day_set_type_4(thermostat_type_4):
+    return thermostat_type_4.get_core_heating_days(method="year_mid_to_mid")[0]
 
 @pytest.fixture(scope="session")
-def cooling_season_type_1_end_to_end(thermostat_type_1):
-    return thermostat_type_1.get_cooling_seasons(method="year_end_to_end")[0]
+def core_cooling_day_set_type_1_end_to_end(thermostat_type_1):
+    return thermostat_type_1.get_core_cooling_days(method="year_end_to_end")[0]
 
 @pytest.fixture(scope="session")
-def cooling_season_type_1_entire(thermostat_type_1):
-    return thermostat_type_1.get_cooling_seasons(method="entire_dataset")[0]
+def core_cooling_day_set_type_1_entire(thermostat_type_1):
+    return thermostat_type_1.get_core_cooling_days(method="entire_dataset")[0]
 
 @pytest.fixture(scope="session")
-def cooling_season_type_1_empty(thermostat_type_1):
-    cooling_season = thermostat_type_1.get_cooling_seasons(method="entire_dataset")[0]
-    season = Season(
+def core_cooling_day_set_type_1_empty(thermostat_type_1):
+    core_cooling_day_set = thermostat_type_1.get_core_cooling_days(method="entire_dataset")[0]
+    season = CoreDaySet(
         "empty",
-        pd.Series(np.tile(False, cooling_season.daily.shape),
-                  index=cooling_season.daily.index),
-        pd.Series(np.tile(False, cooling_season.hourly.shape),
-                  index=cooling_season.hourly.index),
-        cooling_season.start_date,
-        cooling_season.end_date
+        pd.Series(np.tile(False, core_cooling_day_set.daily.shape),
+                  index=core_cooling_day_set.daily.index),
+        pd.Series(np.tile(False, core_cooling_day_set.hourly.shape),
+                  index=core_cooling_day_set.hourly.index),
+        core_cooling_day_set.start_date,
+        core_cooling_day_set.end_date
     )
     return season
 
 @pytest.fixture(scope="session")
-def heating_season_type_1_empty(thermostat_type_1):
-    heating_season = thermostat_type_1.get_heating_seasons(method="entire_dataset")[0]
-    season = Season(
+def core_heating_day_set_type_1_empty(thermostat_type_1):
+    core_heating_day_set = thermostat_type_1.get_core_heating_days(method="entire_dataset")[0]
+    season = CoreDaySet(
         "empty",
-        pd.Series(np.tile(False, heating_season.daily.shape),
-                  index=heating_season.daily.index),
-        pd.Series(np.tile(False, heating_season.hourly.shape),
-                  index=heating_season.hourly.index),
-        heating_season.start_date,
-        heating_season.end_date
+        pd.Series(np.tile(False, core_heating_day_set.daily.shape),
+                  index=core_heating_day_set.daily.index),
+        pd.Series(np.tile(False, core_heating_day_set.hourly.shape),
+                  index=core_heating_day_set.hourly.index),
+        core_heating_day_set.start_date,
+        core_heating_day_set.end_date
     )
     return season
 
 @pytest.fixture(scope="session")
-def cooling_season_type_2(thermostat_type_2):
-    return thermostat_type_2.get_cooling_seasons(method="year_end_to_end")[0]
+def core_cooling_day_set_type_2(thermostat_type_2):
+    return thermostat_type_2.get_core_cooling_days(method="year_end_to_end")[0]
 
 @pytest.fixture(scope="session")
-def cooling_season_type_3(thermostat_type_3):
-    return thermostat_type_3.get_cooling_seasons(method="year_end_to_end")[0]
+def core_cooling_day_set_type_3(thermostat_type_3):
+    return thermostat_type_3.get_core_cooling_days(method="year_end_to_end")[0]
 
 @pytest.fixture(scope="session")
-def cooling_season_type_5(thermostat_type_5):
-    return thermostat_type_5.get_cooling_seasons(method="year_end_to_end")[0]
+def core_cooling_day_set_type_5(thermostat_type_5):
+    return thermostat_type_5.get_core_cooling_days(method="year_end_to_end")[0]
 
 @pytest.fixture(scope="session")
 def seasonal_metrics_type_1_data():
@@ -149,7 +148,7 @@ def seasonal_metrics_type_1_data():
         'avoided_seasonal_runtime_dailyavgCDD': 12565.616968832861,
         'avoided_seasonal_runtime_deltaT': 12565.616965731177,
         'avoided_seasonal_runtime_hourlyavgCDD': 19239.114137251192,
-        'baseline_comfort_temperature': 73.0,
+        'baseline_comfort_temperature': 70.0,
         'baseline_daily_runtime_dailyavgCDD': 304.22084935065539,
         'baseline_daily_runtime_deltaT': 304.22084933953829,
         'baseline_daily_runtime_hourlyavgCDD': 328.14019404032683,
@@ -167,9 +166,9 @@ def seasonal_metrics_type_1_data():
         'mean_abs_pct_err_dailyavgCDD': 0.025945204594942428,
         'mean_abs_pct_err_deltaT': 0.039751319303639385,
         'mean_abs_pct_err_hourlyavgCDD': 0.037364198500506783,
-        'mean_demand_baseline_dailyavgCDD': 7.4133364325744315,
-        'mean_demand_baseline_deltaT': 7.2757930107526905,
-        'mean_demand_baseline_hourlyavgCDD': 7.5963545052436077,
+        'mean_demand_baseline_dailyavgCDD': 10.408255245982748,
+        'mean_demand_baseline_deltaT': 10.275793010752691,
+        'mean_demand_baseline_hourlyavgCDD': 10.076189648529365,
         'mean_demand_dailyavgCDD': 6.3158368867633135,
         'mean_demand_deltaT': 6.1833746515332546,
         'mean_demand_hourlyavgCDD': 6.0000098541637321,

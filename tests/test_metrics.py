@@ -18,13 +18,13 @@ import six
 
 @pytest.fixture(scope="session")
 def seasonal_metrics_type_1(thermostat_type_1):
-    seasonal_metrics_type_1 = thermostat_type_1.calculate_epa_draft_rccs_field_savings_metrics()
+    seasonal_metrics_type_1 = thermostat_type_1.calculate_epa_field_savings_metrics()
     return seasonal_metrics_type_1
 
 RTOL = 1e-3
 ATOL = 1e-3
 
-def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_type_1, seasonal_metrics_type_1_data):
+def test_calculate_epa_field_savings_metrics_type_1(seasonal_metrics_type_1, seasonal_metrics_type_1_data):
     assert len(seasonal_metrics_type_1) == len(seasonal_metrics_type_1_data)
 
     for key in seasonal_metrics_type_1[0].keys():
@@ -43,25 +43,25 @@ def test_calculate_epa_draft_rccs_field_savings_metrics_type_1(seasonal_metrics_
         else:
             assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
 
-def test_calculate_epa_draft_rccs_field_savings_metrics_type_2(thermostat_type_2):
-    seasonal_metrics_type_2_entire = thermostat_type_2.calculate_epa_draft_rccs_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_2(thermostat_type_2):
+    seasonal_metrics_type_2_entire = thermostat_type_2.calculate_epa_field_savings_metrics()
     assert len(seasonal_metrics_type_2_entire) == 2
 
-    seasonal_metrics_type_2_yearly = thermostat_type_2.calculate_epa_draft_rccs_field_savings_metrics(
+    seasonal_metrics_type_2_yearly = thermostat_type_2.calculate_epa_field_savings_metrics(
             cooling_season_method="year_end_to_end",
             heating_season_method="year_mid_to_mid")
     assert len(seasonal_metrics_type_2_yearly) == 9
 
-def test_calculate_epa_draft_rccs_field_savings_metrics_type_3(thermostat_type_3):
-    seasonal_metrics_type_3 = thermostat_type_3.calculate_epa_draft_rccs_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_3(thermostat_type_3):
+    seasonal_metrics_type_3 = thermostat_type_3.calculate_epa_field_savings_metrics()
     assert len(seasonal_metrics_type_3) == 2
 
-def test_calculate_epa_draft_rccs_field_savings_metrics_type_4(thermostat_type_4):
-    seasonal_metrics_type_4 = thermostat_type_4.calculate_epa_draft_rccs_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_4(thermostat_type_4):
+    seasonal_metrics_type_4 = thermostat_type_4.calculate_epa_field_savings_metrics()
     assert len(seasonal_metrics_type_4) == 1
 
-def test_calculate_epa_draft_rccs_field_savings_metrics_type_5(thermostat_type_5):
-    seasonal_metrics_type_5 = thermostat_type_5.calculate_epa_draft_rccs_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_5(thermostat_type_5):
+    seasonal_metrics_type_5 = thermostat_type_5.calculate_epa_field_savings_metrics()
     assert len(seasonal_metrics_type_5) == 1
 
 def test_seasonal_metrics_to_csv(seasonal_metrics_type_1):
