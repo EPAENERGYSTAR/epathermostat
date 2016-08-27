@@ -31,35 +31,35 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'mean_abs_err_deltaT',
     'mean_abs_pct_err_deltaT',
 
-    'percent_savings_dailyavgHDD',
-    'avoided_daily_runtime_dailyavgHDD',
-    'avoided_seasonal_runtime_dailyavgHDD',
-    'baseline_daily_runtime_dailyavgHDD',
-    'baseline_seasonal_runtime_dailyavgHDD',
-    'mean_demand_dailyavgHDD',
-    'mean_demand_baseline_dailyavgHDD',
-    'alpha_dailyavgHDD',
-    'tau_dailyavgHDD',
-    'mean_sq_err_dailyavgHDD',
-    'root_mean_sq_err_dailyavgHDD',
-    'cv_root_mean_sq_err_dailyavgHDD',
-    'mean_abs_err_dailyavgHDD',
-    'mean_abs_pct_err_dailyavgHDD',
+    'percent_savings_dailyavgHTD',
+    'avoided_daily_runtime_dailyavgHTD',
+    'avoided_seasonal_runtime_dailyavgHTD',
+    'baseline_daily_runtime_dailyavgHTD',
+    'baseline_seasonal_runtime_dailyavgHTD',
+    'mean_demand_dailyavgHTD',
+    'mean_demand_baseline_dailyavgHTD',
+    'alpha_dailyavgHTD',
+    'tau_dailyavgHTD',
+    'mean_sq_err_dailyavgHTD',
+    'root_mean_sq_err_dailyavgHTD',
+    'cv_root_mean_sq_err_dailyavgHTD',
+    'mean_abs_err_dailyavgHTD',
+    'mean_abs_pct_err_dailyavgHTD',
 
-    'percent_savings_hourlyavgHDD',
-    'avoided_daily_runtime_hourlyavgHDD',
-    'avoided_seasonal_runtime_hourlyavgHDD',
-    'baseline_daily_runtime_hourlyavgHDD',
-    'baseline_seasonal_runtime_hourlyavgHDD',
-    'mean_demand_hourlyavgHDD',
-    'mean_demand_baseline_hourlyavgHDD',
-    'alpha_hourlyavgHDD',
-    'tau_hourlyavgHDD',
-    'mean_sq_err_hourlyavgHDD',
-    'root_mean_sq_err_hourlyavgHDD',
-    'cv_root_mean_sq_err_hourlyavgHDD',
-    'mean_abs_err_hourlyavgHDD',
-    'mean_abs_pct_err_hourlyavgHDD',
+    'percent_savings_hourlyavgHTD',
+    'avoided_daily_runtime_hourlyavgHTD',
+    'avoided_seasonal_runtime_hourlyavgHTD',
+    'baseline_daily_runtime_hourlyavgHTD',
+    'baseline_seasonal_runtime_hourlyavgHTD',
+    'mean_demand_hourlyavgHTD',
+    'mean_demand_baseline_hourlyavgHTD',
+    'alpha_hourlyavgHTD',
+    'tau_hourlyavgHTD',
+    'mean_sq_err_hourlyavgHTD',
+    'root_mean_sq_err_hourlyavgHTD',
+    'cv_root_mean_sq_err_hourlyavgHTD',
+    'mean_abs_err_hourlyavgHTD',
+    'mean_abs_pct_err_hourlyavgHTD',
 
     'total_auxiliary_heating_runtime',
     'total_emergency_heating_runtime',
@@ -105,35 +105,35 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     'mean_abs_err_deltaT',
     'mean_abs_pct_err_deltaT',
 
-    'percent_savings_dailyavgCDD',
-    'avoided_daily_runtime_dailyavgCDD',
-    'avoided_seasonal_runtime_dailyavgCDD',
-    'baseline_daily_runtime_dailyavgCDD',
-    'baseline_seasonal_runtime_dailyavgCDD',
-    'mean_demand_dailyavgCDD',
-    'mean_demand_baseline_dailyavgCDD',
-    'alpha_dailyavgCDD',
-    'tau_dailyavgCDD',
-    'mean_sq_err_dailyavgCDD',
-    'root_mean_sq_err_dailyavgCDD',
-    'cv_root_mean_sq_err_dailyavgCDD',
-    'mean_abs_err_dailyavgCDD',
-    'mean_abs_pct_err_dailyavgCDD',
+    'percent_savings_dailyavgCTD',
+    'avoided_daily_runtime_dailyavgCTD',
+    'avoided_seasonal_runtime_dailyavgCTD',
+    'baseline_daily_runtime_dailyavgCTD',
+    'baseline_seasonal_runtime_dailyavgCTD',
+    'mean_demand_dailyavgCTD',
+    'mean_demand_baseline_dailyavgCTD',
+    'alpha_dailyavgCTD',
+    'tau_dailyavgCTD',
+    'mean_sq_err_dailyavgCTD',
+    'root_mean_sq_err_dailyavgCTD',
+    'cv_root_mean_sq_err_dailyavgCTD',
+    'mean_abs_err_dailyavgCTD',
+    'mean_abs_pct_err_dailyavgCTD',
 
-    'percent_savings_hourlyavgCDD',
-    'avoided_daily_runtime_hourlyavgCDD',
-    'avoided_seasonal_runtime_hourlyavgCDD',
-    'baseline_daily_runtime_hourlyavgCDD',
-    'baseline_seasonal_runtime_hourlyavgCDD',
-    'mean_demand_hourlyavgCDD',
-    'mean_demand_baseline_hourlyavgCDD',
-    'alpha_hourlyavgCDD',
-    'tau_hourlyavgCDD',
-    'mean_sq_err_hourlyavgCDD',
-    'root_mean_sq_err_hourlyavgCDD',
-    'cv_root_mean_sq_err_hourlyavgCDD',
-    'mean_abs_err_hourlyavgCDD',
-    'mean_abs_pct_err_hourlyavgCDD',
+    'percent_savings_hourlyavgCTD',
+    'avoided_daily_runtime_hourlyavgCTD',
+    'avoided_seasonal_runtime_hourlyavgCTD',
+    'baseline_daily_runtime_hourlyavgCTD',
+    'baseline_seasonal_runtime_hourlyavgCTD',
+    'mean_demand_hourlyavgCTD',
+    'mean_demand_baseline_hourlyavgCTD',
+    'alpha_hourlyavgCTD',
+    'tau_hourlyavgCTD',
+    'mean_sq_err_hourlyavgCTD',
+    'root_mean_sq_err_hourlyavgCTD',
+    'cv_root_mean_sq_err_hourlyavgCTD',
+    'mean_abs_err_hourlyavgCTD',
+    'mean_abs_pct_err_hourlyavgCTD',
 
     'total_cooling_runtime',
 
@@ -164,65 +164,65 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'mean_abs_err_deltaT',
     'mean_abs_pct_err_deltaT',
 
-    'percent_savings_dailyavgCDD',
-    'avoided_daily_runtime_dailyavgCDD',
-    'avoided_seasonal_runtime_dailyavgCDD',
-    'baseline_daily_runtime_dailyavgCDD',
-    'baseline_seasonal_runtime_dailyavgCDD',
-    'mean_demand_dailyavgCDD',
-    'mean_demand_baseline_dailyavgCDD',
-    'alpha_dailyavgCDD',
-    'tau_dailyavgCDD',
-    'mean_sq_err_dailyavgCDD',
-    'root_mean_sq_err_dailyavgCDD',
-    'cv_root_mean_sq_err_dailyavgCDD',
-    'mean_abs_err_dailyavgCDD',
-    'mean_abs_pct_err_dailyavgCDD',
+    'percent_savings_dailyavgCTD',
+    'avoided_daily_runtime_dailyavgCTD',
+    'avoided_seasonal_runtime_dailyavgCTD',
+    'baseline_daily_runtime_dailyavgCTD',
+    'baseline_seasonal_runtime_dailyavgCTD',
+    'mean_demand_dailyavgCTD',
+    'mean_demand_baseline_dailyavgCTD',
+    'alpha_dailyavgCTD',
+    'tau_dailyavgCTD',
+    'mean_sq_err_dailyavgCTD',
+    'root_mean_sq_err_dailyavgCTD',
+    'cv_root_mean_sq_err_dailyavgCTD',
+    'mean_abs_err_dailyavgCTD',
+    'mean_abs_pct_err_dailyavgCTD',
 
-    'percent_savings_hourlyavgCDD',
-    'avoided_daily_runtime_hourlyavgCDD',
-    'avoided_seasonal_runtime_hourlyavgCDD',
-    'baseline_daily_runtime_hourlyavgCDD',
-    'baseline_seasonal_runtime_hourlyavgCDD',
-    'mean_demand_hourlyavgCDD',
-    'mean_demand_baseline_hourlyavgCDD',
-    'alpha_hourlyavgCDD',
-    'tau_hourlyavgCDD',
-    'mean_sq_err_hourlyavgCDD',
-    'root_mean_sq_err_hourlyavgCDD',
-    'cv_root_mean_sq_err_hourlyavgCDD',
-    'mean_abs_err_hourlyavgCDD',
-    'mean_abs_pct_err_hourlyavgCDD',
+    'percent_savings_hourlyavgCTD',
+    'avoided_daily_runtime_hourlyavgCTD',
+    'avoided_seasonal_runtime_hourlyavgCTD',
+    'baseline_daily_runtime_hourlyavgCTD',
+    'baseline_seasonal_runtime_hourlyavgCTD',
+    'mean_demand_hourlyavgCTD',
+    'mean_demand_baseline_hourlyavgCTD',
+    'alpha_hourlyavgCTD',
+    'tau_hourlyavgCTD',
+    'mean_sq_err_hourlyavgCTD',
+    'root_mean_sq_err_hourlyavgCTD',
+    'cv_root_mean_sq_err_hourlyavgCTD',
+    'mean_abs_err_hourlyavgCTD',
+    'mean_abs_pct_err_hourlyavgCTD',
 
-    'percent_savings_dailyavgHDD',
-    'avoided_daily_runtime_dailyavgHDD',
-    'avoided_seasonal_runtime_dailyavgHDD',
-    'baseline_daily_runtime_dailyavgHDD',
-    'baseline_seasonal_runtime_dailyavgHDD',
-    'mean_demand_dailyavgHDD',
-    'mean_demand_baseline_dailyavgHDD',
-    'alpha_dailyavgHDD',
-    'tau_dailyavgHDD',
-    'mean_sq_err_dailyavgHDD',
-    'root_mean_sq_err_dailyavgHDD',
-    'cv_root_mean_sq_err_dailyavgHDD',
-    'mean_abs_err_dailyavgHDD',
-    'mean_abs_pct_err_dailyavgHDD',
+    'percent_savings_dailyavgHTD',
+    'avoided_daily_runtime_dailyavgHTD',
+    'avoided_seasonal_runtime_dailyavgHTD',
+    'baseline_daily_runtime_dailyavgHTD',
+    'baseline_seasonal_runtime_dailyavgHTD',
+    'mean_demand_dailyavgHTD',
+    'mean_demand_baseline_dailyavgHTD',
+    'alpha_dailyavgHTD',
+    'tau_dailyavgHTD',
+    'mean_sq_err_dailyavgHTD',
+    'root_mean_sq_err_dailyavgHTD',
+    'cv_root_mean_sq_err_dailyavgHTD',
+    'mean_abs_err_dailyavgHTD',
+    'mean_abs_pct_err_dailyavgHTD',
 
-    'percent_savings_hourlyavgHDD',
-    'avoided_daily_runtime_hourlyavgHDD',
-    'avoided_seasonal_runtime_hourlyavgHDD',
-    'baseline_daily_runtime_hourlyavgHDD',
-    'baseline_seasonal_runtime_hourlyavgHDD',
-    'mean_demand_hourlyavgHDD',
-    'mean_demand_baseline_hourlyavgHDD',
-    'alpha_hourlyavgHDD',
-    'tau_hourlyavgHDD',
-    'mean_sq_err_hourlyavgHDD',
-    'root_mean_sq_err_hourlyavgHDD',
-    'cv_root_mean_sq_err_hourlyavgHDD',
-    'mean_abs_err_hourlyavgHDD',
-    'mean_abs_pct_err_hourlyavgHDD',
+    'percent_savings_hourlyavgHTD',
+    'avoided_daily_runtime_hourlyavgHTD',
+    'avoided_seasonal_runtime_hourlyavgHTD',
+    'baseline_daily_runtime_hourlyavgHTD',
+    'baseline_seasonal_runtime_hourlyavgHTD',
+    'mean_demand_hourlyavgHTD',
+    'mean_demand_baseline_hourlyavgHTD',
+    'alpha_hourlyavgHTD',
+    'tau_hourlyavgHTD',
+    'mean_sq_err_hourlyavgHTD',
+    'root_mean_sq_err_hourlyavgHTD',
+    'cv_root_mean_sq_err_hourlyavgHTD',
+    'mean_abs_err_hourlyavgHTD',
+    'mean_abs_pct_err_hourlyavgHTD',
 
     'total_auxiliary_heating_runtime',
     'total_emergency_heating_runtime',
@@ -409,7 +409,7 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             if target_method == "deltaT":
                 method = target_method
             else:
-                method = "{}HDD".format(target_method)
+                method = "{}HTD".format(target_method)
 
             stat_power_target_mean = "percent_savings_{}_mean".format(method)
             stat_power_target_sem = "percent_savings_{}_sem".format(method)
@@ -418,7 +418,7 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             if target_method == "deltaT":
                 method = target_method
             else:
-                method = "{}CDD".format(target_method)
+                method = "{}CTD".format(target_method)
 
             stat_power_target_mean = "percent_savings_{}_mean".format(method)
             stat_power_target_sem = "percent_savings_{}_sem".format(method)
@@ -464,9 +464,9 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             column = "tau_deltaT"
         else:
             if season_type == "heating":
-                column = "tau_{}HDD".format(target_method)
+                column = "tau_{}HTD".format(target_method)
             else:
-                column = "tau_{}CDD".format(target_method)
+                column = "tau_{}CTD".format(target_method)
 
         return -10 <= row[column] <= 50
 
@@ -492,9 +492,9 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             method_suffix = "deltaT"
         else:
             if season_type == "cooling":
-                method_suffix = "{}CDD".format(target_method)
+                method_suffix = "{}CTD".format(target_method)
             else:
-                method_suffix = "{}HDD".format(target_method)
+                method_suffix = "{}HTD".format(target_method)
 
         column = "{}_{}".format(error_metric_prefix, method_suffix)
 
@@ -674,7 +674,7 @@ def compute_summary_statistics_by_zipcode_group(df,
                 if target_method == "deltaT":
                     method = "deltaT"
                 else:
-                    method = "{}HDD".format(target_method)
+                    method = "{}HTD".format(target_method)
 
                 weight_group = heating_groups[group]
                 mean_value = stat["percent_savings_{}_mean".format(method)]
@@ -686,7 +686,7 @@ def compute_summary_statistics_by_zipcode_group(df,
                 if target_method == "deltaT":
                     method = "deltaT"
                 else:
-                    method = "{}CDD".format(target_method)
+                    method = "{}CTD".format(target_method)
 
                 weight_group = cooling_groups[group]
                 mean_value = stat["percent_savings_{}_mean".format(method)]
@@ -757,7 +757,7 @@ def compute_summary_statistics_by_zipcode_group(df,
         if target_method == "deltaT":
             method = "deltaT"
         else:
-            method = "{}HDD".format(target_method)
+            method = "{}HTD".format(target_method)
         stats.append({
             "label": "national_heating",
             "percent_savings_{}_mean_national_weighted_mean".format(method): heating_mean,
@@ -767,7 +767,7 @@ def compute_summary_statistics_by_zipcode_group(df,
         if target_method == "deltaT":
             method = "deltaT"
         else:
-            method = "{}CDD".format(target_method)
+            method = "{}CTD".format(target_method)
         stats.append({
             "label": "national_cooling",
             "percent_savings_{}_mean_national_weighted_mean".format(method): cooling_mean,
@@ -892,16 +892,16 @@ def summary_statistics_to_csv(stats, filepath):
             columns.append("{}_q{}".format(column_name, quantile))
 
     columns += [
-        "percent_savings_dailyavgCDD_mean_national_weighted_mean",
-        "percent_savings_dailyavgHDD_mean_national_weighted_mean",
+        "percent_savings_dailyavgCTD_mean_national_weighted_mean",
+        "percent_savings_dailyavgHTD_mean_national_weighted_mean",
         "percent_savings_deltaT_mean_national_weighted_mean",
-        "percent_savings_hourlyavgCDD_mean_national_weighted_mean",
-        "percent_savings_hourlyavgHDD_mean_national_weighted_mean",
-        "percent_savings_dailyavgCDD_q50_national_weighted_mean",
-        "percent_savings_dailyavgHDD_q50_national_weighted_mean",
+        "percent_savings_hourlyavgCTD_mean_national_weighted_mean",
+        "percent_savings_hourlyavgHTD_mean_national_weighted_mean",
+        "percent_savings_dailyavgCTD_q50_national_weighted_mean",
+        "percent_savings_dailyavgHTD_q50_national_weighted_mean",
         "percent_savings_deltaT_q50_national_weighted_mean",
-        "percent_savings_hourlyavgCDD_q50_national_weighted_mean",
-        "percent_savings_hourlyavgHDD_q50_national_weighted_mean",
+        "percent_savings_hourlyavgCTD_q50_national_weighted_mean",
+        "percent_savings_hourlyavgHTD_q50_national_weighted_mean",
     ]
 
     stats_dataframe = pd.DataFrame(stats, columns=columns)
