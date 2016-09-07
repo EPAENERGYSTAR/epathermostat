@@ -1,11 +1,11 @@
 import pandas as pd
 
-def seasonal_metrics_to_csv(seasonal_metrics, filepath):
-    """ Writes seasonal metrics outputs to the file specified.
+def metrics_to_csv(metrics, filepath):
+    """ Writes metrics outputs to the file specified.
 
     Parameters
     ----------
-    seaonal_metrics : list of dict
+    metrics : list of dict
         list of outputs from the function
         `thermostat.calculate_epa_draft_rccs_field_savings_metrics()`
     filepath : str
@@ -15,43 +15,45 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
     -------
     df : pd.DataFrame
         DataFrame containing data output to CSV.
-
     """
 
     columns = [
         'ct_identifier',
         'equipment_type',
-        'season_name',
+        'heating_or_cooling',
         'station',
         'zipcode',
 
-        'n_days_in_season_range',
-        'n_days_in_season',
+        'start_date',
+        'end_date',
+        'n_days_in_inputfile_date_range',
         'n_days_both_heating_and_cooling',
         'n_days_insufficient_data',
+        'n_days_core_cooling_days',
+        'n_days_core_heating_days',
 
-        'percent_savings_deltaT',
-        'avoided_daily_runtime_deltaT',
-        'avoided_seasonal_runtime_deltaT',
-        'baseline_daily_runtime_deltaT',
-        'baseline_seasonal_runtime_deltaT',
-        'mean_demand_deltaT',
-        'mean_demand_baseline_deltaT',
-        'alpha_deltaT',
-        'tau_deltaT',
-        'mean_sq_err_deltaT',
-        'root_mean_sq_err_deltaT',
-        'cv_root_mean_sq_err_deltaT',
-        'mean_abs_err_deltaT',
-        'mean_abs_pct_err_deltaT',
+        'percent_savings_deltaT_cooling',
+        'avoided_daily_mean_core_day_runtime_deltaT_cooling',
+        'avoided_total_core_day_runtime_deltaT_cooling',
+        'baseline_daily_mean_core_day_runtime_deltaT_cooling',
+        'baseline_total_core_day_runtime_deltaT_cooling',
+        '_daily_mean_core_day_demand_baseline_deltaT_cooling',
+        'mean_demand_deltaT_cooling',
+        'alpha_deltaT_cooling',
+        'tau_deltaT_cooling',
+        'mean_sq_err_deltaT_cooling',
+        'root_mean_sq_err_deltaT_cooling',
+        'cv_root_mean_sq_err_deltaT_cooling',
+        'mean_abs_err_deltaT_cooling',
+        'mean_abs_pct_err_deltaT_cooling',
 
         'percent_savings_dailyavgCTD',
-        'avoided_daily_runtime_dailyavgCTD',
-        'avoided_seasonal_runtime_dailyavgCTD',
-        'baseline_daily_runtime_dailyavgCTD',
-        'baseline_seasonal_runtime_dailyavgCTD',
+        'avoided_daily_mean_core_day_runtime_dailyavgCTD',
+        'avoided_total_core_day_runtime_dailyavgCTD',
+        'baseline_daily_mean_core_day_runtime_dailyavgCTD',
+        'baseline_total_core_day_runtime_dailyavgCTD',
         'mean_demand_dailyavgCTD',
-        'mean_demand_baseline_dailyavgCTD',
+        '_daily_mean_core_day_demand_baseline_dailyavgCTD',
         'alpha_dailyavgCTD',
         'tau_dailyavgCTD',
         'mean_sq_err_dailyavgCTD',
@@ -61,12 +63,12 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         'mean_abs_pct_err_dailyavgCTD',
 
         'percent_savings_hourlyavgCTD',
-        'avoided_daily_runtime_hourlyavgCTD',
-        'avoided_seasonal_runtime_hourlyavgCTD',
-        'baseline_daily_runtime_hourlyavgCTD',
-        'baseline_seasonal_runtime_hourlyavgCTD',
+        'avoided_daily_mean_core_day_runtime_hourlyavgCTD',
+        'avoided_total_core_day_runtime_hourlyavgCTD',
+        'baseline_daily_mean_core_day_runtime_hourlyavgCTD',
+        'baseline_total_core_day_runtime_hourlyavgCTD',
         'mean_demand_hourlyavgCTD',
-        'mean_demand_baseline_hourlyavgCTD',
+        '_daily_mean_core_day_demand_baseline_hourlyavgCTD',
         'alpha_hourlyavgCTD',
         'tau_hourlyavgCTD',
         'mean_sq_err_hourlyavgCTD',
@@ -75,13 +77,28 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         'mean_abs_err_hourlyavgCTD',
         'mean_abs_pct_err_hourlyavgCTD',
 
+        'percent_savings_deltaT_heating',
+        'avoided_daily_mean_core_day_runtime_deltaT_heating',
+        'avoided_total_core_day_runtime_deltaT_heating',
+        'baseline_daily_mean_core_day_runtime_deltaT_heating',
+        'baseline_total_core_day_runtime_deltaT_heating',
+        'mean_demand_deltaT_heating',
+        '_daily_mean_core_day_demand_baseline_deltaT_heating',
+        'alpha_deltaT_heating',
+        'tau_deltaT_heating',
+        'mean_sq_err_deltaT_heating',
+        'root_mean_sq_err_deltaT_heating',
+        'cv_root_mean_sq_err_deltaT_heating',
+        'mean_abs_err_deltaT_heating',
+        'mean_abs_pct_err_deltaT_heating',
+
         'percent_savings_dailyavgHTD',
-        'avoided_daily_runtime_dailyavgHTD',
-        'avoided_seasonal_runtime_dailyavgHTD',
-        'baseline_daily_runtime_dailyavgHTD',
-        'baseline_seasonal_runtime_dailyavgHTD',
+        'avoided_daily_mean_core_day_runtime_dailyavgHTD',
+        'avoided_total_core_day_runtime_dailyavgHTD',
+        'baseline_daily_mean_core_day_runtime_dailyavgHTD',
+        'baseline_total_core_day_runtime_dailyavgHTD',
         'mean_demand_dailyavgHTD',
-        'mean_demand_baseline_dailyavgHTD',
+        '_daily_mean_core_day_demand_baseline_dailyavgHTD',
         'alpha_dailyavgHTD',
         'tau_dailyavgHTD',
         'mean_sq_err_dailyavgHTD',
@@ -91,12 +108,12 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         'mean_abs_pct_err_dailyavgHTD',
 
         'percent_savings_hourlyavgHTD',
-        'avoided_daily_runtime_hourlyavgHTD',
-        'avoided_seasonal_runtime_hourlyavgHTD',
-        'baseline_daily_runtime_hourlyavgHTD',
-        'baseline_seasonal_runtime_hourlyavgHTD',
+        'avoided_daily_mean_core_day_runtime_hourlyavgHTD',
+        'avoided_total_core_day_runtime_hourlyavgHTD',
+        'baseline_daily_mean_core_day_runtime_hourlyavgHTD',
+        'baseline_total_core_day_runtime_hourlyavgHTD',
         'mean_demand_hourlyavgHTD',
-        'mean_demand_baseline_hourlyavgHTD',
+        '_daily_mean_core_day_demand_baseline_hourlyavgHTD',
         'alpha_hourlyavgHTD',
         'tau_hourlyavgHTD',
         'mean_sq_err_hourlyavgHTD',
@@ -107,13 +124,14 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
 
         'total_auxiliary_heating_runtime',
         'total_emergency_heating_runtime',
-        'total_heating_runtime',
-        'total_cooling_runtime',
+        'total_core_heating_runtime',
+        'total_core_cooling_runtime',
 
-        'actual_daily_runtime',
-        'actual_seasonal_runtime',
+        'daily_mean_core_cooling_runtime',
+        'daily_mean_core_heating_runtime',
 
-        'baseline_comfort_temperature',
+        'baseline90_core_heating_comfort_temperature',
+        'baseline10_core_cooling_comfort_temperature',
 
         'rhu_00F_to_05F',
         'rhu_05F_to_10F',
@@ -127,8 +145,10 @@ def seasonal_metrics_to_csv(seasonal_metrics, filepath):
         'rhu_45F_to_50F',
         'rhu_50F_to_55F',
         'rhu_55F_to_60F',
+
+        'sw_version',
     ]
 
-    output_dataframe = pd.DataFrame(seasonal_metrics, columns=columns)
+    output_dataframe = pd.DataFrame(metrics, columns=columns)
     output_dataframe.to_csv(filepath, index=False, columns=columns)
     return output_dataframe

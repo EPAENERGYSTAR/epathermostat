@@ -21,7 +21,7 @@ from fixtures.thermostats import core_cooling_day_set_type_1_entire
 from fixtures.thermostats import core_cooling_day_set_type_2
 from fixtures.thermostats import core_cooling_day_set_type_3
 from fixtures.thermostats import core_cooling_day_set_type_5
-from fixtures.thermostats import seasonal_metrics_type_1_data
+from fixtures.thermostats import metrics_type_1_data
 
 from numpy.testing import assert_allclose
 
@@ -178,35 +178,35 @@ def test_thermostat_core_cooling_day_set_attributes(core_cooling_day_set_type_1_
 
 
 def test_thermostat_type_1_total_heating_runtime(thermostat_type_1,
-        core_heating_day_set_type_1_entire, seasonal_metrics_type_1_data):
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
 
     total_runtime = thermostat_type_1.total_heating_runtime(core_heating_day_set_type_1_entire)
-    assert_allclose(total_runtime, seasonal_metrics_type_1_data[1]["total_runtime_core_heating"], rtol=1e-3)
+    assert_allclose(total_runtime, metrics_type_1_data[1]["total_core_heating_runtime"], rtol=1e-3)
 
 
 def test_thermostat_type_1_total_emergency_heating_runtime(thermostat_type_1,
-        core_heating_day_set_type_1_entire, seasonal_metrics_type_1_data):
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
 
     total_runtime = thermostat_type_1.total_emergency_heating_runtime(core_heating_day_set_type_1_entire)
-    assert_allclose(total_runtime, seasonal_metrics_type_1_data[1]["total_emergency_heating_runtime"], rtol=1e-3)
+    assert_allclose(total_runtime, metrics_type_1_data[1]["total_emergency_heating_core_day_runtime"], rtol=1e-3)
 
 
 def test_thermostat_type_1_total_auxiliary_heating_runtime(thermostat_type_1,
-        core_heating_day_set_type_1_entire, seasonal_metrics_type_1_data):
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
 
     total_runtime = thermostat_type_1.total_auxiliary_heating_runtime(core_heating_day_set_type_1_entire)
-    assert_allclose(total_runtime, seasonal_metrics_type_1_data[1]["total_auxiliary_heating_runtime"], rtol=1e-3)
+    assert_allclose(total_runtime, metrics_type_1_data[1]["total_auxiliary_heating_core_day_runtime"], rtol=1e-3)
 
 
 def test_thermostat_type_1_total_cooling_runtime(thermostat_type_1,
-        core_cooling_day_set_type_1_entire, seasonal_metrics_type_1_data):
+        core_cooling_day_set_type_1_entire, metrics_type_1_data):
 
     total_runtime = thermostat_type_1.total_cooling_runtime(core_cooling_day_set_type_1_entire)
-    assert_allclose(total_runtime, seasonal_metrics_type_1_data[0]["total_runtime_core_cooling"], rtol=1e-3)
+    assert_allclose(total_runtime, metrics_type_1_data[0]["total_core_cooling_runtime"], rtol=1e-3)
 
 
 def test_thermostat_type_1_get_resistance_heat_utilization_bins(thermostat_type_1,
-        core_heating_day_set_type_1_entire, seasonal_metrics_type_1_data):
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
 
     bins = thermostat_type_1.get_resistance_heat_utilization_bins(core_heating_day_set_type_1_entire)
 
@@ -228,7 +228,7 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins(thermostat_type_
     assert len(bins) == 12
 
     for i, (bin_value, bin_name) in enumerate(zip(bins, bin_names)):
-        assert_allclose(bin_value, seasonal_metrics_type_1_data[1][bin_name], rtol=1e-3)
+        assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
 
 
 def test_thermostat_types_2_3_4_5_get_resistance_heat_utilization_bins(core_heating_day_set_type_1_entire,
@@ -251,12 +251,12 @@ def core_days(request, thermostat_type_1, core_heating_day_set_type_1_entire,
     return tests[request.param]
 
 
-def test_day_counts(core_days, seasonal_metrics_type_1_data):
+def test_day_counts(core_days, metrics_type_1_data):
     thermostat, core_day_set, i, heating_or_cooling = core_days
     n_both, n_days_insufficient = thermostat.get_ignored_days(core_day_set)
     n_core_days = thermostat.get_core_day_set_n_days(core_day_set)
     n_days_in_inputfile_date_range = thermostat.get_inputfile_date_range(core_day_set)
-    assert n_both == seasonal_metrics_type_1_data[i]["n_days_both_heating_and_cooling"]
-    assert n_days_insufficient == seasonal_metrics_type_1_data[i]["n_days_insufficient_data"]
-    assert n_core_days == seasonal_metrics_type_1_data[i]["n_core_{}_days".format(heating_or_cooling)]
-    assert n_days_in_inputfile_date_range == seasonal_metrics_type_1_data[i]["n_days_in_inputfile_date_range"]
+    assert n_both == metrics_type_1_data[i]["n_days_both_heating_and_cooling"]
+    assert n_days_insufficient == metrics_type_1_data[i]["n_days_insufficient_data"]
+    assert n_core_days == metrics_type_1_data[i]["n_core_{}_days".format(heating_or_cooling)]
+    assert n_days_in_inputfile_date_range == metrics_type_1_data[i]["n_days_in_inputfile_date_range"]
