@@ -382,7 +382,7 @@ class Thermostat(object):
                         index=self.cool_runtime.index)
 
                 if any(inclusion_daily):
-                    name = "cooilng_{}".format(year)
+                    name = "cooling_{}".format(year)
                     inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
                     core_day_set = CoreDaySet(name, inclusion_daily, inclusion_hourly,
                             start_date, end_date)
@@ -588,7 +588,7 @@ class Thermostat(object):
         demand : pd.Series
             Daily demand in the core heating day set as calculated using one of
             the supported methods.
-        deltaT_base_estimate : float
+        tau : float
             Estimate of :math:`\Delta T_{\\text{base cool}}`. Only output for
             "hourlyavgCTD" and "dailyavgCTD".
         alpha_estimate : float
@@ -615,11 +615,11 @@ class Thermostat(object):
         if method == "deltaT":
             return pd.Series(-daily_avg_deltaT, index=daily_index)
         elif method == "dailyavgCTD":
-            def calc_cdd(deltaT_base):
-                return np.maximum(deltaT_base - daily_avg_deltaT, 0)
+            def calc_cdd(tau):
+                return np.maximum(tau - daily_avg_deltaT, 0)
         elif method == "hourlyavgCTD":
-            def calc_cdd(deltaT_base):
-                hourly_cdd = (deltaT_base - core_day_set_deltaT).apply(lambda x: np.maximum(x, 0))
+            def calc_cdd(tau):
+                hourly_cdd = (tau - core_day_set_deltaT).apply(lambda x: np.maximum(x, 0))
                 # Note - `x / 24` this should be thought of as a unit conversion, not an average.
                 return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(core_day_set_deltaT.index.date)])
         else:
@@ -628,28 +628,28 @@ class Thermostat(object):
         daily_runtime = self.cool_runtime[core_cooling_day_set.daily]
         total_runtime = daily_runtime.sum()
 
-        def calc_estimates(deltaT_base):
-            cdd = calc_cdd(deltaT_base)
+        def calc_estimates(tau):
+            cdd = calc_cdd(tau)
             total_cdd = np.sum(cdd)
             alpha_estimate = total_runtime / total_cdd
             runtime_estimate = cdd * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
 
-        def estimate_errors(deltaT_base_estimate):
-            _, _, errors = calc_estimates(deltaT_base_estimate)
+        def estimate_errors(tau_estimate):
+            _, _, errors = calc_estimates(tau_estimate)
             return errors
 
-        deltaT_base_starting_guess = 0
+        tau_starting_guess = 0
         try:
-            y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+            y, _ = leastsq(estimate_errors, tau_starting_guess)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        deltaT_base_estimate = y[0]
+        tau_estimate = y[0]
 
-        cdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
+        cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
@@ -657,7 +657,7 @@ class Thermostat(object):
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
-        return pd.Series(cdd, index=daily_index), deltaT_base_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
+        return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
     def get_heating_demand(self, core_heating_day_set, method="deltaT"):
         """
@@ -686,7 +686,7 @@ class Thermostat(object):
         demand : pd.Series
             Daily demand in the core heating day set as calculated using one of
             the supported methods.
-        deltaT_base_estimate : float
+        tau_estimate : float
             Estimate of :math:`\Delta T_{\\text{base heat}}`. Only output for
             "hourlyavgHTD" and "dailyavgHTD".
         alpha_estimate : float
@@ -710,11 +710,11 @@ class Thermostat(object):
         if method == "deltaT":
             return pd.Series(daily_avg_deltaT, index=daily_index)
         elif method == "dailyavgHTD":
-            def calc_hdd(deltaT_base):
-                return np.maximum(daily_avg_deltaT - deltaT_base, 0)
+            def calc_hdd(tau):
+                return np.maximum(daily_avg_deltaT - tau, 0)
         elif method == "hourlyavgHTD":
-            def calc_hdd(deltaT_base):
-                hourly_hdd = (core_day_set_deltaT - deltaT_base).apply(lambda x: np.maximum(x, 0))
+            def calc_hdd(tau):
+                hourly_hdd = (core_day_set_deltaT - tau).apply(lambda x: np.maximum(x, 0))
                 # Note - this `x / 24` should be thought of as a unit conversion, not an average.
                 return np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(core_day_set_deltaT.index.date)])
         else:
@@ -723,29 +723,29 @@ class Thermostat(object):
         daily_runtime = self.heat_runtime[core_heating_day_set.daily]
         total_runtime = daily_runtime.sum()
 
-        def calc_estimates(deltaT_base):
-            hdd = calc_hdd(deltaT_base)
+        def calc_estimates(tau):
+            hdd = calc_hdd(tau)
             total_hdd = np.sum(hdd)
             alpha_estimate = total_runtime / total_hdd
             runtime_estimate = hdd * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return hdd, alpha_estimate, errors
 
-        def estimate_errors(deltaT_base_estimate):
-            _, _, errors = calc_estimates(deltaT_base_estimate)
+        def estimate_errors(tau_estimate):
+            _, _, errors = calc_estimates(tau_estimate)
             return errors
 
-        deltaT_base_starting_guess = 0
+        tau_starting_guess = 0
 
         try:
-            y, _ = leastsq(estimate_errors, deltaT_base_starting_guess)
+            y, _ = leastsq(estimate_errors, tau_starting_guess)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        deltaT_base_estimate = y[0]
+        tau_estimate = y[0]
 
-        hdd, alpha_estimate, errors = calc_estimates(deltaT_base_estimate)
+        hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
@@ -755,7 +755,7 @@ class Thermostat(object):
 
         return (
             pd.Series(hdd, index=daily_index),
-            deltaT_base_estimate,
+            tau_estimate,
             alpha_estimate,
             mse,
             rmse,
@@ -843,8 +843,8 @@ class Thermostat(object):
             raise NotImplementedError
 
 
-    def get_baseline_cooling_demand(self, core_cooling_day_set,
-            deltaT_base=None, method="deltaT"):
+    def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline,
+                                    tau=None, demand_method="deltaT"):
         """ Calculate baseline cooling demand for a particular core cooling
         day set and baseline setpoint.
 
@@ -852,10 +852,12 @@ class Thermostat(object):
         ----------
         core_cooling_day_set : thermostat.core.CoreDaySet
             Core cooling days over which to calculate baseline cooling demand.
-        deltaT_base : float, default: None
-            Used in calculations for "dailyavgHTD" and "hourlyavgHTD".
-        method : {"deltaT", "dailyavgCTD", "hourlyavgCTD"}; default: "deltaT"
-            Method to use in calculation of the baseline cdd.
+        temp_baseline : float
+            Baseline comfort temperature
+        tau : float, default: None
+            Used in calculations for "dailyavgCTD" and "hourlyavgCTD".
+        demand_method : {"deltaT", "dailyavgCTD", "hourlyavgCTD"}; default: "deltaT"
+            Demand method to use in calculation of the baseline CTD.
 
             - "deltaT": :math:`\Delta T_{\\text{base cool}} = \\text{daily avg }
               T_{\\text{outdoor}} - T_{\\text{base cool}}`
@@ -876,25 +878,24 @@ class Thermostat(object):
         """
         self._protect_cooling()
 
-        temp_baseline = self.get_core_cooling_day_baseline_setpoint(core_cooling_day_set)
         hourly_temp_out = self.temperature_out[core_cooling_day_set.hourly]
 
         daily_temp_out = np.array([temps.mean() for day, temps in hourly_temp_out.groupby(hourly_temp_out.index.date)])
 
-        if method == "deltaT":
+        if demand_method == "deltaT":
             demand = daily_temp_out - temp_baseline
-        elif method == "dailyavgCTD":
-            demand = np.maximum(deltaT_base - (temp_baseline - daily_temp_out), 0)
-        elif method == "hourlyavgCTD":
-            hourly_cdd = (deltaT_base - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
+        elif demand_method == "dailyavgCTD":
+            demand = np.maximum(tau - (temp_baseline - daily_temp_out), 0)
+        elif demand_method == "hourlyavgCTD":
+            hourly_cdd = (tau - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
             demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
         else:
             raise NotImplementedError
         index = core_cooling_day_set.daily[core_cooling_day_set.daily].index
         return pd.Series(demand, index=index)
 
-    def get_baseline_heating_demand(self, core_heating_day_set,
-            deltaT_base=None, method="deltaT"):
+    def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline,
+                                    tau=None, demand_method="deltaT"):
         """ Calculate baseline heating degree days for a particular core heating day set
         and baseline setpoint.
 
@@ -902,10 +903,12 @@ class Thermostat(object):
         ----------
         core_heating_day_set : thermostat.core.CoreDaySet
             Core heating days over which to calculate baseline cooling demand.
-        deltaT_base : float, default: None
+        temp_baseline : float
+            Baseline comfort temperature
+        tau : float, default: None
             Used in calculations for "dailyavgHTD" and "hourlyavgHTD".
-        method : {"deltaT", "dailyavgHTD", "hourlyavgHTD"}; default: "deltaT"
-            Method to use in calculation of the baseline cdd.
+        demand_method : {"deltaT", "dailyavgHTD", "hourlyavgHTD"}; default: "deltaT"
+            Demand method to use in calculation of the baseline HTD.
 
             - "deltaT": :math:`\Delta T_{\\text{base heat}} = T_{\\text{base heat}}
               - \\text{daily avg } T_{\\text{outdoor}}`
@@ -925,17 +928,16 @@ class Thermostat(object):
         """
         self._protect_heating()
 
-        temp_baseline = self.get_core_heating_day_baseline_setpoint(core_heating_day_set)
         hourly_temp_out = self.temperature_out[core_heating_day_set.hourly]
 
         daily_temp_out = np.array([temps.mean() for day, temps in hourly_temp_out.groupby(hourly_temp_out.index.date)])
 
-        if method == "deltaT":
+        if demand_method == "deltaT":
             demand = temp_baseline - daily_temp_out
-        elif method == "dailyavgHTD":
-            demand = np.maximum(temp_baseline - daily_temp_out - deltaT_base, 0)
-        elif method == "hourlyavgHTD":
-            hourly_hdd = (temp_baseline - hourly_temp_out - deltaT_base).apply(lambda x: np.maximum(x, 0))
+        elif demand_method == "dailyavgHTD":
+            demand = np.maximum(temp_baseline - daily_temp_out - tau, 0)
+        elif demand_method == "hourlyavgHTD":
+            hourly_hdd = (temp_baseline - hourly_temp_out - tau).apply(lambda x: np.maximum(x, 0))
             demand = np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(hourly_temp_out.index.date)])
         else:
             raise NotImplementedError
@@ -950,8 +952,14 @@ class Thermostat(object):
 
         Parameters
         ----------
-        cooling_demand : pandas.Series
+        baseline_cooling_demand : pandas.Series
             A series containing estimated daily baseline cooling demand.
+        alpha : float
+            Slope of fitted line
+        tau : float
+            Intercept of fitted line
+        method : float
+            Demand method used to find alpha and tau
 
         Returns
         -------
@@ -970,14 +978,20 @@ class Thermostat(object):
             )
             raise NotImplementedError(message)
 
-    def get_baseline_heating_runtime(self, baseline_heating_demand, alpha, tau, method=True):
+    def get_baseline_heating_runtime(self, baseline_heating_demand, alpha, tau, method="deltaT"):
         """ Calculate baseline heating runtime given baseline heating demand.
         and fitted physical parameters.
 
         Parameters
         ----------
-        heating_demand : pandas.Series
+        baseline_heating_demand : pandas.Series
             A series containing estimated daily baseline heating demand.
+        alpha : float
+            Slope of fitted line
+        tau : float
+            Intercept of fitted line
+        method : float
+            Demand method used to find alpha and tau
 
         Returns
         -------
@@ -1148,18 +1162,21 @@ class Thermostat(object):
                 baseline_demand_deltaT = \
                     self.get_baseline_cooling_demand(
                         core_cooling_day_set,
-                        deltaT_base=None,
-                        method="deltaT")
+                        baseline_comfort_temperature,
+                        tau=None,
+                        demand_method="deltaT")
                 baseline_demand_dailyavgCTD = \
                     self.get_baseline_cooling_demand(
                         core_cooling_day_set,
-                        deltaT_base=tau_dailyavgCTD,
-                        method="dailyavgCTD")
+                        baseline_comfort_temperature,
+                        tau=tau_dailyavgCTD,
+                        demand_method="dailyavgCTD")
                 baseline_demand_hourlyavgCTD = \
                     self.get_baseline_cooling_demand(
                         core_cooling_day_set,
-                        deltaT_base=tau_hourlyavgCTD,
-                        method="hourlyavgCTD")
+                        baseline_comfort_temperature,
+                        tau=tau_hourlyavgCTD,
+                        demand_method="hourlyavgCTD")
 
                 baseline_runtime_deltaT = \
                     self.get_baseline_cooling_runtime(
@@ -1344,18 +1361,21 @@ class Thermostat(object):
                 baseline_demand_deltaT = \
                     self.get_baseline_heating_demand(
                         core_heating_day_set,
-                        deltaT_base=None,
-                        method="deltaT")
+                        baseline_comfort_temperature,
+                        tau=None,
+                        demand_method="deltaT")
                 baseline_demand_dailyavgHTD = \
                     self.get_baseline_heating_demand(
                         core_heating_day_set,
-                        deltaT_base=tau_dailyavgHTD,
-                        method="dailyavgHTD")
+                        baseline_comfort_temperature,
+                        tau=tau_dailyavgHTD,
+                        demand_method="dailyavgHTD")
                 baseline_demand_hourlyavgHTD = \
                     self.get_baseline_heating_demand(
                         core_heating_day_set,
-                        deltaT_base=tau_hourlyavgHTD,
-                        method="hourlyavgHTD")
+                        baseline_comfort_temperature,
+                        tau=tau_hourlyavgHTD,
+                        demand_method="hourlyavgHTD")
 
                 baseline_runtime_deltaT = \
                     self.get_baseline_heating_runtime(
