@@ -7,6 +7,7 @@ from collections import namedtuple
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
+from pkg_resources import resource_stream
 
 import inspect
 
@@ -1005,7 +1006,8 @@ class Thermostat(object):
 
     def calculate_epa_field_savings_metrics(self,
             core_cooling_day_set_method="entire_dataset",
-            core_heating_day_set_method="entire_dataset"):
+            core_heating_day_set_method="entire_dataset",
+            climate_zone_mapping=None):
         """ Calculates metrics for connected thermostat savings as defined by
         the specification defined by the EPA Energy Star program and stakeholders.
 
@@ -1028,12 +1030,41 @@ class Thermostat(object):
               of total heating and no cooling) from July 1 to June 30 into
               independent core heating day sets.
 
+        climate_zone_mapping : filename, default: None
+
+            A mapping from climate zone to zipcode. If None is provided, uses
+            default zipcode to climate zone mapping provided in tutorial.
+
+            :download:`default mapping <./resources/Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv>`
+
         Returns
         -------
         metrics : list
             list of dictionaries of output metrics; one per set of core heating
             or cooling days.
         """
+
+        def _load_mapping(filename_or_buffer):
+            df = pd.read_csv(
+                filename_or_buffer,
+                usecols=["zipcode", "group"],
+                dtype={"zipcode": str, "group": str}
+            ).set_index('zipcode').drop('zipcode')
+            df = df.where((pd.notnull(df)), None)
+
+            return dict(df.to_records('index'))
+
+        if climate_zone_mapping is None:
+            with resource_stream('thermostat.resources',
+                                 'Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv') as f:
+                mapping = _load_mapping(f)
+        else:
+            try:
+                mapping = _load_mapping(climate_zone_mapping)
+            except:
+                raise ValueError("Could not load climate zone mapping")
+
+
         metrics = []
 
         if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
@@ -1167,8 +1198,9 @@ class Thermostat(object):
                     "ct_identifier": self.thermostat_id,
                     "equipment_type": self.equipment_type,
                     "heating_or_cooling": core_cooling_day_set.name,
-                    "station": self.station,
                     "zipcode": self.zipcode,
+                    "station": self.station,
+                    "climate_zone": mapping.get(self.zipcode),
 
                     "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_datetime().isoformat(),
                     "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_datetime().isoformat(),
@@ -1360,6 +1392,7 @@ class Thermostat(object):
                     "heating_or_cooling": core_heating_day_set.name,
                     "zipcode": self.zipcode,
                     "station": self.station,
+                    "climate_zone": mapping.get(self.zipcode),
 
                     "start_date": pd.Timestamp(core_heating_day_set.start_date).to_datetime().isoformat(),
                     "end_date": pd.Timestamp(core_heating_day_set.end_date).to_datetime().isoformat(),

@@ -212,7 +212,7 @@ but the format should be CSV as described in the API docs.
 
 The Building America Climate Zone to ZIP code grouping used in this example
 can be downloaded
-:download:`here <./resources/Building America Climate Zone to Zipcode Database_Rev1_2015.12.18.csv>`.
+:download:`here <./resources/Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv>`.
 The file maps ZIP codes to Climate Zones. This example computes summary
 statistics for each climate zone using the provided mapping.
 

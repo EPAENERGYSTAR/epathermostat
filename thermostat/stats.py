@@ -66,8 +66,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'mean_abs_pct_err_hourlyavgHTD',
 
     'total_core_heating_runtime',
-    'total_auxiliary_heating_runtime',
-    'total_emergency_heating_runtime',
+    'total_auxiliary_heating_core_day_runtime',
+    'total_emergency_heating_core_day_runtime',
 
     'daily_mean_core_heating_runtime',
 
@@ -245,8 +245,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
 
     'total_core_cooling_runtime',
     'total_core_heating_runtime',
-    'total_auxiliary_heating_runtime',
-    'total_emergency_heating_runtime',
+    'total_auxiliary_heating_core_day_runtime',
+    'total_emergency_heating_core_day_runtime',
 
     'daily_mean_core_cooling_runtime',
     'daily_mean_core_heating_runtime',

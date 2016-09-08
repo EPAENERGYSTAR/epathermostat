@@ -83,8 +83,9 @@ def test_metrics_to_csv(metrics_type_1):
             'ct_identifier',
             'equipment_type',
             'heating_or_cooling',
-            'station',
             'zipcode',
+            'station',
+            'climate_zone',
 
             'start_date',
             'end_date',
@@ -189,8 +190,8 @@ def test_metrics_to_csv(metrics_type_1):
 
             'total_core_cooling_runtime',
             'total_core_heating_runtime',
-            'total_auxiliary_heating_runtime',
-            'total_emergency_heating_runtime',
+            'total_auxiliary_heating_core_day_runtime',
+            'total_emergency_heating_core_day_runtime',
 
             'daily_mean_core_cooling_runtime',
             'daily_mean_core_heating_runtime',

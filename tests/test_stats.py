@@ -26,6 +26,7 @@ def get_fake_output_df(n_columns):
         'heating_or_cooling',
         'station',
         'zipcode',
+        'climate_zone',
 
         'start_date',
         'end_date',
@@ -131,8 +132,8 @@ def get_fake_output_df(n_columns):
 
         'total_core_cooling_runtime',
         'total_core_heating_runtime',
-        'total_auxiliary_heating_runtime',
-        'total_emergency_heating_runtime',
+        'total_auxiliary_heating_core_day_runtime',
+        'total_emergency_heating_core_day_runtime',
 
         'daily_mean_core_cooling_runtime',
         'daily_mean_core_heating_runtime',
@@ -171,6 +172,7 @@ def get_fake_output_df(n_columns):
         'heating_or_cooling': core_day_set_name_column,
         'station': string_placeholder,
         'zipcode': zipcode_column,
+        'climate_zone': string_placeholder,
 
         'start_date': datetime(2011, 1, 1),
         'end_date': datetime(2012, 1, 1),
@@ -274,11 +276,11 @@ def get_fake_output_df(n_columns):
 
         'total_core_cooling_runtime': float_column,
         'total_core_heating_runtime': float_column,
-        'total_auxiliary_heating_runtime': float_column,
-        'total_emergency_heating_runtime': float_column,
+        'total_auxiliary_heating_core_day_runtime': float_column,
+        'total_emergency_heating_core_day_runtime': float_column,
 
-        'daily_mean_core_heating_runtime': float_column,
         'daily_mean_core_cooling_runtime': float_column,
+        'daily_mean_core_heating_runtime': float_column,
 
         'rhu_00F_to_05F': float_column,
         'rhu_05F_to_10F': float_column,
@@ -365,7 +367,7 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 117)
+    assert combined.shape == (20, 118)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
