@@ -805,7 +805,7 @@ class Thermostat(object):
 
 
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
-            method='ninetieth_percentile', source='heating_setpoint'):
+            method='ninetieth_percentile', source='temperature_in'):
         """ Calculate the core heating day baseline setpoint (comfort temperature).
 
         Parameters
