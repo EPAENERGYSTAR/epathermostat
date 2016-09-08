@@ -37,6 +37,8 @@ def metrics_to_csv(metrics, filepath):
 
         'baseline10_core_cooling_comfort_temperature',
         'baseline90_core_heating_comfort_temperature',
+        'regional_average_baseline_cooling_comfort_temperature',
+        'regional_average_baseline_heating_comfort_temperature',
 
         'percent_savings_deltaT_cooling',
         'avoided_daily_mean_core_day_runtime_deltaT_cooling',

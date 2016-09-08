@@ -19,6 +19,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'n_core_heating_days',
 
     'baseline90_core_heating_comfort_temperature',
+    'regional_average_baseline_heating_comfort_temperature',
 
     'percent_savings_deltaT_heating',
     'avoided_daily_mean_core_day_runtime_deltaT_heating',
@@ -92,6 +93,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     'n_core_cooling_days',
 
     'baseline10_core_cooling_comfort_temperature',
+    'regional_average_baseline_cooling_comfort_temperature',
 
     'percent_savings_deltaT_cooling',
     'avoided_daily_mean_core_day_runtime_deltaT_cooling',
@@ -152,6 +154,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
 
     'baseline10_core_cooling_comfort_temperature',
     'baseline90_core_heating_comfort_temperature',
+    'regional_average_baseline_cooling_comfort_temperature',
+    'regional_average_baseline_heating_comfort_temperature',
 
     'percent_savings_deltaT_cooling',
     'avoided_daily_mean_core_day_runtime_deltaT_cooling',

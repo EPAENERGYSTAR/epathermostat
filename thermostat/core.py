@@ -1064,6 +1064,21 @@ class Thermostat(object):
             except:
                 raise ValueError("Could not load climate zone mapping")
 
+        with resource_stream('thermostat.resources', 'regional_baselines.csv') as f:
+            df = pd.read_csv(
+                f, usecols=[
+                    'EIA Climate Zone',
+                    'Baseline heating temp (F)',
+                    'Baseline cooling temp (F)'
+                ])
+            df = df.where((pd.notnull(df)), None)
+            df = df.set_index('EIA Climate Zone')
+            cooling_regional_baseline_temps = { k: v for k, v in df['Baseline cooling temp (F)'].items()}
+            heating_regional_baseline_temps = { k: v for k, v in df['Baseline heating temp (F)'].items()}
+
+        climate_zone = mapping.get(self.zipcode)
+        cooling_regional_baseline_temp = cooling_regional_baseline_temps.get(climate_zone, None)
+        heating_regional_baseline_temp = heating_regional_baseline_temps.get(climate_zone, None)
 
         metrics = []
 
@@ -1200,7 +1215,7 @@ class Thermostat(object):
                     "heating_or_cooling": core_cooling_day_set.name,
                     "zipcode": self.zipcode,
                     "station": self.station,
-                    "climate_zone": mapping.get(self.zipcode),
+                    "climate_zone": climate_zone,
 
                     "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_datetime().isoformat(),
                     "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_datetime().isoformat(),
@@ -1210,6 +1225,7 @@ class Thermostat(object):
                     "n_core_cooling_days": n_core_cooling_days,
 
                     "baseline10_core_cooling_comfort_temperature": baseline_comfort_temperature,
+                    "regional_average_baseline_cooling_comfort_temperature": cooling_regional_baseline_temp,
 
                     "percent_savings_deltaT_cooling": savings_deltaT,
                     "avoided_daily_mean_core_day_runtime_deltaT_cooling": avoided_runtime_deltaT.mean(),
@@ -1402,6 +1418,7 @@ class Thermostat(object):
                     "n_core_heating_days": n_core_heating_days,
 
                     "baseline90_core_heating_comfort_temperature": baseline_comfort_temperature,
+                    "regional_average_baseline_heating_comfort_temperature": heating_regional_baseline_temp,
 
                     "percent_savings_deltaT_heating": savings_deltaT,
                     "avoided_daily_mean_core_day_runtime_deltaT_heating": avoided_runtime_deltaT.mean(),

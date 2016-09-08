@@ -39,6 +39,8 @@ def get_fake_output_df(n_columns):
 
         'baseline10_core_cooling_comfort_temperature',
         'baseline90_core_heating_comfort_temperature',
+        'regional_average_baseline_cooling_comfort_temperature',
+        'regional_average_baseline_heating_comfort_temperature',
 
         'percent_savings_deltaT_cooling',
         'avoided_daily_mean_core_day_runtime_deltaT_cooling',
@@ -183,6 +185,8 @@ def get_fake_output_df(n_columns):
 
         'baseline10_core_cooling_comfort_temperature': float_column,
         'baseline90_core_heating_comfort_temperature': float_column,
+        'regional_average_baseline_cooling_comfort_temperature': float_column,
+        'regional_average_baseline_heating_comfort_temperature': float_column,
 
         'percent_savings_deltaT_cooling': float_column,
         'avoided_daily_mean_core_day_runtime_deltaT_cooling': float_column,
@@ -367,13 +371,13 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 118)
+    assert combined.shape == (20, 120)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 63 + 6
-    assert len(summary_statistics[1]) == 12 * 49 + 6
+    assert len(summary_statistics[0]) == 12 * 64 + 6
+    assert len(summary_statistics[1]) == 12 * 50 + 6
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
         if key not in ["label", "sw_version"]:
@@ -389,7 +393,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 109 + 18
+        assert len(columns) == 12 * 111 + 18
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)
