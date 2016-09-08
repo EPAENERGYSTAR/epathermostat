@@ -10,6 +10,7 @@ from scipy.stats import norm, randint
 import pandas as pd
 import numpy as np
 import json
+from datetime import datetime
 
 import tempfile
 from itertools import islice, cycle
@@ -18,39 +19,48 @@ import pytest
 
 def get_fake_output_df(n_columns):
     columns = [
+        'sw_version',
+
         'ct_identifier',
         'equipment_type',
-        'season_name',
+        'heating_or_cooling',
         'station',
         'zipcode',
 
-        'n_days_in_season_range',
-        'n_days_in_season',
+        'start_date',
+        'end_date',
+
+        'n_days_in_inputfile_date_range',
         'n_days_both_heating_and_cooling',
         'n_days_insufficient_data',
+        'n_days_core_cooling_days',
+        'n_days_core_heating_days',
 
-        'percent_savings_deltaT',
-        'avoided_daily_runtime_deltaT',
-        'avoided_seasonal_runtime_deltaT',
-        'baseline_daily_runtime_deltaT',
-        'baseline_seasonal_runtime_deltaT',
-        'mean_demand_deltaT',
-        'mean_demand_baseline_deltaT',
-        'alpha_deltaT',
-        'tau_deltaT',
-        'mean_sq_err_deltaT',
-        'root_mean_sq_err_deltaT',
-        'cv_root_mean_sq_err_deltaT',
-        'mean_abs_err_deltaT',
-        'mean_abs_pct_err_deltaT',
+        'baseline10_core_cooling_comfort_temperature',
+        'baseline90_core_heating_comfort_temperature',
+
+        'percent_savings_deltaT_cooling',
+        'avoided_daily_mean_core_day_runtime_deltaT_cooling',
+        'avoided_total_core_day_runtime_deltaT_cooling',
+        'baseline_daily_mean_core_day_runtime_deltaT_cooling',
+        'baseline_total_core_day_runtime_deltaT_cooling',
+        'mean_demand_deltaT_cooling',
+        '_daily_mean_core_day_demand_baseline_deltaT_cooling',
+        'alpha_deltaT_cooling',
+        'tau_deltaT_cooling',
+        'mean_sq_err_deltaT_cooling',
+        'root_mean_sq_err_deltaT_cooling',
+        'cv_root_mean_sq_err_deltaT_cooling',
+        'mean_abs_err_deltaT_cooling',
+        'mean_abs_pct_err_deltaT_cooling',
 
         'percent_savings_dailyavgCTD',
-        'avoided_daily_runtime_dailyavgCTD',
-        'avoided_seasonal_runtime_dailyavgCTD',
-        'baseline_daily_runtime_dailyavgCTD',
-        'baseline_seasonal_runtime_dailyavgCTD',
+        'avoided_daily_mean_core_day_runtime_dailyavgCTD',
+        'avoided_total_core_day_runtime_dailyavgCTD',
+        'baseline_daily_mean_core_day_runtime_dailyavgCTD',
+        'baseline_total_core_day_runtime_dailyavgCTD',
         'mean_demand_dailyavgCTD',
-        'mean_demand_baseline_dailyavgCTD',
+        '_daily_mean_core_day_demand_baseline_dailyavgCTD',
         'alpha_dailyavgCTD',
         'tau_dailyavgCTD',
         'mean_sq_err_dailyavgCTD',
@@ -60,12 +70,12 @@ def get_fake_output_df(n_columns):
         'mean_abs_pct_err_dailyavgCTD',
 
         'percent_savings_hourlyavgCTD',
-        'avoided_daily_runtime_hourlyavgCTD',
-        'avoided_seasonal_runtime_hourlyavgCTD',
-        'baseline_daily_runtime_hourlyavgCTD',
-        'baseline_seasonal_runtime_hourlyavgCTD',
+        'avoided_daily_mean_core_day_runtime_hourlyavgCTD',
+        'avoided_total_core_day_runtime_hourlyavgCTD',
+        'baseline_daily_mean_core_day_runtime_hourlyavgCTD',
+        'baseline_total_core_day_runtime_hourlyavgCTD',
         'mean_demand_hourlyavgCTD',
-        'mean_demand_baseline_hourlyavgCTD',
+        '_daily_mean_core_day_demand_baseline_hourlyavgCTD',
         'alpha_hourlyavgCTD',
         'tau_hourlyavgCTD',
         'mean_sq_err_hourlyavgCTD',
@@ -74,13 +84,28 @@ def get_fake_output_df(n_columns):
         'mean_abs_err_hourlyavgCTD',
         'mean_abs_pct_err_hourlyavgCTD',
 
+        'percent_savings_deltaT_heating',
+        'avoided_daily_mean_core_day_runtime_deltaT_heating',
+        'avoided_total_core_day_runtime_deltaT_heating',
+        'baseline_daily_mean_core_day_runtime_deltaT_heating',
+        'baseline_total_core_day_runtime_deltaT_heating',
+        'mean_demand_deltaT_heating',
+        '_daily_mean_core_day_demand_baseline_deltaT_heating',
+        'alpha_deltaT_heating',
+        'tau_deltaT_heating',
+        'mean_sq_err_deltaT_heating',
+        'root_mean_sq_err_deltaT_heating',
+        'cv_root_mean_sq_err_deltaT_heating',
+        'mean_abs_err_deltaT_heating',
+        'mean_abs_pct_err_deltaT_heating',
+
         'percent_savings_dailyavgHTD',
-        'avoided_daily_runtime_dailyavgHTD',
-        'avoided_seasonal_runtime_dailyavgHTD',
-        'baseline_daily_runtime_dailyavgHTD',
-        'baseline_seasonal_runtime_dailyavgHTD',
+        'avoided_daily_mean_core_day_runtime_dailyavgHTD',
+        'avoided_total_core_day_runtime_dailyavgHTD',
+        'baseline_daily_mean_core_day_runtime_dailyavgHTD',
+        'baseline_total_core_day_runtime_dailyavgHTD',
         'mean_demand_dailyavgHTD',
-        'mean_demand_baseline_dailyavgHTD',
+        '_daily_mean_core_day_demand_baseline_dailyavgHTD',
         'alpha_dailyavgHTD',
         'tau_dailyavgHTD',
         'mean_sq_err_dailyavgHTD',
@@ -90,12 +115,12 @@ def get_fake_output_df(n_columns):
         'mean_abs_pct_err_dailyavgHTD',
 
         'percent_savings_hourlyavgHTD',
-        'avoided_daily_runtime_hourlyavgHTD',
-        'avoided_seasonal_runtime_hourlyavgHTD',
-        'baseline_daily_runtime_hourlyavgHTD',
-        'baseline_seasonal_runtime_hourlyavgHTD',
+        'avoided_daily_mean_core_day_runtime_hourlyavgHTD',
+        'avoided_total_core_day_runtime_hourlyavgHTD',
+        'baseline_daily_mean_core_day_runtime_hourlyavgHTD',
+        'baseline_total_core_day_runtime_hourlyavgHTD',
         'mean_demand_hourlyavgHTD',
-        'mean_demand_baseline_hourlyavgHTD',
+        '_daily_mean_core_day_demand_baseline_hourlyavgHTD',
         'alpha_hourlyavgHTD',
         'tau_hourlyavgHTD',
         'mean_sq_err_hourlyavgHTD',
@@ -104,15 +129,13 @@ def get_fake_output_df(n_columns):
         'mean_abs_err_hourlyavgHTD',
         'mean_abs_pct_err_hourlyavgHTD',
 
+        'total_core_cooling_runtime',
+        'total_core_heating_runtime',
         'total_auxiliary_heating_runtime',
         'total_emergency_heating_runtime',
-        'total_heating_runtime',
-        'total_cooling_runtime',
 
-        'actual_daily_runtime',
-        'actual_seasonal_runtime',
-
-        'baseline_comfort_temperature',
+        'daily_mean_core_cooling_runtime',
+        'daily_mean_core_heating_runtime',
 
         'rhu_00F_to_05F',
         'rhu_05F_to_10F',
@@ -137,41 +160,50 @@ def get_fake_output_df(n_columns):
                     for i in norm.rvs(size=n_columns)]
     zipcodes = ["01234", "12345", "23456", "34567", "43210", "54321", "65432", "76543"]
     zipcode_column = [i for i in islice(cycle(zipcodes), None, n_columns)]
-    season_names = ["Cooling 2012", "Heating 2012-2013", "Cooling 2013"]
-    season_name_column = [i for i in islice(cycle(season_names), None, n_columns)]
+    core_day_set_names = ["cooling_2012", "heating_2012-2013", "cooling_2013"]
+    core_day_set_name_column = [i for i in islice(cycle(core_day_set_names), None, n_columns)]
+
     data = {
-        "ct_identifier": string_placeholder,
-        "equipment_type": string_placeholder,
-        "season_name": season_name_column,
-        "station": string_placeholder,
-        "zipcode": zipcode_column,
+        'sw_version': string_placeholder,
 
-        "n_days_both_heating_and_cooling": one_column,
-        "n_days_in_season": one_column,
-        "n_days_in_season_range": one_column,
-        "n_days_insufficient_data": zero_column,
+        'ct_identifier': string_placeholder,
+        'equipment_type': string_placeholder,
+        'heating_or_cooling': core_day_set_name_column,
+        'station': string_placeholder,
+        'zipcode': zipcode_column,
 
-        'percent_savings_deltaT': float_column,
-        'avoided_daily_runtime_deltaT': float_column,
-        'avoided_seasonal_runtime_deltaT': float_column,
-        'baseline_daily_runtime_deltaT': float_column,
-        'baseline_seasonal_runtime_deltaT': float_column,
-        'mean_demand_deltaT': float_column,
-        'mean_demand_baseline_deltaT': float_column,
-        'alpha_deltaT': float_column,
-        'tau_deltaT': float_column,
-        'mean_sq_err_deltaT': float_column,
-        'root_mean_sq_err_deltaT': float_column,
-        'cv_root_mean_sq_err_deltaT': float_column,
-        'mean_abs_err_deltaT': float_column,
-        'mean_abs_pct_err_deltaT': float_column,
+        'start_date': datetime(2011, 1, 1),
+        'end_date': datetime(2012, 1, 1),
+        'n_days_both_heating_and_cooling': one_column,
+        'n_days_core_heating_days': one_column,
+        'n_days_in_inputfile_date_range': one_column,
+        'n_days_insufficient_data': zero_column,
+
+        'baseline10_core_cooling_comfort_temperature': float_column,
+        'baseline90_core_heating_comfort_temperature': float_column,
+
+        'percent_savings_deltaT_cooling': float_column,
+        'avoided_daily_mean_core_day_runtime_deltaT_cooling': float_column,
+        'avoided_total_core_day_runtime_deltaT_cooling': float_column,
+        'baseline_daily_mean_core_day_runtime_deltaT_cooling': float_column,
+        'baseline_total_core_day_runtime_deltaT_cooling': float_column,
+        'mean_demand_deltaT_cooling': float_column,
+        '_daily_mean_core_day_demand_baseline_deltaT_cooling': float_column,
+        'alpha_deltaT_cooling': float_column,
+        'tau_deltaT_cooling': float_column,
+        'mean_sq_err_deltaT_cooling': float_column,
+        'root_mean_sq_err_deltaT_cooling': float_column,
+        'cv_root_mean_sq_err_deltaT_cooling': float_column,
+        'mean_abs_err_deltaT_cooling': float_column,
+        'mean_abs_pct_err_deltaT_cooling': float_column,
+
         'percent_savings_dailyavgCTD': float_column,
-        'avoided_daily_runtime_dailyavgCTD': float_column,
-        'avoided_seasonal_runtime_dailyavgCTD': float_column,
-        'baseline_daily_runtime_dailyavgCTD': float_column,
-        'baseline_seasonal_runtime_dailyavgCTD': float_column,
+        'avoided_daily_mean_core_day_runtime_dailyavgCTD': float_column,
+        'avoided_total_core_day_runtime_dailyavgCTD': float_column,
+        'baseline_daily_mean_core_day_runtime_dailyavgCTD': float_column,
+        'baseline_total_core_day_runtime_dailyavgCTD': float_column,
         'mean_demand_dailyavgCTD': float_column,
-        'mean_demand_baseline_dailyavgCTD': float_column,
+        '_daily_mean_core_day_demand_baseline_dailyavgCTD': float_column,
         'alpha_dailyavgCTD': float_column,
         'tau_dailyavgCTD': float_column,
         'mean_sq_err_dailyavgCTD': float_column,
@@ -179,13 +211,14 @@ def get_fake_output_df(n_columns):
         'cv_root_mean_sq_err_dailyavgCTD': float_column,
         'mean_abs_err_dailyavgCTD': float_column,
         'mean_abs_pct_err_dailyavgCTD': float_column,
+
         'percent_savings_hourlyavgCTD': float_column,
-        'avoided_daily_runtime_hourlyavgCTD': float_column,
-        'avoided_seasonal_runtime_hourlyavgCTD': float_column,
-        'baseline_daily_runtime_hourlyavgCTD': float_column,
-        'baseline_seasonal_runtime_hourlyavgCTD': float_column,
+        'avoided_daily_mean_core_day_runtime_hourlyavgCTD': float_column,
+        'avoided_total_core_day_runtime_hourlyavgCTD': float_column,
+        'baseline_daily_mean_core_day_runtime_hourlyavgCTD': float_column,
+        'baseline_total_core_day_runtime_hourlyavgCTD': float_column,
         'mean_demand_hourlyavgCTD': float_column,
-        'mean_demand_baseline_hourlyavgCTD': float_column,
+        '_daily_mean_core_day_demand_baseline_hourlyavgCTD': float_column,
         'alpha_hourlyavgCTD': float_column,
         'tau_hourlyavgCTD': float_column,
         'mean_sq_err_hourlyavgCTD': float_column,
@@ -193,13 +226,29 @@ def get_fake_output_df(n_columns):
         'cv_root_mean_sq_err_hourlyavgCTD': float_column,
         'mean_abs_err_hourlyavgCTD': float_column,
         'mean_abs_pct_err_hourlyavgCTD': float_column,
+
+        'percent_savings_deltaT_heating': float_column,
+        'avoided_daily_mean_core_day_runtime_deltaT_heating': float_column,
+        'avoided_total_core_day_runtime_deltaT_heating': float_column,
+        'baseline_daily_mean_core_day_runtime_deltaT_heating': float_column,
+        'baseline_total_core_day_runtime_deltaT_heating': float_column,
+        'mean_demand_deltaT_heating': float_column,
+        '_daily_mean_core_day_demand_baseline_deltaT_heating': float_column,
+        'alpha_deltaT_heating': float_column,
+        'tau_deltaT_heating': float_column,
+        'mean_sq_err_deltaT_heating': float_column,
+        'root_mean_sq_err_deltaT_heating': float_column,
+        'cv_root_mean_sq_err_deltaT_heating': float_column,
+        'mean_abs_err_deltaT_heating': float_column,
+        'mean_abs_pct_err_deltaT_heating': float_column,
+
         'percent_savings_dailyavgHTD': float_column,
-        'avoided_daily_runtime_dailyavgHTD': float_column,
-        'avoided_seasonal_runtime_dailyavgHTD': float_column,
-        'baseline_daily_runtime_dailyavgHTD': float_column,
-        'baseline_seasonal_runtime_dailyavgHTD': float_column,
+        'avoided_daily_mean_core_day_runtime_dailyavgHTD': float_column,
+        'avoided_total_core_day_runtime_dailyavgHTD': float_column,
+        'baseline_daily_mean_core_day_runtime_dailyavgHTD': float_column,
+        'baseline_total_core_day_runtime_dailyavgHTD': float_column,
         'mean_demand_dailyavgHTD': float_column,
-        'mean_demand_baseline_dailyavgHTD': float_column,
+        '_daily_mean_core_day_demand_baseline_dailyavgHTD': float_column,
         'alpha_dailyavgHTD': float_column,
         'tau_dailyavgHTD': float_column,
         'mean_sq_err_dailyavgHTD': float_column,
@@ -207,13 +256,14 @@ def get_fake_output_df(n_columns):
         'cv_root_mean_sq_err_dailyavgHTD': float_column,
         'mean_abs_err_dailyavgHTD': float_column,
         'mean_abs_pct_err_dailyavgHTD': float_column,
+
         'percent_savings_hourlyavgHTD': float_column,
-        'avoided_daily_runtime_hourlyavgHTD': float_column,
-        'avoided_seasonal_runtime_hourlyavgHTD': float_column,
-        'baseline_daily_runtime_hourlyavgHTD': float_column,
-        'baseline_seasonal_runtime_hourlyavgHTD': float_column,
+        'avoided_daily_mean_core_day_runtime_hourlyavgHTD': float_column,
+        'avoided_total_core_day_runtime_hourlyavgHTD': float_column,
+        'baseline_daily_mean_core_day_runtime_hourlyavgHTD': float_column,
+        'baseline_total_core_day_runtime_hourlyavgHTD': float_column,
         'mean_demand_hourlyavgHTD': float_column,
-        'mean_demand_baseline_hourlyavgHTD': float_column,
+        '_daily_mean_core_day_demand_baseline_hourlyavgHTD': float_column,
         'alpha_hourlyavgHTD': float_column,
         'tau_hourlyavgHTD': float_column,
         'mean_sq_err_hourlyavgHTD': float_column,
@@ -221,13 +271,15 @@ def get_fake_output_df(n_columns):
         'cv_root_mean_sq_err_hourlyavgHTD': float_column,
         'mean_abs_err_hourlyavgHTD': float_column,
         'mean_abs_pct_err_hourlyavgHTD': float_column,
+
+        'total_core_cooling_runtime': float_column,
+        'total_core_heating_runtime': float_column,
         'total_auxiliary_heating_runtime': float_column,
         'total_emergency_heating_runtime': float_column,
-        'total_heating_runtime': float_column,
-        'total_cooling_runtime': float_column,
-        'actual_daily_runtime': float_column,
-        'actual_seasonal_runtime': float_column,
-        'baseline_comfort_temperature': float_column,
+
+        'daily_mean_core_heating_runtime': float_column,
+        'daily_mean_core_cooling_runtime': float_column,
+
         'rhu_00F_to_05F': float_column,
         'rhu_05F_to_10F': float_column,
         'rhu_10F_to_15F': float_column,
@@ -240,7 +292,6 @@ def get_fake_output_df(n_columns):
         'rhu_45F_to_50F': float_column,
         'rhu_50F_to_55F': float_column,
         'rhu_55F_to_60F': float_column,
-
     }
     df = pd.DataFrame(data, columns=columns)
     return df
@@ -314,13 +365,13 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 98)
+    assert combined.shape == (20, 117)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 64 + 5
-    assert len(summary_statistics[1]) == 12 * 50 + 5
+    assert len(summary_statistics[0]) == 12 * 63 + 5
+    assert len(summary_statistics[1]) == 12 * 49 + 5
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
         if key not in ["label"]:
@@ -336,7 +387,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 93 + 15
+        assert len(columns) == 12 * 109 + 15
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)

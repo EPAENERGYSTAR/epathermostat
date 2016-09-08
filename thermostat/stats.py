@@ -11,33 +11,35 @@ from warnings import warn
 import json
 
 REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
-    'n_days_in_season_range',
-    'n_days_in_season',
+    'n_days_in_inputfile_date_range',
     'n_days_both_heating_and_cooling',
     'n_days_insufficient_data',
+    'n_days_core_heating_days',
 
-    'percent_savings_deltaT',
-    'avoided_daily_runtime_deltaT',
-    'avoided_seasonal_runtime_deltaT',
-    'baseline_daily_runtime_deltaT',
-    'baseline_seasonal_runtime_deltaT',
-    'mean_demand_deltaT',
-    'mean_demand_baseline_deltaT',
-    'alpha_deltaT',
-    'tau_deltaT',
-    'mean_sq_err_deltaT',
-    'root_mean_sq_err_deltaT',
-    'cv_root_mean_sq_err_deltaT',
-    'mean_abs_err_deltaT',
-    'mean_abs_pct_err_deltaT',
+    'baseline90_core_heating_comfort_temperature',
+
+    'percent_savings_deltaT_heating',
+    'avoided_daily_mean_core_day_runtime_deltaT_heating',
+    'avoided_total_core_day_runtime_deltaT_heating',
+    'baseline_daily_mean_core_day_runtime_deltaT_heating',
+    'baseline_total_core_day_runtime_deltaT_heating',
+    'mean_demand_deltaT_heating',
+    '_daily_mean_core_day_demand_baseline_deltaT_heating',
+    'alpha_deltaT_heating',
+    'tau_deltaT_heating',
+    'mean_sq_err_deltaT_heating',
+    'root_mean_sq_err_deltaT_heating',
+    'cv_root_mean_sq_err_deltaT_heating',
+    'mean_abs_err_deltaT_heating',
+    'mean_abs_pct_err_deltaT_heating',
 
     'percent_savings_dailyavgHTD',
-    'avoided_daily_runtime_dailyavgHTD',
-    'avoided_seasonal_runtime_dailyavgHTD',
-    'baseline_daily_runtime_dailyavgHTD',
-    'baseline_seasonal_runtime_dailyavgHTD',
+    'avoided_daily_mean_core_day_runtime_dailyavgHTD',
+    'avoided_total_core_day_runtime_dailyavgHTD',
+    'baseline_daily_mean_core_day_runtime_dailyavgHTD',
+    'baseline_total_core_day_runtime_dailyavgHTD',
     'mean_demand_dailyavgHTD',
-    'mean_demand_baseline_dailyavgHTD',
+    '_daily_mean_core_day_demand_baseline_dailyavgHTD',
     'alpha_dailyavgHTD',
     'tau_dailyavgHTD',
     'mean_sq_err_dailyavgHTD',
@@ -47,12 +49,12 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'mean_abs_pct_err_dailyavgHTD',
 
     'percent_savings_hourlyavgHTD',
-    'avoided_daily_runtime_hourlyavgHTD',
-    'avoided_seasonal_runtime_hourlyavgHTD',
-    'baseline_daily_runtime_hourlyavgHTD',
-    'baseline_seasonal_runtime_hourlyavgHTD',
+    'avoided_daily_mean_core_day_runtime_hourlyavgHTD',
+    'avoided_total_core_day_runtime_hourlyavgHTD',
+    'baseline_daily_mean_core_day_runtime_hourlyavgHTD',
+    'baseline_total_core_day_runtime_hourlyavgHTD',
     'mean_demand_hourlyavgHTD',
-    'mean_demand_baseline_hourlyavgHTD',
+    '_daily_mean_core_day_demand_baseline_hourlyavgHTD',
     'alpha_hourlyavgHTD',
     'tau_hourlyavgHTD',
     'mean_sq_err_hourlyavgHTD',
@@ -61,14 +63,11 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'mean_abs_err_hourlyavgHTD',
     'mean_abs_pct_err_hourlyavgHTD',
 
+    'total_core_heating_runtime',
     'total_auxiliary_heating_runtime',
     'total_emergency_heating_runtime',
-    'total_heating_runtime',
 
-    'actual_daily_runtime',
-    'actual_seasonal_runtime',
-
-    'baseline_comfort_temperature',
+    'daily_mean_core_heating_runtime',
 
     'rhu_00F_to_05F',
     'rhu_05F_to_10F',
@@ -85,33 +84,35 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
 ]
 
 REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
-    'n_days_in_season_range',
-    'n_days_in_season',
+    'n_days_in_inputfile_date_range',
     'n_days_both_heating_and_cooling',
     'n_days_insufficient_data',
+    'n_days_core_cooling_days',
 
-    'percent_savings_deltaT',
-    'avoided_daily_runtime_deltaT',
-    'avoided_seasonal_runtime_deltaT',
-    'baseline_daily_runtime_deltaT',
-    'baseline_seasonal_runtime_deltaT',
-    'mean_demand_deltaT',
-    'mean_demand_baseline_deltaT',
-    'alpha_deltaT',
-    'tau_deltaT',
-    'mean_sq_err_deltaT',
-    'root_mean_sq_err_deltaT',
-    'cv_root_mean_sq_err_deltaT',
-    'mean_abs_err_deltaT',
-    'mean_abs_pct_err_deltaT',
+    'baseline10_core_cooling_comfort_temperature',
+
+    'percent_savings_deltaT_cooling',
+    'avoided_daily_mean_core_day_runtime_deltaT_cooling',
+    'avoided_total_core_day_runtime_deltaT_cooling',
+    'baseline_daily_mean_core_day_runtime_deltaT_cooling',
+    'baseline_total_core_day_runtime_deltaT_cooling',
+    '_daily_mean_core_day_demand_baseline_deltaT_cooling',
+    'mean_demand_deltaT_cooling',
+    'alpha_deltaT_cooling',
+    'tau_deltaT_cooling',
+    'mean_sq_err_deltaT_cooling',
+    'root_mean_sq_err_deltaT_cooling',
+    'cv_root_mean_sq_err_deltaT_cooling',
+    'mean_abs_err_deltaT_cooling',
+    'mean_abs_pct_err_deltaT_cooling',
 
     'percent_savings_dailyavgCTD',
-    'avoided_daily_runtime_dailyavgCTD',
-    'avoided_seasonal_runtime_dailyavgCTD',
-    'baseline_daily_runtime_dailyavgCTD',
-    'baseline_seasonal_runtime_dailyavgCTD',
+    'avoided_daily_mean_core_day_runtime_dailyavgCTD',
+    'avoided_total_core_day_runtime_dailyavgCTD',
+    'baseline_daily_mean_core_day_runtime_dailyavgCTD',
+    'baseline_total_core_day_runtime_dailyavgCTD',
     'mean_demand_dailyavgCTD',
-    'mean_demand_baseline_dailyavgCTD',
+    '_daily_mean_core_day_demand_baseline_dailyavgCTD',
     'alpha_dailyavgCTD',
     'tau_dailyavgCTD',
     'mean_sq_err_dailyavgCTD',
@@ -121,12 +122,12 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     'mean_abs_pct_err_dailyavgCTD',
 
     'percent_savings_hourlyavgCTD',
-    'avoided_daily_runtime_hourlyavgCTD',
-    'avoided_seasonal_runtime_hourlyavgCTD',
-    'baseline_daily_runtime_hourlyavgCTD',
-    'baseline_seasonal_runtime_hourlyavgCTD',
+    'avoided_daily_mean_core_day_runtime_hourlyavgCTD',
+    'avoided_total_core_day_runtime_hourlyavgCTD',
+    'baseline_daily_mean_core_day_runtime_hourlyavgCTD',
+    'baseline_total_core_day_runtime_hourlyavgCTD',
     'mean_demand_hourlyavgCTD',
-    'mean_demand_baseline_hourlyavgCTD',
+    '_daily_mean_core_day_demand_baseline_hourlyavgCTD',
     'alpha_hourlyavgCTD',
     'tau_hourlyavgCTD',
     'mean_sq_err_hourlyavgCTD',
@@ -135,42 +136,43 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     'mean_abs_err_hourlyavgCTD',
     'mean_abs_pct_err_hourlyavgCTD',
 
-    'total_cooling_runtime',
+    'total_core_cooling_runtime',
 
-    'actual_daily_runtime',
-    'actual_seasonal_runtime',
-
-    'baseline_comfort_temperature',
+    'daily_mean_core_cooling_runtime',
 ]
 
 REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
-    'n_days_in_season_range',
-    'n_days_in_season',
+    'n_days_in_inputfile_date_range',
     'n_days_both_heating_and_cooling',
     'n_days_insufficient_data',
+    'n_days_core_cooling_days',
+    'n_days_core_heating_days',
 
-    'percent_savings_deltaT',
-    'avoided_daily_runtime_deltaT',
-    'avoided_seasonal_runtime_deltaT',
-    'baseline_daily_runtime_deltaT',
-    'baseline_seasonal_runtime_deltaT',
-    'mean_demand_deltaT',
-    'mean_demand_baseline_deltaT',
-    'alpha_deltaT',
-    'tau_deltaT',
-    'mean_sq_err_deltaT',
-    'root_mean_sq_err_deltaT',
-    'cv_root_mean_sq_err_deltaT',
-    'mean_abs_err_deltaT',
-    'mean_abs_pct_err_deltaT',
+    'baseline10_core_cooling_comfort_temperature',
+    'baseline90_core_heating_comfort_temperature',
+
+    'percent_savings_deltaT_cooling',
+    'avoided_daily_mean_core_day_runtime_deltaT_cooling',
+    'avoided_total_core_day_runtime_deltaT_cooling',
+    'baseline_daily_mean_core_day_runtime_deltaT_cooling',
+    'baseline_total_core_day_runtime_deltaT_cooling',
+    '_daily_mean_core_day_demand_baseline_deltaT_cooling',
+    'mean_demand_deltaT_cooling',
+    'alpha_deltaT_cooling',
+    'tau_deltaT_cooling',
+    'mean_sq_err_deltaT_cooling',
+    'root_mean_sq_err_deltaT_cooling',
+    'cv_root_mean_sq_err_deltaT_cooling',
+    'mean_abs_err_deltaT_cooling',
+    'mean_abs_pct_err_deltaT_cooling',
 
     'percent_savings_dailyavgCTD',
-    'avoided_daily_runtime_dailyavgCTD',
-    'avoided_seasonal_runtime_dailyavgCTD',
-    'baseline_daily_runtime_dailyavgCTD',
-    'baseline_seasonal_runtime_dailyavgCTD',
+    'avoided_daily_mean_core_day_runtime_dailyavgCTD',
+    'avoided_total_core_day_runtime_dailyavgCTD',
+    'baseline_daily_mean_core_day_runtime_dailyavgCTD',
+    'baseline_total_core_day_runtime_dailyavgCTD',
     'mean_demand_dailyavgCTD',
-    'mean_demand_baseline_dailyavgCTD',
+    '_daily_mean_core_day_demand_baseline_dailyavgCTD',
     'alpha_dailyavgCTD',
     'tau_dailyavgCTD',
     'mean_sq_err_dailyavgCTD',
@@ -180,12 +182,12 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'mean_abs_pct_err_dailyavgCTD',
 
     'percent_savings_hourlyavgCTD',
-    'avoided_daily_runtime_hourlyavgCTD',
-    'avoided_seasonal_runtime_hourlyavgCTD',
-    'baseline_daily_runtime_hourlyavgCTD',
-    'baseline_seasonal_runtime_hourlyavgCTD',
+    'avoided_daily_mean_core_day_runtime_hourlyavgCTD',
+    'avoided_total_core_day_runtime_hourlyavgCTD',
+    'baseline_daily_mean_core_day_runtime_hourlyavgCTD',
+    'baseline_total_core_day_runtime_hourlyavgCTD',
     'mean_demand_hourlyavgCTD',
-    'mean_demand_baseline_hourlyavgCTD',
+    '_daily_mean_core_day_demand_baseline_hourlyavgCTD',
     'alpha_hourlyavgCTD',
     'tau_hourlyavgCTD',
     'mean_sq_err_hourlyavgCTD',
@@ -194,13 +196,28 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'mean_abs_err_hourlyavgCTD',
     'mean_abs_pct_err_hourlyavgCTD',
 
+    'percent_savings_deltaT_heating',
+    'avoided_daily_mean_core_day_runtime_deltaT_heating',
+    'avoided_total_core_day_runtime_deltaT_heating',
+    'baseline_daily_mean_core_day_runtime_deltaT_heating',
+    'baseline_total_core_day_runtime_deltaT_heating',
+    'mean_demand_deltaT_heating',
+    '_daily_mean_core_day_demand_baseline_deltaT_heating',
+    'alpha_deltaT_heating',
+    'tau_deltaT_heating',
+    'mean_sq_err_deltaT_heating',
+    'root_mean_sq_err_deltaT_heating',
+    'cv_root_mean_sq_err_deltaT_heating',
+    'mean_abs_err_deltaT_heating',
+    'mean_abs_pct_err_deltaT_heating',
+
     'percent_savings_dailyavgHTD',
-    'avoided_daily_runtime_dailyavgHTD',
-    'avoided_seasonal_runtime_dailyavgHTD',
-    'baseline_daily_runtime_dailyavgHTD',
-    'baseline_seasonal_runtime_dailyavgHTD',
+    'avoided_daily_mean_core_day_runtime_dailyavgHTD',
+    'avoided_total_core_day_runtime_dailyavgHTD',
+    'baseline_daily_mean_core_day_runtime_dailyavgHTD',
+    'baseline_total_core_day_runtime_dailyavgHTD',
     'mean_demand_dailyavgHTD',
-    'mean_demand_baseline_dailyavgHTD',
+    '_daily_mean_core_day_demand_baseline_dailyavgHTD',
     'alpha_dailyavgHTD',
     'tau_dailyavgHTD',
     'mean_sq_err_dailyavgHTD',
@@ -210,12 +227,12 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'mean_abs_pct_err_dailyavgHTD',
 
     'percent_savings_hourlyavgHTD',
-    'avoided_daily_runtime_hourlyavgHTD',
-    'avoided_seasonal_runtime_hourlyavgHTD',
-    'baseline_daily_runtime_hourlyavgHTD',
-    'baseline_seasonal_runtime_hourlyavgHTD',
+    'avoided_daily_mean_core_day_runtime_hourlyavgHTD',
+    'avoided_total_core_day_runtime_hourlyavgHTD',
+    'baseline_daily_mean_core_day_runtime_hourlyavgHTD',
+    'baseline_total_core_day_runtime_hourlyavgHTD',
     'mean_demand_hourlyavgHTD',
-    'mean_demand_baseline_hourlyavgHTD',
+    '_daily_mean_core_day_demand_baseline_hourlyavgHTD',
     'alpha_hourlyavgHTD',
     'tau_hourlyavgHTD',
     'mean_sq_err_hourlyavgHTD',
@@ -224,15 +241,13 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'mean_abs_err_hourlyavgHTD',
     'mean_abs_pct_err_hourlyavgHTD',
 
+    'total_core_cooling_runtime',
+    'total_core_heating_runtime',
     'total_auxiliary_heating_runtime',
     'total_emergency_heating_runtime',
-    'total_heating_runtime',
-    'total_cooling_runtime',
 
-    'actual_daily_runtime',
-    'actual_seasonal_runtime',
-
-    'baseline_comfort_temperature',
+    'daily_mean_core_cooling_runtime',
+    'daily_mean_core_heating_runtime',
 
     'rhu_00F_to_05F',
     'rhu_05F_to_10F',
@@ -310,7 +325,7 @@ class ZipcodeGroupSpec(object):
         df = pd.read_csv(filepath,
                 usecols=["zipcode", "group"],
                 dtype={"zipcode":str, "group":str})
-        return {row["zipcode"]: row["group"] for _,row in df.iterrows()}
+        return {row["zipcode"]: row["group"] for _, row in df.iterrows()}
 
     def iter_groups(self, df):
         """ Iterate over groups (in no particular order.)
@@ -363,7 +378,7 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
         Metric method by which samples will be filtered according to bad fits, and
         for which statistical power extrapolation is desired.
     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-        Error metric to use when determining thermostat-season inclusion in
+        Error metric to use when determining thermostat-core-day-set inclusion in
         statistics output.
     target_error_max_value : float, default np.inf
         Maximum acceptable value for error metric defined by target_error_metric.
@@ -389,12 +404,12 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
           - 70th quantile: ###_70q
           - 80th quantile: ###_80q
           - 90th quantile: ###_90q
-          - number of non-null seasons: ###_n
+          - number of non-null core day sets: ###_n
 
         The following general values are also output:
 
           - label: label
-          - number of total seasons: n_total_seasons
+          - number of total core day sets: n_total_core_day_sets
 
     """
 
@@ -403,11 +418,11 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
                 '"hourlyavg", or "deltaT"'
         raise ValueError(message)
 
-    def _statistical_power_estimate(season_type_stats, season_type):
+    def _statistical_power_estimate(core_day_set_type_stats, core_day_set_type):
 
-        if season_type == "heating":
+        if core_day_set_type == "heating":
             if target_method == "deltaT":
-                method = target_method
+                method = "{}_heating".format(target_method)
             else:
                 method = "{}HTD".format(target_method)
 
@@ -416,7 +431,7 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             stat_power_target_n = "percent_savings_{}_n".format(method)
         else:
             if target_method == "deltaT":
-                method = target_method
+                method = "{}_cooling".format(target_method)
             else:
                 method = "{}CTD".format(target_method)
 
@@ -424,9 +439,9 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             stat_power_target_sem = "percent_savings_{}_sem".format(method)
             stat_power_target_n = "percent_savings_{}_n".format(method)
 
-        mean = season_type_stats[stat_power_target_mean]
-        sem = season_type_stats[stat_power_target_sem]
-        n = season_type_stats[stat_power_target_n]
+        mean = core_day_set_type_stats[stat_power_target_mean]
+        sem = core_day_set_type_stats[stat_power_target_sem]
+        n = core_day_set_type_stats[stat_power_target_n]
 
         n_std_devs = norm.ppf(1 - (1 - statistical_power_confidence)/2)
         std = sem * (n**.5)
@@ -434,17 +449,17 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
         target_n = (std * n_std_devs / target_interval) ** 2.
         return target_n
 
-    def _filter_rows(season_type_df, season_type):
+    def _filter_rows(core_day_set_type_df, core_day_set_type):
         filtered_df_rows = []
-        for i, row in season_type_df.iterrows():
-            if _accept_row(row, season_type):
+        for i, row in core_day_set_type_df.iterrows():
+            if _accept_row(row, core_day_set_type):
                 filtered_df_rows.append(row)
         return pd.DataFrame(filtered_df_rows)
 
-    def _accept_row(row, season_type):
+    def _accept_row(row, core_day_set_type):
         passes_validity_rules = _passes_validity_rules(row)
-        has_physical_tau = _has_physical_tau(row, season_type)
-        has_good_enough_fit = _has_good_enough_fit(row, season_type)
+        has_physical_tau = _has_physical_tau(row, core_day_set_type)
+        has_good_enough_fit = _has_good_enough_fit(row, core_day_set_type)
         return (
             passes_validity_rules
             and has_physical_tau
@@ -453,24 +468,27 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
 
     def _passes_validity_rules(row):
         try:
-            pct_insufficient_data = row.n_days_insufficient_data / row.n_days_in_season_range
+            pct_insufficient_data = row.n_days_insufficient_data / row.n_days_in_inputfile_date_range
         except ZeroDivisionError:
             return False
         else:
             return pct_insufficient_data < 0.05
 
-    def _has_physical_tau(row, season_type):
+    def _has_physical_tau(row, core_day_set_type):
         if target_method == "deltaT":
-            column = "tau_deltaT"
+            if core_day_set_type == "heating":
+                column = "tau_deltaT_heating"
+            else:
+                column = "tau_deltaT_cooling"
         else:
-            if season_type == "heating":
+            if core_day_set_type == "heating":
                 column = "tau_{}HTD".format(target_method)
             else:
                 column = "tau_{}CTD".format(target_method)
 
         return -10 <= row[column] <= 50
 
-    def _has_good_enough_fit(row, season_type):
+    def _has_good_enough_fit(row, core_day_set_type):
         if target_error_metric == "MSE":
             error_metric_prefix = "mean_sq_err"
         elif target_error_metric == "RMSE":
@@ -489,60 +507,63 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
             raise ValueError(message)
 
         if target_method == "deltaT":
-            method_suffix = "deltaT"
-        else:
-            if season_type == "cooling":
-                method_suffix = "{}CTD".format(target_method)
+            if core_day_set_type == "heating":
+                method_suffix = "tau_deltaT_heating"
             else:
+                method_suffix = "tau_deltaT_cooling"
+        else:
+            if core_day_set_type == "heating":
                 method_suffix = "{}HTD".format(target_method)
+            else:
+                method_suffix = "{}CTD".format(target_method)
 
         column = "{}_{}".format(error_metric_prefix, method_suffix)
 
         return row[column] < target_error_max_value
 
-    def _get_season_type_stats(season_type_df, season_type, season_type_columns):
-        n_seasons_total = season_type_df.shape[0]
+    def _get_core_day_set_type_stats(core_day_set_type_df, core_day_set_type, core_day_set_type_columns):
+        n_core_day_sets_total = core_day_set_type_df.shape[0]
 
-        filtered_season_type_df = _filter_rows(season_type_df, season_type)
+        filtered_core_day_set_type_df = _filter_rows(core_day_set_type_df, core_day_set_type)
 
-        n_seasons_kept = filtered_season_type_df.shape[0]
-        n_seasons_discarded = n_seasons_total - n_seasons_kept
+        n_core_day_sets_kept = filtered_core_day_set_type_df.shape[0]
+        n_core_day_sets_discarded = n_core_day_sets_total - n_core_day_sets_kept
 
-        season_type_stats = OrderedDict()
-        season_type_stats["label"] = "{}_{}".format(label, season_type)
-        season_type_stats["n_seasons_total"] = n_seasons_total
-        season_type_stats["n_seasons_kept"] = n_seasons_kept
-        season_type_stats["n_seasons_discarded"] = n_seasons_discarded
+        core_day_set_type_stats = OrderedDict()
+        core_day_set_type_stats["label"] = "{}_{}".format(label, core_day_set_type)
+        core_day_set_type_stats["n_core_day_sets_total"] = n_core_day_sets_total
+        core_day_set_type_stats["n_core_day_sets_kept"] = n_core_day_sets_kept
+        core_day_set_type_stats["n_core_day_sets_discarded"] = n_core_day_sets_discarded
 
-        if n_seasons_total > 0:
+        if n_core_day_sets_total > 0:
 
             quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 
-            for column_name in season_type_columns:
-                column = season_type_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
+            for column_name in core_day_set_type_columns:
+                column = core_day_set_type_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
 
                 # calculate quantiles
-                season_type_stats["{}_mean".format(column_name)] = np.nanmean(column)
-                season_type_stats["{}_sem".format(column_name)] = np.nanstd(column) / (column.count() ** .5)
-                season_type_stats["{}_n".format(column_name)] = column.count()
+                core_day_set_type_stats["{}_mean".format(column_name)] = np.nanmean(column)
+                core_day_set_type_stats["{}_sem".format(column_name)] = np.nanstd(column) / (column.count() ** .5)
+                core_day_set_type_stats["{}_n".format(column_name)] = column.count()
                 for quantile in quantiles:
-                    season_type_stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
+                    core_day_set_type_stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
 
-            season_type_stats["n_enough_statistical_power"] = \
-                    _statistical_power_estimate(season_type_stats, season_type)
+            core_day_set_type_stats["n_enough_statistical_power"] = \
+                    _statistical_power_estimate(core_day_set_type_stats, core_day_set_type)
 
-            return [season_type_stats]
+            return [core_day_set_type_stats]
         else:
-            message = "Not enough data to compute summary_statistics for {} {}".format(label, season_type)
+            message = "Not enough data to compute summary_statistics for {} {}".format(label, core_day_set_type)
             warn(message)
             return []
 
 
-    heating_df = df[["Heating" in name for name in df["season_name"]]]
-    cooling_df = df[["Cooling" in name for name in df["season_name"]]]
+    heating_df = df[["heating" in name for name in df["heating_or_cooling"]]]
+    cooling_df = df[["cooling" in name for name in df["heating_or_cooling"]]]
 
-    stats = _get_season_type_stats(heating_df, "heating", REAL_OR_INTEGER_VALUED_COLUMNS_HEATING)
-    stats.extend(_get_season_type_stats(cooling_df, "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING))
+    stats = _get_core_day_set_type_stats(heating_df, "heating", REAL_OR_INTEGER_VALUED_COLUMNS_HEATING)
+    stats.extend(_get_core_day_set_type_stats(cooling_df, "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING))
 
     return stats
 
@@ -603,7 +624,7 @@ def compute_summary_statistics_by_zipcode_group(df,
         Metric method by which samples will be filtered according to bad fits, and
         for which statistical power extrapolation is desired.
     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-        Error metric to use when determining thermostat-season inclusion in
+        Error metric to use when determining thermostat-core-day-set inclusion in
         statistics output.
     target_error_max_value : float, default np.inf
         Maximum acceptable value for error metric defined by target_error_metric.
@@ -668,7 +689,7 @@ def compute_summary_statistics_by_zipcode_group(df,
             label = stat["label"]
             category = label[-7:]
             group = label[:-8]
-            count = stat["n_seasons_kept"]
+            count = stat["n_core_day_sets_kept"]
 
             if category == "heating":
                 if target_method == "deltaT":
@@ -755,7 +776,7 @@ def compute_summary_statistics_by_zipcode_group(df,
 
 
         if target_method == "deltaT":
-            method = "deltaT"
+            method = "deltaT_heating"
         else:
             method = "{}HTD".format(target_method)
         stats.append({
@@ -765,7 +786,7 @@ def compute_summary_statistics_by_zipcode_group(df,
         })
 
         if target_method == "deltaT":
-            method = "deltaT"
+            method = "deltaT_cooling"
         else:
             method = "{}CTD".format(target_method)
         stats.append({
@@ -775,6 +796,7 @@ def compute_summary_statistics_by_zipcode_group(df,
         })
 
     return stats
+
 
 def compute_summary_statistics_by_zipcode(df, target_method="dailyavg",
         target_error_metric="CVRMSE", target_error_max_value=np.inf,
@@ -790,7 +812,7 @@ def compute_summary_statistics_by_zipcode(df, target_method="dailyavg",
         Metric method by which samples will be filtered according to bad fits, and
         for which statistical power extrapolation is desired.
     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-        Error metric to use when determining thermostat-season inclusion in
+        Error metric to use when determining thermostat-core-day-set inclusion in
         statistics output.
     target_error_max_value : float, default np.inf
         Maximum acceptable value for error metric defined by target_error_metric.
@@ -832,7 +854,7 @@ def compute_summary_statistics_by_weather_station(df, target_method="dailyavg",
         Metric method by which samples will be filtered according to bad fits, and
         for which statistical power extrapolation is desired.
     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-        Error metric to use when determining thermostat-season inclusion in
+        Error metric to use when determining thermostat-core-day-set inclusion in
         statistics output.
     target_error_max_value : float, default np.inf
         Maximum acceptable value for error metric defined by target_error_metric.
@@ -853,11 +875,11 @@ def compute_summary_statistics_by_weather_station(df, target_method="dailyavg",
     group_spec = ZipcodeGroupSpec(dictionary=zipcode_dict)
 
     stats = compute_summary_statistics_by_zipcode_group(df, group_spec=group_spec,
-            target_method=target_method,
-            target_error_metric=target_error_metric,
-            target_error_max_value=target_error_max_value,
-            statistical_power_confidence=statistical_power_confidence,
-            statistical_power_ratio=statistical_power_ratio)
+        target_method=target_method,
+        target_error_metric=target_error_metric,
+        target_error_max_value=target_error_max_value,
+        statistical_power_confidence=statistical_power_confidence,
+        statistical_power_ratio=statistical_power_ratio)
     return stats
 
 def summary_statistics_to_csv(stats, filepath):
@@ -879,9 +901,9 @@ def summary_statistics_to_csv(stats, filepath):
     quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     columns = [
         "label",
-        "n_seasons_total",
-        "n_seasons_kept",
-        "n_seasons_discarded",
+        "n_core_day_sets_total",
+        "n_core_day_sets_kept",
+        "n_core_day_sets_discarded",
         "n_enough_statistical_power"
     ]
     for column_name in REAL_OR_INTEGER_VALUED_COLUMNS_ALL:

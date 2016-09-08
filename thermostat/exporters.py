@@ -18,6 +18,8 @@ def metrics_to_csv(metrics, filepath):
     """
 
     columns = [
+        'sw_version',
+
         'ct_identifier',
         'equipment_type',
         'heating_or_cooling',
@@ -32,13 +34,16 @@ def metrics_to_csv(metrics, filepath):
         'n_days_core_cooling_days',
         'n_days_core_heating_days',
 
+        'baseline10_core_cooling_comfort_temperature',
+        'baseline90_core_heating_comfort_temperature',
+
         'percent_savings_deltaT_cooling',
         'avoided_daily_mean_core_day_runtime_deltaT_cooling',
         'avoided_total_core_day_runtime_deltaT_cooling',
         'baseline_daily_mean_core_day_runtime_deltaT_cooling',
         'baseline_total_core_day_runtime_deltaT_cooling',
-        '_daily_mean_core_day_demand_baseline_deltaT_cooling',
         'mean_demand_deltaT_cooling',
+        '_daily_mean_core_day_demand_baseline_deltaT_cooling',
         'alpha_deltaT_cooling',
         'tau_deltaT_cooling',
         'mean_sq_err_deltaT_cooling',
@@ -122,16 +127,13 @@ def metrics_to_csv(metrics, filepath):
         'mean_abs_err_hourlyavgHTD',
         'mean_abs_pct_err_hourlyavgHTD',
 
+        'total_core_cooling_runtime',
+        'total_core_heating_runtime',
         'total_auxiliary_heating_runtime',
         'total_emergency_heating_runtime',
-        'total_core_heating_runtime',
-        'total_core_cooling_runtime',
 
         'daily_mean_core_cooling_runtime',
         'daily_mean_core_heating_runtime',
-
-        'baseline90_core_heating_comfort_temperature',
-        'baseline10_core_cooling_comfort_temperature',
 
         'rhu_00F_to_05F',
         'rhu_05F_to_10F',
@@ -145,8 +147,6 @@ def metrics_to_csv(metrics, filepath):
         'rhu_45F_to_50F',
         'rhu_50F_to_55F',
         'rhu_55F_to_60F',
-
-        'sw_version',
     ]
 
     output_dataframe = pd.DataFrame(metrics, columns=columns)
