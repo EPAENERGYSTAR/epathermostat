@@ -370,11 +370,11 @@ def test_combine_output_dataframes(dataframes):
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 63 + 5
-    assert len(summary_statistics[1]) == 12 * 49 + 5
+    assert len(summary_statistics[0]) == 12 * 63 + 6
+    assert len(summary_statistics[1]) == 12 * 49 + 6
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
-        if key not in ["label"]:
+        if key not in ["label", "sw_version"]:
             assert pd.notnull(value)
             assert not np.isinf(value)
 
@@ -387,7 +387,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 109 + 15
+        assert len(columns) == 12 * 109 + 18
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)

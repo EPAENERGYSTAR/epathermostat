@@ -692,7 +692,7 @@ def compute_summary_statistics_by_zipcode_group(df,
             label = stat["label"]
             category = label[-7:]
             group = label[:-8]
-            count = stat["n_core_day_sets_kept"]
+            count = stat["n_thermostat_core_day_sets_kept"]
 
             if category == "heating":
                 if target_method == "deltaT":
