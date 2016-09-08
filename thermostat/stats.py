@@ -10,11 +10,13 @@ from collections import defaultdict
 from warnings import warn
 import json
 
+from thermostat import get_version
+
 REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'n_days_in_inputfile_date_range',
     'n_days_both_heating_and_cooling',
     'n_days_insufficient_data',
-    'n_days_core_heating_days',
+    'n_core_heating_days',
 
     'baseline90_core_heating_comfort_temperature',
 
@@ -87,7 +89,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     'n_days_in_inputfile_date_range',
     'n_days_both_heating_and_cooling',
     'n_days_insufficient_data',
-    'n_days_core_cooling_days',
+    'n_core_cooling_days',
 
     'baseline10_core_cooling_comfort_temperature',
 
@@ -145,8 +147,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'n_days_in_inputfile_date_range',
     'n_days_both_heating_and_cooling',
     'n_days_insufficient_data',
-    'n_days_core_cooling_days',
-    'n_days_core_heating_days',
+    'n_core_cooling_days',
+    'n_core_heating_days',
 
     'baseline10_core_cooling_comfort_temperature',
     'baseline90_core_heating_comfort_temperature',
@@ -531,9 +533,10 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
 
         core_day_set_type_stats = OrderedDict()
         core_day_set_type_stats["label"] = "{}_{}".format(label, core_day_set_type)
-        core_day_set_type_stats["n_core_day_sets_total"] = n_core_day_sets_total
-        core_day_set_type_stats["n_core_day_sets_kept"] = n_core_day_sets_kept
-        core_day_set_type_stats["n_core_day_sets_discarded"] = n_core_day_sets_discarded
+        core_day_set_type_stats["sw_version"] = get_version()
+        core_day_set_type_stats["n_thermostat_core_day_sets_total"] = n_core_day_sets_total
+        core_day_set_type_stats["n_thermostat_core_day_sets_kept"] = n_core_day_sets_kept
+        core_day_set_type_stats["n_thermostat_core_day_sets_discarded"] = n_core_day_sets_discarded
 
         if n_core_day_sets_total > 0:
 
@@ -693,7 +696,7 @@ def compute_summary_statistics_by_zipcode_group(df,
 
             if category == "heating":
                 if target_method == "deltaT":
-                    method = "deltaT"
+                    method = "deltaT_heating"
                 else:
                     method = "{}HTD".format(target_method)
 
@@ -705,7 +708,7 @@ def compute_summary_statistics_by_zipcode_group(df,
                 heating_values[weight_group]["counts"].append(count)
             else:
                 if target_method == "deltaT":
-                    method = "deltaT"
+                    method = "deltaT_cooling"
                 else:
                     method = "{}CTD".format(target_method)
 
@@ -901,9 +904,10 @@ def summary_statistics_to_csv(stats, filepath):
     quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     columns = [
         "label",
-        "n_core_day_sets_total",
-        "n_core_day_sets_kept",
-        "n_core_day_sets_discarded",
+        "sw_version",
+        "n_thermostat_core_day_sets_total",
+        "n_thermostat_core_day_sets_kept",
+        "n_thermostat_core_day_sets_discarded",
         "n_enough_statistical_power"
     ]
     for column_name in REAL_OR_INTEGER_VALUED_COLUMNS_ALL:
@@ -916,12 +920,15 @@ def summary_statistics_to_csv(stats, filepath):
     columns += [
         "percent_savings_dailyavgCTD_mean_national_weighted_mean",
         "percent_savings_dailyavgHTD_mean_national_weighted_mean",
-        "percent_savings_deltaT_mean_national_weighted_mean",
+        "percent_savings_deltaT_cooling_mean_national_weighted_mean",
+        "percent_savings_deltaT_heating_mean_national_weighted_mean",
         "percent_savings_hourlyavgCTD_mean_national_weighted_mean",
         "percent_savings_hourlyavgHTD_mean_national_weighted_mean",
+
         "percent_savings_dailyavgCTD_q50_national_weighted_mean",
         "percent_savings_dailyavgHTD_q50_national_weighted_mean",
-        "percent_savings_deltaT_q50_national_weighted_mean",
+        "percent_savings_deltaT_cooling_q50_national_weighted_mean",
+        "percent_savings_deltaT_heating_q50_national_weighted_mean",
         "percent_savings_hourlyavgCTD_q50_national_weighted_mean",
         "percent_savings_hourlyavgHTD_q50_national_weighted_mean",
     ]

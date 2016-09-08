@@ -33,8 +33,8 @@ def get_fake_output_df(n_columns):
         'n_days_in_inputfile_date_range',
         'n_days_both_heating_and_cooling',
         'n_days_insufficient_data',
-        'n_days_core_cooling_days',
-        'n_days_core_heating_days',
+        'n_core_cooling_days',
+        'n_core_heating_days',
 
         'baseline10_core_cooling_comfort_temperature',
         'baseline90_core_heating_comfort_temperature',
@@ -175,9 +175,9 @@ def get_fake_output_df(n_columns):
         'start_date': datetime(2011, 1, 1),
         'end_date': datetime(2012, 1, 1),
         'n_days_both_heating_and_cooling': one_column,
-        'n_days_core_heating_days': one_column,
         'n_days_in_inputfile_date_range': one_column,
         'n_days_insufficient_data': zero_column,
+        'n_core_heating_days': one_column,
 
         'baseline10_core_cooling_comfort_temperature': float_column,
         'baseline90_core_heating_comfort_temperature': float_column,

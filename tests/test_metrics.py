@@ -91,8 +91,8 @@ def test_metrics_to_csv(metrics_type_1):
             'n_days_in_inputfile_date_range',
             'n_days_both_heating_and_cooling',
             'n_days_insufficient_data',
-            'n_days_core_cooling_days',
-            'n_days_core_heating_days',
+            'n_core_cooling_days',
+            'n_core_heating_days',
 
             'baseline10_core_cooling_comfort_temperature',
             'baseline90_core_heating_comfort_temperature',
