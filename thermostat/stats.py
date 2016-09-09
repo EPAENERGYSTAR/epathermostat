@@ -26,7 +26,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'avoided_total_core_day_runtime_deltaT_heating_baseline90',
     'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90',
     'baseline_total_core_day_runtime_deltaT_heating_baseline90',
-    '_daily_mean_core_day_demand_baseline_deltaT_heating',
+    '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline90',
     'mean_demand_deltaT_heating',
     'alpha_deltaT_heating',
     'tau_deltaT_heating',
@@ -100,8 +100,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
     'avoided_total_core_day_runtime_deltaT_cooling_baseline10',
     'baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline10',
     'baseline_total_core_day_runtime_deltaT_cooling_baseline10',
-    'mean_demand_deltaT_cooling_baseline10',
     '_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline10',
+    'mean_demand_deltaT_cooling',
     'alpha_deltaT_cooling',
     'tau_deltaT_cooling',
     'mean_sq_err_deltaT_cooling',
@@ -162,8 +162,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'avoided_total_core_day_runtime_deltaT_cooling_baseline10',
     'baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline10',
     'baseline_total_core_day_runtime_deltaT_cooling_baseline10',
-    'mean_demand_deltaT_cooling_baseline10',
     '_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline10',
+    'mean_demand_deltaT_cooling',
     'alpha_deltaT_cooling',
     'tau_deltaT_cooling',
     'mean_sq_err_deltaT_cooling',
@@ -207,7 +207,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'avoided_total_core_day_runtime_deltaT_heating_baseline90',
     'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90',
     'baseline_total_core_day_runtime_deltaT_heating_baseline90',
-    '_daily_mean_core_day_demand_baseline_deltaT_heating',
+    '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline90',
     'mean_demand_deltaT_heating',
     'alpha_deltaT_heating',
     'tau_deltaT_heating',
@@ -428,18 +428,18 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
 
         if core_day_set_type == "heating":
             if target_method == "deltaT":
-                method = "{}_heating".format(target_method)
+                method = "{}_heating_baseline90".format(target_method)
             else:
-                method = "{}HTD".format(target_method)
+                method = "{}HTD_baseline90".format(target_method)
 
             stat_power_target_mean = "percent_savings_{}_mean".format(method)
             stat_power_target_sem = "percent_savings_{}_sem".format(method)
             stat_power_target_n = "percent_savings_{}_n".format(method)
         else:
             if target_method == "deltaT":
-                method = "{}_cooling".format(target_method)
+                method = "{}_cooling_baseline10".format(target_method)
             else:
-                method = "{}CTD".format(target_method)
+                method = "{}CTD_baseline10".format(target_method)
 
             stat_power_target_mean = "percent_savings_{}_mean".format(method)
             stat_power_target_sem = "percent_savings_{}_sem".format(method)
@@ -514,9 +514,9 @@ def compute_summary_statistics(df, label, target_method="dailyavg",
 
         if target_method == "deltaT":
             if core_day_set_type == "heating":
-                method_suffix = "tau_deltaT_heating"
+                method_suffix = "deltaT_heating"
             else:
-                method_suffix = "tau_deltaT_cooling"
+                method_suffix = "deltaT_cooling"
         else:
             if core_day_set_type == "heating":
                 method_suffix = "{}HTD".format(target_method)
@@ -700,9 +700,9 @@ def compute_summary_statistics_by_zipcode_group(df,
 
             if category == "heating":
                 if target_method == "deltaT":
-                    method = "deltaT_heating"
+                    method = "deltaT_heating_baseline90"
                 else:
-                    method = "{}HTD".format(target_method)
+                    method = "{}HTD_baseline90".format(target_method)
 
                 weight_group = heating_groups[group]
                 mean_value = stat["percent_savings_{}_mean".format(method)]
@@ -712,9 +712,9 @@ def compute_summary_statistics_by_zipcode_group(df,
                 heating_values[weight_group]["counts"].append(count)
             else:
                 if target_method == "deltaT":
-                    method = "deltaT_cooling"
+                    method = "deltaT_cooling_baseline10"
                 else:
-                    method = "{}CTD".format(target_method)
+                    method = "{}CTD_baseline10".format(target_method)
 
                 weight_group = cooling_groups[group]
                 mean_value = stat["percent_savings_{}_mean".format(method)]
@@ -783,9 +783,9 @@ def compute_summary_statistics_by_zipcode_group(df,
 
 
         if target_method == "deltaT":
-            method = "deltaT_heating"
+            method = "deltaT_heating_baseline90"
         else:
-            method = "{}HTD".format(target_method)
+            method = "{}HTD_baseline90".format(target_method)
         stats.append({
             "label": "national_heating",
             "percent_savings_{}_mean_national_weighted_mean".format(method): heating_mean,
@@ -793,9 +793,9 @@ def compute_summary_statistics_by_zipcode_group(df,
         })
 
         if target_method == "deltaT":
-            method = "deltaT_cooling"
+            method = "deltaT_cooling_baseline10"
         else:
-            method = "{}CTD".format(target_method)
+            method = "{}CTD_baseline10".format(target_method)
         stats.append({
             "label": "national_cooling",
             "percent_savings_{}_mean_national_weighted_mean".format(method): cooling_mean,
@@ -922,19 +922,19 @@ def summary_statistics_to_csv(stats, filepath):
             columns.append("{}_q{}".format(column_name, quantile))
 
     columns += [
-        "percent_savings_dailyavgCTD_mean_national_weighted_mean",
-        "percent_savings_dailyavgHTD_mean_national_weighted_mean",
-        "percent_savings_deltaT_cooling_mean_national_weighted_mean",
-        "percent_savings_deltaT_heating_mean_national_weighted_mean",
-        "percent_savings_hourlyavgCTD_mean_national_weighted_mean",
-        "percent_savings_hourlyavgHTD_mean_national_weighted_mean",
+        "percent_savings_dailyavgCTD_baseline10_mean_national_weighted_mean",
+        "percent_savings_dailyavgHTD_baseline90_mean_national_weighted_mean",
+        "percent_savings_deltaT_cooling_baseline10_mean_national_weighted_mean",
+        "percent_savings_deltaT_heating_baseline90_mean_national_weighted_mean",
+        "percent_savings_hourlyavgCTD_baseline10_mean_national_weighted_mean",
+        "percent_savings_hourlyavgHTD_baseline90_mean_national_weighted_mean",
 
-        "percent_savings_dailyavgCTD_q50_national_weighted_mean",
-        "percent_savings_dailyavgHTD_q50_national_weighted_mean",
-        "percent_savings_deltaT_cooling_q50_national_weighted_mean",
-        "percent_savings_deltaT_heating_q50_national_weighted_mean",
-        "percent_savings_hourlyavgCTD_q50_national_weighted_mean",
-        "percent_savings_hourlyavgHTD_q50_national_weighted_mean",
+        "percent_savings_dailyavgCTD_baseline10_q50_national_weighted_mean",
+        "percent_savings_dailyavgHTD_baseline90_q50_national_weighted_mean",
+        "percent_savings_deltaT_cooling_baseline10_q50_national_weighted_mean",
+        "percent_savings_deltaT_heating_baseline90_q50_national_weighted_mean",
+        "percent_savings_hourlyavgCTD_baseline10_q50_national_weighted_mean",
+        "percent_savings_hourlyavgHTD_baseline90_q50_national_weighted_mean",
     ]
 
     stats_dataframe = pd.DataFrame(stats, columns=columns)
