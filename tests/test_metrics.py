@@ -150,7 +150,7 @@ def test_metrics_to_csv(metrics_type_1):
             'avoided_total_core_day_runtime_deltaT_heating_baseline90',
             'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90',
             'baseline_total_core_day_runtime_deltaT_heating_baseline90',
-            '_daily_mean_core_day_demand_baseline_deltaT_heating',
+            '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline90',
             'mean_demand_deltaT_heating',
             'alpha_deltaT_heating',
             'tau_deltaT_heating',
