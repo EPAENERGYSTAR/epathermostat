@@ -48,6 +48,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline10',
         'baseline_total_core_day_runtime_deltaT_cooling_baseline10',
         '_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline10',
+        'percent_savings_deltaT_cooling_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional',
+        'avoided_total_core_day_runtime_deltaT_cooling_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional',
+        'baseline_total_core_day_runtime_deltaT_cooling_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional',
         'mean_demand_deltaT_cooling',
         'alpha_deltaT_cooling',
         'tau_deltaT_cooling',
@@ -63,6 +69,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline10',
         'baseline_total_core_day_runtime_dailyavgCTD_baseline10',
         '_daily_mean_core_day_demand_baseline_dailyavgCTD_baseline10',
+        'percent_savings_dailyavgCTD_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional',
+        'avoided_total_core_day_runtime_dailyavgCTD_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional',
+        'baseline_total_core_day_runtime_dailyavgCTD_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional',
         'mean_demand_dailyavgCTD',
         'alpha_dailyavgCTD',
         'tau_dailyavgCTD',
@@ -78,6 +90,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline10',
         'baseline_total_core_day_runtime_hourlyavgCTD_baseline10',
         '_daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline10',
+        'percent_savings_hourlyavgCTD_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional',
+        'avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional',
+        'baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional',
         'mean_demand_hourlyavgCTD',
         'alpha_hourlyavgCTD',
         'tau_hourlyavgCTD',
@@ -93,6 +111,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90',
         'baseline_total_core_day_runtime_deltaT_heating_baseline90',
         '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline90',
+        'percent_savings_deltaT_heating_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional',
+        'avoided_total_core_day_runtime_deltaT_heating_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional',
+        'baseline_total_core_day_runtime_deltaT_heating_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional',
         'mean_demand_deltaT_heating',
         'alpha_deltaT_heating',
         'tau_deltaT_heating',
@@ -108,6 +132,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline90',
         'baseline_total_core_day_runtime_dailyavgHTD_baseline90',
         '_daily_mean_core_day_demand_baseline_dailyavgHTD_baseline90',
+        'percent_savings_dailyavgHTD_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional',
+        'avoided_total_core_day_runtime_dailyavgHTD_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional',
+        'baseline_total_core_day_runtime_dailyavgHTD_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional',
         'mean_demand_dailyavgHTD',
         'alpha_dailyavgHTD',
         'tau_dailyavgHTD',
@@ -123,6 +153,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline90',
         'baseline_total_core_day_runtime_hourlyavgHTD_baseline90',
         '_daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline90',
+        'percent_savings_hourlyavgHTD_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional',
+        'avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional',
+        'baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional',
         'mean_demand_hourlyavgHTD',
         'alpha_hourlyavgHTD',
         'tau_hourlyavgHTD',
@@ -194,6 +230,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline10': float_column,
         'baseline_total_core_day_runtime_deltaT_cooling_baseline10': float_column,
         '_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline10': float_column,
+        'percent_savings_deltaT_cooling_baseline_regional': float_column,
+        'avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional': float_column,
+        'avoided_total_core_day_runtime_deltaT_cooling_baseline_regional': float_column,
+        'baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional': float_column,
+        'baseline_total_core_day_runtime_deltaT_cooling_baseline_regional': float_column,
+        '_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional': float_column,
         'mean_demand_deltaT_cooling': float_column,
         'alpha_deltaT_cooling': float_column,
         'tau_deltaT_cooling': float_column,
@@ -209,6 +251,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline10': float_column,
         'baseline_total_core_day_runtime_dailyavgCTD_baseline10': float_column,
         '_daily_mean_core_day_demand_baseline_dailyavgCTD_baseline10': float_column,
+        'percent_savings_dailyavgCTD_baseline_regional': float_column,
+        'avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional': float_column,
+        'avoided_total_core_day_runtime_dailyavgCTD_baseline_regional': float_column,
+        'baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional': float_column,
+        'baseline_total_core_day_runtime_dailyavgCTD_baseline_regional': float_column,
+        '_daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional': float_column,
         'mean_demand_dailyavgCTD': float_column,
         'alpha_dailyavgCTD': float_column,
         'tau_dailyavgCTD': float_column,
@@ -224,6 +272,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline10': float_column,
         'baseline_total_core_day_runtime_hourlyavgCTD_baseline10': float_column,
         '_daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline10': float_column,
+        'percent_savings_hourlyavgCTD_baseline_regional': float_column,
+        'avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional': float_column,
+        'avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional': float_column,
+        'baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional': float_column,
+        'baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional': float_column,
+        '_daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional': float_column,
         'mean_demand_hourlyavgCTD': float_column,
         'alpha_hourlyavgCTD': float_column,
         'tau_hourlyavgCTD': float_column,
@@ -239,6 +293,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90': float_column,
         'baseline_total_core_day_runtime_deltaT_heating_baseline90': float_column,
         '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline90': float_column,
+        'percent_savings_deltaT_heating_baseline_regional': float_column,
+        'avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional': float_column,
+        'avoided_total_core_day_runtime_deltaT_heating_baseline_regional': float_column,
+        'baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional': float_column,
+        'baseline_total_core_day_runtime_deltaT_heating_baseline_regional': float_column,
+        '_daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional': float_column,
         'mean_demand_deltaT_heating': float_column,
         'alpha_deltaT_heating': float_column,
         'tau_deltaT_heating': float_column,
@@ -254,6 +314,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline90': float_column,
         'baseline_total_core_day_runtime_dailyavgHTD_baseline90': float_column,
         '_daily_mean_core_day_demand_baseline_dailyavgHTD_baseline90': float_column,
+        'percent_savings_dailyavgHTD_baseline_regional': float_column,
+        'avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional': float_column,
+        'avoided_total_core_day_runtime_dailyavgHTD_baseline_regional': float_column,
+        'baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional': float_column,
+        'baseline_total_core_day_runtime_dailyavgHTD_baseline_regional': float_column,
+        '_daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional': float_column,
         'mean_demand_dailyavgHTD': float_column,
         'alpha_dailyavgHTD': float_column,
         'tau_dailyavgHTD': float_column,
@@ -269,6 +335,12 @@ def get_fake_output_df(n_columns):
         'baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline90': float_column,
         'baseline_total_core_day_runtime_hourlyavgHTD_baseline90': float_column,
         '_daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline90': float_column,
+        'percent_savings_hourlyavgHTD_baseline_regional': float_column,
+        'avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional': float_column,
+        'avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional': float_column,
+        'baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional': float_column,
+        'baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional': float_column,
+        '_daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional': float_column,
         'mean_demand_hourlyavgHTD': float_column,
         'alpha_hourlyavgHTD': float_column,
         'tau_hourlyavgHTD': float_column,
@@ -371,13 +443,13 @@ def groups_df():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 120)
+    assert combined.shape == (20, 156)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe, "label")
     assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 64 + 6
-    assert len(summary_statistics[1]) == 12 * 50 + 6
+    assert len(summary_statistics[0]) == 12 * 82 + 6
+    assert len(summary_statistics[1]) == 12 * 68 + 6
     assert summary_statistics[0]["label"] == "label_heating"
     for key, value in summary_statistics[0].items():
         if key not in ["label", "sw_version"]:
@@ -393,7 +465,7 @@ def test_summary_statistics_to_csv(combined_dataframe):
 
     with open(fname, 'r') as f:
         columns = f.readline().split(",")
-        assert len(columns) == 12 * 111 + 18
+        assert len(columns) == 12 * 147 + 18
 
 def test_zipcode_group_spec_csv(zipcode_group_spec_csv_filepath, groups_df):
     group_spec = ZipcodeGroupSpec(filepath=zipcode_group_spec_csv_filepath)
