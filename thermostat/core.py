@@ -1260,24 +1260,24 @@ class Thermostat(object):
                     savings_dailyavgCTD_baseline_regional = percent_savings(avoided_runtime_dailyavgCTD_baseline_regional, baseline_regional_runtime_dailyavgCTD)
                     savings_hourlyavgCTD_baseline_regional = percent_savings(avoided_runtime_hourlyavgCTD_baseline_regional, baseline_regional_runtime_hourlyavgCTD)
 
-                    percent_savings_deltaT_cooling_baseline_regional = savings_deltaT_baseline_regional,
-                    avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = avoided_runtime_deltaT_baseline_regional.mean(),
-                    avoided_total_core_day_runtime_deltaT_cooling_baseline_regional = avoided_runtime_deltaT_baseline_regional.sum(),
-                    baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = baseline_regional_runtime_deltaT.mean(),
-                    baseline_total_core_day_runtime_deltaT_cooling_baseline_regional = baseline_regional_runtime_deltaT.sum(),
-                    _daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional = np.nanmean(baseline_regional_demand_deltaT),
-                    percent_savings_dailyavgCTD_baseline_regional = savings_dailyavgCTD_baseline_regional,
-                    avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = avoided_runtime_dailyavgCTD_baseline_regional.mean(),
-                    avoided_total_core_day_runtime_dailyavgCTD_baseline_regional = avoided_runtime_dailyavgCTD_baseline_regional.sum(),
-                    baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = baseline_regional_runtime_dailyavgCTD.mean(),
-                    baseline_total_core_day_runtime_dailyavgCTD_baseline_regional = baseline_regional_runtime_dailyavgCTD.sum(),
-                    _daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional = np.nanmean(baseline_regional_demand_dailyavgCTD),
-                    percent_savings_hourlyavgCTD_baseline_regional = savings_hourlyavgCTD_baseline_regional,
-                    avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = avoided_runtime_hourlyavgCTD_baseline_regional.mean(),
-                    avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional = avoided_runtime_hourlyavgCTD_baseline_regional.sum(),
-                    baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = baseline_regional_runtime_hourlyavgCTD.mean(),
-                    baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional = baseline_regional_runtime_hourlyavgCTD.sum(),
-                    _daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional = np.nanmean(baseline_regional_demand_hourlyavgCTD),
+                    percent_savings_deltaT_cooling_baseline_regional = savings_deltaT_baseline_regional
+                    avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = avoided_runtime_deltaT_baseline_regional.mean()
+                    avoided_total_core_day_runtime_deltaT_cooling_baseline_regional = avoided_runtime_deltaT_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = baseline_regional_runtime_deltaT.mean()
+                    baseline_total_core_day_runtime_deltaT_cooling_baseline_regional = baseline_regional_runtime_deltaT.sum()
+                    _daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional = np.nanmean(baseline_regional_demand_deltaT)
+                    percent_savings_dailyavgCTD_baseline_regional = savings_dailyavgCTD_baseline_regional
+                    avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = avoided_runtime_dailyavgCTD_baseline_regional.mean()
+                    avoided_total_core_day_runtime_dailyavgCTD_baseline_regional = avoided_runtime_dailyavgCTD_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = baseline_regional_runtime_dailyavgCTD.mean()
+                    baseline_total_core_day_runtime_dailyavgCTD_baseline_regional = baseline_regional_runtime_dailyavgCTD.sum()
+                    _daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional = np.nanmean(baseline_regional_demand_dailyavgCTD)
+                    percent_savings_hourlyavgCTD_baseline_regional = savings_hourlyavgCTD_baseline_regional
+                    avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = avoided_runtime_hourlyavgCTD_baseline_regional.mean()
+                    avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional = avoided_runtime_hourlyavgCTD_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = baseline_regional_runtime_hourlyavgCTD.mean()
+                    baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional = baseline_regional_runtime_hourlyavgCTD.sum()
+                    _daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional = np.nanmean(baseline_regional_demand_hourlyavgCTD)
 
                 else:
 
@@ -1565,24 +1565,24 @@ class Thermostat(object):
                     savings_dailyavgHTD_baseline_regional = percent_savings(avoided_runtime_dailyavgHTD_baseline_regional, baseline_regional_runtime_dailyavgHTD)
                     savings_hourlyavgHTD_baseline_regional = percent_savings(avoided_runtime_hourlyavgHTD_baseline_regional, baseline_regional_runtime_hourlyavgHTD)
 
-                    percent_savings_deltaT_heating_baseline_regional = savings_deltaT_baseline_regional,
-                    avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = avoided_runtime_deltaT_baseline_regional.mean(),
-                    avoided_total_core_day_runtime_deltaT_heating_baseline_regional = avoided_runtime_deltaT_baseline_regional.sum(),
-                    baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = baseline_regional_runtime_deltaT.mean(),
-                    baseline_total_core_day_runtime_deltaT_heating_baseline_regional = baseline_regional_runtime_deltaT.sum(),
-                    _daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional = np.nanmean(baseline_regional_demand_deltaT),
-                    percent_savings_dailyavgHTD_baseline_regional = savings_dailyavgHTD_baseline_regional,
-                    avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = avoided_runtime_dailyavgHTD_baseline_regional.mean(),
-                    avoided_total_core_day_runtime_dailyavgHTD_baseline_regional = avoided_runtime_dailyavgHTD_baseline_regional.sum(),
-                    baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = baseline_regional_runtime_dailyavgHTD.mean(),
-                    baseline_total_core_day_runtime_dailyavgHTD_baseline_regional = baseline_regional_runtime_dailyavgHTD.sum(),
-                    _daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional = np.nanmean(baseline_regional_demand_dailyavgHTD),
-                    percent_savings_hourlyavgHTD_baseline_regional = savings_hourlyavgHTD_baseline_regional,
-                    avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = avoided_runtime_hourlyavgHTD_baseline_regional.mean(),
-                    avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional = avoided_runtime_hourlyavgHTD_baseline_regional.sum(),
-                    baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = baseline_regional_runtime_hourlyavgHTD.mean(),
-                    baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional = baseline_regional_runtime_hourlyavgHTD.sum(),
-                    _daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional = np.nanmean(baseline_regional_demand_hourlyavgHTD),
+                    percent_savings_deltaT_heating_baseline_regional = savings_deltaT_baseline_regional
+                    avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = avoided_runtime_deltaT_baseline_regional.mean()
+                    avoided_total_core_day_runtime_deltaT_heating_baseline_regional = avoided_runtime_deltaT_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = baseline_regional_runtime_deltaT.mean()
+                    baseline_total_core_day_runtime_deltaT_heating_baseline_regional = baseline_regional_runtime_deltaT.sum()
+                    _daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional = np.nanmean(baseline_regional_demand_deltaT)
+                    percent_savings_dailyavgHTD_baseline_regional = savings_dailyavgHTD_baseline_regional
+                    avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = avoided_runtime_dailyavgHTD_baseline_regional.mean()
+                    avoided_total_core_day_runtime_dailyavgHTD_baseline_regional = avoided_runtime_dailyavgHTD_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = baseline_regional_runtime_dailyavgHTD.mean()
+                    baseline_total_core_day_runtime_dailyavgHTD_baseline_regional = baseline_regional_runtime_dailyavgHTD.sum()
+                    _daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional = np.nanmean(baseline_regional_demand_dailyavgHTD)
+                    percent_savings_hourlyavgHTD_baseline_regional = savings_hourlyavgHTD_baseline_regional
+                    avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = avoided_runtime_hourlyavgHTD_baseline_regional.mean()
+                    avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional = avoided_runtime_hourlyavgHTD_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = baseline_regional_runtime_hourlyavgHTD.mean()
+                    baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional = baseline_regional_runtime_hourlyavgHTD.sum()
+                    _daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional = np.nanmean(baseline_regional_demand_hourlyavgHTD)
 
                 else:
 
