@@ -10,6 +10,7 @@ from collections import defaultdict
 from itertools import chain
 from warnings import warn
 import json
+from functools import reduce
 
 from thermostat import get_version
 
@@ -440,6 +441,29 @@ def combine_output_dataframes(dfs):
     """
     return pd.concat(dfs, ignore_index=True)
 
+def _get_method(heating_or_cooling, target_demand_method, target_baseline_method=None):
+    if heating_or_cooling == "heating":
+        if target_demand_method == "deltaT":
+            method = "deltaT_heating"
+        else:
+            method = "{}HTD".format(target_demand_method)
+
+        if target_baseline_method == "baseline_percentile":
+            method += "_baseline90"
+        elif target_baseline_method == "baseline_regional":
+            method += "_baseline_regional"
+    else:
+        if target_demand_method == "deltaT":
+            method = "deltaT_cooling"
+        else:
+            method = "{}CTD".format(target_demand_method)
+
+        if target_baseline_method == "baseline_percentile":
+            method += "_baseline10"
+        elif target_baseline_method == "baseline_regional":
+            method += "_baseline_regional"
+    return method
+
 def get_filtered_stats(
         df, row_filter, label,
         statistical_power_confidence, statistical_power_ratio,
@@ -450,24 +474,7 @@ def get_filtered_stats(
             stats, statistical_power_confidence, statistical_power_ratio,
             heating_or_cooling, target_demand_method, target_baseline_method):
 
-        if heating_or_cooling == "heating":
-            if target_demand_method == "deltaT":
-                method = "deltaT_heating"
-            else:
-                method = "{}HTD".format(target_demand_method)
-            if target_baseline_method == "baseline_percentile":
-                method += "_baseline90"
-            elif target_baseline_method == "baseline_regional":
-                method += "_baseline_regional"
-        else:
-            if target_demand_method == "deltaT":
-                method = "deltaT_cooling"
-            else:
-                method = "{}CTD".format(target_demand_method)
-            if target_baseline_method == "baseline_percentile":
-                method += "_baseline10"
-            elif target_baseline_method == "baseline_regional":
-                method += "_baseline_regional"
+        method = _get_method(heating_or_cooling, target_demand_method, target_baseline_method)
 
         stat_power_target_mean = "percent_savings_{}_mean".format(method)
         stat_power_target_sem = "percent_savings_{}_sem".format(method)
@@ -485,7 +492,7 @@ def get_filtered_stats(
 
     n_rows_total = df.shape[0]
 
-    filtered_df = df[[row_filter(row) for row in df.iterrows()]]
+    filtered_df = df[[row_filter(row) for i, row in df.iterrows()]]
 
     n_rows_kept = filtered_df.shape[0]
     n_rows_discarded = n_rows_total - n_rows_kept
@@ -666,9 +673,55 @@ def compute_summary_statistics(
     #
     #     return row[column] < target_error_max_value
 
-
     def _identity_filter(row):
         return True
+
+    def _range_filter(row, column_name, heating_or_cooling, lower_bound=-np.inf, upper_bound=np.inf):
+        method = _get_method(heating_or_cooling, target_demand_method)
+        column = row["{}_{}".format(column_name, method)]
+        return lower_bound < column < upper_bound
+
+    def _percentile_range_filter(row, column_name, heating_or_cooling, df, quantile=0.0):
+        method = _get_method(heating_or_cooling, target_demand_method)
+        column = row["{}_{}".format(column_name, method)]
+        lower_bound = df[column].dropna().quantile(0.0 + quantile)
+        upper_bound = df[column].dropna().quantile(1.0 - quantile)
+        return _range_filter(row, column, lower_bound, upper_bound)
+
+    def _tau_filter_heating(row):
+        return _range_filter(row, "tau", "heating", 0, 25)
+
+    def _tau_filter_cooling(row):
+        return _range_filter(row, "tau", "cooling", 0, 25)
+
+    def _cvrmse_filter_heating(row):
+        return _range_filter(row, "cv_root_mean_sq_err", "heating", upper_bound=0.6)
+
+    def _cvrmse_filter_cooling(row):
+        return _range_filter(row, "cv_root_mean_sq_err", "cooling", upper_bound=0.6)
+
+    def _savings_filter_p01_heating(row):
+        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.01)
+
+    def _savings_filter_p01_cooling(row):
+        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.01)
+
+    def _savings_filter_p02_heating(row):
+        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.02)
+
+    def _savings_filter_p02_cooling(row):
+        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.02)
+
+    def _savings_filter_p05_heating(row):
+        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.05)
+
+    def _savings_filter_p05_cooling(row):
+        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.05)
+
+    def _combine_filters(filters):
+        def _new_filter(row):
+            return reduce(lambda x, y: x and y(row), filters, True)
+        return _new_filter
 
     def heating_stats(df, filter_, label):
         heating_df = df[["heating" in name for name in df["heating_or_cooling"]]]
@@ -686,25 +739,72 @@ def compute_summary_statistics(
             "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING,
             target_demand_method, target_baseline_method)
 
-    very_cold_cold_df = metrics_df[["Very-Cold/Cold" in cz for cz in metrics_df["climate_zone"]]]
-    mixed_humid_df = metrics_df[["Mixed-Humid" in cz for cz in metrics_df["climate_zone"]]]
-    mixed_dry_hot_dry_df = metrics_df[["Mixed-Dry/Hot-Dry" in cz for cz in metrics_df["climate_zone"]]]
-    hot_humid_df = metrics_df[["Hot-Humid" in cz for cz in metrics_df["climate_zone"]]]
-    marine_df = metrics_df[["Marine" in cz for cz in metrics_df["climate_zone"]]]
+    very_cold_cold_df = metrics_df[[
+        "Very-Cold/Cold" in cz
+        for cz in metrics_df["climate_zone"] if cz is not None
+    ]]
+    mixed_humid_df = metrics_df[[
+        "Mixed-Humid" in cz
+        for cz in metrics_df["climate_zone"] if cz is not None
+    ]]
+    mixed_dry_hot_dry_df = metrics_df[[
+        "Mixed-Dry/Hot-Dry" in cz
+        for cz in metrics_df["climate_zone"] if cz is not None
+    ]]
+    hot_humid_df = metrics_df[[
+        "Hot-Humid" in cz
+        for cz in metrics_df["climate_zone"] if cz is not None
+    ]]
+    marine_df = metrics_df[[
+        "Marine" in cz
+        for cz in metrics_df["climate_zone"] if cz is not None
+    ]]
+
+    filter_0 = _identity_filter
+    filter_1_heating = _combine_filters([_tau_filter_heating])
+    filter_2_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating])
+    filter_1_cooling = _combine_filters([_tau_filter_cooling])
+    filter_2_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling])
 
     return list(chain.from_iterable([
-        heating_stats(metrics_df, _identity_filter, "all"),
-        cooling_stats(metrics_df, _identity_filter, "all"),
-        heating_stats(very_cold_cold_df, _identity_filter, "very-cold_cold"),
-        cooling_stats(very_cold_cold_df, _identity_filter, "very-cold_cold"),
-        heating_stats(mixed_humid_df, _identity_filter, "mixed-humid"),
-        cooling_stats(mixed_humid_df, _identity_filter, "mixed-humid"),
-        heating_stats(mixed_dry_hot_dry_df, _identity_filter, "mixed-dry_hot-dry"),
-        cooling_stats(mixed_dry_hot_dry_df, _identity_filter, "mixed-dry_hot-dry"),
-        heating_stats(hot_humid_df, _identity_filter, "hot-humid"),
-        cooling_stats(hot_humid_df, _identity_filter, "hot-humid"),
-        heating_stats(marine_df, _identity_filter, "marine"),
-        cooling_stats(marine_df, _identity_filter, "marine"),
+        heating_stats(metrics_df, filter_0, "all"),
+        cooling_stats(metrics_df, filter_0, "all"),
+        heating_stats(very_cold_cold_df, filter_0, "very-cold_cold"),
+        cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold"),
+        heating_stats(mixed_humid_df, filter_0, "mixed-humid"),
+        cooling_stats(mixed_humid_df, filter_0, "mixed-humid"),
+        heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry"),
+        heating_stats(hot_humid_df, filter_0, "hot-humid"),
+        cooling_stats(hot_humid_df, filter_0, "hot-humid"),
+        heating_stats(marine_df, filter_0, "marine"),
+        cooling_stats(marine_df, filter_0, "marine"),
+
+        heating_stats(metrics_df, filter_1_heating, "all_tau_filter"),
+        cooling_stats(metrics_df, filter_1_cooling, "all_tau_filter"),
+        heating_stats(very_cold_cold_df, filter_1_heating, "very-cold_cold_tau_filter"),
+        cooling_stats(very_cold_cold_df, filter_1_cooling, "very-cold_cold_tau_filter"),
+        heating_stats(mixed_humid_df, filter_1_heating, "mixed-humid_tau_filter"),
+        cooling_stats(mixed_humid_df, filter_1_cooling, "mixed-humid_tau_filter"),
+        heating_stats(mixed_dry_hot_dry_df, filter_1_heating, "mixed-dry_hot-dry_tau_filter"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_1_cooling, "mixed-dry_hot-dry_tau_filter"),
+        heating_stats(hot_humid_df, filter_1_heating, "hot-humid_tau_filter"),
+        cooling_stats(hot_humid_df, filter_1_cooling, "hot-humid_tau_filter"),
+        heating_stats(marine_df, filter_1_heating, "marine_tau_filter"),
+        cooling_stats(marine_df, filter_1_cooling, "marine_tau_filter"),
+
+        heating_stats(metrics_df, filter_2_heating, "all_tau_cvrmse_filter"),
+        cooling_stats(metrics_df, filter_2_cooling, "all_tau_cvrmse_filter"),
+        heating_stats(very_cold_cold_df, filter_2_heating, "very-cold_cold_tau_cvrmse_filter"),
+        cooling_stats(very_cold_cold_df, filter_2_cooling, "very-cold_cold_tau_cvrmse_filter"),
+        heating_stats(mixed_humid_df, filter_2_heating, "mixed-humid_tau_cvrmse_filter"),
+        cooling_stats(mixed_humid_df, filter_2_cooling, "mixed-humid_tau_cvrmse_filter"),
+        heating_stats(mixed_dry_hot_dry_df, filter_2_heating, "mixed-dry_hot-dry_tau_cvrmse_filter"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_2_cooling, "mixed-dry_hot-dry_tau_cvrmse_filter"),
+        heating_stats(hot_humid_df, filter_2_heating, "hot-humid_tau_cvrmse_filter"),
+        cooling_stats(hot_humid_df, filter_2_cooling, "hot-humid_tau_cvrmse_filter"),
+        heating_stats(marine_df, filter_2_heating, "marine_tau_cvrmse_filter"),
+        cooling_stats(marine_df, filter_2_cooling, "marine_tau_cvrmse_filter"),
     ]))
 
 # def compute_summary_statistics_by_zipcode_group(df,
