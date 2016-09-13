@@ -381,28 +381,24 @@ def dataframes():
 def combined_dataframe():
     df = get_fake_output_df(100)
     return df
+
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
     assert combined.shape == (20, 156)
 
 def test_compute_summary_statistics(combined_dataframe):
-    summary_statistics = compute_summary_statistics(combined_dataframe, "label")
-    assert len(summary_statistics) == 2
-    assert len(summary_statistics[0]) == 12 * 82 + 6
-    assert len(summary_statistics[1]) == 12 * 68 + 6
-    assert summary_statistics[0]["label"] == "label_heating"
-    for key, value in summary_statistics[0].items():
-        if key not in ["label", "sw_version"]:
-            assert pd.notnull(value)
-            assert not np.isinf(value)
+    summary_statistics = compute_summary_statistics(combined_dataframe)
+    assert [len(s) for s in summary_statistics] == [
+        1154, 958, 1154, 958, 1154, 958, 1154, 958, 1154, 958, 1154, 958,
+        19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19
+    ]
 
 def test_summary_statistics_to_csv(combined_dataframe):
-    summary_statistics = compute_summary_statistics(combined_dataframe, "label")
+    summary_statistics = compute_summary_statistics(combined_dataframe)
 
     _, fname = tempfile.mkstemp()
     stats_df = summary_statistics_to_csv(summary_statistics, fname)
     assert isinstance(stats_df, pd.DataFrame)
 
-    with open(fname, 'r') as f:
-        columns = f.readline().split(",")
-        assert len(columns) == 12 * 147 + 18
+    stats_df_reread = pd.read_csv(fname)
+    assert stats_df_reread.shape == (2099, 25)
