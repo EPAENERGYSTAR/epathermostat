@@ -11,6 +11,7 @@ from itertools import chain
 from warnings import warn
 import json
 from functools import reduce
+from pkg_resources import resource_stream
 
 from thermostat import get_version
 
@@ -343,88 +344,6 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'rhu_55F_to_60F',
 ]
 
-# class ZipcodeGroupSpec(object):
-#     """ Mapping from zipcodes to groups. Must supply either filepath or
-#     dictionary.
-#
-#     Parameters
-#     ----------
-#     filepath : str, None
-#         Path to CSV file containing the columns "zipcode" and "group".
-#         Each row should map the zipcode column to a target group. E.g.::
-#
-#             zipcode,group
-#             01234,group_a
-#             12345,group_a
-#             23456,group_a
-#             43210,groub_b
-#             54321,group_b
-#             65432,group_c
-#
-#         This creates the following grouping:
-#
-#         - **group_a**: 01234,12345,23456
-#         - **group_b**: 43210,54321
-#         - **group_c**: 65432
-#
-#     dictionary : dict, None
-#         Dictionary with zipcodes as keys and groups as values. E.g.::
-#
-#             dictionary = {
-#                 "01234": "group_a",
-#                 "12345": "group_a",
-#                 "23456": "group_a",
-#                 "43210": "group_b",
-#                 "54321": "group_b",
-#                 "65432": "group_c",
-#             }
-#
-#         This creates the following grouping:
-#
-#         - **group_a**: 01234,12345,23456
-#         - **group_b**: 43210,54321
-#         - **group_c**: 65432
-#
-#     label : str
-#         Extra label identifying the grouping method, for use in cases in which
-#         there might be ambiguity.
-#     """
-#
-#     def __init__(self, filepath=None, dictionary=None, label=None):
-#         if filepath is not None:
-#             self.spec = self._load_spec_csv(filepath)
-#         elif dictionary is not None:
-#             self.spec = dictionary
-#         else:
-#             message = "Please supply either filepath or dictionary."
-#             raise ValueError(message)
-#
-#         self.label = label
-#
-#     def _load_spec_csv(self, filepath):
-#         df = pd.read_csv(filepath,
-#                 usecols=["zipcode", "group"],
-#                 dtype={"zipcode":str, "group":str})
-#         return {row["zipcode"]: row["group"] for _, row in df.iterrows()}
-#
-#     def iter_groups(self, df):
-#         """ Iterate over groups (in no particular order.)
-#
-#         Parameters
-#         ----------
-#         df : pd.Dataframe
-#             Dataframe containing all output data from which to draw groupings.
-#         """
-#
-#         # avoid adding extra column to input df
-#         df = df.copy()
-#
-#         df["_group"] = pd.Series([self.spec.get(zipcode) for zipcode in df["zipcode"]])
-#         for group, grouped in df.groupby("_group"):
-#             group_name = group if self.label is None else "{}_{}".format(group, self.label)
-#             yield group_name, grouped
-#
-
 def combine_output_dataframes(dfs):
     """ Combines output dataframes. Useful when combining output from batches.
 
@@ -440,6 +359,7 @@ def combine_output_dataframes(dfs):
 
     """
     return pd.concat(dfs, ignore_index=True)
+
 
 def _get_method(heating_or_cooling, target_demand_method, target_baseline_method=None):
     if heating_or_cooling == "heating":
@@ -463,6 +383,7 @@ def _get_method(heating_or_cooling, target_demand_method, target_baseline_method
         elif target_baseline_method == "baseline_regional":
             method += "_baseline_regional"
     return method
+
 
 def get_filtered_stats(
         df, row_filter, label,
@@ -492,7 +413,7 @@ def get_filtered_stats(
 
     n_rows_total = df.shape[0]
 
-    filtered_df = df[[row_filter(row) for i, row in df.iterrows()]]
+    filtered_df = df[[row_filter(row, df) for i, row in df.iterrows()]]
 
     n_rows_kept = filtered_df.shape[0]
     n_rows_discarded = n_rows_total - n_rows_kept
@@ -511,10 +432,16 @@ def get_filtered_stats(
         for column_name in target_columns:
             column = filtered_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
 
-            # calculate quantiles
-            stats["{}_mean".format(column_name)] = np.nanmean(column)
-            stats["{}_sem".format(column_name)] = np.nanstd(column) / (column.count() ** .5)
+            # calculate quantiles and statistics
+            mean = np.nanmean(column)
+            sem = np.nanstd(column) / (column.count() ** .5)
+            lower_bound = mean - (1.96 * sem)
+            upper_bound = mean + (1.96 * sem)
             stats["{}_n".format(column_name)] = column.count()
+            stats["{}_upper_bound_95_perc_conf".format(column_name)] = upper_bound
+            stats["{}_mean".format(column_name)] = mean
+            stats["{}_lower_bound_95_perc_conf".format(column_name)] = lower_bound
+            stats["{}_sem".format(column_name)] = sem
 
             for quantile in quantiles:
                 stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
@@ -530,6 +457,7 @@ def get_filtered_stats(
             .format(label, heating_or_cooling)
         )
         return []
+
 
 def compute_summary_statistics(
         metrics_df,
@@ -601,126 +529,61 @@ def compute_summary_statistics(
                 '"baseline_regional"'
         raise ValueError(message)
 
-    # def _filter_rows(core_day_set_type_df, core_day_set_type):
-    #     filtered_df_rows = []
-    #     for i, row in core_day_set_type_df.iterrows():
-    #         if _accept_row(row, core_day_set_type):
-    #             filtered_df_rows.append(row)
-    #     return pd.DataFrame(filtered_df_rows)
-    #
-    # def _accept_row(row, core_day_set_type):
-    #     passes_validity_rules = _passes_validity_rules(row)
-    #     has_physical_tau = _has_physical_tau(row, core_day_set_type)
-    #     has_good_enough_fit = _has_good_enough_fit(row, core_day_set_type)
-    #     return (
-    #         passes_validity_rules
-    #         and has_physical_tau
-    #         and has_good_enough_fit
-    #     )
-    #
-    # def _passes_validity_rules(row):
-    #     try:
-    #         pct_insufficient_data = row.n_days_insufficient_data / row.n_days_in_inputfile_date_range
-    #     except ZeroDivisionError:
-    #         return False
-    #     else:
-    #         return pct_insufficient_data < 0.05
-    #
-    # def _has_physical_tau(row, core_day_set_type):
-    #     if target_demand_method == "deltaT":
-    #         if core_day_set_type == "heating":
-    #             column = "tau_deltaT_heating"
-    #         else:
-    #             column = "tau_deltaT_cooling"
-    #     else:
-    #         if core_day_set_type == "heating":
-    #             column = "tau_{}HTD".format(target_demand_method)
-    #         else:
-    #             column = "tau_{}CTD".format(target_demand_method)
-    #
-    #     return -10 <= row[column] <= 50
-    #
-    # def _has_good_enough_fit(row, core_day_set_type):
-    #     if target_error_metric == "MSE":
-    #         error_metric_prefix = "mean_sq_err"
-    #     elif target_error_metric == "RMSE":
-    #         error_metric_prefix = "root_mean_sq_err"
-    #     elif target_error_metric == "CVRMSE":
-    #         error_metric_prefix = "cv_root_mean_sq_err"
-    #     elif target_error_metric == "MAE":
-    #         error_metric_prefix = "mean_abs_err"
-    #     elif target_error_metric == "MAPE":
-    #         error_metric_prefix = "mean_abs_pct_err"
-    #     else:
-    #         message = (
-    #             'Method {} not supported.'
-    #             ' Use one of "MSE", "RMSE", "CVRMSE", "MAE", or "MAPE".'
-    #         ).format(target_error_metric)
-    #         raise ValueError(message)
-    #
-    #     if target_demand_method == "deltaT":
-    #         if core_day_set_type == "heating":
-    #             method_suffix = "deltaT_heating"
-    #         else:
-    #             method_suffix = "deltaT_cooling"
-    #     else:
-    #         if core_day_set_type == "heating":
-    #             method_suffix = "{}HTD".format(target_demand_method)
-    #         else:
-    #             method_suffix = "{}CTD".format(target_demand_method)
-    #
-    #     column = "{}_{}".format(error_metric_prefix, method_suffix)
-    #
-    #     return row[column] < target_error_max_value
-
-    def _identity_filter(row):
+    def _identity_filter(row, df):
         return True
 
-    def _range_filter(row, column_name, heating_or_cooling, lower_bound=-np.inf, upper_bound=np.inf):
-        method = _get_method(heating_or_cooling, target_demand_method)
-        column = row["{}_{}".format(column_name, method)]
-        return lower_bound < column < upper_bound
+    def _range_filter(row, column_name, heating_or_cooling, lower_bound=-np.inf, upper_bound=np.inf, target_baseline=False):
+        if target_baseline:
+            method = _get_method(heating_or_cooling, target_demand_method, target_baseline_method)
+        else:
+            method = _get_method(heating_or_cooling, target_demand_method)
+        full_column_selector = "{}_{}".format(column_name, method)
+        column_value = row[full_column_selector]
+        return lower_bound < column_value < upper_bound
 
-    def _percentile_range_filter(row, column_name, heating_or_cooling, df, quantile=0.0):
-        method = _get_method(heating_or_cooling, target_demand_method)
-        column = row["{}_{}".format(column_name, method)]
-        lower_bound = df[column].dropna().quantile(0.0 + quantile)
-        upper_bound = df[column].dropna().quantile(1.0 - quantile)
-        return _range_filter(row, column, lower_bound, upper_bound)
+    def _percentile_range_filter(row, column_name, heating_or_cooling, df, quantile=0.0, target_baseline=False):
+        if target_baseline:
+            method = _get_method(heating_or_cooling, target_demand_method, target_baseline_method)
+        else:
+            method = _get_method(heating_or_cooling, target_demand_method)
+        full_column_selector = "{}_{}".format(column_name, method)
+        lower_bound = df[full_column_selector].dropna().quantile(0.0 + quantile)
+        upper_bound = df[full_column_selector].dropna().quantile(1.0 - quantile)
+        return _range_filter(row, column_name, heating_or_cooling, lower_bound, upper_bound, target_baseline)
 
-    def _tau_filter_heating(row):
+    def _tau_filter_heating(row, df):
         return _range_filter(row, "tau", "heating", 0, 25)
 
-    def _tau_filter_cooling(row):
+    def _tau_filter_cooling(row, df):
         return _range_filter(row, "tau", "cooling", 0, 25)
 
-    def _cvrmse_filter_heating(row):
+    def _cvrmse_filter_heating(row, df):
         return _range_filter(row, "cv_root_mean_sq_err", "heating", upper_bound=0.6)
 
-    def _cvrmse_filter_cooling(row):
+    def _cvrmse_filter_cooling(row, df):
         return _range_filter(row, "cv_root_mean_sq_err", "cooling", upper_bound=0.6)
 
-    def _savings_filter_p01_heating(row):
-        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.01)
+    def _savings_filter_p01_heating(row, df):
+        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.01, True)
 
-    def _savings_filter_p01_cooling(row):
-        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.01)
+    def _savings_filter_p01_cooling(row, df):
+        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.01, True)
 
-    def _savings_filter_p02_heating(row):
-        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.02)
+    def _savings_filter_p02_heating(row, df):
+        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.02, True)
 
-    def _savings_filter_p02_cooling(row):
-        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.02)
+    def _savings_filter_p02_cooling(row, df):
+        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.02, True)
 
-    def _savings_filter_p05_heating(row):
-        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.05)
+    def _savings_filter_p05_heating(row, df):
+        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.05, True)
 
-    def _savings_filter_p05_cooling(row):
-        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.05)
+    def _savings_filter_p05_cooling(row, df):
+        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.05, True)
 
     def _combine_filters(filters):
-        def _new_filter(row):
-            return reduce(lambda x, y: x and y(row), filters, True)
+        def _new_filter(row, df):
+            return reduce(lambda x, y: x and y(row, df), filters, True)
         return _new_filter
 
     def heating_stats(df, filter_, label):
@@ -740,45 +603,51 @@ def compute_summary_statistics(
             target_demand_method, target_baseline_method)
 
     very_cold_cold_df = metrics_df[[
-        "Very-Cold/Cold" in cz
-        for cz in metrics_df["climate_zone"] if cz is not None
+        (cz is not None) and "Very-Cold/Cold" in cz
+        for cz in metrics_df["climate_zone"]
     ]]
     mixed_humid_df = metrics_df[[
-        "Mixed-Humid" in cz
-        for cz in metrics_df["climate_zone"] if cz is not None
+        (cz is not None) and "Mixed-Humid" in cz
+        for cz in metrics_df["climate_zone"]
     ]]
     mixed_dry_hot_dry_df = metrics_df[[
-        "Mixed-Dry/Hot-Dry" in cz
-        for cz in metrics_df["climate_zone"] if cz is not None
+        (cz is not None) and "Mixed-Dry/Hot-Dry" in cz
+        for cz in metrics_df["climate_zone"]
     ]]
     hot_humid_df = metrics_df[[
-        "Hot-Humid" in cz
-        for cz in metrics_df["climate_zone"] if cz is not None
+        (cz is not None) and "Hot-Humid" in cz
+        for cz in metrics_df["climate_zone"]
     ]]
     marine_df = metrics_df[[
-        "Marine" in cz
-        for cz in metrics_df["climate_zone"] if cz is not None
+        (cz is not None) and "Marine" in cz
+        for cz in metrics_df["climate_zone"]
     ]]
 
     filter_0 = _identity_filter
     filter_1_heating = _combine_filters([_tau_filter_heating])
-    filter_2_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating])
     filter_1_cooling = _combine_filters([_tau_filter_cooling])
+    filter_2_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating])
     filter_2_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling])
+    filter_3_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p01_heating])
+    filter_3_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p01_heating])
+    filter_4_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p02_heating])
+    filter_4_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p02_heating])
+    filter_5_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p05_heating])
+    filter_5_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p05_heating])
 
-    return list(chain.from_iterable([
-        heating_stats(metrics_df, filter_0, "all"),
-        cooling_stats(metrics_df, filter_0, "all"),
-        heating_stats(very_cold_cold_df, filter_0, "very-cold_cold"),
+    stats = list(chain.from_iterable([
+        heating_stats(metrics_df, filter_0, "all_no_filter"),
+        cooling_stats(metrics_df, filter_0, "all_no_filter"),
+        heating_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
         cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold"),
-        heating_stats(mixed_humid_df, filter_0, "mixed-humid"),
-        cooling_stats(mixed_humid_df, filter_0, "mixed-humid"),
-        heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry"),
-        cooling_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry"),
-        heating_stats(hot_humid_df, filter_0, "hot-humid"),
-        cooling_stats(hot_humid_df, filter_0, "hot-humid"),
-        heating_stats(marine_df, filter_0, "marine"),
-        cooling_stats(marine_df, filter_0, "marine"),
+        heating_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
+        cooling_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
+        heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
+        heating_stats(hot_humid_df, filter_0, "hot-humid_no_filter"),
+        cooling_stats(hot_humid_df, filter_0, "hot-humid_no_filter"),
+        heating_stats(marine_df, filter_0, "marine_no_filter"),
+        cooling_stats(marine_df, filter_0, "marine_no_filter"),
 
         heating_stats(metrics_df, filter_1_heating, "all_tau_filter"),
         cooling_stats(metrics_df, filter_1_cooling, "all_tau_filter"),
@@ -805,322 +674,150 @@ def compute_summary_statistics(
         cooling_stats(hot_humid_df, filter_2_cooling, "hot-humid_tau_cvrmse_filter"),
         heating_stats(marine_df, filter_2_heating, "marine_tau_cvrmse_filter"),
         cooling_stats(marine_df, filter_2_cooling, "marine_tau_cvrmse_filter"),
+
+        heating_stats(metrics_df, filter_3_heating, "all_tau_cvrmse_savings_p01_filter"),
+        cooling_stats(metrics_df, filter_3_cooling, "all_tau_cvrmse_savings_p01_filter"),
+        heating_stats(very_cold_cold_df, filter_3_heating, "very-cold_cold_tau_cvrmse_savings_p01_filter"),
+        cooling_stats(very_cold_cold_df, filter_3_cooling, "very-cold_cold_tau_cvrmse_savings_p01_filter"),
+        heating_stats(mixed_humid_df, filter_3_heating, "mixed-humid_tau_cvrmse_savings_p01_filter"),
+        cooling_stats(mixed_humid_df, filter_3_cooling, "mixed-humid_tau_cvrmse_savings_p01_filter"),
+        heating_stats(mixed_dry_hot_dry_df, filter_3_heating, "mixed-dry_hot-dry_tau_cvrmse_savings_p01_filter"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_3_cooling, "mixed-dry_hot-dry_tau_cvrmse_savings_p01_filter"),
+        heating_stats(hot_humid_df, filter_3_heating, "hot-humid_tau_cvrmse_savings_p01_filter"),
+        cooling_stats(hot_humid_df, filter_3_cooling, "hot-humid_tau_cvrmse_savings_p01_filter"),
+        heating_stats(marine_df, filter_3_heating, "marine_tau_cvrmse_savings_p01_filter"),
+        cooling_stats(marine_df, filter_3_cooling, "marine_tau_cvrmse_savings_p01_filter"),
+
+        heating_stats(metrics_df, filter_4_heating, "all_tau_cvrmse_savings_p02_filter"),
+        cooling_stats(metrics_df, filter_4_cooling, "all_tau_cvrmse_savings_p02_filter"),
+        heating_stats(very_cold_cold_df, filter_4_heating, "very-cold_cold_tau_cvrmse_savings_p02_filter"),
+        cooling_stats(very_cold_cold_df, filter_4_cooling, "very-cold_cold_tau_cvrmse_savings_p02_filter"),
+        heating_stats(mixed_humid_df, filter_4_heating, "mixed-humid_tau_cvrmse_savings_p02_filter"),
+        cooling_stats(mixed_humid_df, filter_4_cooling, "mixed-humid_tau_cvrmse_savings_p02_filter"),
+        heating_stats(mixed_dry_hot_dry_df, filter_4_heating, "mixed-dry_hot-dry_tau_cvrmse_savings_p02_filter"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_4_cooling, "mixed-dry_hot-dry_tau_cvrmse_savings_p02_filter"),
+        heating_stats(hot_humid_df, filter_4_heating, "hot-humid_tau_cvrmse_savings_p02_filter"),
+        cooling_stats(hot_humid_df, filter_4_cooling, "hot-humid_tau_cvrmse_savings_p02_filter"),
+        heating_stats(marine_df, filter_4_heating, "marine_tau_cvrmse_savings_p02_filter"),
+        cooling_stats(marine_df, filter_4_cooling, "marine_tau_cvrmse_savings_p02_filter"),
+
+        heating_stats(metrics_df, filter_5_heating, "all_tau_cvrmse_savings_p05_filter"),
+        cooling_stats(metrics_df, filter_5_cooling, "all_tau_cvrmse_savings_p05_filter"),
+        heating_stats(very_cold_cold_df, filter_5_heating, "very-cold_cold_tau_cvrmse_savings_p05_filter"),
+        cooling_stats(very_cold_cold_df, filter_5_cooling, "very-cold_cold_tau_cvrmse_savings_p05_filter"),
+        heating_stats(mixed_humid_df, filter_5_heating, "mixed-humid_tau_cvrmse_savings_p05_filter"),
+        cooling_stats(mixed_humid_df, filter_5_cooling, "mixed-humid_tau_cvrmse_savings_p05_filter"),
+        heating_stats(mixed_dry_hot_dry_df, filter_5_heating, "mixed-dry_hot-dry_tau_cvrmse_savings_p05_filter"),
+        cooling_stats(mixed_dry_hot_dry_df, filter_5_cooling, "mixed-dry_hot-dry_tau_cvrmse_savings_p05_filter"),
+        heating_stats(hot_humid_df, filter_5_heating, "hot-humid_tau_cvrmse_savings_p05_filter"),
+        cooling_stats(hot_humid_df, filter_5_cooling, "hot-humid_tau_cvrmse_savings_p05_filter"),
+        heating_stats(marine_df, filter_5_heating, "marine_tau_cvrmse_savings_p05_filter"),
+        cooling_stats(marine_df, filter_5_cooling, "marine_tau_cvrmse_savings_p05_filter"),
     ]))
 
-# def compute_summary_statistics_by_zipcode_group(df,
-#         filepath=None, dictionary=None, group_spec=None, weights=None,
-#         target_method="dailyavg", target_error_metric="CVRMSE",
-#         target_error_max_value=np.inf, statistical_power_confidence=.95,
-#         statistical_power_ratio=.05):
-#     """ Filepath to zipcode -> group mapping. Note that this mapping should
-#     include all zipcodes that may appear in the raw output file dataframe. Any
-#     zipcodes which do not appear in the mapping but do occur in the ouput data
-#     will be ignored. The mapping can, however, include zipcodes that do not
-#     appear in the raw output data.
-#
-#     Parameters
-#     ----------
-#     filepath : str, None
-#         Path to CSV file containing the columns "zipcode" and "group".
-#         Each row should map the zipcode column to a target group. E.g.::
-#
-#             zipcode,group
-#             01234,group_a
-#             12345,group_a
-#             23456,group_a
-#             43210,groub_b
-#             54321,group_b
-#             65432,group_c
-#
-#         This creates the following grouping:
-#
-#         - **group_a**: 01234,12345,23456
-#         - **group_b**: 43210,54321
-#         - **group_c**: 65432
-#
-#     dictionary : dict, None
-#         Dictionary with zipcodes as keys and groups as values. E.g.::
-#
-#             dictionary = {
-#                 "01234": "group_a",
-#                 "12345": "group_a",
-#                 "23456": "group_a",
-#                 "43210": "group_b",
-#                 "54321": "group_b",
-#                 "65432": "group_c",
-#             }
-#
-#         This creates the following grouping:
-#
-#         - **group_a**: 01234,12345,23456
-#         - **group_b**: 43210,54321
-#         - **group_c**: 65432
-#
-#     group_spec : ZipcodeGroupSpec object
-#         Initialized group spec object containing a zipcode -> group mapping.
-#     weights : dict
-#         Object containing weightings for heating and cooling, by group.
-#     target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-#         Metric method by which samples will be filtered according to bad fits, and
-#         for which statistical power extrapolation is desired.
-#     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-#         Error metric to use when determining thermostat-core-day-set inclusion in
-#         statistics output.
-#     target_error_max_value : float, default np.inf
-#         Maximum acceptable value for error metric defined by target_error_metric.
-#     statistical_power_confidence : float in range 0 to 1, default .95
-#         Confidence interval to use in estimated statistical power calculation.
-#     statistical_power_ratio : float in range 0 to 1, default .05
-#         Ratio of standard error to mean desired in statistical power calculation.
-#
-#     Returns
-#     -------
-#     stats : list of dict
-#         List of stats dictionaries computed by group.
-#
-#     """
-#     if group_spec is not None:
-#         pass
-#     elif filepath is not None:
-#         group_spec = ZipcodeGroupSpec(filepath=filepath)
-#     elif dictionary is not None:
-#         group_spec = ZipcodeGroupSpec(dictionary=dictionary)
-#     else:
-#         message = "Please supply either the filepath of a CSV file, a" \
-#                 "dictionary, or a ZipcodeGroupSpec object"
-#         raise ValueError(message)
-#
-#     if weights is not None:
-#         with open(weights, 'r') as f:
-#             national_weights = json.load(f)
-#     else:
-#         national_weights = None
-#
-#     stats = []
-#     for label, group_df in group_spec.iter_groups(df):
-#         summary_statistics = compute_summary_statistics(group_df, label,
-#                 target_method=target_method,
-#                 target_error_metric=target_error_metric,
-#                 target_error_max_value=target_error_max_value,
-#                 statistical_power_confidence=statistical_power_confidence,
-#                 statistical_power_ratio=statistical_power_ratio)
-#         stats.extend(summary_statistics)
-#
-#     if national_weights is not None:
-#
-#         heating_groups = { component: key
-#                 for key, value in national_weights["heating"].items()
-#                 for component in value["components"]}
-#         heating_weights = { key: value["weight"]
-#                 for key, value in national_weights["heating"].items()}
-#
-#         cooling_groups = { component: key
-#                 for key, value in national_weights["cooling"].items()
-#                 for component in value["components"]}
-#         cooling_weights = { key: value["weight"]
-#                 for key, value in national_weights["cooling"].items()}
-#
-#         heating_weight_groups = heating_weights.keys()
-#         cooling_weight_groups = cooling_weights.keys()
-#         heating_values = { wg: {"means":[], "medians": [], "counts": [], "weight": heating_weights[wg]} for wg in heating_weight_groups}
-#         cooling_values = { wg: {"means":[], "medians": [], "counts": [], "weight": cooling_weights[wg]} for wg in cooling_weight_groups}
-#
-#         for stat in stats:
-#             label = stat["label"]
-#             category = label[-7:]
-#             group = label[:-8]
-#             count = stat["n_thermostat_core_day_sets_kept"]
-#
-#             if category == "heating":
-#                 if target_method == "deltaT":
-#                     method = "deltaT_heating_baseline90"
-#                 else:
-#                     method = "{}HTD_baseline90".format(target_method)
-#
-#                 weight_group = heating_groups[group]
-#                 mean_value = stat["percent_savings_{}_mean".format(method)]
-#                 median_value = stat["percent_savings_{}_q50".format(method)]
-#                 heating_values[weight_group]["means"].append(mean_value)
-#                 heating_values[weight_group]["medians"].append(median_value)
-#                 heating_values[weight_group]["counts"].append(count)
-#             else:
-#                 if target_method == "deltaT":
-#                     method = "deltaT_cooling_baseline10"
-#                 else:
-#                     method = "{}CTD_baseline10".format(target_method)
-#
-#                 weight_group = cooling_groups[group]
-#                 mean_value = stat["percent_savings_{}_mean".format(method)]
-#                 median_value = stat["percent_savings_{}_q50".format(method)]
-#                 cooling_values[weight_group]["means"].append(mean_value)
-#                 cooling_values[weight_group]["medians"].append(median_value)
-#                 cooling_values[weight_group]["counts"].append(count)
-#
-#         national_heating_mean_numerator = 0
-#         national_heating_median_numerator = 0
-#         national_heating_denominator = 0
-#         for values in heating_values.values():
-#             if len(values["means"]) == 0:
-#                 continue
-#             mean_numerator = 0
-#             median_numerator = 0
-#             denominator = 0
-#             for median, mean, count in zip(values["means"], values["medians"], values["counts"]):
-#                 median_numerator += median * count
-#                 mean_numerator += mean * count
-#                 denominator += count
-#             try:
-#                 national_heating_mean_numerator += (mean_numerator / denominator) * values["weight"]
-#                 national_heating_median_numerator += (median_numerator / denominator) * values["weight"]
-#                 national_heating_denominator += values["weight"]
-#             except ZeroDivisionError:
-#                 pass
-#
-#         try:
-#             heating_mean = (national_heating_mean_numerator / national_heating_denominator)
-#         except ZeroDivisionError:
-#             heating_mean = np.nan
-#         try:
-#             heating_median = (national_heating_median_numerator / national_heating_denominator)
-#         except ZeroDivisionError:
-#             heating_median = np.nan
-#
-#         national_cooling_mean_numerator = 0
-#         national_cooling_median_numerator = 0
-#         national_cooling_denominator = 0
-#         for values in cooling_values.values():
-#             if len(values["means"]) == 0:
-#                 continue
-#             mean_numerator = 0
-#             median_numerator = 0
-#             denominator = 0
-#             for median, mean, count in zip(values["means"], values["medians"], values["counts"]):
-#                 median_numerator += median * count
-#                 mean_numerator += mean * count
-#                 denominator += count
-#             try:
-#                 national_cooling_mean_numerator += (mean_numerator / denominator) * values["weight"]
-#                 national_cooling_median_numerator += (median_numerator / denominator) * values["weight"]
-#                 national_cooling_denominator += values["weight"]
-#             except ZeroDivisionError:
-#                 pass
-#
-#         try:
-#             cooling_mean = (national_cooling_mean_numerator / national_cooling_denominator)
-#         except ZeroDivisionError:
-#             cooling_mean = np.nan
-#         try:
-#             cooling_median = (national_cooling_median_numerator / national_cooling_denominator)
-#         except ZeroDivisionError:
-#             cooling_median = np.nan
-#
-#
-#         if target_method == "deltaT":
-#             method = "deltaT_heating_baseline90"
-#         else:
-#             method = "{}HTD_baseline90".format(target_method)
-#         stats.append({
-#             "label": "national_heating",
-#             "percent_savings_{}_mean_national_weighted_mean".format(method): heating_mean,
-#             "percent_savings_{}_q50_national_weighted_mean".format(method): heating_median,
-#         })
-#
-#         if target_method == "deltaT":
-#             method = "deltaT_cooling_baseline10"
-#         else:
-#             method = "{}CTD_baseline10".format(target_method)
-#         stats.append({
-#             "label": "national_cooling",
-#             "percent_savings_{}_mean_national_weighted_mean".format(method): cooling_mean,
-#             "percent_savings_{}_q50_national_weighted_mean".format(method): cooling_median,
-#         })
-#
-#     return stats
-#
-#
-# def compute_summary_statistics_by_zipcode(df, target_method="dailyavg",
-#         target_error_metric="CVRMSE", target_error_max_value=np.inf,
-#         statistical_power_confidence=.95, statistical_power_ratio=.05):
-#     """ Compute summary statistics for a particular dataframe by zipcode.
-#
-#     Parameters
-#     ----------
-#     df : pd.Dataframe
-#         Contains combined (not yet grouped) output data for all thermostats in
-#         the sample.
-#     target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-#         Metric method by which samples will be filtered according to bad fits, and
-#         for which statistical power extrapolation is desired.
-#     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-#         Error metric to use when determining thermostat-core-day-set inclusion in
-#         statistics output.
-#     target_error_max_value : float, default np.inf
-#         Maximum acceptable value for error metric defined by target_error_metric.
-#     statistical_power_confidence : float in range 0 to 1, default .95
-#         Confidence interval to use in estimated statistical power calculation.
-#     statistical_power_ratio : float in range 0 to 1, default .05
-#         Ratio of standard error to mean desired in statistical power calculation.
-#
-#     Returns
-#     -------
-#     stats : list of dict
-#         Summary statistics for the input dataframe grouped by USPS ZIP code.
-#     """
-#     # Map zipcodes to themselves.
-#     zipcode_dict = { z: z for z in _load_zipcode_to_lat_lng_index().keys()}
-#     group_spec = ZipcodeGroupSpec(dictionary=zipcode_dict)
-#
-#     stats = compute_summary_statistics_by_zipcode_group(df,
-#             group_spec=group_spec,
-#             target_method=target_method,
-#             target_error_metric=target_error_metric,
-#             target_error_max_value=target_error_max_value,
-#             statistical_power_confidence=statistical_power_confidence,
-#             statistical_power_ratio=statistical_power_ratio)
-#     return stats
-#
-# def compute_summary_statistics_by_weather_station(df, target_method="dailyavg",
-#         target_error_metric="CVRMSE", target_error_max_value=np.inf,
-#         statistical_power_confidence=.95, statistical_power_ratio=.05):
-#     """ Compute summary statistics for a particular dataframe by weather
-#     weather station used to find outdoor temperature data
-#
-#     Parameters
-#     ----------
-#     df : pd.Dataframe
-#         Contains combined (not yet grouped) output data for all thermostats in
-#         the sample.
-#     target_method : {"dailyavg", "hourlyavg", "deltaT"}, default "dailyavg"
-#         Metric method by which samples will be filtered according to bad fits, and
-#         for which statistical power extrapolation is desired.
-#     target_error_metric : {"MSE", "RMSE", "CVRMSE", "MAE", "MAPE"}, default "CVRMSE"
-#         Error metric to use when determining thermostat-core-day-set inclusion in
-#         statistics output.
-#     target_error_max_value : float, default np.inf
-#         Maximum acceptable value for error metric defined by target_error_metric.
-#     statistical_power_confidence : float in range 0 to 1, default .95
-#         Confidence interval to use in estimated statistical power calculation.
-#     statistical_power_ratio : float in range 0 to 1, default .05
-#         Ratio of standard error to mean desired in statistical power calculation.
-#
-#     Returns
-#     -------
-#     stats : list of dict
-#         Summary statistics for the input dataframe grouped by weather station
-#         used to find outdoor temperature data.
-#     """
-#     # Map zipcodes to stations. This is the same mapping used to match outdoor
-#     # temperature data.
-#     zipcode_dict = _load_zipcode_to_station_index()
-#     group_spec = ZipcodeGroupSpec(dictionary=zipcode_dict)
-#
-#     stats = compute_summary_statistics_by_zipcode_group(df, group_spec=group_spec,
-#         target_method=target_method,
-#         target_error_metric=target_error_metric,
-#         target_error_max_value=target_error_max_value,
-#         statistical_power_confidence=statistical_power_confidence,
-#         statistical_power_ratio=statistical_power_ratio)
-#     return stats
+    stats_dict = {stat["label"]: stat for stat in stats}
+
+    def _load_climate_zone_weights(filename_or_buffer):
+        climate_zone_keys = {
+            "Very-Cold/Cold": "very-cold_cold",
+            "Mixed-Humid": "mixed-humid",
+            "Mixed-Dry/Hot-Dry": "mixed-dry_hot-dry",
+            "Hot-Humid": "hot-humid",
+            "Marine": "marine",
+        }
+        df = pd.read_csv(
+            filename_or_buffer,
+            usecols=["climate_zone", "heating_weight", "cooling_weight"],
+        ).set_index("climate_zone")
+
+        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].iteritems()}
+        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].iteritems()}
+
+        return heating_weights, cooling_weights
+
+    with resource_stream('thermostat.resources', 'NationalAverageClimateZoneWeightings.csv') as f:
+        heating_weights, cooling_weights = _load_climate_zone_weights(f)
+
+    def _compute_national_weightings(stats_by_climate_zone, keys, weights):
+        def _national_weight(key):
+            results = []
+            for cz, weight in weights.items():
+                stat_cz = stats_by_climate_zone.get(cz)
+                if stat_cz is None:
+                    value = None
+                else:
+                    value = stat_cz.get(key)
+                if pd.notnull(weight) and pd.notnull(value):
+                    results.append((weight, value))
+            if len(results) == 0:
+                return None
+            else:
+                return sum([r[0] * r[1] for r in results]) / sum([r[0] for r in results])
+
+        return {"{}_{}".format(key, "national_weighted_mean"): _national_weight(key) for key in keys}
+
+    national_weighting_stats = []
+
+    filters = [
+        "no_filter",
+        "tau_filter",
+        "tau_cvrmse_filter",
+        "tau_cvrmse_savings_p01_filter",
+        "tau_cvrmse_savings_p02_filter",
+        "tau_cvrmse_savings_p05_filter",
+    ]
+    climate_zones = [
+        "mixed-humid",
+        "mixed-dry_hot-dry",
+        "marine",
+        "hot-humid",
+        "very-cold_cold"
+    ]
+    heating_methods = [
+        "deltaT_heating_baseline90",
+        "deltaT_heating_baseline_regional",
+        "dailyavgHTD_baseline90",
+        "dailyavgHTD_baseline_regional",
+        "hourlyavgHTD_baseline90",
+        "hourlyavgHTD_baseline_regional",
+    ]
+    cooling_methods = [
+        "deltaT_cooling_baseline10",
+        "deltaT_cooling_baseline_regional",
+        "dailyavgCTD_baseline10",
+        "dailyavgCTD_baseline_regional",
+        "hourlyavgCTD_baseline10",
+        "hourlyavgCTD_baseline_regional",
+    ]
+    for season_type in ["heating", "cooling"]:
+        if season_type == "heating":
+            weights = heating_weights
+            methods = heating_methods
+        else:
+            weights = cooling_weights
+            methods = cooling_methods
+
+        for filter_ in filters:
+            stats_by_climate_zone = {
+                cz: stats_dict.get("{}_{}_{}".format(cz, filter_, season_type))
+                for cz in climate_zones
+            }
+
+            keys = list(chain.from_iterable([
+                ["percent_savings_{}_mean".format(method) for method in methods],
+                ["percent_savings_{}_q50".format(method) for method in methods],
+                ["percent_savings_{}_lower_bound_95_perc_conf".format(method) for method in methods],
+            ]))
+
+            national_weightings = _compute_national_weightings(
+                stats_by_climate_zone, keys, weights)
+            national_weightings.update({"label": "national_weighted_mean_{}".format(filter_)})
+            national_weighting_stats.append(national_weightings)
+
+    stats.extend(national_weighting_stats)
+
+    return stats
+
 
 def summary_statistics_to_csv(stats, filepath):
     """ Write metric statistics to CSV file.
@@ -1148,42 +845,39 @@ def summary_statistics_to_csv(stats, filepath):
         "n_enough_statistical_power"
     ]
     for column_name in REAL_OR_INTEGER_VALUED_COLUMNS_ALL:
-        columns.append("{}_mean".format(column_name))
-        columns.append("{}_sem".format(column_name))
         columns.append("{}_n".format(column_name))
+        columns.append("{}_upper_bound_95_perc_conf".format(column_name))
+        columns.append("{}_mean".format(column_name))
+        columns.append("{}_lower_bound_95_perc_conf".format(column_name))
+        columns.append("{}_sem".format(column_name))
         for quantile in quantiles:
             columns.append("{}_q{}".format(column_name, quantile))
 
-    columns += [
-        "percent_savings_dailyavgCTD_baseline10_mean_national_weighted_mean",
-        "percent_savings_dailyavgHTD_baseline90_mean_national_weighted_mean",
-        "percent_savings_deltaT_cooling_baseline10_mean_national_weighted_mean",
-        "percent_savings_deltaT_heating_baseline90_mean_national_weighted_mean",
-        "percent_savings_hourlyavgCTD_baseline10_mean_national_weighted_mean",
-        "percent_savings_hourlyavgHTD_baseline90_mean_national_weighted_mean",
-
-        "percent_savings_dailyavgCTD_baseline10_q50_national_weighted_mean",
-        "percent_savings_dailyavgHTD_baseline90_q50_national_weighted_mean",
-        "percent_savings_deltaT_cooling_baseline10_q50_national_weighted_mean",
-        "percent_savings_deltaT_heating_baseline90_q50_national_weighted_mean",
-        "percent_savings_hourlyavgCTD_baseline10_q50_national_weighted_mean",
-        "percent_savings_hourlyavgHTD_baseline90_q50_national_weighted_mean",
-
-        "percent_savings_dailyavgCTD_baseline_regional_mean_national_weighted_mean",
-        "percent_savings_dailyavgHTD_baseline_regional_mean_national_weighted_mean",
-        "percent_savings_deltaT_cooling_baseline_regional_mean_national_weighted_mean",
-        "percent_savings_deltaT_heating_baseline_regional_mean_national_weighted_mean",
-        "percent_savings_hourlyavgCTD_baseline_regional_mean_national_weighted_mean",
-        "percent_savings_hourlyavgHTD_baseline_regional_mean_national_weighted_mean",
-
-        "percent_savings_dailyavgCTD_baseline_regional_q50_national_weighted_mean",
-        "percent_savings_dailyavgHTD_baseline_regional_q50_national_weighted_mean",
-        "percent_savings_deltaT_cooling_baseline_regional_q50_national_weighted_mean",
-        "percent_savings_deltaT_heating_baseline_regional_q50_national_weighted_mean",
-        "percent_savings_hourlyavgCTD_baseline_regional_q50_national_weighted_mean",
-        "percent_savings_hourlyavgHTD_baseline_regional_q50_national_weighted_mean",
+    methods = [
+        "deltaT_heating_baseline90",
+        "deltaT_heating_baseline_regional",
+        "dailyavgHTD_baseline90",
+        "dailyavgHTD_baseline_regional",
+        "hourlyavgHTD_baseline90",
+        "hourlyavgHTD_baseline_regional",
+        "deltaT_cooling_baseline10",
+        "deltaT_cooling_baseline_regional",
+        "dailyavgCTD_baseline10",
+        "dailyavgCTD_baseline_regional",
+        "hourlyavgCTD_baseline10",
+        "hourlyavgCTD_baseline_regional",
     ]
+    national_weighting_columns = list(chain.from_iterable([
+        [
+            "percent_savings_{}_mean_national_weighted_mean".format(method),
+            "percent_savings_{}_q50_national_weighted_mean".format(method),
+            "percent_savings_{}_lower_bound_95_perc_conf_national_weighted_mean".format(method),
+        ] for method in methods
+    ]))
 
+    columns.extend(national_weighting_columns)
+
+    # transpose for readability.
     stats_dataframe = pd.DataFrame(stats, columns=columns).set_index('label').transpose()
     stats_dataframe.to_csv(filepath)
     return stats_dataframe

@@ -2,15 +2,15 @@ from thermostat.core import Thermostat
 
 import pandas as pd
 import numpy as np
-from eemeter.location import zipcode_to_station
+from eemeter.weather.location import zipcode_to_usaf_station
 from eemeter.weather import ISDWeatherSource
-from eemeter.evaluation import Period
 
 import warnings
 from datetime import datetime
 from datetime import timedelta
 import dateutil.parser
 import os
+import pytz
 
 def from_csv(metadata_filename, verbose=False):
     """
@@ -97,6 +97,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, in
     dates = pd.to_datetime(df["date"])
     daily_index = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0], freq="D")
     hourly_index = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0] * 24, freq="H")
+    hourly_index_utc = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0] * 24, freq="H", tz=pytz.UTC)
 
     # raise an error if dates are not aligned
     if not all(dates == daily_index):
@@ -125,16 +126,17 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, in
         emergency_heat_runtime = None
 
     # load outdoor temperatures
-    station = zipcode_to_station(zipcode)
+    station = zipcode_to_usaf_station(zipcode)
 
     if station is None:
         message = "Could not locate a valid source of outdoor temperature " \
                 "data for ZIP code {}".format(zipcode)
         raise ValueError(message)
 
-    ws_hourly = ISDWeatherSource(station, daily_index[0].year, daily_index[-1].year)
+    ws_hourly = ISDWeatherSource(station)
     utc_offset = dateutil.parser.parse("2000-01-01T00:00:00" + utc_offset).tzinfo.utcoffset(None)
-    temp_out = pd.Series(_get_outdoor_temperatures(daily_index, ws_hourly, utc_offset), hourly_index)
+    temp_out = ws_hourly.indexed_temperatures(hourly_index_utc - utc_offset, "degF")
+    temp_out.index = hourly_index
 
     # load daily time series values
     if cooling:
@@ -157,15 +159,6 @@ def _get_hourly_block(df, prefix):
     columns = ["{}_{:02d}".format(prefix, i) for i in range(24)]
     values = df[columns].values
     return values.reshape((values.shape[0] * values.shape[1],))
-
-def _get_outdoor_temperatures(dates, ws_hourly, utc_offset):
-    all_temps = []
-    for date in dates:
-        date = date - utc_offset
-        period = Period(date, date + timedelta(days=1))
-        temps = ws_hourly.hourly_temperatures(period, "degF")
-        all_temps.append(temps)
-    return np.array(all_temps).reshape(dates.shape[0] * 24)
 
 def _get_equipment_type(equipment_type):
     """

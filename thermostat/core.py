@@ -1062,7 +1062,7 @@ class Thermostat(object):
             df = pd.read_csv(
                 filename_or_buffer,
                 usecols=["zipcode", "group"],
-                dtype={"zipcode": str, "group": str}
+                dtype={"zipcode": str, "group": str},
             ).set_index('zipcode').drop('zipcode')
             df = df.where((pd.notnull(df)), None)
 
