@@ -35,8 +35,9 @@ setup(name='thermostat',
     cmdclass = {'test': PyTest},
     keywords='thermostat savings EPA',
     packages=find_packages(),
+    package_data={'': ['*.csv']},
     install_requires=[
-        'eemeter==0.3.20',
+        'eemeter==0.4.8',
         'pandas==0.18.1',
     ],
 )
