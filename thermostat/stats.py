@@ -629,11 +629,11 @@ def compute_summary_statistics(
     filter_2_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating])
     filter_2_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling])
     filter_3_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p01_heating])
-    filter_3_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p01_heating])
+    filter_3_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p01_cooling])
     filter_4_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p02_heating])
-    filter_4_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p02_heating])
+    filter_4_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p02_cooling])
     filter_5_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p05_heating])
-    filter_5_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p05_heating])
+    filter_5_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p05_cooling])
 
     stats = list(chain.from_iterable([
         heating_stats(metrics_df, filter_0, "all_no_filter"),
