@@ -64,6 +64,8 @@ use the :code:`--no-deps` flag:
 
     $ pip install thermostat --upgrade --no-deps
 
+Previous versions of the package are available on `github <https://github.com/openeemeter/thermostat/releases>`.
+
 .. note::
 
     If you experience issues installing python packages with C extensions, such
@@ -75,6 +77,24 @@ use the :code:`--no-deps` flag:
 
 Once you have verified a correct installation, import the necessary methods
 and set a directory for finding and storing data.
+
+.. note::
+
+    If you suspect a package version conflict or error, you can verify the
+    versions of the packages you have installed against the package
+    versions in :download:`thermostatreqnotes.txt <../thermostatreqnotes.txt>`.
+
+    To list your package versions, use:
+
+    .. code-block:: bash
+
+        $ pip freeze
+
+    or (if you're using Anaconda):
+
+    .. code-block:: bash
+
+        $ conda list
 
 Script setup and imports
 ------------------------
@@ -225,10 +245,16 @@ thermostats, as determined by grouping by EIC climate zone and applying
 various filtering methods. National weighted averages will be available near
 the bottom of the file.
 
+At this point, you will also need to provide an alphanumeric product identifier
+for the connected thermostat; e.g. a combination of the connected thermostat
+service plus one or more connected thermostat device models that comprises the
+data set.
+
 .. code-block:: python
 
+    product_id = "INSERT ALPHANUMERIC PRODUCT ID HERE"
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    stats_df = summary_statistics_to_csv(stats, stats_filepath)
+    stats_df = summary_statistics_to_csv(stats, stats_filepath, product_id)
 
 More information
 ----------------
@@ -314,8 +340,8 @@ Name                         Data Format             Units    Description
 
    - :code:`0`: Other – e.g. multi-zone multi-stage, modulating. Note: module will
      not output savings data for this type.
-   - :code:`1`: Single stage heat pump with aux and/or emergency heat
-   - :code:`2`: Single stage heat pump without aux or emergency heat
+   - :code:`1`: Single stage heat pump with electric resistance aux and/or emergency heat (i.e., strip heat)
+   - :code:`2`: Single stage heat pump without additional and/or supplemental heating sources (excludes aux/emergency heat as well as dual fuel systems, i.e., heat pump plus gas- or oil-fired furnace)
    - :code:`3`: Single stage non heat pump with single-stage central air conditioning
    - :code:`4`: Single stage non heat pump without central air conditioning
    - :code:`5`: Single stage central air conditioning without central heating
@@ -507,6 +533,8 @@ Summary Statistics
 For each real- or integer-valued column ("###") from the individual thermostat-season
 output, the following summary statistics are generated.
 
+(For readability, these columns are actually rows.)
+
 Columns
 ```````
 
@@ -540,14 +568,13 @@ Columns
    ":code:`n_thermostat_core_day_sets_total`","Number of relevant rows from thermostat module output before filtering"
    ":code:`n_thermostat_core_day_sets_kept`","Number of relevant rows from thermostat module not filtered out"
    ":code:`n_thermostat_core_day_sets_discarded`","Number of relevant rows from thermostat module filtered out"
-   ":code:`n_enough_statistical_power`","Estimate of number of rows needed for sufficient statistical power (diagnostic)"
 
 The following national weighted percent savings columns are also available.
 
 National savings are computed by weighted average of percent savings results
 grouped by climate zone. Heavier weights are applied to results in climate
 zones which, regionally, tend to have longer runtimes. Weightings used are
-available :download:`for download <./resources/NationalAverageClimateZoneWeightings.csv>`.
+available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
 
 Columns
 ```````

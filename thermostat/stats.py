@@ -391,26 +391,6 @@ def get_filtered_stats(
         heating_or_cooling, target_columns,
         target_demand_method, target_baseline_method):
 
-    def _statistical_power_estimate(
-            stats, statistical_power_confidence, statistical_power_ratio,
-            heating_or_cooling, target_demand_method, target_baseline_method):
-
-        method = _get_method(heating_or_cooling, target_demand_method, target_baseline_method)
-
-        stat_power_target_mean = "percent_savings_{}_mean".format(method)
-        stat_power_target_sem = "percent_savings_{}_sem".format(method)
-        stat_power_target_n = "percent_savings_{}_n".format(method)
-
-        mean = stats[stat_power_target_mean]
-        sem = stats[stat_power_target_sem]
-        n = stats[stat_power_target_n]
-
-        n_std_devs = norm.ppf(1 - (1 - statistical_power_confidence)/2)
-        std = sem * (n**.5)
-        target_interval = mean * statistical_power_ratio
-        target_n = (std * n_std_devs / target_interval) ** 2.
-        return target_n
-
     n_rows_total = df.shape[0]
 
     filtered_df = df[[row_filter(row, df) for i, row in df.iterrows()]]
@@ -427,8 +407,6 @@ def get_filtered_stats(
 
     if n_rows_total > 0:
 
-        quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-
         for column_name in target_columns:
             column = filtered_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
 
@@ -443,12 +421,8 @@ def get_filtered_stats(
             stats["{}_lower_bound_95_perc_conf".format(column_name)] = lower_bound
             stats["{}_sem".format(column_name)] = sem
 
-            for quantile in quantiles:
+            for quantile in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
                 stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
-
-        stats["n_enough_statistical_power"] = _statistical_power_estimate(
-                stats, statistical_power_confidence, statistical_power_ratio,
-                heating_or_cooling, target_demand_method, target_baseline_method)
 
         return [stats]
     else:
@@ -752,9 +726,76 @@ def compute_summary_statistics(
             if len(results) == 0:
                 return None
             else:
-                return sum([r[0] * r[1] for r in results]) / sum([r[0] for r in results])
+                weighted_sum = sum([weight * value for weight, value in results])
+                sum_of_weights = sum([weight for weight, _ in results])
+                return weighted_sum / sum_of_weights
 
-        return {"{}_{}".format(key, "national_weighted_mean"): _national_weight(key) for key in keys}
+        stats = [
+            "mean",
+            "q10",
+            "q20",
+            "q30",
+            "q40",
+            "q50",
+            "q60",
+            "q70",
+            "q80",
+            "q90",
+        ]
+
+        key_stats = [
+            "{}_{}".format(key, stat)
+            for key in keys for stat in stats
+        ]
+
+        return {
+            "{}_{}".format(key_stat, "national_weighted_mean"): _national_weight(key_stat)
+            for key_stat in key_stats
+        }
+
+    def _compute_national_weighting_lower_and_upper_bounds(stats_by_climate_zone, keys, weights):
+
+        def _compute_bounds(key):
+
+            # compute sem savings
+            means, sems, weights_ = [], [], []
+            for cz, weight in weights.items():
+                stat_cz = stats_by_climate_zone.get(cz)
+                if stat_cz is None:
+                    mean, sem = None, None
+                else:
+                    mean = stat_cz.get("{}_mean".format(key), None)
+                    sem = stat_cz.get("{}_sem".format(key), None)
+
+                if pd.notnull(weight) and pd.notnull(mean) and pd.notnull(sem):
+                    weights_.append(weight)
+                    means.append(mean)
+                    sems.append(sem)
+
+            if len(weights_) == 0:
+                return {}
+            else:
+                weighted_sum = sum([
+                    weight * mean for weight, mean in zip(weights_, means)
+                ])
+                weighted_mean = weighted_sum / sum(weights_)  # renormalize
+
+                weighted_sem = sum([
+                    (weight*sem) ** 2 for weight, sem in zip(weights_, sems)
+                ]) ** 0.5
+
+                lower_bound = weighted_mean - (1.96 * weighted_sem)
+                upper_bound = weighted_mean + (1.96 * weighted_sem)
+
+                return {
+                    "{}_lower_bound_95_perc_conf_national_weighted_mean".format(key): lower_bound,
+                    "{}_upper_bound_95_perc_conf_national_weighted_mean".format(key): upper_bound
+                }
+
+        items = {}
+        for key in keys:
+            items.update(_compute_bounds(key))
+        return items
 
     national_weighting_stats = []
 
@@ -803,15 +844,19 @@ def compute_summary_statistics(
                 for cz in climate_zones
             }
 
-            keys = list(chain.from_iterable([
-                ["percent_savings_{}_mean".format(method) for method in methods],
-                ["percent_savings_{}_q50".format(method) for method in methods],
-                ["percent_savings_{}_lower_bound_95_perc_conf".format(method) for method in methods],
-            ]))
+            keys = ["percent_savings_{}".format(method) for method in methods]
 
             national_weightings = _compute_national_weightings(
                 stats_by_climate_zone, keys, weights)
-            national_weightings.update({"label": "national_weighted_mean_{}".format(filter_)})
+
+            bounds = _compute_national_weighting_lower_and_upper_bounds(
+                stats_by_climate_zone, keys, weights)
+            national_weightings.update(bounds)
+
+            national_weightings.update(
+                {"label": "national_weighted_mean_{}".format(filter_)}
+            )
+
             national_weighting_stats.append(national_weightings)
 
     stats.extend(national_weighting_stats)
@@ -819,7 +864,7 @@ def compute_summary_statistics(
     return stats
 
 
-def summary_statistics_to_csv(stats, filepath):
+def summary_statistics_to_csv(stats, filepath, product_id):
     """ Write metric statistics to CSV file.
 
     Parameters
@@ -835,23 +880,12 @@ def summary_statistics_to_csv(stats, filepath):
         A pandas dataframe containing the output data.
 
     """
-    quantiles = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+
     columns = [
         "label",
+        "product_id",
         "sw_version",
-        "n_thermostat_core_day_sets_total",
-        "n_thermostat_core_day_sets_kept",
-        "n_thermostat_core_day_sets_discarded",
-        "n_enough_statistical_power"
     ]
-    for column_name in REAL_OR_INTEGER_VALUED_COLUMNS_ALL:
-        columns.append("{}_n".format(column_name))
-        columns.append("{}_upper_bound_95_perc_conf".format(column_name))
-        columns.append("{}_mean".format(column_name))
-        columns.append("{}_lower_bound_95_perc_conf".format(column_name))
-        columns.append("{}_sem".format(column_name))
-        for quantile in quantiles:
-            columns.append("{}_q{}".format(column_name, quantile))
 
     methods = [
         "deltaT_heating_baseline90",
@@ -867,15 +901,43 @@ def summary_statistics_to_csv(stats, filepath):
         "hourlyavgCTD_baseline10",
         "hourlyavgCTD_baseline_regional",
     ]
+
     national_weighting_columns = list(chain.from_iterable([
         [
             "percent_savings_{}_mean_national_weighted_mean".format(method),
+            "percent_savings_{}_q10_national_weighted_mean".format(method),
+            "percent_savings_{}_q20_national_weighted_mean".format(method),
+            "percent_savings_{}_q30_national_weighted_mean".format(method),
+            "percent_savings_{}_q40_national_weighted_mean".format(method),
             "percent_savings_{}_q50_national_weighted_mean".format(method),
+            "percent_savings_{}_q60_national_weighted_mean".format(method),
+            "percent_savings_{}_q70_national_weighted_mean".format(method),
+            "percent_savings_{}_q80_national_weighted_mean".format(method),
+            "percent_savings_{}_q90_national_weighted_mean".format(method),
             "percent_savings_{}_lower_bound_95_perc_conf_national_weighted_mean".format(method),
+            "percent_savings_{}_upper_bound_95_perc_conf_national_weighted_mean".format(method),
         ] for method in methods
     ]))
 
     columns.extend(national_weighting_columns)
+
+    columns.extend([
+        "n_thermostat_core_day_sets_total",
+        "n_thermostat_core_day_sets_kept",
+        "n_thermostat_core_day_sets_discarded",
+    ])
+    for column_name in REAL_OR_INTEGER_VALUED_COLUMNS_ALL:
+        columns.append("{}_n".format(column_name))
+        columns.append("{}_upper_bound_95_perc_conf".format(column_name))
+        columns.append("{}_mean".format(column_name))
+        columns.append("{}_lower_bound_95_perc_conf".format(column_name))
+        columns.append("{}_sem".format(column_name))
+        for quantile in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
+            columns.append("{}_q{}".format(column_name, quantile))
+
+    # add product_id
+    for row in stats:
+        row["product_id"] = product_id
 
     # transpose for readability.
     stats_dataframe = pd.DataFrame(stats, columns=columns).set_index('label').transpose()

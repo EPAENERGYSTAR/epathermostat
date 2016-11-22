@@ -93,10 +93,11 @@ class Thermostat(object):
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
 
 
-    def __init__(self, thermostat_id, equipment_type, zipcode, station, temperature_in,
-                 temperature_out, cooling_setpoint, heating_setpoint,
-                 cool_runtime, heat_runtime, auxiliary_heat_runtime,
-                 emergency_heat_runtime):
+    def __init__(
+            self, thermostat_id, equipment_type, zipcode, station,
+            temperature_in, temperature_out, cooling_setpoint,
+            heating_setpoint, cool_runtime, heat_runtime,
+            auxiliary_heat_runtime, emergency_heat_runtime):
 
         self.thermostat_id = thermostat_id
         self.equipment_type = equipment_type
@@ -191,7 +192,7 @@ class Thermostat(object):
             raise ValueError(message)
 
     def get_core_heating_days(self, method="entire_dataset",
-            min_minutes_heating=60, max_minutes_cooling=0):
+            min_minutes_heating=30, max_minutes_cooling=0):
         """ Get all data for core heating days for data associated with this
         thermostat
 
@@ -206,7 +207,7 @@ class Thermostat(object):
               of total heating and no cooling) from July 1 to June 30
               (inclusive) into individual core heating day sets. May overlap
               with core cooling day sets.
-        min_minutes_heating : int, default 60
+        min_minutes_heating : int, default 30
             Number of minutes of heating runtime per day required for inclusion
             in core heating day set.
         max_minutes_cooling : int, default 0
@@ -299,7 +300,7 @@ class Thermostat(object):
             return core_heating_day_sets
 
     def get_core_cooling_days(self, method="entire_dataset",
-            min_minutes_cooling=60, max_minutes_heating=0):
+            min_minutes_cooling=30, max_minutes_heating=0):
         """ Get all data for core cooling days for data associated with this
         thermostat.
 
@@ -313,7 +314,7 @@ class Thermostat(object):
             - "year_end_to_end": groups all cooling days (days with >= 1 hour
               of total cooling and no heating) from January 1 to December 31
               into individual core cooling sets.
-        min_minutes_cooling : int, default 0
+        min_minutes_cooling : int, default 30
             Number of minutes of core cooling runtime per day required for
             inclusion in core cooling day set.
         max_minutes_heating : int, default 0
@@ -500,19 +501,26 @@ class Thermostat(object):
         if self.equipment_type == 1:
             RHUs = []
 
-            in_core_day_set = self._get_range_boolean(
-                core_heating_day_set.hourly.index,
+            in_core_day_set_daily = self._get_range_boolean(
+                core_heating_day_set.daily.index,
                 core_heating_day_set.start_date,
                 core_heating_day_set.end_date)
 
+
+            # convert to daily
+            temp_out_daily = self.temperature_out.resample('D').mean()
+            aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
+            emg_daily = self.emergency_heat_runtime.resample('D').sum()
+
             temperature_bins = [(i, i+5) for i in range(0, 60, 5)]
             for low_temp, high_temp in temperature_bins:
-                temp_low_enough = self.temperature_out < high_temp
-                temp_high_enough = self.temperature_out >= low_temp
-                temp_bin = temp_low_enough & temp_high_enough & in_core_day_set
-                R_heat = self.heat_runtime[temp_bin].sum()
-                R_aux = self.auxiliary_heat_runtime[temp_bin].sum()
-                R_emg = self.emergency_heat_runtime[temp_bin].sum()
+                temp_low_enough_daily = temp_out_daily < high_temp
+                temp_high_enough_daily = temp_out_daily >= low_temp
+
+                temp_bin_daily = temp_low_enough_daily & temp_high_enough_daily & in_core_day_set_daily
+                R_heat = self.heat_runtime[temp_bin_daily].sum()
+                R_aux = aux_daily[temp_bin_daily].sum()
+                R_emg = emg_daily[temp_bin_daily].sum()
                 try:
                     rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
                 except ZeroDivisionError:

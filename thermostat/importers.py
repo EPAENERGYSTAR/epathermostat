@@ -28,15 +28,23 @@ def from_csv(metadata_filename, verbose=False):
     thermostats : iterator over thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
-    metadata = pd.read_csv(metadata_filename,
-            dtype={"thermostat_id": str, "zipcode": str, "utc_offset": str, "equipment_type": int, "interval_data_filename": str})
+    metadata = pd.read_csv(
+        metadata_filename,
+        dtype={
+            "thermostat_id": str,
+            "zipcode": str,
+            "utc_offset": str,
+            "equipment_type": int,
+            "interval_data_filename": str
+        }
+    )
 
     for i, row in metadata.iterrows():
         if verbose:
             print("Importing thermostat {}".format(row.thermostat_id))
 
         # make sure this thermostat type is supported.
-        if row.equipment_type not in [1,2,3,4,5]:
+        if row.equipment_type not in [1, 2, 3, 4, 5]:
             warnings.warn("Skipping import of thermostat controlling equipment"
                           " of unsupported type. (id={})".format(row.thermostat_id))
             continue
@@ -65,7 +73,8 @@ def from_csv(metadata_filename, verbose=False):
 
         yield thermostat
 
-def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, interval_data_filename):
+def get_single_thermostat(thermostat_id, zipcode, equipment_type,
+                          utc_offset, interval_data_filename):
     """ Load a single thermostat directly from an interval data file.
 
     Parameters
@@ -149,10 +158,20 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type, utc_offset, in
         heat_runtime = None
 
     # create thermostat instance
-    thermostat = Thermostat(thermostat_id, equipment_type, zipcode, station,
-            temp_in, temp_out, cooling_setpoint, heating_setpoint,
-            cool_runtime, heat_runtime, auxiliary_heat_runtime,
-            emergency_heat_runtime)
+    thermostat = Thermostat(
+        thermostat_id,
+        equipment_type,
+        zipcode,
+        station,
+        temp_in,
+        temp_out,
+        cooling_setpoint,
+        heating_setpoint,
+        cool_runtime,
+        heat_runtime,
+        auxiliary_heat_runtime,
+        emergency_heat_runtime
+    )
     return thermostat
 
 def _get_hourly_block(df, prefix):

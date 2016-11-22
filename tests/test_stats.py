@@ -389,16 +389,17 @@ def test_combine_output_dataframes(dataframes):
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
-        1154, 958, 1154, 958, 1154, 958, 1154, 958, 1154, 958, 1154, 958,
-        19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19
+        1153, 957, 1153, 957, 1153, 957, 1153, 957, 1153, 957, 1153, 957,
+        61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61
     ]
 
 def test_summary_statistics_to_csv(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
 
     _, fname = tempfile.mkstemp()
-    stats_df = summary_statistics_to_csv(summary_statistics, fname)
+    product_id = "FAKE"
+    stats_df = summary_statistics_to_csv(summary_statistics, fname, product_id)
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (2099, 25)
+    assert stats_df_reread.shape == (2207, 25)

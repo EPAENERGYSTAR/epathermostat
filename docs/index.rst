@@ -13,10 +13,6 @@ Usage
    :maxdepth: 2
 
    tutorial
-
-.. toctree::
-   :maxdepth: 2
-
    api
 
 License
