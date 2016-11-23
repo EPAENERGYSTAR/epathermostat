@@ -15,7 +15,7 @@ class PyTest(Command):
     def run(self):
         import subprocess
         import sys
-        errno = subprocess.call([sys.executable, 'runtests.py', '--runslow', '--cov-report', 'term-missing', '--cov', 'thermostat'  ])
+        errno = subprocess.call([sys.executable, 'runtests.py', '--runslow', '--assert=plain', '--verbose','--cov-report', 'term-missing', '--cov', 'thermostat'  ])
         raise SystemExit(errno)
 
 
