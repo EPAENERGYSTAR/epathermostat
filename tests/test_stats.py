@@ -179,7 +179,7 @@ def test_combine_output_dataframes(dataframes):
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
-        21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
+        21, 21, 21, 21,
         593, 397, 593, 397,
     ]
 
@@ -187,7 +187,7 @@ def test_compute_summary_statistics_advanced(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe,
                                                     advanced_filtering=True)
     assert [len(s) for s in summary_statistics] == [
-        21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
+        21, 21, 21, 21, 21, 21, 21, 21,
         593, 397, 593, 397, 593, 397, 593, 397,
     ]
 
@@ -200,4 +200,4 @@ def test_summary_statistics_to_csv(combined_dataframe):
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (687, 17)
+    assert stats_df_reread.shape == (687, 9)

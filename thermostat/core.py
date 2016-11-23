@@ -614,7 +614,7 @@ class Thermostat(object):
         and calculated daily cooling run times.
 
         Next recalculate :math:`\\alpha_c` (in accordance with the above step)
-        and record the model’s parameters :math:`\left(\\alpha_c, \\tau_c \\right)`
+        and record the model's parameters :math:`\left(\\alpha_c, \\tau_c \\right)`
 
         Parameters
         ----------
@@ -719,7 +719,7 @@ class Thermostat(object):
         and calculated daily heating run times.
 
         Next recalculate :math:`\\alpha_h` (in accordance with the above step)
-        and record the model’s parameters :math:`\left(\\alpha_h, \\tau_h \\right)`
+        and record the model's parameters :math:`\left(\\alpha_h, \\tau_h \\right)`
 
         Parameters
         ----------
