@@ -24,7 +24,7 @@ class Thermostat(object):
     ----------
     thermostat_id : object
         An identifier for the thermostat. Can be anything, but should be
-        identifying (e.g. an ID provided by the manufacturer).
+        identifying (e.g., an ID provided by the manufacturer).
     equipment_type : { 0, 1, 2, 3, 4, 5 }
         - :code:`0`: Other - e.g. multi-zone multi-stage, modulating. Note: module will
           not output savings data for this type.
@@ -93,10 +93,11 @@ class Thermostat(object):
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
 
 
-    def __init__(self, thermostat_id, equipment_type, zipcode, station, temperature_in,
-                 temperature_out, cooling_setpoint, heating_setpoint,
-                 cool_runtime, heat_runtime, auxiliary_heat_runtime,
-                 emergency_heat_runtime):
+    def __init__(
+            self, thermostat_id, equipment_type, zipcode, station,
+            temperature_in, temperature_out, cooling_setpoint,
+            heating_setpoint, cool_runtime, heat_runtime,
+            auxiliary_heat_runtime, emergency_heat_runtime):
 
         self.thermostat_id = thermostat_id
         self.equipment_type = equipment_type
@@ -191,22 +192,21 @@ class Thermostat(object):
             raise ValueError(message)
 
     def get_core_heating_days(self, method="entire_dataset",
-            min_minutes_heating=60, max_minutes_cooling=0):
-        """ Get all data for core heating days for data associated with this
-        thermostat
+            min_minutes_heating=30, max_minutes_cooling=0):
+        """ Determine core heating days from data associated with this thermostat
 
         Parameters
         ----------
         method : {"entire_dataset", "year_mid_to_mid"}, default: "entire_dataset"
             Method by which to find core heating day sets.
 
-            - "entire_dataset": all heating days in dataset (days with >= 1
-              hour of heating runtime and no cooling runtime.
-            - "year_mid_to_mid": groups all heating days (days with >= 1 hour
+            - "entire_dataset": all heating days in dataset (days with >= 30 min
+              of heating runtime and no cooling runtime. (default)
+            - "year_mid_to_mid": groups all heating days (days with >= 30 min
               of total heating and no cooling) from July 1 to June 30
               (inclusive) into individual core heating day sets. May overlap
               with core cooling day sets.
-        min_minutes_heating : int, default 60
+        min_minutes_heating : int, default 30
             Number of minutes of heating runtime per day required for inclusion
             in core heating day set.
         max_minutes_cooling : int, default 0
@@ -223,7 +223,7 @@ class Thermostat(object):
 
             A value of True at a particular index indicates inclusion of
             of the data at that index in the core day set. If method is
-            "entire_dataset", name of is "heating_ALL"; if method
+            "entire_dataset", name of core day sets are "heating_ALL"; if method
             is "year_mid_to_mid", names of core day sets are of the form
             "heating_YYYY-YYYY"
         """
@@ -299,8 +299,8 @@ class Thermostat(object):
             return core_heating_day_sets
 
     def get_core_cooling_days(self, method="entire_dataset",
-            min_minutes_cooling=60, max_minutes_heating=0):
-        """ Get all data for core cooling days for data associated with this
+            min_minutes_cooling=30, max_minutes_heating=0):
+        """ Determine core cooling days from data associated with this
         thermostat.
 
         Parameters
@@ -308,12 +308,12 @@ class Thermostat(object):
         method : {"entire_dataset", "year_end_to_end"}, default: "entire_dataset"
             Method by which to find core cooling days.
 
-            - "entire_dataset": all cooling days in dataset (days with >= 1
-              hour of cooling runtime and no heating runtime.
-            - "year_end_to_end": groups all cooling days (days with >= 1 hour
+            - "entire_dataset": all cooling days in dataset (days with >= 30 min
+              of cooling runtime and no heating runtime.
+            - "year_end_to_end": groups all cooling days (days with >= 30 min
               of total cooling and no heating) from January 1 to December 31
               into individual core cooling sets.
-        min_minutes_cooling : int, default 0
+        min_minutes_cooling : int, default 30
             Number of minutes of core cooling runtime per day required for
             inclusion in core cooling day set.
         max_minutes_heating : int, default 0
@@ -331,7 +331,7 @@ class Thermostat(object):
             A value of True at a particular index indicates inclusion of
             of the data at that index in the core day set. If method is
             "entire_dataset", name of core day set is "cooling_ALL"; if method
-            == "year_end_to_end", names of core day sets are of the form
+            is "year_end_to_end", names of core day sets are of the form
             "cooling_YYYY"
         """
         if method not in ["year_end_to_end", "entire_dataset"]:
@@ -500,19 +500,26 @@ class Thermostat(object):
         if self.equipment_type == 1:
             RHUs = []
 
-            in_core_day_set = self._get_range_boolean(
-                core_heating_day_set.hourly.index,
+            in_core_day_set_daily = self._get_range_boolean(
+                core_heating_day_set.daily.index,
                 core_heating_day_set.start_date,
                 core_heating_day_set.end_date)
 
+
+            # convert hourly to daily
+            temp_out_daily = self.temperature_out.resample('D').mean()
+            aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
+            emg_daily = self.emergency_heat_runtime.resample('D').sum()
+
             temperature_bins = [(i, i+5) for i in range(0, 60, 5)]
             for low_temp, high_temp in temperature_bins:
-                temp_low_enough = self.temperature_out < high_temp
-                temp_high_enough = self.temperature_out >= low_temp
-                temp_bin = temp_low_enough & temp_high_enough & in_core_day_set
-                R_heat = self.heat_runtime[temp_bin].sum()
-                R_aux = self.auxiliary_heat_runtime[temp_bin].sum()
-                R_emg = self.emergency_heat_runtime[temp_bin].sum()
+                temp_low_enough_daily = temp_out_daily < high_temp
+                temp_high_enough_daily = temp_out_daily >= low_temp
+
+                temp_bin_daily = temp_low_enough_daily & temp_high_enough_daily & in_core_day_set_daily
+                R_heat = self.heat_runtime[temp_bin_daily].sum()
+                R_aux = aux_daily[temp_bin_daily].sum()
+                R_emg = emg_daily[temp_bin_daily].sum()
                 try:
                     rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
                 except ZeroDivisionError:
@@ -523,6 +530,18 @@ class Thermostat(object):
             return None
 
     def get_ignored_days(self, core_day_set):
+        """ Determine how many days are ignored for a particular core day set
+
+        Returns
+        -------
+
+        n_both : int
+            Number of days excluded from core day set because of presence of
+            both heating and cooling runtime.
+        n_days_insufficient : int
+            Number of days excluded from core day set because of null runtime
+            data.
+        """
 
         in_range = self._get_range_boolean(
             core_day_set.daily.index,
@@ -548,55 +567,79 @@ class Thermostat(object):
         n_days_insufficient = (in_range & (null_heating | null_cooling)).sum()
         return n_both, n_days_insufficient
 
-
     def get_core_day_set_n_days(self, core_day_set):
+        """ Returns number of days in the core day set.
+        """
         return int(core_day_set.daily.sum())
 
     def get_inputfile_date_range(self, core_day_set):
+        """ Returns number of days of data provided in input data file.
+        """
         delta = (core_day_set.end_date - core_day_set.start_date)
         if isinstance(delta, timedelta):
             return delta.days
         else:
             return int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
 
-    ##################### DEMAND ################################
-
-    def get_cooling_demand(self, core_cooling_day_set, method="deltaT"):
+    def get_cooling_demand(self, core_cooling_day_set):
         """
-        Calculates a measure of cooling demand.
+        Calculates a measure of cooling demand using the hourlyavgCTD method.
+
+        Starting with an assumed value of zero for Tau :math:`(\\tau_c)`,
+        calculate the daily Cooling Thermal Demand :math:`(\\text{daily CTD}_d)`, as follows
+
+        :math:`\\text{daily CTD}_d = \\frac{\sum_{i=1}^{24} [\\tau_c - \\text{hourly} \Delta T_{d.n}]_{+}}{24}`, where
+
+        :math:`\\text{hourly} \Delta T_{d.n} (^{\circ} F) = \\text{hourly indoor} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+
+        :math:`d` is the core cooling day; :math:`\left(001, 002, 003 ... x \\right)`,
+
+        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+
+        :math:`\\tau_c` (cooling) is the :math:`\Delta T` associated with :math:`CTD=0` (zero cooling runtime), and
+
+        :math:`[]_{+}` indicates that the term is zero if its value would be negative.
+
+        For the set of all core cooling days in the CT interval data file, use
+        ratio estimation to calculate :math:`\\alpha_c`, the home's
+        responsiveness to cooling, which should be positive.
+
+        :math:`\\alpha_c \left(\\frac{\\text{minutes}}{^{\circ} F}\\right) = \\frac{RT_\\text{actual cool}}{\sum_{d=1}^{x} \\text{daily CTD}_d}`, where
+
+        :math:`RT_\\text{actual cool}` is the sum of cooling run times for all core cooling days in the CT interval data file.
+
+        For the set of all core cooling days in the CT interval data file,
+        optimize :math:`\\tau_c` that results in minimization of the sum of
+        squares of the difference between daily run times reported by the CT,
+        and calculated daily cooling run times.
+
+        Next recalculate :math:`\\alpha_c` (in accordance with the above step)
+        and record the model's parameters :math:`\left(\\alpha_c, \\tau_c \\right)`
 
         Parameters
         ----------
         core_cooling_day_set : thermostat.core.CoreDaySet
             Core day set over which to calculate cooling demand.
-        method : {"deltaT", "dailyavgCTD", "hourlyavgCTD"}, default: "deltaT"
-            The method to use during calculation of demand.
-
-            - "deltaT": :math:`-\Delta T` where :math:`\Delta T = T_{in} - T_{out}`
-            - "dailyavgCTD": :math:`\\text{daily CTD} = \\text{max} \left(
-              \Delta T_{\\text{base cool}} - \Delta T_{\\text{daily avg}}
-              , 0\\right)`
-              where :math:`\Delta T_{\\text{daily avg}} =
-              \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
-            - "hourlyavgCTD": :math:`\\text{daily CTD} = \sum_{i=1}^{24} \\text{CDH}_i`
-              where :math:`\\text{CDH}_i = \\text{max}\left(
-              \Delta T_{\\text{base cool}} - \Delta T_i, 0\\right)`
-
 
         Returns
         -------
         demand : pd.Series
-            Daily demand in the core heating day set as calculated using one of
-            the supported methods.
+            Daily demand in the core heating day set as calculated using the
+            method described above.
         tau : float
-            Estimate of :math:`\Delta T_{\\text{base cool}}`. Only output for
-            "hourlyavgCTD" and "dailyavgCTD".
-        alpha_estimate : float
-            Estimate of linear runtime response to demand. Only output for
-            "hourlyavgCTD" and "dailyavgCTD".
-        mean_squared_error : float
-            Mean squared error in runtime estimates. Only output for "hourlyavgCTD"
-            and "dailyavgCTD".
+            Estimate of :math:`\\tau_c`.
+        alpha : float
+            Estimate of :math:`\\alpha_c`
+        mse : float
+            Mean squared error in runtime estimates.
+        rmse : float
+            Root mean squared error in runtime estimates.
+        cvrmse : float
+            Coefficient of variation of root mean squared error in runtime estimates.
+        mape : float
+            Mean absolute percent error
+        mae : float
+            Mean absolute error
         """
 
         self._protect_cooling()
@@ -605,25 +648,12 @@ class Thermostat(object):
         core_day_set_temp_out = self.temperature_out[core_cooling_day_set.hourly]
         core_day_set_deltaT = core_day_set_temp_in - core_day_set_temp_out
 
-        daily_avg_deltaT = np.array([
-            temps.mean()
-            for day, temps in core_day_set_deltaT.groupby(core_day_set_deltaT.index.date)
-        ])
-
         daily_index = core_cooling_day_set.daily[core_cooling_day_set.daily].index
 
-        if method == "deltaT":
-            return pd.Series(-daily_avg_deltaT, index=daily_index)
-        elif method == "dailyavgCTD":
-            def calc_cdd(tau):
-                return np.maximum(tau - daily_avg_deltaT, 0)
-        elif method == "hourlyavgCTD":
-            def calc_cdd(tau):
-                hourly_cdd = (tau - core_day_set_deltaT).apply(lambda x: np.maximum(x, 0))
-                # Note - `x / 24` this should be thought of as a unit conversion, not an average.
-                return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(core_day_set_deltaT.index.date)])
-        else:
-            raise NotImplementedError
+        def calc_cdd(tau):
+            hourly_cdd = (tau - core_day_set_deltaT).apply(lambda x: np.maximum(x, 0))
+            # Note - `x / 24` this should be thought of as a unit conversion, not an average.
+            return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(core_day_set_deltaT.index.date)])
 
         daily_runtime = self.cool_runtime[core_cooling_day_set.daily]
         total_runtime = daily_runtime.sum()
@@ -659,42 +689,62 @@ class Thermostat(object):
 
         return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
-    def get_heating_demand(self, core_heating_day_set, method="deltaT"):
+    def get_heating_demand(self, core_heating_day_set):
         """
-        Calculates a measure of heating demand.
+        Calculates a measure of heating demand using the hourlyavgCTD method.
+
+        :math:`\\text{daily HTD}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly} \Delta T_{d.n} - \\tau_h]_{+}}{24}`, where
+
+        :math:`\\text{hourly} \Delta T_{d.n} (^{\circ} F) = \\text{hourly indoor} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+
+        :math:`d` is the core heating day; :math:`\left(001, 002, 003 ... x \\right)`,
+
+        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+
+        :math:`\\tau_h` (heating) is the :math:`\Delta T` associated with :math:`HTD=0`, reflecting that homes with no heat running tend to be warmer that the outdoors, and
+
+        :math:`[]_{+}` indicates that the term is zero if its value would be negative.
+
+        For the set of all core heating days in the CT interval data file, use
+        ratio estimation to calculate :math:`\\alpha_h`, the home's
+        responsiveness to heating, which should be positive.
+
+        :math:`\\alpha_h \left(\\frac{\\text{minutes}}{^{\circ} F}\\right) = \\frac{RT_\\text{actual heat}}{\sum_{d=1}^{x} \\text{daily HTD}_d}`, where
+
+        :math:`RT_\\text{actual heat}` is the sum of heating run times for all core heating days in the CT interval data file.
+
+        For the set of all core heating days in the CT interval data file,
+        optimize :math:`\\tau_h` that results in minimization of the sum of
+        squares of the difference between daily run times reported by the CT,
+        and calculated daily heating run times.
+
+        Next recalculate :math:`\\alpha_h` (in accordance with the above step)
+        and record the model's parameters :math:`\left(\\alpha_h, \\tau_h \\right)`
 
         Parameters
         ----------
         core_heating_day_set : array_like
             Core day set over which to calculate heating demand.
-        method : {"deltaT", "hourlyavgHTD", "dailyavgHTD"} default: "deltaT"
-            The method to use during calculation of demand.
-
-            - "deltaT": :math:`\Delta T = T_{in} - T_{out}`
-            - "dailyavgHTD": :math:`\\text{daily HTD} = \\text{max}\left(
-              \Delta T_{\\text{daily avg}} - \Delta T_{\\text{base heat}}
-              , 0\\right)` where
-              :math:`\Delta T_{\\text{daily avg}} =
-              \\frac{\sum_{i=1}^{24} \Delta T_i}{24}`
-            - "hourlyavgHTD": :math:`\\text{daily HTD} = \sum_{i=1}^{24} \\text{HDH}_i`
-              where :math:`\\text{HDH}_i = \\text{max}\left(
-              \Delta T_i - \Delta T_{\\text{base heat}}
-              , 0\\right)`
 
         Returns
         -------
         demand : pd.Series
-            Daily demand in the core heating day set as calculated using one of
-            the supported methods.
-        tau_estimate : float
-            Estimate of :math:`\Delta T_{\\text{base heat}}`. Only output for
-            "hourlyavgHTD" and "dailyavgHTD".
-        alpha_estimate : float
-            Estimate of linear runtime response to demand. Only output for
-            "hourlyavgHTD" and "dailyavgHTD".
-        mean_squared_error : float
-            Mean squared error in runtime estimates. Only output for "hourlyavgHTD"
-            and "dailyavgHTD".
+            Daily demand in the core heating day set as calculated using the
+            method described above.
+        tau : float
+            Estimate of :math:`\\tau_h`.
+        alpha : float
+            Estimate of :math:`\\alpha_h`
+        mse : float
+            Mean squared error in runtime estimates.
+        rmse : float
+            Root mean squared error in runtime estimates.
+        cvrmse : float
+            Coefficient of variation of root mean squared error in runtime estimates.
+        mape : float
+            Mean absolute percent error
+        mae : float
+            Mean absolute error
         """
 
         self._protect_heating()
@@ -703,22 +753,12 @@ class Thermostat(object):
         core_day_set_temp_out = self.temperature_out[core_heating_day_set.hourly]
         core_day_set_deltaT = core_day_set_temp_in - core_day_set_temp_out
 
-        daily_avg_deltaT = np.array([temps.mean() for day, temps in core_day_set_deltaT.groupby(core_day_set_deltaT.index.date)])
-
         daily_index = core_heating_day_set.daily[core_heating_day_set.daily].index
 
-        if method == "deltaT":
-            return pd.Series(daily_avg_deltaT, index=daily_index)
-        elif method == "dailyavgHTD":
-            def calc_hdd(tau):
-                return np.maximum(daily_avg_deltaT - tau, 0)
-        elif method == "hourlyavgHTD":
-            def calc_hdd(tau):
-                hourly_hdd = (core_day_set_deltaT - tau).apply(lambda x: np.maximum(x, 0))
-                # Note - this `x / 24` should be thought of as a unit conversion, not an average.
-                return np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(core_day_set_deltaT.index.date)])
-        else:
-            raise NotImplementedError
+        def calc_hdd(tau):
+            hourly_hdd = (core_day_set_deltaT - tau).apply(lambda x: np.maximum(x, 0))
+            # Note - this `x / 24` should be thought of as a unit conversion, not an average.
+            return np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(core_day_set_deltaT.index.date)])
 
         daily_runtime = self.heat_runtime[core_heating_day_set.daily]
         total_runtime = daily_runtime.sum()
@@ -764,8 +804,6 @@ class Thermostat(object):
             mae
         )
 
-    ################## BASELINING ##########################
-
     def get_core_cooling_day_baseline_setpoint(self, core_cooling_day_set,
             method='tenth_percentile', source='temperature_in'):
         """ Calculate the core cooling day baseline setpoint (comfort
@@ -780,7 +818,7 @@ class Thermostat(object):
 
             - "tenth_percentile": 10th percentile of source temperature.
               (Either cooling setpoint or temperature in).
-        source : {"cooling_setpoint", "temperature_in"}, default "cooling_setpoint"
+        source : {"cooling_setpoint", "temperature_in"}, default "temperature_in"
             The source of temperatures to use in baseline calculation.
 
         Returns
@@ -804,7 +842,6 @@ class Thermostat(object):
         else:
             raise NotImplementedError
 
-
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
             method='ninetieth_percentile', source='temperature_in'):
         """ Calculate the core heating day baseline setpoint (comfort temperature).
@@ -818,7 +855,7 @@ class Thermostat(object):
 
             - "ninetieth_percentile": 90th percentile of source temperature.
               (Either heating setpoint or indoor temperature).
-        source : {"heating_setpoint", "temperature_in"}, default "heating_setpoint"
+        source : {"heating_setpoint", "temperature_in"}, default "temperature_in"
             The source of temperatures to use in baseline calculation.
 
         Returns
@@ -842,11 +879,21 @@ class Thermostat(object):
         else:
             raise NotImplementedError
 
-
-    def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline,
-                                    tau=None, demand_method="deltaT"):
+    def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
-        day set and baseline setpoint.
+        day set and fitted physical parameters.
+
+        :math:`\\text{daily CTD base}_d = \\frac{\sum_{i=1}^{24} [\\tau_c - \\text{hourly } \Delta T \\text{ base cool}_{d.n}]_{+}}{24}`, where
+
+        :math:`\\text{hourly } \Delta T \\text{ base cool}_{d.n} (^{\circ} F) = \\text{base heat} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+
+        :math:`d` is the core cooling day; :math:`\left(001, 002, 003 ... x \\right)`,
+
+        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+
+        :math:`\\tau_c` (cooling), determined earlier, is a constant that is part of the CT/home's thermal/HVAC cooling run time model, and
+
+        :math:`[]_{+}` indicates that the term is zero if its value would be negative.
 
         Parameters
         ----------
@@ -855,20 +902,7 @@ class Thermostat(object):
         temp_baseline : float
             Baseline comfort temperature
         tau : float, default: None
-            Used in calculations for "dailyavgCTD" and "hourlyavgCTD".
-        demand_method : {"deltaT", "dailyavgCTD", "hourlyavgCTD"}; default: "deltaT"
-            Demand method to use in calculation of the baseline CTD.
-
-            - "deltaT": :math:`\Delta T_{\\text{base cool}} = \\text{daily avg }
-              T_{\\text{outdoor}} - T_{\\text{base cool}}`
-            - "dailyavgCTD": :math:`\\text{CTD}_{\\text{base}} = \Delta T_{\\text{base
-              cool}} - \Delta T_{\\text{b cool}}` where :math:`\Delta T_{\\text{base
-              cool}} = \\text{daily avg } T_{\\text{outdoor}} - T_{\\text{base cool}}`
-            - "hourlyavgCTD": :math:`\\text{CTD}_{\\text{base}} = \\frac{\sum_{i=1}^
-              {24} \\text{CDH}_{\\text{base } i}}{24}` where :math:`\\text{CDH}_{
-              \\text{base } i} = \Delta T_{\\text{base cool}} - \Delta T_{\\text{b
-              cool}}` and :math:`\Delta T_{\\text{base cool}} = T_{\\text{outdoor}}
-              - T_{\\text{base cool}}`
+            From fitted demand model.
 
         Returns
         -------
@@ -880,24 +914,27 @@ class Thermostat(object):
 
         hourly_temp_out = self.temperature_out[core_cooling_day_set.hourly]
 
-        daily_temp_out = np.array([temps.mean() for day, temps in hourly_temp_out.groupby(hourly_temp_out.index.date)])
+        hourly_cdd = (tau - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
+        demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
 
-        if demand_method == "deltaT":
-            demand = daily_temp_out - temp_baseline
-        elif demand_method == "dailyavgCTD":
-            demand = np.maximum(tau - (temp_baseline - daily_temp_out), 0)
-        elif demand_method == "hourlyavgCTD":
-            hourly_cdd = (tau - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
-            demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
-        else:
-            raise NotImplementedError
         index = core_cooling_day_set.daily[core_cooling_day_set.daily].index
         return pd.Series(demand, index=index)
 
-    def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline,
-                                    tau=None, demand_method="deltaT"):
-        """ Calculate baseline heating degree days for a particular core heating day set
-        and baseline setpoint.
+    def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline, tau):
+        """ Calculate baseline heating demand for a particular core heating day
+        set and fitted physical parameters.
+
+        :math:`\\text{daily HTD base}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly } \Delta T \\text{ base heat}_{d.n} - \\tau_h]_{+}}{24}`, where
+
+        :math:`\\text{hourly } \Delta T \\text{ base heat}_{d.n} (^{\circ} F) = \\text{base cool} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+
+        :math:`d` is the core heating day; :math:`\left(001, 002, 003 ... x \\right)`,
+
+        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+
+        :math:`\\tau_h` (heating), determined earlier, is a constant that is part of the CT/home's thermal/HVAC heating run time model, and
+
+        :math:`[]_{+}` indicates that the term is zero if its value would be negative.
 
         Parameters
         ----------
@@ -906,20 +943,7 @@ class Thermostat(object):
         temp_baseline : float
             Baseline comfort temperature
         tau : float, default: None
-            Used in calculations for "dailyavgHTD" and "hourlyavgHTD".
-        demand_method : {"deltaT", "dailyavgHTD", "hourlyavgHTD"}; default: "deltaT"
-            Demand method to use in calculation of the baseline HTD.
-
-            - "deltaT": :math:`\Delta T_{\\text{base heat}} = T_{\\text{base heat}}
-              - \\text{daily avg } T_{\\text{outdoor}}`
-            - "dailyavgHTD": :math:`\\text{HTD}_{\\text{base}} = \Delta T_{\\text{base
-              heat}} - \Delta T_{\\text{b heat}}` where :math:`\Delta T_{\\text{base
-              heat}} = T_{\\text{base heat}} - \\text{daily avg } T_{\\text{outdoor}}`
-            - "hourlyavgHTD": :math:`\\text{HTD}_{\\text{base}} = \\frac{\sum_{i=1}^
-              {24} \\text{HDH}_{\\text{base } i}}{24}` where :math:`\\text{HDH}_{
-              \\text{base } i} = \Delta T_{\\text{base heat}} - \Delta T_{\\text{b
-              heat}}` and :math:`\Delta T_{\\text{base heat}} = T_{\\text{base heat}}
-              - T_{\\text{outdoor}}`
+            From fitted demand model.
 
         Returns
         -------
@@ -930,25 +954,17 @@ class Thermostat(object):
 
         hourly_temp_out = self.temperature_out[core_heating_day_set.hourly]
 
-        daily_temp_out = np.array([temps.mean() for day, temps in hourly_temp_out.groupby(hourly_temp_out.index.date)])
+        hourly_hdd = (temp_baseline - hourly_temp_out - tau).apply(lambda x: np.maximum(x, 0))
+        demand = np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(hourly_temp_out.index.date)])
 
-        if demand_method == "deltaT":
-            demand = temp_baseline - daily_temp_out
-        elif demand_method == "dailyavgHTD":
-            demand = np.maximum(temp_baseline - daily_temp_out - tau, 0)
-        elif demand_method == "hourlyavgHTD":
-            hourly_hdd = (temp_baseline - hourly_temp_out - tau).apply(lambda x: np.maximum(x, 0))
-            demand = np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(hourly_temp_out.index.date)])
-        else:
-            raise NotImplementedError
         index = core_heating_day_set.daily[core_heating_day_set.daily].index
         return pd.Series(demand, index=index)
 
-    ######################### SAVINGS ###############################
-
-    def get_baseline_cooling_runtime(self, baseline_cooling_demand, alpha, tau, method="deltaT"):
-        """ Calculate baseline heating runtime given baseline cooling demand
+    def get_baseline_cooling_runtime(self, baseline_cooling_demand, alpha):
+        """ Calculate baseline cooling runtime given baseline cooling demand
         and fitted physical parameters.
+
+        :math:`RT_{\\text{base cool}} (\\text{minutes}) = \\alpha_c \cdot \\text{daily CTD base}_d`
 
         Parameters
         ----------
@@ -956,31 +972,19 @@ class Thermostat(object):
             A series containing estimated daily baseline cooling demand.
         alpha : float
             Slope of fitted line
-        tau : float
-            Intercept of fitted line
-        method : float
-            Demand method used to find alpha and tau
 
         Returns
         -------
         baseline_cooling_runtime : pandas.Series
             A series containing estimated daily baseline cooling runtime.
         """
-        if method == "deltaT":
-             return np.maximum(alpha * (baseline_cooling_demand + tau), 0)
-        elif method in ["dailyavgCTD", "hourlyavgCTD"]:
-            # np.maximum is in case alpha negative for some reason, or in case bad
-            # demand data (e.g., not strictly non-negative) is used
-            return np.maximum(alpha * (baseline_cooling_demand), 0)
-        else:
-            message = (
-                "Method should be one of `deltaT`, `dailyavgCTD`, or `hourlyavgCTD`"
-            )
-            raise NotImplementedError(message)
+        return np.maximum(alpha * (baseline_cooling_demand), 0)
 
-    def get_baseline_heating_runtime(self, baseline_heating_demand, alpha, tau, method="deltaT"):
+    def get_baseline_heating_runtime(self, baseline_heating_demand, alpha):
         """ Calculate baseline heating runtime given baseline heating demand.
         and fitted physical parameters.
+
+        :math:`RT_{\\text{base heat}} (\\text{minutes}) = \\alpha_h \cdot \\text{daily HTD base}_d`
 
         Parameters
         ----------
@@ -988,35 +992,21 @@ class Thermostat(object):
             A series containing estimated daily baseline heating demand.
         alpha : float
             Slope of fitted line
-        tau : float
-            Intercept of fitted line
-        method : float
-            Demand method used to find alpha and tau
 
         Returns
         -------
         baseline_heating_runtime : pandas.Series
             A series containing estimated daily baseline heating runtime.
         """
-        if method == "deltaT":
-             return np.maximum(alpha * (baseline_heating_demand - tau), 0)
-        elif method in ["dailyavgHTD", "hourlyavgHTD"]:
-            # np.maximum is in case alpha negative for some reason, or in case bad
-            # demand data (e.g., not strictly non-negative) is used
-            return np.maximum(alpha * (baseline_heating_demand), 0)
-        else:
-            message = (
-                "Method should be one of `deltaT`, `dailyavgHTD`, or `hourlyavgHTD`"
-            )
-            raise NotImplementedError(message)
+        return np.maximum(alpha * (baseline_heating_demand), 0)
 
-    def get_daily_avoided_cooling_runtime(self, baseline_runtime, core_cooling_day_set):
+    def get_daily_avoided_cooling_runtime(
+            self, baseline_runtime, core_cooling_day_set):
         return baseline_runtime - self.cool_runtime[core_cooling_day_set]
 
-    def get_daily_avoided_heating_runtime(self, baseline_runtime, core_heating_day_set):
+    def get_daily_avoided_heating_runtime(
+            self, baseline_runtime, core_heating_day_set):
         return baseline_runtime - self.heat_runtime[core_heating_day_set]
-
-    ###################### Metrics #################################
 
     def calculate_epa_field_savings_metrics(self,
             core_cooling_day_set_method="entire_dataset",
@@ -1102,7 +1092,6 @@ class Thermostat(object):
         def percent_savings(avoided, baseline):
             return (avoided.mean() / baseline.mean()) * 100.0
 
-
         if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
             for core_cooling_day_set in self.get_core_cooling_days(
                     method=core_cooling_day_set_method):
@@ -1110,210 +1099,79 @@ class Thermostat(object):
                 baseline10_comfort_temperature = \
                     self.get_core_cooling_day_baseline_setpoint(core_cooling_day_set)
 
-                # Calculate demand
                 daily_runtime = self.cool_runtime[core_cooling_day_set.daily]
-                demand_deltaT = self.get_cooling_demand(core_cooling_day_set, method="deltaT")
 
-                # deltaT
-                try:
-                    (
-                        alpha_deltaT,
-                        tau_deltaT,
-                        mse_deltaT,
-                        rmse_deltaT,
-                        cvrmse_deltaT,
-                        mape_deltaT,
-                        mae_deltaT,
-                    ) = runtime_regression(
-                            daily_runtime, demand_deltaT, "cooling")
-                except ValueError:
-                    alpha_deltaT = np.nan
-                    tau_deltaT = np.nan
-                    mse_deltaT = np.nan
-                    rmse_deltaT = np.nan
-                    cvrmse_deltaT = np.nan
-                    mape_deltaT = np.nan
-                    mae_deltaT = np.nan
-
-                # dailyavgCTD
                 (
-                    demand_dailyavgCTD,
-                    tau_dailyavgCTD,
-                    alpha_dailyavgCTD,
-                    mse_dailyavgCTD,
-                    rmse_dailyavgCTD,
-                    cvrmse_dailyavgCTD,
-                    mape_dailyavgCTD,
-                    mae_dailyavgCTD,
-                ) = self.get_cooling_demand(
-                        core_cooling_day_set, method="dailyavgCTD")
-
-                # hourlyavgCTD
-                (
-                    demand_hourlyavgCTD,
-                    tau_hourlyavgCTD,
-                    alpha_hourlyavgCTD,
-                    mse_hourlyavgCTD,
-                    rmse_hourlyavgCTD,
-                    cvrmse_hourlyavgCTD,
-                    mape_hourlyavgCTD,
-                    mae_hourlyavgCTD,
-                ) = self.get_cooling_demand(
-                        core_cooling_day_set, method="hourlyavgCTD")
+                    demand,
+                    tau,
+                    alpha,
+                    mse,
+                    rmse,
+                    cvrmse,
+                    mape,
+                    mae,
+                ) = self.get_cooling_demand(core_cooling_day_set)
 
                 total_runtime_core_cooling = daily_runtime.sum()
                 n_days = core_cooling_day_set.daily.sum()
+
                 average_daily_cooling_runtime = \
                     total_runtime_core_cooling / n_days
 
-                baseline10_demand_deltaT = \
-                    self.get_baseline_cooling_demand(
-                        core_cooling_day_set,
-                        baseline10_comfort_temperature,
-                        tau=None,
-                        demand_method="deltaT")
-                baseline10_demand_dailyavgCTD = \
-                    self.get_baseline_cooling_demand(
-                        core_cooling_day_set,
-                        baseline10_comfort_temperature,
-                        tau=tau_dailyavgCTD,
-                        demand_method="dailyavgCTD")
-                baseline10_demand_hourlyavgCTD = \
-                    self.get_baseline_cooling_demand(
-                        core_cooling_day_set,
-                        baseline10_comfort_temperature,
-                        tau=tau_hourlyavgCTD,
-                        demand_method="hourlyavgCTD")
+                baseline10_demand = self.get_baseline_cooling_demand(
+                    core_cooling_day_set,
+                    baseline10_comfort_temperature,
+                    tau,
+                )
 
-                baseline10_runtime_deltaT = \
-                    self.get_baseline_cooling_runtime(
-                        baseline10_demand_deltaT,
-                        alpha_deltaT,
-                        tau_deltaT,
-                        method="deltaT")
-                baseline10_runtime_dailyavgCTD = \
-                    self.get_baseline_cooling_runtime(
-                        baseline10_demand_dailyavgCTD,
-                        alpha_dailyavgCTD,
-                        tau_dailyavgCTD,
-                        method="dailyavgCTD")
-                baseline10_runtime_hourlyavgCTD = \
-                    self.get_baseline_cooling_runtime(
-                        baseline10_demand_hourlyavgCTD,
-                        alpha_hourlyavgCTD,
-                        tau_hourlyavgCTD,
-                        method="hourlyavgCTD")
+                baseline10_runtime = self.get_baseline_cooling_runtime(
+                    baseline10_demand,
+                    alpha
+                )
 
-                avoided_runtime_deltaT_baseline10 = avoided(baseline10_runtime_deltaT, daily_runtime)
-                avoided_runtime_dailyavgCTD_baseline10 = avoided(baseline10_runtime_dailyavgCTD, daily_runtime)
-                avoided_runtime_hourlyavgCTD_baseline10 = avoided(baseline10_runtime_hourlyavgCTD, daily_runtime)
+                avoided_runtime_baseline10 = avoided(baseline10_runtime, daily_runtime)
 
-                savings_deltaT_baseline10 = percent_savings(avoided_runtime_deltaT_baseline10, baseline10_runtime_deltaT)
-                savings_dailyavgCTD_baseline10 = percent_savings(avoided_runtime_dailyavgCTD_baseline10, baseline10_runtime_dailyavgCTD)
-                savings_hourlyavgCTD_baseline10 = percent_savings(avoided_runtime_hourlyavgCTD_baseline10, baseline10_runtime_hourlyavgCTD)
+                savings_baseline10 = percent_savings(avoided_runtime_baseline10, baseline10_runtime)
 
                 if baseline_regional_cooling_comfort_temperature is not None:
 
-                    baseline_regional_demand_deltaT = \
-                        self.get_baseline_cooling_demand(
-                            core_cooling_day_set,
-                            baseline_regional_cooling_comfort_temperature,
-                            tau=None,
-                            demand_method="deltaT")
-                    baseline_regional_demand_dailyavgCTD = \
-                        self.get_baseline_cooling_demand(
-                            core_cooling_day_set,
-                            baseline_regional_cooling_comfort_temperature,
-                            tau=tau_dailyavgCTD,
-                            demand_method="dailyavgCTD")
-                    baseline_regional_demand_hourlyavgCTD = \
-                        self.get_baseline_cooling_demand(
-                            core_cooling_day_set,
-                            baseline_regional_cooling_comfort_temperature,
-                            tau=tau_hourlyavgCTD,
-                            demand_method="hourlyavgCTD")
+                    baseline_regional_demand = self.get_baseline_cooling_demand(
+                        core_cooling_day_set,
+                        baseline_regional_cooling_comfort_temperature,
+                        tau
+                    )
 
-                    baseline_regional_runtime_deltaT = \
-                        self.get_baseline_cooling_runtime(
-                            baseline_regional_demand_deltaT,
-                            alpha_deltaT,
-                            tau_deltaT,
-                            method="deltaT")
-                    baseline_regional_runtime_dailyavgCTD = \
-                        self.get_baseline_cooling_runtime(
-                            baseline_regional_demand_dailyavgCTD,
-                            alpha_dailyavgCTD,
-                            tau_dailyavgCTD,
-                            method="dailyavgCTD")
-                    baseline_regional_runtime_hourlyavgCTD = \
-                        self.get_baseline_cooling_runtime(
-                            baseline_regional_demand_hourlyavgCTD,
-                            alpha_hourlyavgCTD,
-                            tau_hourlyavgCTD,
-                            method="hourlyavgCTD")
+                    baseline_regional_runtime = self.get_baseline_cooling_runtime(
+                        baseline_regional_demand,
+                        alpha
+                    )
 
-                    avoided_runtime_deltaT_baseline_regional = avoided(baseline_regional_runtime_deltaT, daily_runtime)
-                    avoided_runtime_dailyavgCTD_baseline_regional = avoided(baseline_regional_runtime_dailyavgCTD, daily_runtime)
-                    avoided_runtime_hourlyavgCTD_baseline_regional = avoided(baseline_regional_runtime_hourlyavgCTD, daily_runtime)
+                    avoided_runtime_baseline_regional = avoided(baseline_regional_runtime, daily_runtime)
 
-                    savings_deltaT_baseline_regional = percent_savings(avoided_runtime_deltaT_baseline_regional, baseline_regional_runtime_deltaT)
-                    savings_dailyavgCTD_baseline_regional = percent_savings(avoided_runtime_dailyavgCTD_baseline_regional, baseline_regional_runtime_dailyavgCTD)
-                    savings_hourlyavgCTD_baseline_regional = percent_savings(avoided_runtime_hourlyavgCTD_baseline_regional, baseline_regional_runtime_hourlyavgCTD)
+                    savings_baseline_regional = percent_savings(avoided_runtime_baseline_regional, baseline_regional_runtime)
 
-                    percent_savings_deltaT_cooling_baseline_regional = savings_deltaT_baseline_regional
-                    avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = avoided_runtime_deltaT_baseline_regional.mean()
-                    avoided_total_core_day_runtime_deltaT_cooling_baseline_regional = avoided_runtime_deltaT_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = baseline_regional_runtime_deltaT.mean()
-                    baseline_total_core_day_runtime_deltaT_cooling_baseline_regional = baseline_regional_runtime_deltaT.sum()
-                    _daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional = np.nanmean(baseline_regional_demand_deltaT)
-                    percent_savings_dailyavgCTD_baseline_regional = savings_dailyavgCTD_baseline_regional
-                    avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = avoided_runtime_dailyavgCTD_baseline_regional.mean()
-                    avoided_total_core_day_runtime_dailyavgCTD_baseline_regional = avoided_runtime_dailyavgCTD_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = baseline_regional_runtime_dailyavgCTD.mean()
-                    baseline_total_core_day_runtime_dailyavgCTD_baseline_regional = baseline_regional_runtime_dailyavgCTD.sum()
-                    _daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional = np.nanmean(baseline_regional_demand_dailyavgCTD)
-                    percent_savings_hourlyavgCTD_baseline_regional = savings_hourlyavgCTD_baseline_regional
-                    avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = avoided_runtime_hourlyavgCTD_baseline_regional.mean()
-                    avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional = avoided_runtime_hourlyavgCTD_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = baseline_regional_runtime_hourlyavgCTD.mean()
-                    baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional = baseline_regional_runtime_hourlyavgCTD.sum()
-                    _daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional = np.nanmean(baseline_regional_demand_hourlyavgCTD)
+                    percent_savings_baseline_regional = savings_baseline_regional
+                    avoided_daily_mean_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.mean()
+                    avoided_total_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_baseline_regional = baseline_regional_runtime.mean()
+                    baseline_total_core_day_runtime_baseline_regional = baseline_regional_runtime.sum()
+                    _daily_mean_core_day_demand_baseline_baseline_regional = np.nanmean(baseline_regional_demand)
 
                 else:
 
-                    baseline_regional_demand_deltaT = None
-                    baseline_regional_demand_dailyavgCTD = None
-                    baseline_regional_demand_hourlyavgCTD = None
-                    baseline_regional_runtime_deltaT = None
-                    baseline_regional_runtime_dailyavgCTD = None
-                    baseline_regional_runtime_hourlyavgCTD = None
+                    baseline_regional_demand = None
+                    baseline_regional_runtime = None
 
-                    avoided_runtime_deltaT_baseline_regional = None
-                    avoided_runtime_dailyavgCTD_baseline_regional = None
-                    avoided_runtime_hourlyavgCTD_baseline_regional = None
+                    avoided_runtime_baseline_regional = None
 
-                    savings_deltaT_baseline_regional = None
-                    savings_dailyavgCTD_baseline_regional = None
-                    savings_hourlyavgCTD_baseline_regional = None
+                    savings_baseline_regional = None
 
-                    percent_savings_deltaT_cooling_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = None
-                    avoided_total_core_day_runtime_deltaT_cooling_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional = None
-                    baseline_total_core_day_runtime_deltaT_cooling_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional = None
-                    percent_savings_dailyavgCTD_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = None
-                    avoided_total_core_day_runtime_dailyavgCTD_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional = None
-                    baseline_total_core_day_runtime_dailyavgCTD_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional = None
-                    percent_savings_hourlyavgCTD_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = None
-                    avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional = None
-                    baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional = None
+                    percent_savings_baseline_regional = None
+                    avoided_daily_mean_core_day_runtime_baseline_regional = None
+                    avoided_total_core_day_runtime_baseline_regional = None
+                    baseline_daily_mean_core_day_runtime_baseline_regional = None
+                    baseline_total_core_day_runtime_baseline_regional = None
+                    _daily_mean_core_day_demand_baseline_baseline_regional = None
 
                 n_days_both, n_days_insufficient_data = self.get_ignored_days(core_cooling_day_set)
                 n_core_cooling_days = self.get_core_day_set_n_days(core_cooling_day_set)
@@ -1336,71 +1194,29 @@ class Thermostat(object):
                     "n_days_insufficient_data": n_days_insufficient_data,
                     "n_core_cooling_days": n_core_cooling_days,
 
-                    "baseline10_core_cooling_comfort_temperature": baseline10_comfort_temperature,
+                    "baseline_percentile_core_cooling_comfort_temperature": baseline10_comfort_temperature,
                     "regional_average_baseline_cooling_comfort_temperature": baseline_regional_cooling_comfort_temperature,
 
-                    "percent_savings_deltaT_cooling_baseline10": savings_deltaT_baseline10,
-                    "avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline10": avoided_runtime_deltaT_baseline10.mean(),
-                    "avoided_total_core_day_runtime_deltaT_cooling_baseline10": avoided_runtime_deltaT_baseline10.sum(),
-                    "baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline10": baseline10_runtime_deltaT.mean(),
-                    "baseline_total_core_day_runtime_deltaT_cooling_baseline10": baseline10_runtime_deltaT.sum(),
-                    "_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline10": np.nanmean(baseline10_demand_deltaT),
-                    "percent_savings_deltaT_cooling_baseline_regional": percent_savings_deltaT_cooling_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional": avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional,
-                    "avoided_total_core_day_runtime_deltaT_cooling_baseline_regional": avoided_total_core_day_runtime_deltaT_cooling_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional": baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional,
-                    "baseline_total_core_day_runtime_deltaT_cooling_baseline_regional": baseline_total_core_day_runtime_deltaT_cooling_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional": _daily_mean_core_day_demand_baseline_deltaT_cooling_baseline_regional,
-                    "mean_demand_deltaT_cooling": np.nanmean(demand_deltaT),
-                    "alpha_deltaT_cooling": alpha_deltaT,
-                    "tau_deltaT_cooling": tau_deltaT,
-                    "mean_sq_err_deltaT_cooling": mse_deltaT,
-                    "root_mean_sq_err_deltaT_cooling": rmse_deltaT,
-                    "cv_root_mean_sq_err_deltaT_cooling": cvrmse_deltaT,
-                    "mean_abs_pct_err_deltaT_cooling": mape_deltaT,
-                    "mean_abs_err_deltaT_cooling": mae_deltaT,
-
-                    "percent_savings_dailyavgCTD_baseline10": savings_dailyavgCTD_baseline10,
-                    "avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline10": avoided_runtime_dailyavgCTD_baseline10.mean(),
-                    "avoided_total_core_day_runtime_dailyavgCTD_baseline10": avoided_runtime_dailyavgCTD_baseline10.sum(),
-                    "baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline10": baseline10_runtime_dailyavgCTD.mean(),
-                    "baseline_total_core_day_runtime_dailyavgCTD_baseline10": baseline10_runtime_dailyavgCTD.sum(),
-                    "_daily_mean_core_day_demand_baseline_dailyavgCTD_baseline10": np.nanmean(baseline10_demand_dailyavgCTD),
-                    "percent_savings_dailyavgCTD_baseline_regional": percent_savings_dailyavgCTD_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional": avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional,
-                    "avoided_total_core_day_runtime_dailyavgCTD_baseline_regional": avoided_total_core_day_runtime_dailyavgCTD_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional": baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional,
-                    "baseline_total_core_day_runtime_dailyavgCTD_baseline_regional": baseline_total_core_day_runtime_dailyavgCTD_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional": _daily_mean_core_day_demand_baseline_dailyavgCTD_baseline_regional,
-                    "mean_demand_dailyavgCTD": np.nanmean(demand_dailyavgCTD),
-                    "tau_dailyavgCTD": tau_dailyavgCTD,
-                    "alpha_dailyavgCTD": alpha_dailyavgCTD,
-                    "mean_sq_err_dailyavgCTD": mse_dailyavgCTD,
-                    "root_mean_sq_err_dailyavgCTD": rmse_dailyavgCTD,
-                    "cv_root_mean_sq_err_dailyavgCTD": cvrmse_dailyavgCTD,
-                    "mean_abs_pct_err_dailyavgCTD": mape_dailyavgCTD,
-                    "mean_abs_err_dailyavgCTD": mae_dailyavgCTD,
-
-                    "percent_savings_hourlyavgCTD_baseline10": savings_hourlyavgCTD_baseline10,
-                    "avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline10": avoided_runtime_hourlyavgCTD_baseline10.mean(),
-                    "avoided_total_core_day_runtime_hourlyavgCTD_baseline10": avoided_runtime_hourlyavgCTD_baseline10.sum(),
-                    "baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline10": baseline10_runtime_hourlyavgCTD.mean(),
-                    "baseline_total_core_day_runtime_hourlyavgCTD_baseline10": baseline10_runtime_hourlyavgCTD.sum(),
-                    "_daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline10": np.nanmean(baseline10_demand_hourlyavgCTD),
-                    "percent_savings_hourlyavgCTD_baseline_regional": percent_savings_hourlyavgCTD_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional": avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional,
-                    "avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional": avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional": baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional,
-                    "baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional": baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional": _daily_mean_core_day_demand_baseline_hourlyavgCTD_baseline_regional,
-                    "mean_demand_hourlyavgCTD": np.nanmean(demand_hourlyavgCTD),
-                    "tau_hourlyavgCTD": tau_hourlyavgCTD,
-                    "alpha_hourlyavgCTD": alpha_hourlyavgCTD,
-                    "mean_sq_err_hourlyavgCTD": mse_hourlyavgCTD,
-                    "root_mean_sq_err_hourlyavgCTD": rmse_hourlyavgCTD,
-                    "cv_root_mean_sq_err_hourlyavgCTD": cvrmse_hourlyavgCTD,
-                    "mean_abs_pct_err_hourlyavgCTD": mape_hourlyavgCTD,
-                    "mean_abs_err_hourlyavgCTD": mae_hourlyavgCTD,
+                    "percent_savings_baseline_percentile": savings_baseline10,
+                    "avoided_daily_mean_core_day_runtime_baseline_percentile": avoided_runtime_baseline10.mean(),
+                    "avoided_total_core_day_runtime_baseline_percentile": avoided_runtime_baseline10.sum(),
+                    "baseline_daily_mean_core_day_runtime_baseline_percentile": baseline10_runtime.mean(),
+                    "baseline_total_core_day_runtime_baseline_percentile": baseline10_runtime.sum(),
+                    "_daily_mean_core_day_demand_baseline_baseline_percentile": np.nanmean(baseline10_demand),
+                    "percent_savings_baseline_regional": percent_savings_baseline_regional,
+                    "avoided_daily_mean_core_day_runtime_baseline_regional": avoided_daily_mean_core_day_runtime_baseline_regional,
+                    "avoided_total_core_day_runtime_baseline_regional": avoided_total_core_day_runtime_baseline_regional,
+                    "baseline_daily_mean_core_day_runtime_baseline_regional": baseline_daily_mean_core_day_runtime_baseline_regional,
+                    "baseline_total_core_day_runtime_baseline_regional": baseline_total_core_day_runtime_baseline_regional,
+                    "_daily_mean_core_day_demand_baseline_baseline_regional": _daily_mean_core_day_demand_baseline_baseline_regional,
+                    "mean_demand": np.nanmean(demand),
+                    "tau": tau,
+                    "alpha": alpha,
+                    "mean_sq_err": mse,
+                    "root_mean_sq_err": rmse,
+                    "cv_root_mean_sq_err": cvrmse,
+                    "mean_abs_pct_err": mape,
+                    "mean_abs_err": mae,
 
                     "total_core_cooling_runtime": total_runtime_core_cooling,
 
@@ -1408,7 +1224,6 @@ class Thermostat(object):
                 }
 
                 metrics.append(outputs)
-
 
         if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
             for core_heating_day_set in self.get_core_heating_days(method=core_heating_day_set_method):
@@ -1418,208 +1233,78 @@ class Thermostat(object):
 
                 # deltaT
                 daily_runtime = self.heat_runtime[core_heating_day_set.daily]
-                demand_deltaT = self.get_heating_demand(core_heating_day_set, method="deltaT")
 
-                try:
-                    (
-                        alpha_deltaT,
-                        tau_deltaT,
-                        mse_deltaT,
-                        rmse_deltaT,
-                        cvrmse_deltaT,
-                        mape_deltaT,
-                        mae_deltaT,
-                    ) = runtime_regression(
-                        daily_runtime, demand_deltaT, "heating")
-                except ValueError:
-                    alpha_deltaT = np.nan
-                    tau_deltaT = np.nan
-                    mse_deltaT = np.nan
-                    rmse_deltaT = np.nan
-                    cvrmse_deltaT = np.nan
-                    mape_deltaT = np.nan
-                    mae_deltaT = np.nan
-
-                # dailyavgHTD
                 (
-                    demand_dailyavgHTD,
-                    tau_dailyavgHTD,
-                    alpha_dailyavgHTD,
-                    mse_dailyavgHTD,
-                    rmse_dailyavgHTD,
-                    cvrmse_dailyavgHTD,
-                    mape_dailyavgHTD,
-                    mae_dailyavgHTD,
-                ) = self.get_heating_demand(
-                    core_heating_day_set, method="dailyavgHTD")
-
-                # hourlyavgHTD
-                (
-                    demand_hourlyavgHTD,
-                    tau_hourlyavgHTD,
-                    alpha_hourlyavgHTD,
-                    mse_hourlyavgHTD,
-                    rmse_hourlyavgHTD,
-                    cvrmse_hourlyavgHTD,
-                    mape_hourlyavgHTD,
-                    mae_hourlyavgHTD,
-                ) = self.get_heating_demand(
-                    core_heating_day_set, method="hourlyavgHTD")
+                    demand,
+                    tau,
+                    alpha,
+                    mse,
+                    rmse,
+                    cvrmse,
+                    mape,
+                    mae,
+                ) = self.get_heating_demand(core_heating_day_set)
 
                 total_runtime_core_heating = daily_runtime.sum()
                 n_days = core_heating_day_set.daily.sum()
                 average_daily_heating_runtime = \
                     total_runtime_core_heating / n_days
 
-                baseline90_demand_deltaT = \
-                    self.get_baseline_heating_demand(
-                        core_heating_day_set,
-                        baseline90_comfort_temperature,
-                        tau=None,
-                        demand_method="deltaT")
-                baseline90_demand_dailyavgHTD = \
-                    self.get_baseline_heating_demand(
-                        core_heating_day_set,
-                        baseline90_comfort_temperature,
-                        tau=tau_dailyavgHTD,
-                        demand_method="dailyavgHTD")
-                baseline90_demand_hourlyavgHTD = \
-                    self.get_baseline_heating_demand(
-                        core_heating_day_set,
-                        baseline90_comfort_temperature,
-                        tau=tau_hourlyavgHTD,
-                        demand_method="hourlyavgHTD")
+                baseline90_demand = self.get_baseline_heating_demand(
+                    core_heating_day_set,
+                    baseline90_comfort_temperature,
+                    tau,
+                )
 
-                baseline90_runtime_deltaT = \
-                    self.get_baseline_heating_runtime(
-                        baseline90_demand_deltaT,
-                        alpha_deltaT,
-                        tau_deltaT,
-                        method="deltaT")
-                baseline90_runtime_dailyavgHTD = \
-                    self.get_baseline_heating_runtime(
-                        baseline90_demand_dailyavgHTD,
-                        alpha_dailyavgHTD,
-                        tau_dailyavgHTD,
-                        method="dailyavgHTD")
-                baseline90_runtime_hourlyavgHTD = \
-                    self.get_baseline_heating_runtime(
-                        baseline90_demand_hourlyavgHTD,
-                        alpha_hourlyavgHTD,
-                        tau_hourlyavgHTD,
-                        method="hourlyavgHTD")
+                baseline90_runtime = self.get_baseline_heating_runtime(
+                    baseline90_demand,
+                    alpha,
+                )
 
-                avoided_runtime_deltaT_baseline90 = avoided(baseline90_runtime_deltaT, daily_runtime)
-                avoided_runtime_dailyavgHTD_baseline90 = avoided(baseline90_runtime_dailyavgHTD, daily_runtime)
-                avoided_runtime_hourlyavgHTD_baseline90 = avoided(baseline90_runtime_hourlyavgHTD, daily_runtime)
+                avoided_runtime_baseline90 = avoided(baseline90_runtime, daily_runtime)
 
-                savings_deltaT_baseline90 = percent_savings(avoided_runtime_deltaT_baseline90, baseline90_runtime_deltaT)
-                savings_dailyavgHTD_baseline90 = percent_savings(avoided_runtime_dailyavgHTD_baseline90, baseline90_runtime_dailyavgHTD)
-                savings_hourlyavgHTD_baseline90 = percent_savings(avoided_runtime_hourlyavgHTD_baseline90, baseline90_runtime_hourlyavgHTD)
+                savings_baseline90 = percent_savings(avoided_runtime_baseline90, baseline90_runtime)
 
                 if baseline_regional_heating_comfort_temperature is not None:
 
-                    baseline_regional_demand_deltaT = \
-                        self.get_baseline_heating_demand(
-                            core_heating_day_set,
-                            baseline_regional_heating_comfort_temperature,
-                            tau=None,
-                            demand_method="deltaT")
-                    baseline_regional_demand_dailyavgHTD = \
-                        self.get_baseline_heating_demand(
-                            core_heating_day_set,
-                            baseline_regional_heating_comfort_temperature,
-                            tau=tau_dailyavgHTD,
-                            demand_method="dailyavgHTD")
-                    baseline_regional_demand_hourlyavgHTD = \
-                        self.get_baseline_heating_demand(
-                            core_heating_day_set,
-                            baseline_regional_heating_comfort_temperature,
-                            tau=tau_hourlyavgHTD,
-                            demand_method="hourlyavgHTD")
+                    baseline_regional_demand = self.get_baseline_heating_demand(
+                        core_heating_day_set,
+                        baseline_regional_heating_comfort_temperature,
+                        tau,
+                    )
 
-                    baseline_regional_runtime_deltaT = \
-                        self.get_baseline_heating_runtime(
-                            baseline_regional_demand_deltaT,
-                            alpha_deltaT,
-                            tau_deltaT,
-                            method="deltaT")
-                    baseline_regional_runtime_dailyavgHTD = \
-                        self.get_baseline_heating_runtime(
-                            baseline_regional_demand_dailyavgHTD,
-                            alpha_dailyavgHTD,
-                            tau_dailyavgHTD,
-                            method="dailyavgHTD")
-                    baseline_regional_runtime_hourlyavgHTD = \
-                        self.get_baseline_heating_runtime(
-                            baseline_regional_demand_hourlyavgHTD,
-                            alpha_hourlyavgHTD,
-                            tau_hourlyavgHTD,
-                            method="hourlyavgHTD")
+                    baseline_regional_runtime = self.get_baseline_heating_runtime(
+                        baseline_regional_demand,
+                        alpha,
+                    )
 
-                    avoided_runtime_deltaT_baseline_regional = avoided(baseline_regional_runtime_deltaT, daily_runtime)
-                    avoided_runtime_dailyavgHTD_baseline_regional = avoided(baseline_regional_runtime_dailyavgHTD, daily_runtime)
-                    avoided_runtime_hourlyavgHTD_baseline_regional = avoided(baseline_regional_runtime_hourlyavgHTD, daily_runtime)
+                    avoided_runtime_baseline_regional = avoided(baseline_regional_runtime, daily_runtime)
 
-                    savings_deltaT_baseline_regional = percent_savings(avoided_runtime_deltaT_baseline_regional, baseline_regional_runtime_deltaT)
-                    savings_dailyavgHTD_baseline_regional = percent_savings(avoided_runtime_dailyavgHTD_baseline_regional, baseline_regional_runtime_dailyavgHTD)
-                    savings_hourlyavgHTD_baseline_regional = percent_savings(avoided_runtime_hourlyavgHTD_baseline_regional, baseline_regional_runtime_hourlyavgHTD)
+                    savings_baseline_regional = percent_savings(avoided_runtime_baseline_regional, baseline_regional_runtime)
 
-                    percent_savings_deltaT_heating_baseline_regional = savings_deltaT_baseline_regional
-                    avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = avoided_runtime_deltaT_baseline_regional.mean()
-                    avoided_total_core_day_runtime_deltaT_heating_baseline_regional = avoided_runtime_deltaT_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = baseline_regional_runtime_deltaT.mean()
-                    baseline_total_core_day_runtime_deltaT_heating_baseline_regional = baseline_regional_runtime_deltaT.sum()
-                    _daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional = np.nanmean(baseline_regional_demand_deltaT)
-                    percent_savings_dailyavgHTD_baseline_regional = savings_dailyavgHTD_baseline_regional
-                    avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = avoided_runtime_dailyavgHTD_baseline_regional.mean()
-                    avoided_total_core_day_runtime_dailyavgHTD_baseline_regional = avoided_runtime_dailyavgHTD_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = baseline_regional_runtime_dailyavgHTD.mean()
-                    baseline_total_core_day_runtime_dailyavgHTD_baseline_regional = baseline_regional_runtime_dailyavgHTD.sum()
-                    _daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional = np.nanmean(baseline_regional_demand_dailyavgHTD)
-                    percent_savings_hourlyavgHTD_baseline_regional = savings_hourlyavgHTD_baseline_regional
-                    avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = avoided_runtime_hourlyavgHTD_baseline_regional.mean()
-                    avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional = avoided_runtime_hourlyavgHTD_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = baseline_regional_runtime_hourlyavgHTD.mean()
-                    baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional = baseline_regional_runtime_hourlyavgHTD.sum()
-                    _daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional = np.nanmean(baseline_regional_demand_hourlyavgHTD)
+                    percent_savings_baseline_regional = savings_baseline_regional
+                    avoided_daily_mean_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.mean()
+                    avoided_total_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.sum()
+                    baseline_daily_mean_core_day_runtime_baseline_regional = baseline_regional_runtime.mean()
+                    baseline_total_core_day_runtime_baseline_regional = baseline_regional_runtime.sum()
+                    _daily_mean_core_day_demand_baseline_baseline_regional = np.nanmean(baseline_regional_demand)
 
                 else:
 
-                    baseline_regional_demand_deltaT = None
-                    baseline_regional_demand_dailyavgHTD = None
-                    baseline_regional_demand_hourlyavgHTD = None
+                    baseline_regional_demand = None
 
-                    baseline_regional_runtime_deltaT = None
-                    baseline_regional_runtime_dailyavgHTD = None
-                    baseline_regional_runtime_hourlyavgHTD = None
+                    baseline_regional_runtime = None
 
-                    avoided_runtime_deltaT_baseline_regional = None
-                    avoided_runtime_dailyavgHTD_baseline_regional = None
-                    avoided_runtime_hourlyavgHTD_baseline_regional = None
+                    avoided_runtime_baseline_regional = None
 
-                    savings_deltaT_baseline_regional = None
-                    savings_dailyavgHTD_baseline_regional = None
-                    savings_hourlyavgHTD_baseline_regional = None
+                    savings_baseline_regional = None
 
-                    percent_savings_deltaT_heating_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = None
-                    avoided_total_core_day_runtime_deltaT_heating_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional = None
-                    baseline_total_core_day_runtime_deltaT_heating_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional = None
-                    percent_savings_dailyavgHTD_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = None
-                    avoided_total_core_day_runtime_dailyavgHTD_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional = None
-                    baseline_total_core_day_runtime_dailyavgHTD_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional = None
-                    percent_savings_hourlyavgHTD_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = None
-                    avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional = None
-                    baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional = None
+                    percent_savings_baseline_regional = None
+                    avoided_daily_mean_core_day_runtime_baseline_regional = None
+                    avoided_total_core_day_runtime_baseline_regional = None
+                    baseline_daily_mean_core_day_runtime_baseline_regional = None
+                    baseline_total_core_day_runtime_baseline_regional = None
+                    _daily_mean_core_day_demand_baseline_baseline_regional = None
 
 
                 n_days_both, n_days_insufficient_data = self.get_ignored_days(core_heating_day_set)
@@ -1643,77 +1328,34 @@ class Thermostat(object):
                     "n_days_insufficient_data": n_days_insufficient_data,
                     "n_core_heating_days": n_core_heating_days,
 
-                    "baseline90_core_heating_comfort_temperature": baseline90_comfort_temperature,
+                    "baseline_percentile_core_heating_comfort_temperature": baseline90_comfort_temperature,
                     "regional_average_baseline_heating_comfort_temperature": baseline_regional_heating_comfort_temperature,
 
-                    "percent_savings_deltaT_heating_baseline90": savings_deltaT_baseline90,
-                    "avoided_daily_mean_core_day_runtime_deltaT_heating_baseline90": avoided_runtime_deltaT_baseline90.mean(),
-                    "avoided_total_core_day_runtime_deltaT_heating_baseline90": avoided_runtime_deltaT_baseline90.sum(),
-                    "baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90": baseline90_runtime_deltaT.mean(),
-                    "baseline_total_core_day_runtime_deltaT_heating_baseline90": baseline90_runtime_deltaT.sum(),
-                    "_daily_mean_core_day_demand_baseline_deltaT_heating_baseline90": np.nanmean(baseline90_demand_deltaT),
-                    "percent_savings_deltaT_heating_baseline_regional": percent_savings_deltaT_heating_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional": avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional,
-                    "avoided_total_core_day_runtime_deltaT_heating_baseline_regional": avoided_total_core_day_runtime_deltaT_heating_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional": baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional,
-                    "baseline_total_core_day_runtime_deltaT_heating_baseline_regional": baseline_total_core_day_runtime_deltaT_heating_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional": _daily_mean_core_day_demand_baseline_deltaT_heating_baseline_regional,
-                    "mean_demand_deltaT_heating": np.nanmean(demand_deltaT),
-                    "alpha_deltaT_heating": alpha_deltaT,
-                    "tau_deltaT_heating": tau_deltaT,
-                    "mean_sq_err_deltaT_heating": mse_deltaT,
-                    "root_mean_sq_err_deltaT_heating": rmse_deltaT,
-                    "cv_root_mean_sq_err_deltaT_heating": cvrmse_deltaT,
-                    "mean_abs_pct_err_deltaT_heating": mape_deltaT,
-                    "mean_abs_err_deltaT_heating": mae_deltaT,
-
-                    "percent_savings_dailyavgHTD_baseline90": savings_dailyavgHTD_baseline90,
-                    "avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline90": avoided_runtime_dailyavgHTD_baseline90.mean(),
-                    "avoided_total_core_day_runtime_dailyavgHTD_baseline90": avoided_runtime_dailyavgHTD_baseline90.sum(),
-                    "baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline90": baseline90_runtime_dailyavgHTD.mean(),
-                    "baseline_total_core_day_runtime_dailyavgHTD_baseline90": baseline90_runtime_dailyavgHTD.sum(),
-                    "_daily_mean_core_day_demand_baseline_dailyavgHTD_baseline90": np.nanmean(baseline90_demand_dailyavgHTD),
-                    "percent_savings_dailyavgHTD_baseline_regional": percent_savings_dailyavgHTD_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional": avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional,
-                    "avoided_total_core_day_runtime_dailyavgHTD_baseline_regional": avoided_total_core_day_runtime_dailyavgHTD_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional": baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional,
-                    "baseline_total_core_day_runtime_dailyavgHTD_baseline_regional": baseline_total_core_day_runtime_dailyavgHTD_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional": _daily_mean_core_day_demand_baseline_dailyavgHTD_baseline_regional,
-                    "mean_demand_dailyavgHTD": np.nanmean(demand_dailyavgHTD),
-                    "tau_dailyavgHTD": tau_dailyavgHTD,
-                    "alpha_dailyavgHTD": alpha_dailyavgHTD,
-                    "mean_sq_err_dailyavgHTD": mse_dailyavgHTD,
-                    "root_mean_sq_err_dailyavgHTD": rmse_dailyavgHTD,
-                    "cv_root_mean_sq_err_dailyavgHTD": cvrmse_dailyavgHTD,
-                    "mean_abs_pct_err_dailyavgHTD": mape_dailyavgHTD,
-                    "mean_abs_err_dailyavgHTD": mae_dailyavgHTD,
-
-                    "percent_savings_hourlyavgHTD_baseline90": savings_hourlyavgHTD_baseline90,
-                    "avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline90": avoided_runtime_hourlyavgHTD_baseline90.mean(),
-                    "avoided_total_core_day_runtime_hourlyavgHTD_baseline90": avoided_runtime_hourlyavgHTD_baseline90.sum(),
-                    "baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline90": baseline90_runtime_hourlyavgHTD.mean(),
-                    "baseline_total_core_day_runtime_hourlyavgHTD_baseline90": baseline90_runtime_hourlyavgHTD.sum(),
-                    "_daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline90": np.nanmean(baseline90_demand_hourlyavgHTD),
-                    "percent_savings_hourlyavgHTD_baseline_regional": savings_hourlyavgHTD_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional": avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional,
-                    "avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional": avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional": baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional,
-                    "baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional": baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional": _daily_mean_core_day_demand_baseline_hourlyavgHTD_baseline_regional,
-                    "mean_demand_hourlyavgHTD": np.nanmean(demand_hourlyavgHTD),
-                    "tau_hourlyavgHTD": tau_hourlyavgHTD,
-                    "alpha_hourlyavgHTD": alpha_hourlyavgHTD,
-                    "mean_sq_err_hourlyavgHTD": mse_hourlyavgHTD,
-                    "root_mean_sq_err_hourlyavgHTD": rmse_hourlyavgHTD,
-                    "cv_root_mean_sq_err_hourlyavgHTD": cvrmse_hourlyavgHTD,
-                    "mean_abs_pct_err_hourlyavgHTD": mape_hourlyavgHTD,
-                    "mean_abs_err_hourlyavgHTD": mae_hourlyavgHTD,
+                    "percent_savings_baseline_percentile": savings_baseline90,
+                    "avoided_daily_mean_core_day_runtime_baseline_percentile": avoided_runtime_baseline90.mean(),
+                    "avoided_total_core_day_runtime_baseline_percentile": avoided_runtime_baseline90.sum(),
+                    "baseline_daily_mean_core_day_runtime_baseline_percentile": baseline90_runtime.mean(),
+                    "baseline_total_core_day_runtime_baseline_percentile": baseline90_runtime.sum(),
+                    "_daily_mean_core_day_demand_baseline_baseline_percentile": np.nanmean(baseline90_demand),
+                    "percent_savings_baseline_regional": savings_baseline_regional,
+                    "avoided_daily_mean_core_day_runtime_baseline_regional": avoided_daily_mean_core_day_runtime_baseline_regional,
+                    "avoided_total_core_day_runtime_baseline_regional": avoided_total_core_day_runtime_baseline_regional,
+                    "baseline_daily_mean_core_day_runtime_baseline_regional": baseline_daily_mean_core_day_runtime_baseline_regional,
+                    "baseline_total_core_day_runtime_baseline_regional": baseline_total_core_day_runtime_baseline_regional,
+                    "_daily_mean_core_day_demand_baseline_baseline_regional": _daily_mean_core_day_demand_baseline_baseline_regional,
+                    "mean_demand": np.nanmean(demand),
+                    "tau": tau,
+                    "alpha": alpha,
+                    "mean_sq_err": mse,
+                    "root_mean_sq_err": rmse,
+                    "cv_root_mean_sq_err": cvrmse,
+                    "mean_abs_pct_err": mape,
+                    "mean_abs_err": mae,
 
                     "total_core_heating_runtime": total_runtime_core_heating,
 
                     "daily_mean_core_heating_runtime": average_daily_heating_runtime,
                 }
-
 
                 if self.equipment_type in self.AUX_EMERG_EQUIPMENT_TYPES:
 
