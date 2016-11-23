@@ -64,7 +64,7 @@ use the :code:`--no-deps` flag:
 
     $ pip install thermostat --upgrade --no-deps
 
-Previous versions of the package are available on `github <https://github.com/openeemeter/thermostat/releases>`.
+Previous versions of the package are available on `github <https://github.com/openeemeter/thermostat/releases>`_.
 
 .. note::
 
@@ -151,22 +151,22 @@ the root logger, which this uses.
     The thermostat package depends on the eemeter package for weather data
     fetching. The eemeter package automatically creates its own cache directory
     in which it keeps cached versions of weather source data. This speeds up
-    the (generally IO-bound) NOAA weather fetching routine on subsequent
+    the (generally I/O bound) NOAA weather fetching routine on subsequent
     internal calls to fetch the same weather data (i.e. getting outdoor
     temperature data for thermostats that map to the same weather station).
 
-    For more information, see the `eemeter package <https://eemeter.readthedocs.io/en/latest/weather.html#isdweathersource>`_.
+    For more information, see the `eemeter package <https://eemeter.readthedocs.io/en/release-v0.4.8-alpha/weather.html#isdweathersource>`_.
 
 .. note::
 
-    US Census Bureau ZIP Code Tabulation Areas (ZCTA) are used to USPS ZIP
+    US Census Bureau ZIP Code Tabulation Areas (ZCTA) are used to map USPS ZIP
     codes to outdoor temperature data. If the automatic mapping is unsuccessful
     for one or more of the ZIP codes in your dataset, the reason is likely to
     be the discrepancy between "true" USPS ZIP codes and the US Census Bureau
     ZCTAs. "True" ZIP codes are not used because they do not always map well to
-    location (e.g. P.O. boxes). You may need to first map ZIP codes to ZCTAs,
-    or these thermostats will be skipped. There are roughly 32,000 ZCTAs and
-    roughly 42000 ZIP codes - many fewer ZCTAs than ZIP codes.
+    location (for example, ZIP codes for P.O. boxes). You may need to first map
+    ZIP codes to ZCTAs, or these thermostats will be skipped. There are roughly
+    32,000 ZCTAs and roughly 42000 ZIP codes - many fewer ZCTAs than ZIP codes.
 
 Computing individual thermostat-season metrics
 ----------------------------------------------
@@ -237,13 +237,16 @@ Compute statistics across all thermostats.
         # uses the metrics_df created in the quickstart above.
         stats = compute_summary_statistics(metrics_df)
 
+        # If you want to have advanced filter outputs, use this instead
+        # stats_advanced = compute_summary_statistics(metrics_df, advanced_filtering=True)
+
 Save these results to file.
 
 Each row of the saved CSV will represent one type of output, with one row per
 statistic per output. Each column in the CSV will represent one subset of
 thermostats, as determined by grouping by EIC climate zone and applying
 various filtering methods. National weighted averages will be available near
-the bottom of the file.
+the top of the file.
 
 At this point, you will also need to provide an alphanumeric product identifier
 for the connected thermostat; e.g. a combination of the connected thermostat
@@ -256,12 +259,20 @@ data set.
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
     stats_df = summary_statistics_to_csv(stats, stats_filepath, product_id)
 
+    # or with advanced filter outputs
+    # stats_advanced_filepath = os.path.join(data_dir, "thermostat_example_stats_advanced.csv")
+    # stats_advanced_df = summary_statistics_to_csv(stats_advanced, stats_advanced_filepath, product_id)
+
+National savings are computed by weighted average of percent savings results
+grouped by climate zone. Heavier weights are applied to results in climate
+zones which, regionally, tend to have longer runtimes. Weightings used are
+available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
+
 More information
 ----------------
 
 For additional information on package usage, please see the
 :ref:`thermostat-api` documentation.
-
 
 .. _thermostat-input:
 
@@ -333,7 +344,7 @@ Name                         Data Format             Units    Description
 - If only a single setpoint is used for the thermostat, please copy the same
   setpoint data in to the heating and cooling setpoint columns.
 - Outdoor temperature data need not be provided - it will be fetched
-  automatically from NCDC using the `eemeter <https://eemeter.readthedocs.io/en/latest/weather.html#isdweathersource>`_ package.
+  automatically from NCDC using the `eemeter package <https://eemeter.readthedocs.io/en/release-v0.4.8-alpha/weather.html#isdweathersource>`_ package.
 - Dates should be consecutive.
 
 .. [#] Options for :code:`equipment_type`:
@@ -350,7 +361,7 @@ Name                         Data Format             Units    Description
    dry-bulb temperature data. This temperature data will be used to determine
    the bounds of the heating and cooling season over which metrics will be
    computed. For more information on the mapping between ZIP codes and
-   weather stations, please see `eemeter.weather.location <https://eemeter.readthedocs.io/en/latest/weather.html#eemeter.weather.location.zipcode_to_climate_zone>`_.
+   weather stations, please see `eemeter.weather.location <https://eemeter.readthedocs.io/en/release-v0.4.8-alpha/weather.html#eemeter.weather.location.zipcode_to_climate_zone>`_.
 
 .. [#] Should not include runtime for auxiliary or emergency heat - this should
    be provided separately in the columns `emergency_heat_HH` and
@@ -392,120 +403,25 @@ Columns
    ":code:`baseline90_core_cooling_comfort_temperature`","float","°F","Baseline comfort temperature as determined by 90th percentile of indoor temperatures."
    ":code:`regional_average_baseline_cooling_comfort_temperature`","float","°F","Baseline comfort temperature as determined by regional average."
    ":code:`regional_average_baseline_heating_comfort_temperature`","float","°F","Baseline comfort temperature as determined by regional average."
-   "**Delta T cooling outputs**"
-   ":code:`percent_savings_deltaT_cooling_baseline10`","float","percent","Percent savings as given by ΔT cooling method with 10th percentile baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline10`","float","minutes","Avoided average daily runtime for core cooling days"
-   ":code:`avoided_total_core_day_runtime_deltaT_cooling_baseline10`","float","minutes","Avoided total runtime for core cooling days"
-   ":code:`baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline10`","float","minutes","Baseline average daily runtime for core cooling days"
-   ":code:`baseline_total_core_day_runtime_deltaT_cooling_baseline10`","float","minutes","Baseline total runtime for core cooling days"
-   ":code:`percent_savings_deltaT_cooling_baseline_regional`","float","percent","Percent savings as given by ΔT cooling method with regional baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional`","float","minutes","Avoided average daily runtime for core cooling days"
-   ":code:`avoided_total_core_day_runtime_deltaT_cooling_baseline_regional`","float","minutes","Avoided total runtime for core cooling days"
-   ":code:`baseline_daily_mean_core_day_runtime_deltaT_cooling_baseline_regional`","float","minutes","Baseline average daily runtime for core cooling days"
-   ":code:`baseline_total_core_day_runtime_deltaT_cooling_baseline_regional`","float","minutes","Baseline total runtime for core cooling days"
-   ":code:`mean_demand_deltaT_cooling`","float","°F","Average cooling demand"
-   ":code:`alpha_deltaT_cooling`","float","minutes/Δ°F","The fitted slope of cooling runtime to demand regression"
-   ":code:`tau_deltaT_cooling`","float","°F","The fitted intercept of cooling runtime to demand regression"
-   ":code:`mean_sq_err_deltaT_cooling`","float","N/A","Mean squared error of regression"
-   ":code:`root_mean_sq_err_deltaT_cooling`","float","N/A","Root mean squared error of regression"
-   ":code:`cv_root_mean_sq_err_deltaT_cooling`","float","N/A","Coefficient of variation of root mean squared error of regression"
-   ":code:`mean_abs_err_deltaT_cooling`","float","N/A","Mean absolute error"
-   ":code:`mean_abs_pct_err_deltaT_cooling`","float","N/A","Mean absolute percent error"
-   "**Daily average CTD outputs**"
-   ":code:`percent_savings_dailyavgCTD_baseline10`","float","percent","Percent savings as given by daily average CTD method with 10th percentile baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline10`","float","minutes","Avoided average daily runtime for core cooling days"
-   ":code:`avoided_total_core_day_runtime_dailyavgCTD_baseline10`","float","minutes","Avoided total runtime for core cooling days"
-   ":code:`baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline10`","float","minutes","Baseline average daily runtime for core cooling days"
-   ":code:`baseline_total_core_day_runtime_dailyavgCTD_baseline10`","float","minutes","Baseline total runtime for core cooling days"
-   ":code:`percent_savings_dailyavgCTD_baseline_regional`","float","percent","Percent savings as given by daily average CTD method with regional baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional`","float","minutes","Avoided average daily runtime for core cooling days"
-   ":code:`avoided_total_core_day_runtime_dailyavgCTD_baseline_regional`","float","minutes","Avoided total runtime for core cooling days"
-   ":code:`baseline_daily_mean_core_day_runtime_dailyavgCTD_baseline_regional`","float","minutes","Baseline average daily runtime for core cooling days"
-   ":code:`baseline_total_core_day_runtime_dailyavgCTD_baseline_regional`","float","minutes","Baseline total runtime for core cooling days"
-   ":code:`mean_demand_dailyavgCTD`","float","°F","Average cooling demand"
-   ":code:`alpha_dailyavgCTD`","float","minutes/Δ°F","The fitted slope of cooling runtime to demand regression"
-   ":code:`tau_dailyavgCTD`","float","°F","The fitted intercept of cooling runtime to demand regression"
-   ":code:`mean_sq_err_dailyavgCTD`","float","N/A","Mean squared error of regression"
-   ":code:`root_mean_sq_err_dailyavgCTD`","float","N/A","Root mean squared error of regression"
-   ":code:`cv_root_mean_sq_err_dailyavgCTD`","float","N/A","Coefficient of variation of root mean squared error of regression"
-   ":code:`mean_abs_err_dailyavgCTD`","float","N/A","Mean absolute error"
-   ":code:`mean_abs_pct_err_dailyavgCTD`","float","N/A","Mean absolute percent error"
-   "**Hourly average CTD outputs**"
-   ":code:`percent_savings_hourlyavgCTD_baseline10`","float","percent","Percent savings as given by hourly average CTD method with 10th percentile baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline10`","float","minutes","Avoided average daily runtime for core cooling days"
-   ":code:`avoided_total_core_day_runtime_hourlyavgCTD_baseline10`","float","minutes","Avoided total runtime for core cooling days"
-   ":code:`baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline10`","float","minutes","Baseline average daily runtime for core cooling days"
-   ":code:`baseline_total_core_day_runtime_hourlyavgCTD_baseline10`","float","minutes","Baseline total runtime for core cooling days"
-   ":code:`percent_savings_hourlyavgCTD_baseline_regional`","float","percent","Percent savings as given by hourly average CTD method with regional baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional`","float","minutes","Avoided average daily runtime for core cooling days"
-   ":code:`avoided_total_core_day_runtime_hourlyavgCTD_baseline_regional`","float","minutes","Avoided total runtime for core cooling days"
-   ":code:`baseline_daily_mean_core_day_runtime_hourlyavgCTD_baseline_regional`","float","minutes","Baseline average daily runtime for core cooling days"
-   ":code:`baseline_total_core_day_runtime_hourlyavgCTD_baseline_regional`","float","minutes","Baseline total runtime for core cooling days"
-   ":code:`mean_demand_hourlyavgCTD`","float","°F","Average cooling demand"
-   ":code:`alpha_hourlyavgCTD`","float","minutes/Δ°F","The fitted slope of cooling runtime to demand regression"
-   ":code:`tau_hourlyavgCTD`","float","°F","The fitted intercept of cooling runtime to demand regression"
-   ":code:`mean_sq_err_hourlyavgCTD`","float","N/A","Mean squared error of regression"
-   ":code:`root_mean_sq_err_hourlyavgCTD`","float","N/A","Root mean squared error of regression"
-   ":code:`cv_root_mean_sq_err_hourlyavgCTD`","float","N/A","Coefficient of variation of root mean squared error of regression"
-   ":code:`mean_abs_err_hourlyavgCTD`","float","N/A","Mean absolute error"
-   ":code:`mean_abs_pct_err_hourlyavgCTD`","float","N/A","Mean absolute percent error"
-   "**Delta T heating outputs**"
-   ":code:`percent_savings_deltaT_heating_baseline90`","float","percent","Percent savings as given by ΔT heating method with 90th percentile baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_deltaT_heating_baseline90`","float","minutes","Avoided average daily runtime for core heating days"
-   ":code:`avoided_total_core_day_runtime_deltaT_heating_baseline90`","float","minutes","Avoided total runtime for core heating days"
-   ":code:`baseline_daily_mean_core_day_runtime_deltaT_heating_baseline90`","float","minutes","Baseline average daily runtime for core heating days"
-   ":code:`baseline_total_core_day_runtime_deltaT_heating_baseline90`","float","minutes","Baseline total runtime for core heating days"
-   ":code:`percent_savings_deltaT_heating_baseline_regional`","float","percent","Percent savings as given by ΔT heating method with regional baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_deltaT_heating_baseline_regional`","float","minutes","Avoided average daily runtime for core heating days"
-   ":code:`avoided_total_core_day_runtime_deltaT_heating_baseline_regional`","float","minutes","Avoided total runtime for core heating days"
-   ":code:`baseline_daily_mean_core_day_runtime_deltaT_heating_baseline_regional`","float","minutes","Baseline average daily runtime for core heating days"
-   ":code:`baseline_total_core_day_runtime_deltaT_heating_baseline_regional`","float","minutes","Baseline total runtime for core heating days"
-   ":code:`mean_demand_deltaT_heating`","float","°F","Average heating demand"
-   ":code:`alpha_deltaT_heating`","float","minutes/Δ°F","The fitted slope of heating runtime to demand regression"
-   ":code:`tau_deltaT_heating`","float","°F","The fitted intercept of heating runtime to demand regression"
-   ":code:`mean_sq_err_deltaT_heating`","float","N/A","Mean squared error of regression"
-   ":code:`root_mean_sq_err_deltaT_heating`","float","N/A","Root mean squared error of regression"
-   ":code:`cv_root_mean_sq_err_deltaT_heating`","float","N/A","Coefficient of variation of root mean squared error of regression"
-   ":code:`mean_abs_err_deltaT_heating`","float","N/A","Mean absolute error"
-   ":code:`mean_abs_pct_err_deltaT_heating`","float","N/A","Mean absolute percent error"
-   "**Daily average CTD outputs**"
-   ":code:`percent_savings_dailyavgHTD_baseline90`","float","percent","Percent savings as given by daily average HTD method with 90th percentile baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline90`","float","minutes","Avoided average daily runtime for core heating days"
-   ":code:`avoided_total_core_day_runtime_dailyavgHTD_baseline90`","float","minutes","Avoided total runtime for core heating days"
-   ":code:`baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline90`","float","minutes","Baseline average daily runtime for core heating days"
-   ":code:`baseline_total_core_day_runtime_dailyavgHTD_baseline90`","float","minutes","Baseline total runtime for core heating days"
-   ":code:`percent_savings_dailyavgHTD_baseline_regional`","float","percent","Percent savings as given by daily average HTD method with regional baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional`","float","minutes","Avoided average daily runtime for core heating days"
-   ":code:`avoided_total_core_day_runtime_dailyavgHTD_baseline_regional`","float","minutes","Avoided total runtime for core heating days"
-   ":code:`baseline_daily_mean_core_day_runtime_dailyavgHTD_baseline_regional`","float","minutes","Baseline average daily runtime for core heating days"
-   ":code:`baseline_total_core_day_runtime_dailyavgHTD_baseline_regional`","float","minutes","Baseline total runtime for core heating days"
-   ":code:`mean_demand_dailyavgHTD`","float","°F","Average heating demand"
-   ":code:`alpha_dailyavgHTD`","float","minutes/Δ°F","The fitted slope of heating runtime to demand regression"
-   ":code:`tau_dailyavgHTD`","float","°F","The fitted intercept of heating runtime to demand regression"
-   ":code:`mean_sq_err_dailyavgHTD`","float","N/A","Mean squared error of regression"
-   ":code:`root_mean_sq_err_dailyavgHTD`","float","N/A","Root mean squared error of regression"
-   ":code:`cv_root_mean_sq_err_dailyavgHTD`","float","N/A","Coefficient of variation of root mean squared error of regression"
-   ":code:`mean_abs_err_dailyavgHTD`","float","N/A","Mean absolute error"
-   ":code:`mean_abs_pct_err_dailyavgHTD`","float","N/A","Mean absolute percent error"
-   "**Hourly average CTD outputs**"
-   ":code:`percent_savings_hourlyavgHTD_baseline90`","float","percent","Percent savings as given by hourly average HTD method with 90th percentile baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline90`","float","minutes","Avoided average daily runtime for core heating days"
-   ":code:`avoided_total_core_day_runtime_hourlyavgHTD_baseline90`","float","minutes","Avoided total runtime for core heating days"
-   ":code:`baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline90`","float","minutes","Baseline average daily runtime for core heating days"
-   ":code:`baseline_total_core_day_runtime_hourlyavgHTD_baseline90`","float","minutes","Baseline total runtime for core heating days"
-   ":code:`percent_savings_hourlyavgHTD_baseline_regional`","float","percent","Percent savings as given by hourly average HTD method with regional baseline"
-   ":code:`avoided_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional`","float","minutes","Avoided average daily runtime for core heating days"
-   ":code:`avoided_total_core_day_runtime_hourlyavgHTD_baseline_regional`","float","minutes","Avoided total runtime for core heating days"
-   ":code:`baseline_daily_mean_core_day_runtime_hourlyavgHTD_baseline_regional`","float","minutes","Baseline average daily runtime for core heating days"
-   ":code:`baseline_total_core_day_runtime_hourlyavgHTD_baseline_regional`","float","minutes","Baseline total runtime for core heating days"
-   ":code:`mean_demand_hourlyavgHTD`","float","°F","Average heating demand"
-   ":code:`alpha_hourlyavgHTD`","float","minutes/Δ°F","The fitted slope of heating runtime to demand regression"
-   ":code:`tau_hourlyavgHTD`","float","°F","The fitted intercept of heating runtime to demand regression"
-   ":code:`mean_sq_err_hourlyavgHTD`","float","N/A","Mean squared error of regression"
-   ":code:`root_mean_sq_err_hourlyavgHTD`","float","N/A","Root mean squared error of regression"
-   ":code:`cv_root_mean_sq_err_hourlyavgHTD`","float","N/A","Coefficient of variation of root mean squared error of regression"
-   ":code:`mean_abs_err_hourlyavgHTD`","float","N/A","Mean absolute error"
-   ":code:`mean_abs_pct_err_hourlyavgHTD`","float","N/A","Mean absolute percent error"
+   "**Model outputs**"
+   ":code:`percent_savings_baseline_percentile`","float","percent","Percent savings as given by hourly average CTD or HTD method with 10th or 90th percentile baseline"
+   ":code:`avoided_daily_mean_core_day_runtime_baseline_percentile`","float","minutes","Avoided average daily runtime for core cooling days"
+   ":code:`avoided_total_core_day_runtime_baseline_percentile`","float","minutes","Avoided total runtime for core cooling days"
+   ":code:`baseline_daily_mean_core_day_runtime_baseline_percentile`","float","minutes","Baseline average daily runtime for core cooling days"
+   ":code:`baseline_total_core_day_runtime_baseline_percentile`","float","minutes","Baseline total runtime for core cooling days"
+   ":code:`percent_savings_baseline_regional`","float","percent","Percent savings as given by hourly average CTD or HTD method with 10th or 90th percentile regional baseline"
+   ":code:`avoided_daily_mean_core_day_runtime_baseline_regional`","float","minutes","Avoided average daily runtime for core cooling days"
+   ":code:`avoided_total_core_day_runtime_baseline_regional`","float","minutes","Avoided total runtime for core cooling days"
+   ":code:`baseline_daily_mean_core_day_runtime_baseline_regional`","float","minutes","Baseline average daily runtime for core cooling days"
+   ":code:`baseline_total_core_day_runtime_baseline_regional`","float","minutes","Baseline total runtime for core cooling days"
+   ":code:`mean_demand`","float","°F","Average cooling demand"
+   ":code:`alpha`","float","minutes/Δ°F","The fitted slope of cooling runtime to demand regression"
+   ":code:`tau`","float","°F","The fitted intercept of cooling runtime to demand regression"
+   ":code:`mean_sq_err`","float","N/A","Mean squared error of regression"
+   ":code:`root_mean_sq_err`","float","N/A","Root mean squared error of regression"
+   ":code:`cv_root_mean_sq_err`","float","N/A","Coefficient of variation of root mean squared error of regression"
+   ":code:`mean_abs_err`","float","N/A","Mean absolute error"
+   ":code:`mean_abs_pct_err`","float","N/A","Mean absolute percent error"
    "**Runtime outputs**"
    ":code:`total_core_cooling_runtime`","float","minutes","Total core cooling equipment runtime"
    ":code:`total_core_heating_runtime`","float","minutes","Total core heating equipment runtime"
@@ -565,6 +481,7 @@ Columns
    :header: "Name", "Description"
 
    ":code:`sw_version`","Software version"
+   ":code:`product_id`","Alphanumeric product identifier"
    ":code:`n_thermostat_core_day_sets_total`","Number of relevant rows from thermostat module output before filtering"
    ":code:`n_thermostat_core_day_sets_kept`","Number of relevant rows from thermostat module not filtered out"
    ":code:`n_thermostat_core_day_sets_discarded`","Number of relevant rows from thermostat module filtered out"
@@ -579,41 +496,29 @@ available :download:`for download <../thermostat/resources/NationalAverageClimat
 Columns
 ```````
 .. csv-table::
-   :header: "Name"
+   :header: "Name", "Description"
 
-   ":code:`percent_savings_deltaT_heating_baseline90_mean_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_heating_baseline90_q50_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_heating_baseline90_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_heating_baseline_regional_mean_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_heating_baseline_regional_q50_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_heating_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgHTD_baseline90_mean_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgHTD_baseline90_q50_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgHTD_baseline90_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgHTD_baseline_regional_mean_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgHTD_baseline_regional_q50_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgHTD_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgHTD_baseline90_mean_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgHTD_baseline90_q50_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgHTD_baseline90_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgHTD_baseline_regional_mean_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgHTD_baseline_regional_q50_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgHTD_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_cooling_baseline10_mean_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_cooling_baseline10_q50_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_cooling_baseline10_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_cooling_baseline_regional_mean_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_cooling_baseline_regional_q50_national_weighted_mean`"
-   ":code:`percent_savings_deltaT_cooling_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgCTD_baseline10_mean_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgCTD_baseline10_q50_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgCTD_baseline10_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgCTD_baseline_regional_mean_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgCTD_baseline_regional_q50_national_weighted_mean`"
-   ":code:`percent_savings_dailyavgCTD_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgCTD_baseline10_mean_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgCTD_baseline10_q50_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgCTD_baseline10_lower_bound_95_perc_conf_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgCTD_baseline_regional_mean_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgCTD_baseline_regional_q50_national_weighted_mean`"
-   ":code:`percent_savings_hourlyavgCTD_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`"
+   ":code:`percent_savings_baseline_percentile_mean_national_weighted_mean`","National weighted mean percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q10_national_weighted_mean`","National weighted 10th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q20_national_weighted_mean`","National weighted 20th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q30_national_weighted_mean`","National weighted 30th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q40_national_weighted_mean`","National weighted 40th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q50_national_weighted_mean`","National weighted 50th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q60_national_weighted_mean`","National weighted 60th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q70_national_weighted_mean`","National weighted 70th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q80_national_weighted_mean`","National weighted 80th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_q90_national_weighted_mean`","National weighted 90th percentile percent savings as given by baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_lower_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings lower bound as given by a 95% confidence interval and the baseline_percentile method."
+   ":code:`percent_savings_baseline_percentile_upper_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings upper bound as given by a 95% confidence interval and the baseline_percentile method."
+   ":code:`percent_savings_baseline_regional_mean_national_weighted_mean`","National weighted mean percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q10_national_weighted_mean`","National weighted 10th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q20_national_weighted_mean`","National weighted 20th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q30_national_weighted_mean`","National weighted 30th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q40_national_weighted_mean`","National weighted 40th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q50_national_weighted_mean`","National weighted 50th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q60_national_weighted_mean`","National weighted 60th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q70_national_weighted_mean`","National weighted 70th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q80_national_weighted_mean`","National weighted 80th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_q90_national_weighted_mean`","National weighted 90th percentile percent savings as given by baseline_regional method."
+   ":code:`percent_savings_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings lower bound as given by a 95% confidence interval and the baseline_regional method."
+   ":code:`percent_savings_baseline_regional_upper_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings upper bound as given by a 95% confidence interval and the baseline_regional method."

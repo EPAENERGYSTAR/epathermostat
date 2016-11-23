@@ -22,13 +22,13 @@ ATOL = 1e-3
 def test_get_core_cooling_day_baseline_setpoint(thermostat_type_1, core_cooling_day_set_type_1_entire, metrics_type_1_data):
 
     baseline = thermostat_type_1.get_core_cooling_day_baseline_setpoint(core_cooling_day_set_type_1_entire)
-    assert_allclose(baseline, metrics_type_1_data[0]["baseline10_core_cooling_comfort_temperature"], rtol=RTOL, atol=ATOL)
+    assert_allclose(baseline, metrics_type_1_data[0]["baseline_percentile_core_cooling_comfort_temperature"], rtol=RTOL, atol=ATOL)
 
 @pytest.mark.slow
 def test_get_core_heating_day_baseline_setpoint(thermostat_type_1, core_heating_day_set_type_1_entire, metrics_type_1_data):
 
     baseline = thermostat_type_1.get_core_heating_day_baseline_setpoint(core_heating_day_set_type_1_entire)
-    assert_allclose(baseline, metrics_type_1_data[1]["baseline90_core_heating_comfort_temperature"], rtol=RTOL, atol=ATOL)
+    assert_allclose(baseline, metrics_type_1_data[1]["baseline_percentile_core_heating_comfort_temperature"], rtol=RTOL, atol=ATOL)
 
 def test_get_core_heating_day_baseline_setpoint_null_temperature_in(thermostat_template):
 
