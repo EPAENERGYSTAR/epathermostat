@@ -40,6 +40,12 @@ def thermostat_template():
     )
     return thermostat
 
+# Note:
+# The following fixtures can be quite slow without a prebuilt weather cache
+# they the from_csv command fetches weather data. (This happens with builds on
+# travis.)
+# To speed this up, spoof the weather source.
+
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
