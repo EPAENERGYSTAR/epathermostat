@@ -231,12 +231,12 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins(thermostat_type_
         assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
 
 
-def test_thermostat_types_2_3_4_5_get_resistance_heat_utilization_bins(core_heating_day_set_type_1_entire,
-        thermostat_type_2, thermostat_type_3, thermostat_type_4, thermostat_type_5):
+def test_thermostat_types_2_get_resistance_heat_utilization_bins(
+        core_heating_day_set_type_1_entire, thermostat_type_2):
 
-    for thermostat in [thermostat_type_2, thermostat_type_3, thermostat_type_4, thermostat_type_5]:
-        with pytest.raises(ValueError):
-            thermostat.get_resistance_heat_utilization_bins(core_heating_day_set_type_1_entire)
+    with pytest.raises(ValueError):
+        thermostat_type_2.get_resistance_heat_utilization_bins(
+            core_heating_day_set_type_1_entire)
 
 
 @pytest.fixture(params=range(2))
