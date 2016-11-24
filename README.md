@@ -1,7 +1,7 @@
 Connected Thermostat draft field savings metrics module
 =======================================================
 
-[![Build Status](https://travis-ci.org/impactlab/thermostat.svg?branch=develop)](https://travis-ci.org/impactlab/thermostat)
+[![Build Status](https://travis-ci.org/openeemeter/thermostat.svg?branch=develop)](https://travis-ci.org/openeemeter/thermostat)
 
 Calculate temperature/run-time savings for connected thermostats using this
 package.
@@ -9,7 +9,7 @@ package.
 Documenation
 ------------
 
-Documentation is on [Read the Docs](http://thermostat.readthedocs.org/en/latest/).
+Documentation is on [Read the Docs](https://thermostat.readthedocs.io/en/latest/).
 
 Tests
 -----
