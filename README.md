@@ -9,7 +9,7 @@ package.
 Documenation
 ------------
 
-Documentation is on [Read the Docs](https://thermostat.readthedocs.io/en/latest/).
+Documentation is on [Read the Docs](http://epathermostat.readthedocs.io/en/latest/).
 
 Tests
 -----
