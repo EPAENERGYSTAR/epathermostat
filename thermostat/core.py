@@ -93,6 +93,7 @@ class Thermostat(object):
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
 
     RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
+    RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
 
 
     def __init__(
@@ -482,7 +483,8 @@ class Thermostat(object):
     def get_resistance_heat_utilization_bins(self, core_heating_day_set):
         """ Calculates resistance heat utilization metrics in temperature
         bins of RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH degrees
-        between 0 and 60 degrees Fahrenheit.
+        between 0 and
+        RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP degrees Fahrenheit.
 
         Parameters
         ----------
@@ -513,8 +515,9 @@ class Thermostat(object):
             aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
             emg_daily = self.emergency_heat_runtime.resample('D').sum()
 
+            stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
             step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
-            temperature_bins = [(t, t+step) for t in range(0, 60, step)]
+            temperature_bins = [(t, t+step) for t in range(0, stop, step)]
             for low_temp, high_temp in temperature_bins:
                 temp_low_enough_daily = temp_out_daily < high_temp
                 temp_high_enough_daily = temp_out_daily >= low_temp
@@ -1373,14 +1376,15 @@ class Thermostat(object):
 
                     rhus = self.get_resistance_heat_utilization_bins(core_heating_day_set)
 
+                    stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
                     step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
 
                     if rhus is None:
-                        for low, high in [(t, t+step) for t in range(0, 60, step)]:
+                        for low, high in [(t, t+step) for t in range(0, stop, step)]:
                             column = "rhu_{:02d}F_to_{:02d}F".format(low, high)
                             additional_outputs[column] = None
                     else:
-                        for rhu, (low, high) in zip(rhus, [(t, t+step) for t in range(0, 60, step)]):
+                        for rhu, (low, high) in zip(rhus, [(t, t+step) for t in range(0, stop, step)]):
                             column = "rhu_{:02d}F_to_{:02d}F".format(low, high)
                             additional_outputs[column] = rhu
 
