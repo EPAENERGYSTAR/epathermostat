@@ -1,15 +1,15 @@
+from datetime import datetime, timedelta
+from collections import namedtuple
+from itertools import repeat
+import inspect
+
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
-
-from datetime import datetime, timedelta
-from collections import namedtuple
+from pkg_resources import resource_stream
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
-from pkg_resources import resource_stream
-
-import inspect
 
 CoreDaySet = namedtuple("CoreDaySet",
     ["name", "daily", "hourly", "start_date", "end_date"]
@@ -1383,15 +1383,14 @@ class Thermostat(object):
                     step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
                     temperature_bins = (
                         (t, t+step) for t in range(start, stop, step))
-
-                    if rhus is None:
-                        for low, high in temperature_bins:
-                            column = "rhu_{:02d}F_to_{:02d}F".format(low, high)
-                            additional_outputs[column] = None
+                    if rhus:
+                        iter_rhus = rhus
                     else:
-                        for rhu, (low, high) in zip(rhus, temperature_bins):
-                            column = "rhu_{:02d}F_to_{:02d}F".format(low, high)
-                            additional_outputs[column] = rhu
+                        iter_rhus = repeat(None)
+
+                    for rhu, (low, high) in zip(iter_rhus, temperature_bins):
+                        column = 'rhu_{:02d}F_to_{:02d}F'.format(low, high)
+                        additional_outputs[column] = rhu
 
                     outputs.update(additional_outputs)
                 metrics.append(outputs)
