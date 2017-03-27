@@ -18,6 +18,7 @@ make it easier to debug.
 
     # if using conda (see note below - conda is distributed with Anaconda)
     $ conda create --yes --name thermostat pandas
+    $ source activate thermostat
     (thermostat)$ pip install thermostat
 
 If you already have an environment, use the following:
