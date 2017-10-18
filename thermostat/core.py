@@ -42,9 +42,10 @@ class Thermostat(object):
         with resolution of at least 0.5F.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    heating_setpoint : pandas.Series
-        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
-        with resolution of at least 0.5F used to control heating equipment.
+    temperature_out : pandas.Series
+        Contains outdoor temperature (setpoint) data as observed by a relevant
+        weather station in degrees Fahrenheit (F), with resolution of at least
+        0.5F.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     cooling_setpoint : pandas.Series
@@ -52,10 +53,9 @@ class Thermostat(object):
         with resolution of at least 0.5F used to control cooling equipment.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    temperature_out : pandas.Series
-        Contains outdoor temperature (setpoint) data as observed by a relevant
-        weather station in degrees Fahrenheit (F), with resolution of at least
-        0.5F.
+    heating_setpoint : pandas.Series
+        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
+        with resolution of at least 0.5F used to control heating equipment.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     cool_runtime : pandas.Series,
