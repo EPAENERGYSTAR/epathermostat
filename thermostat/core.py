@@ -1073,7 +1073,7 @@ class Thermostat(object):
         else:
             try:
                 mapping = _load_mapping(climate_zone_mapping)
-            except:
+            except: #!!! danger: wildcard except. Should specify exception.
                 raise ValueError("Could not load climate zone mapping")
 
         with resource_stream('thermostat.resources', 'regional_baselines.csv') as f:
