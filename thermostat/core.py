@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 from itertools import repeat
 import inspect
+from warnings import warn
 
 import pandas as pd
 import numpy as np
@@ -531,7 +532,22 @@ class Thermostat(object):
                 try:
                     rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
                 except ZeroDivisionError:
-                    rhu = 0.
+                    rhu = np.nan
+                data_is_nonsense = R_aux > R_heat
+                if data_is_nonsense:
+                    rhu = np.nan
+                    warn(
+                        'WARNING: '
+                        'aux heat runtime %s > compressor runtime %s '
+                        'for %sF <= temperature < %sF '
+                        'for therostat_id %s '
+                        'from %s to %s inclusive' % (
+                            R_aux, R_heat,
+                            low_temp, high_temp,
+                            self.thermostat_id,
+                            core_heating_day_set.start_date,
+                            core_heating_day_set.end_date)
+                    )
                 RHUs.append(rhu)
             return np.array(RHUs)
         else:
