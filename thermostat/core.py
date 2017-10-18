@@ -1383,7 +1383,7 @@ class Thermostat(object):
                     step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
                     temperature_bins = (
                         (t, t+step) for t in range(start, stop, step))
-                    if rhus:
+                    if rhus is not None:
                         iter_rhus = rhus
                     else:
                         iter_rhus = repeat(None)
