@@ -1195,8 +1195,8 @@ class Thermostat(object):
                     "station": self.station,
                     "climate_zone": climate_zone,
 
-                    "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_datetime().isoformat(),
-                    "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_datetime().isoformat(),
+                    "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_pydatetime().isoformat(),
+                    "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_pydatetime().isoformat(),
                     "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
                     "n_days_both_heating_and_cooling": n_days_both,
                     "n_days_insufficient_data": n_days_insufficient_data,
@@ -1329,8 +1329,8 @@ class Thermostat(object):
                     "station": self.station,
                     "climate_zone": mapping.get(self.zipcode),
 
-                    "start_date": pd.Timestamp(core_heating_day_set.start_date).to_datetime().isoformat(),
-                    "end_date": pd.Timestamp(core_heating_day_set.end_date).to_datetime().isoformat(),
+                    "start_date": pd.Timestamp(core_heating_day_set.start_date).to_pydatetime().isoformat(),
+                    "end_date": pd.Timestamp(core_heating_day_set.end_date).to_pydatetime().isoformat(),
                     "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
                     "n_days_both_heating_and_cooling": n_days_both,
                     "n_days_insufficient_data": n_days_insufficient_data,
