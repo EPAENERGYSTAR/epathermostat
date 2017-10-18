@@ -92,9 +92,9 @@ class Thermostat(object):
     COOLING_EQUIPMENT_TYPES = set([1, 2, 3, 5])
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
 
-    RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
-    RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
-    RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
+    RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
+    RESISTANCE_HEAT_USE_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
+    RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
 
 
     def __init__(
@@ -483,9 +483,9 @@ class Thermostat(object):
 
     def get_resistance_heat_utilization_bins(self, core_heating_day_set):
         """ Calculates resistance heat utilization metrics in temperature
-        bins of RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
-        between RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP and
-        RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP Fahrenheit.
+        bins of RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
+        between RESISTANCE_HEAT_USE_BINS_MIN_TEMP and
+        RESISTANCE_HEAT_USE_BINS_MAX_TEMP Fahrenheit.
 
         Parameters
         ----------
@@ -516,9 +516,9 @@ class Thermostat(object):
             aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
             emg_daily = self.emergency_heat_runtime.resample('D').sum()
 
-            start = self.RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP
-            stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
-            step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+            start = self.RESISTANCE_HEAT_USE_BINS_MIN_TEMP
+            stop = self.RESISTANCE_HEAT_USE_BINS_MAX_TEMP
+            step = self.RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
             temperature_bins = ((t, t+step) for t in range(start, stop, step))
             for low_temp, high_temp in temperature_bins:
                 temp_low_enough_daily = temp_out_daily < high_temp
@@ -1378,9 +1378,9 @@ class Thermostat(object):
 
                     rhus = self.get_resistance_heat_utilization_bins(core_heating_day_set)
 
-                    start = self.RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP
-                    stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
-                    step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+                    start = self.RESISTANCE_HEAT_USE_BINS_MIN_TEMP
+                    stop = self.RESISTANCE_HEAT_USE_BINS_MAX_TEMP
+                    step = self.RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
                     temperature_bins = (
                         (t, t+step) for t in range(start, stop, step))
                     if rhus is not None:
