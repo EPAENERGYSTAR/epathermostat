@@ -43,7 +43,7 @@ class Thermostat(object):
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     temperature_out : pandas.Series
-        Contains outdoor temperature (setpoint) data as observed by a relevant
+        Contains outdoor temperature data as observed by a relevant
         weather station in degrees Fahrenheit (F), with resolution of at least
         0.5F.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
