@@ -78,7 +78,7 @@ class Thermostat(object):
         over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    energency_heat_runtime : pandas.Series,
+    emergency_heat_runtime : pandas.Series,
         Hourly runtimes for emergency heating equipment controlled by the
         thermostat, measured in minutes. Emergency heat runtime is counted when
         resistance heating is running when the compressor is not (for heat pump
