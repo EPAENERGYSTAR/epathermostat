@@ -212,7 +212,7 @@ def metrics_type_1_data():
         'percent_savings_baseline_percentile': 10.656581547267123,
         'percent_savings_baseline_regional': 9.0446932166836049,
         'regional_average_baseline_heating_comfort_temperature': 69,
-        'rhu_00F_to_05F': 0.0,
+        'rhu_00F_to_05F': float('nan'),
         'rhu_05F_to_10F': 0.35810185185185184,
         'rhu_10F_to_15F': 0.36336805555555557,
         'rhu_15F_to_20F': 0.38119557629422784,
