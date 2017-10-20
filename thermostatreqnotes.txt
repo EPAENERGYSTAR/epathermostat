@@ -14,5 +14,5 @@ requests==2.18.4
 scikit-learn==0.19.0
 scipy==0.19.1
 six==1.11.0
-thermostat==1.1.1
+thermostat==1.1.2
 urllib3==1.22
