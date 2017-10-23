@@ -540,7 +540,7 @@ class Thermostat(object):
                         'WARNING: '
                         'aux heat runtime %s > compressor runtime %s '
                         'for %sF <= temperature < %sF '
-                        'for therostat_id %s '
+                        'for thermostat_id %s '
                         'from %s to %s inclusive' % (
                             R_aux, R_heat,
                             low_temp, high_temp,
