@@ -1,15 +1,15 @@
+from datetime import datetime, timedelta
+from collections import namedtuple
+from itertools import repeat
+import inspect
+
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
-
-from datetime import datetime, timedelta
-from collections import namedtuple
+from pkg_resources import resource_stream
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
-from pkg_resources import resource_stream
-
-import inspect
 
 CoreDaySet = namedtuple("CoreDaySet",
     ["name", "daily", "hourly", "start_date", "end_date"]
@@ -91,6 +91,10 @@ class Thermostat(object):
     HEATING_EQUIPMENT_TYPES = set([1, 2, 3, 4])
     COOLING_EQUIPMENT_TYPES = set([1, 2, 3, 5])
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
+
+    RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
+    RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
+    RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
 
 
     def __init__(
@@ -479,7 +483,9 @@ class Thermostat(object):
 
     def get_resistance_heat_utilization_bins(self, core_heating_day_set):
         """ Calculates resistance heat utilization metrics in temperature
-        bins of 5 degrees between 0 and 60 degrees Fahrenheit.
+        bins of RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+        between RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP and
+        RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP Fahrenheit.
 
         Parameters
         ----------
@@ -496,7 +502,6 @@ class Thermostat(object):
 
         self._protect_aux_emerg()
 
-        bin_step = 5
         if self.equipment_type == 1:
             RHUs = []
 
@@ -511,7 +516,10 @@ class Thermostat(object):
             aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
             emg_daily = self.emergency_heat_runtime.resample('D').sum()
 
-            temperature_bins = [(i, i+5) for i in range(0, 60, 5)]
+            start = self.RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP
+            stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
+            step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+            temperature_bins = ((t, t+step) for t in range(start, stop, step))
             for low_temp, high_temp in temperature_bins:
                 temp_low_enough_daily = temp_out_daily < high_temp
                 temp_high_enough_daily = temp_out_daily >= low_temp
@@ -1370,14 +1378,19 @@ class Thermostat(object):
 
                     rhus = self.get_resistance_heat_utilization_bins(core_heating_day_set)
 
-                    if rhus is None:
-                        for low, high in [(i, i+5) for i in range(0, 60, 5)]:
-                            column = "rhu_{:02d}F_to_{:02d}F".format(low, high)
-                            additional_outputs[column] = None
+                    start = self.RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP
+                    stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
+                    step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+                    temperature_bins = (
+                        (t, t+step) for t in range(start, stop, step))
+                    if rhus is not None:
+                        iter_rhus = rhus
                     else:
-                        for rhu, (low, high) in zip(rhus, [(i, i+5) for i in range(0, 60, 5)]):
-                            column = "rhu_{:02d}F_to_{:02d}F".format(low, high)
-                            additional_outputs[column] = rhu
+                        iter_rhus = repeat(None)
+
+                    for rhu, (low, high) in zip(iter_rhus, temperature_bins):
+                        column = 'rhu_{:02d}F_to_{:02d}F'.format(low, high)
+                        additional_outputs[column] = rhu
 
                     outputs.update(additional_outputs)
                 metrics.append(outputs)
