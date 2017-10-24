@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 from itertools import repeat
 import inspect
+from warnings import warn
 
 import pandas as pd
 import numpy as np
@@ -42,9 +43,10 @@ class Thermostat(object):
         with resolution of at least 0.5F.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    heating_setpoint : pandas.Series
-        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
-        with resolution of at least 0.5F used to control heating equipment.
+    temperature_out : pandas.Series
+        Contains outdoor temperature data as observed by a relevant
+        weather station in degrees Fahrenheit (F), with resolution of at least
+        0.5F.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     cooling_setpoint : pandas.Series
@@ -52,10 +54,9 @@ class Thermostat(object):
         with resolution of at least 0.5F used to control cooling equipment.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    temperature_out : pandas.Series
-        Contains outdoor temperature (setpoint) data as observed by a relevant
-        weather station in degrees Fahrenheit (F), with resolution of at least
-        0.5F.
+    heating_setpoint : pandas.Series
+        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
+        with resolution of at least 0.5F used to control heating equipment.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     cool_runtime : pandas.Series,
@@ -78,7 +79,7 @@ class Thermostat(object):
         over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    energency_heat_runtime : pandas.Series,
+    emergency_heat_runtime : pandas.Series,
         Hourly runtimes for emergency heating equipment controlled by the
         thermostat, measured in minutes. Emergency heat runtime is counted when
         resistance heating is running when the compressor is not (for heat pump
@@ -92,9 +93,9 @@ class Thermostat(object):
     COOLING_EQUIPMENT_TYPES = set([1, 2, 3, 5])
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
 
-    RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
-    RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
-    RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
+    RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
+    RESISTANCE_HEAT_USE_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
+    RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
 
 
     def __init__(
@@ -483,9 +484,9 @@ class Thermostat(object):
 
     def get_resistance_heat_utilization_bins(self, core_heating_day_set):
         """ Calculates resistance heat utilization metrics in temperature
-        bins of RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
-        between RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP and
-        RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP Fahrenheit.
+        bins of RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
+        between RESISTANCE_HEAT_USE_BINS_MIN_TEMP and
+        RESISTANCE_HEAT_USE_BINS_MAX_TEMP Fahrenheit.
 
         Parameters
         ----------
@@ -516,9 +517,9 @@ class Thermostat(object):
             aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
             emg_daily = self.emergency_heat_runtime.resample('D').sum()
 
-            start = self.RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP
-            stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
-            step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+            start = self.RESISTANCE_HEAT_USE_BINS_MIN_TEMP
+            stop = self.RESISTANCE_HEAT_USE_BINS_MAX_TEMP
+            step = self.RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
             temperature_bins = ((t, t+step) for t in range(start, stop, step))
             for low_temp, high_temp in temperature_bins:
                 temp_low_enough_daily = temp_out_daily < high_temp
@@ -531,7 +532,22 @@ class Thermostat(object):
                 try:
                     rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
                 except ZeroDivisionError:
-                    rhu = 0.
+                    rhu = np.nan
+                data_is_nonsense = R_aux > R_heat
+                if data_is_nonsense:
+                    rhu = np.nan
+                    warn(
+                        'WARNING: '
+                        'aux heat runtime %s > compressor runtime %s '
+                        'for %sF <= temperature < %sF '
+                        'for thermostat_id %s '
+                        'from %s to %s inclusive' % (
+                            R_aux, R_heat,
+                            low_temp, high_temp,
+                            self.thermostat_id,
+                            core_heating_day_set.start_date,
+                            core_heating_day_set.end_date)
+                    )
                 RHUs.append(rhu)
             return np.array(RHUs)
         else:
@@ -1073,7 +1089,7 @@ class Thermostat(object):
         else:
             try:
                 mapping = _load_mapping(climate_zone_mapping)
-            except:
+            except: #!!! danger: wildcard except. Should specify exception.
                 raise ValueError("Could not load climate zone mapping")
 
         with resource_stream('thermostat.resources', 'regional_baselines.csv') as f:
@@ -1195,8 +1211,8 @@ class Thermostat(object):
                     "station": self.station,
                     "climate_zone": climate_zone,
 
-                    "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_datetime().isoformat(),
-                    "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_datetime().isoformat(),
+                    "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_pydatetime().isoformat(),
+                    "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_pydatetime().isoformat(),
                     "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
                     "n_days_both_heating_and_cooling": n_days_both,
                     "n_days_insufficient_data": n_days_insufficient_data,
@@ -1329,8 +1345,8 @@ class Thermostat(object):
                     "station": self.station,
                     "climate_zone": mapping.get(self.zipcode),
 
-                    "start_date": pd.Timestamp(core_heating_day_set.start_date).to_datetime().isoformat(),
-                    "end_date": pd.Timestamp(core_heating_day_set.end_date).to_datetime().isoformat(),
+                    "start_date": pd.Timestamp(core_heating_day_set.start_date).to_pydatetime().isoformat(),
+                    "end_date": pd.Timestamp(core_heating_day_set.end_date).to_pydatetime().isoformat(),
                     "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
                     "n_days_both_heating_and_cooling": n_days_both,
                     "n_days_insufficient_data": n_days_insufficient_data,
@@ -1378,9 +1394,9 @@ class Thermostat(object):
 
                     rhus = self.get_resistance_heat_utilization_bins(core_heating_day_set)
 
-                    start = self.RESISTANCE_HEAT_UTILIZATION_BINS_MIN_TEMP
-                    stop = self.RESISTANCE_HEAT_UTILIZATION_BINS_MAX_TEMP
-                    step = self.RESISTANCE_HEAT_UTILIZATION_BIN_TEMP_WIDTH
+                    start = self.RESISTANCE_HEAT_USE_BINS_MIN_TEMP
+                    stop = self.RESISTANCE_HEAT_USE_BINS_MAX_TEMP
+                    step = self.RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
                     temperature_bins = (
                         (t, t+step) for t in range(start, stop, step))
                     if rhus is not None:

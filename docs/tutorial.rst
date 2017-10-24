@@ -50,7 +50,7 @@ Check to make sure you are on the most recent version of the package.
 .. code-block:: python
 
     >>> import thermostat; thermostat.get_version()
-    '1.1.1'
+    '1.1.2'
 
 If you are not on the correct version, you should upgrade:
 
