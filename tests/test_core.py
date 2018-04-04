@@ -22,8 +22,15 @@ from fixtures.thermostats import core_cooling_day_set_type_2
 from fixtures.thermostats import core_cooling_day_set_type_3
 from fixtures.thermostats import core_cooling_day_set_type_5
 from fixtures.thermostats import metrics_type_1_data
+from fixtures.thermostats import thermostat_zero_days
 
 from numpy.testing import assert_allclose
+from numpy import isnan
+
+
+def test_zero_days_warning(thermostat_zero_days):
+    output = thermostat_zero_days.calculate_epa_field_savings_metrics()
+    assert isnan(output[0]['daily_mean_core_cooling_runtime'])
 
 
 def test_interpolate_empty(thermostat_type_1):
