@@ -12,6 +12,36 @@ import dateutil.parser
 import os
 import pytz
 
+
+def normalize_utc_offset(utc_offset):
+    """
+    Normalizes the UTC offset
+    Returns the UTC offset based on the string passed in.
+
+    Parameters
+    ----------
+    utc_offset : str
+        String representation of the UTC offset
+
+    Returns
+    -------
+    datetime timdelta offset
+    """
+    # FIXME
+
+    try:
+        if int(utc_offset) == 0:
+            utc_offset = "+0"
+        delta = dateutil.parser.parse(
+            "2000-01-01T00:00:00" + str(utc_offset)).tzinfo.utcoffset(None)
+        return delta
+
+    except (ValueError, TypeError, AttributeError) as e:
+        raise TypeError("Invalid UTC offset: {} ({})".format(
+           utc_offset,
+           e))
+
+
 def from_csv(metadata_filename, verbose=False):
     """
     Creates Thermostat objects from data stored in CSV files.
@@ -69,6 +99,12 @@ def from_csv(metadata_filename, verbose=False):
                     "Census Bureau ZCTAs (which usually do). Please supply " \
                     "a zipcode which corresponds to a US Census Bureau ZCTA." \
                     .format(row.thermostat_id, row.zipcode))
+            continue
+
+        except TypeError as e:
+            warnings.warn("Skipping import of thermostat(id={}) because of" \
+                    "the following error: {}" \
+                    .format(row.thermostat_id, e))
             continue
 
         yield thermostat
@@ -143,7 +179,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         raise ValueError(message)
 
     ws_hourly = ISDWeatherSource(station)
-    utc_offset = dateutil.parser.parse("2000-01-01T00:00:00" + utc_offset).tzinfo.utcoffset(None)
+    utc_offset = normalize_utc_offset(utc_offset)
     temp_out = ws_hourly.indexed_temperatures(hourly_index_utc - utc_offset, "degF")
     temp_out.index = hourly_index
 

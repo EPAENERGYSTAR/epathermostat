@@ -12,6 +12,11 @@ from pkg_resources import resource_stream
 from thermostat.regression import runtime_regression
 from thermostat import get_version
 
+if "0.21." in pd.__version__:
+    warn(
+        "WARNING: Pandas version 0.21.x has known issues and is not supported. "
+        "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
+
 CoreDaySet = namedtuple("CoreDaySet",
     ["name", "daily", "hourly", "start_date", "end_date"]
 )
@@ -1139,8 +1144,23 @@ class Thermostat(object):
                 total_runtime_core_cooling = daily_runtime.sum()
                 n_days = core_cooling_day_set.daily.sum()
 
-                average_daily_cooling_runtime = \
-                    total_runtime_core_cooling / n_days
+                if np.isnan(total_runtime_core_cooling):
+                    warn(
+                        "WARNING: Total Runtime Core Cooling Days is nan. "
+                        "This may mean that you have pandas 0.21.x installed "
+                        "(which is not supported).")
+
+                if n_days == 0:
+                    warn(
+                        "WARNING: Number of valid cooling days is zero.")
+
+                # Raise a division error if dividing by zero and replace with np.nan instead
+                old_err_state = np.seterr(divide='raise')
+                try:
+                    average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
+                except FloatingPointError:
+                    average_daily_cooling_runtime = np.nan
+                np.seterr(**old_err_state)
 
                 baseline10_demand = self.get_baseline_cooling_demand(
                     core_cooling_day_set,
@@ -1271,8 +1291,24 @@ class Thermostat(object):
 
                 total_runtime_core_heating = daily_runtime.sum()
                 n_days = core_heating_day_set.daily.sum()
-                average_daily_heating_runtime = \
-                    total_runtime_core_heating / n_days
+
+                if np.isnan(total_runtime_core_heating):
+                    warn(
+                        "WARNING: Total Runtime Core Heating is nan. "
+                        "This may mean that you have pandas 0.21.x installed "
+                        "(which is not supported).")
+
+                if n_days == 0:
+                    warn(
+                        "WARNING: Number of valid heating days is zero.")
+
+                # Raise a division error if dividing by zero and replace with np.nan instead
+                old_err_state = np.seterr(divide='raise')
+                try:
+                    average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
+                except FloatingPointError:
+                    average_daily_heating_runtime = np.nan
+                np.seterr(**old_err_state)
 
                 baseline90_demand = self.get_baseline_heating_demand(
                     core_heating_day_set,

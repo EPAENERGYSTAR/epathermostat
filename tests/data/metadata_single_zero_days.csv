@@ -1,0 +1,2 @@
+thermostat_id,equipment_type,zipcode,utc_offset,interval_data_filename
+thermostat_zero_days,3,14586,+0,thermostat_zero_days.csv

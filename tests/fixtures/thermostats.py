@@ -46,6 +46,15 @@ def thermostat_template():
 # travis.)
 # To speed this up, spoof the weather source.
 
+@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_utc_offset_0.csv"])
+def thermostat_type_1_utc(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_utc_offset_bad.csv"])
+def thermostat_type_1_utc_bad(request):
+    thermostats = from_csv(get_data_path(request.param))
+
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
@@ -68,6 +77,11 @@ def thermostat_type_4(request):
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_5_single.csv"])
 def thermostat_type_5(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/metadata_single_zero_days.csv"])
+def thermostat_zero_days(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
@@ -177,7 +191,7 @@ def metrics_type_1_data():
         'root_mean_sq_err': 18.856744309329105,
         'start_date': '2011-01-01T00:00:00',
         'station': '725314',
-        'sw_version': '1.1.2',
+        'sw_version': '1.3.0',
         'tau': -0.77340507831642546,
         'total_core_cooling_runtime': 73087.0,
         'zipcode': '62223'
@@ -227,7 +241,7 @@ def metrics_type_1_data():
         'root_mean_sq_err': 82.63221684666604,
         'start_date': '2011-01-01T00:00:00',
         'station': '725314',
-        'sw_version': '1.1.2',
+        'sw_version': '1.3.0',
         'tau': -2.3424954770368576,
         'total_auxiliary_heating_core_day_runtime': 144794.0,
         'total_core_heating_runtime': 691905.0,
