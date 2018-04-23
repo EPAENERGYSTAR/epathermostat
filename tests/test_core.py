@@ -23,6 +23,7 @@ from fixtures.thermostats import core_cooling_day_set_type_3
 from fixtures.thermostats import core_cooling_day_set_type_5
 from fixtures.thermostats import metrics_type_1_data
 from fixtures.thermostats import thermostat_zero_days
+from fixtures.thermostats import thermostats_multiple_same_key
 
 from numpy.testing import assert_allclose
 from numpy import isnan
@@ -31,6 +32,22 @@ from numpy import isnan
 def test_zero_days_warning(thermostat_zero_days):
     output = thermostat_zero_days.calculate_epa_field_savings_metrics()
     assert isnan(output[0]['daily_mean_core_cooling_runtime'])
+
+
+def test_multiple_same_key(thermostats_multiple_same_key):
+    metrics = []
+    for thermostat in thermostats_multiple_same_key:
+        outputs = thermostat.calculate_epa_field_savings_metrics()
+        metrics.extend(outputs)
+    assert len(metrics) == 4
+
+    for key in metrics[0]:
+        assert(metrics[0][key] == metrics[2][key])
+
+    for key in metrics[1]:
+        # nan can never be equal, so skip nan
+        if not (isinstance(metrics[1][key], float) and np.isnan(metrics[1][key])):
+            assert(metrics[1][key] == metrics[3][key])
 
 
 def test_interpolate_empty(thermostat_type_1):

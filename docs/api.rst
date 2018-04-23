@@ -52,3 +52,11 @@ thermostat.parallel
     :members:
     :undoc-members:
     :show-inheritance:
+
+thermostat.multiple
+-------------------
+
+.. automodule:: thermostat.multiple
+    :members:
+    :undoc-members:
+    :show-inheritance:
