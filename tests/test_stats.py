@@ -67,6 +67,13 @@ def get_fake_output_df(n_columns):
         'daily_mean_core_cooling_runtime',
         'daily_mean_core_heating_runtime',
 
+        'core_cooling_days_mean_indoor_temperature',
+        'core_cooling_days_mean_outdoor_temperature',
+        'core_heating_days_mean_indoor_temperature',
+        'core_heating_days_mean_outdoor_temperature',
+        'core_mean_indoor_temperature',
+        'core_mean_outdoor_temperature',
+
         'rhu_00F_to_05F',
         'rhu_05F_to_10F',
         'rhu_10F_to_15F',
@@ -144,6 +151,13 @@ def get_fake_output_df(n_columns):
         'daily_mean_core_cooling_runtime': float_column,
         'daily_mean_core_heating_runtime': float_column,
 
+        'core_cooling_days_mean_indoor_temperature': float_column,
+        'core_cooling_days_mean_outdoor_temperature': float_column,
+        'core_heating_days_mean_indoor_temperature': float_column,
+        'core_heating_days_mean_outdoor_temperature': float_column,
+        'core_mean_indoor_temperature': float_column,
+        'core_mean_outdoor_temperature': float_column,
+
         'rhu_00F_to_05F': float_column,
         'rhu_05F_to_10F': float_column,
         'rhu_10F_to_15F': float_column,
@@ -174,13 +188,13 @@ def combined_dataframe():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 56)
+    assert combined.shape == (20, 62)
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
         21, 21, 21, 21,
-        593, 397, 593, 397,
+        649, 453, 649, 453
     ]
 
 def test_compute_summary_statistics_advanced(combined_dataframe):
@@ -188,7 +202,7 @@ def test_compute_summary_statistics_advanced(combined_dataframe):
                                                     advanced_filtering=True)
     assert [len(s) for s in summary_statistics] == [
         21, 21, 21, 21, 21, 21, 21, 21,
-        593, 397, 593, 397, 593, 397, 593, 397,
+        649, 453, 649, 453, 649, 453, 649, 453,
     ]
 
 def test_summary_statistics_to_csv(combined_dataframe):
@@ -200,4 +214,4 @@ def test_summary_statistics_to_csv(combined_dataframe):
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (687, 9)
+    assert stats_df_reread.shape == (715, 9)
