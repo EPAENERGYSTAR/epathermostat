@@ -17,6 +17,7 @@ notifications:
 
 install:
   - pip install -U setuptools && pip install tox-travis
+  - pip install -U pandas
   - pip install coveralls
 
 script:
