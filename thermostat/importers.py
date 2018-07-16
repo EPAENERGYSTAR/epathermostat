@@ -1,15 +1,16 @@
 from thermostat.core import Thermostat
 
 import pandas as pd
-import numpy as np
+# import numpy as np
 from eemeter.weather.location import zipcode_to_usaf_station
-from eemeter.weather import ISDWeatherSource
-from eemeter.weather.cache import SqliteJSONStore
+from eemeter.weather import WeatherSource
+from eemeter.weather.cache import SqlJSONStore
+from eeweather.exceptions import ISDDataNotAvailableError
 import json
 
 import warnings
-from datetime import datetime
-from datetime import timedelta
+# from datetime import datetime
+# from datetime import timedelta
 import dateutil.parser
 import os
 import errno
@@ -23,6 +24,16 @@ except AttributeError:
     NUMBER_OF_CORES = cpu_count()
 MAX_FTP_CONNECTIONS = 3
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
+
+
+def __prime_eemeter_cache():
+    """ Primes the eemeter / eeweather caches by doing a non-existent query
+    This creates the cache directories sooner than if they were created
+    during normal processing (which can lead to a race condition and missing
+    thermostats)
+    """
+    sql_json = SqlJSONStore()
+    sql_json.key_exists('0')
 
 
 def save_json_cache(index, thermostat_id, station, cache_path=None):
@@ -54,7 +65,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
             raise
 
     json_cache = {}
-    sqlite_json_store = SqliteJSONStore()
+    sqlite_json_store = SqlJSONStore()
     years = index.groupby(index.year).keys()
     for year in years:
         filename = "ISD-{station}-{year}.json".format(
@@ -119,6 +130,9 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None
     thermostats : iterator over thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
+
+    __prime_eemeter_cache()
+
     metadata = pd.read_csv(
         metadata_filename,
         dtype={
@@ -185,9 +199,16 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
             .format(row.thermostat_id, row.zipcode))
         return
 
+    except ISDDataNotAvailableError as e:
+        warnings.warn(
+            "Skipping import of thermostat(id={} because the NCDC "
+            "does not have data: {}"
+            .format(row.thermostat_id, e))
+        return
+
     except Exception as e:
         warnings.warn(
-            "Skipping import of thermostat(id={}) because of"
+            "Skipping import of thermostat(id={}) because of "
             "the following error: {}"
             .format(row.thermostat_id, e))
         return
@@ -230,14 +251,14 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
 
     # load indices
     dates = pd.to_datetime(df["date"])
-    daily_index = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0], freq="D")
-    hourly_index = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0] * 24, freq="H")
-    hourly_index_utc = pd.DatetimeIndex(start=dates[0], periods = dates.shape[0] * 24, freq="H", tz=pytz.UTC)
+    daily_index = pd.DatetimeIndex(start=dates[0], periods=dates.shape[0], freq="D")
+    hourly_index = pd.DatetimeIndex(start=dates[0], periods=dates.shape[0] * 24, freq="H")
+    hourly_index_utc = pd.DatetimeIndex(start=dates[0], periods=dates.shape[0] * 24, freq="H", tz=pytz.UTC)
 
     # raise an error if dates are not aligned
     if not all(dates == daily_index):
-        message("Dates provided for thermostat_id={} may contain some "
-                "which are out of order, missing, or duplicated.".format(thermostat_id))
+        message = ("Dates provided for thermostat_id={} may contain some "
+                   "which are out of order, missing, or duplicated.".format(thermostat_id))
         raise ValueError(message)
 
     # load hourly time series values
@@ -268,7 +289,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
                 "data for ZIP code {}".format(zipcode)
         raise ValueError(message)
 
-    ws_hourly = ISDWeatherSource(station)
+    ws_hourly = WeatherSource(station, normalized=False, use_cz2010=False)
     utc_offset = normalize_utc_offset(utc_offset)
     temp_out = ws_hourly.indexed_temperatures(hourly_index_utc - utc_offset, "degF")
     temp_out.index = hourly_index
@@ -303,6 +324,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         emergency_heat_runtime
     )
     return thermostat
+
 
 def _get_hourly_block(df, prefix):
     columns = ["{}_{:02d}".format(prefix, i) for i in range(24)]

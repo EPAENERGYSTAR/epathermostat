@@ -541,7 +541,17 @@ class Thermostat(object):
                 try:
                     rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
                 except ZeroDivisionError:
+                    warn(
+                        'WARNING: '
+                        'rhu calculation divided by zero (%s + %s / %s + %s) '
+                        'for thermostat_id %s '
+                        'from %s to %s inclusive' % (
+                            R_aux, R_emg, R_heat, R_emg,
+                            self.thermostat_id,
+                            core_heating_day_set.start_date,
+                            core_heating_day_set.end_date))
                     rhu = np.nan
+
                 data_is_nonsense = R_aux > R_heat
                 if data_is_nonsense:
                     rhu = np.nan
@@ -555,8 +565,7 @@ class Thermostat(object):
                             low_temp, high_temp,
                             self.thermostat_id,
                             core_heating_day_set.start_date,
-                            core_heating_day_set.end_date)
-                    )
+                            core_heating_day_set.end_date))
                 RHUs.append(rhu)
             return np.array(RHUs)
         else:
@@ -612,7 +621,16 @@ class Thermostat(object):
         if isinstance(delta, timedelta):
             return delta.days
         else:
-            return int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
+            try:
+                result = int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
+            except ZeroDivisionError:
+                warn(
+                    'WARNING: Date Range divided by zero: %s / %s '
+                    'for thermostat_id %s' % (
+                        delta.astype('timedelta64[D]'), np.timedelta64(1, 'D'),
+                        self.thermostat_id))
+                result = np.nan
+            return result
 
     def get_cooling_demand(self, core_cooling_day_set):
         """
@@ -694,7 +712,15 @@ class Thermostat(object):
         def calc_estimates(tau):
             cdd = calc_cdd(tau)
             total_cdd = np.sum(cdd)
-            alpha_estimate = total_runtime / total_cdd
+            try:
+                alpha_estimate = total_runtime / total_cdd
+            except ZeroDivisionError:
+                warn(
+                    'WARNING: Alpha Estimate divided by zero: %s / %s'
+                    'for thermostat %s' % (
+                        total_runtime, total_cdd,
+                        self.thermostat_id))
+                alpha_estimate = np.nan
             runtime_estimate = cdd * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
@@ -716,7 +742,16 @@ class Thermostat(object):
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
-        cvrmse = rmse / mean_daily_runtime
+        try:
+            cvrmse = rmse / mean_daily_runtime
+        except ZeroDivisionError:
+            warn(
+                'WARNING: CVRMSE divided by zero: %s / %s '
+                'for thermostat_id %s ' % (
+                    rmse, mean_daily_runtime,
+                    self.thermostat_id))
+            cvrmse = np.nan
+
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
@@ -799,7 +834,15 @@ class Thermostat(object):
         def calc_estimates(tau):
             hdd = calc_hdd(tau)
             total_hdd = np.sum(hdd)
-            alpha_estimate = total_runtime / total_hdd
+            try:
+                alpha_estimate = total_runtime / total_hdd
+            except ZeroDivisionError:
+                warn(
+                    'WARNING: alpha_estimate divided by zero: %s / %s '
+                    'for thermostat_id %s ' % (
+                        total_runtime, total_hdd,
+                        self.thermostat_id))
+                alpha_estimate = np.nan
             runtime_estimate = hdd * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return hdd, alpha_estimate, errors
@@ -822,7 +865,16 @@ class Thermostat(object):
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
-        cvrmse = rmse / mean_daily_runtime
+        try:
+            cvrmse = rmse / mean_daily_runtime
+        except ZeroDivisionError:
+            warn(
+                'WARNING: CVRMSE divided by zero: %s / %s '
+                'for thermostat_id %s ' % (
+                    rmse, mean_daily_runtime,
+                    self.thermostat_id))
+            cvrmse = np.nan
+
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
@@ -1090,7 +1142,16 @@ class Thermostat(object):
             return baseline - observed
 
         def percent_savings(avoided, baseline):
-            return (avoided.mean() / baseline.mean()) * 100.0
+            try:
+                savings = (avoided.mean() / baseline.mean()) * 100.0
+            except ZeroDivisionError:
+                warn(
+                    'WARNING: percent_savings divided by zero: %s / %s '
+                    'for thermostat_id %s ' % (
+                        avoided.mean(), baseline.mean(),
+                        self.thermostat_id))
+                savings = np.nan
+            return savings
 
         if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
             for core_cooling_day_set in self.get_core_cooling_days(
