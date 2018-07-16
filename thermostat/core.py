@@ -11,11 +11,15 @@ from pkg_resources import resource_stream
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
+from thermostat.climate_zone import retrieve_climate_zone
 
-if "0.21." in pd.__version__:
-    warn(
-        "WARNING: Pandas version 0.21.x has known issues and is not supported. "
-        "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
+try:
+    if "0.21." in pd.__version__:
+        warn(
+            "WARNING: Pandas version 0.21.x has known issues and is not supported. "
+            "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
+except TypeError:
+    pass  # Documentation mocks out pd, so ignore if not present.
 
 CoreDaySet = namedtuple("CoreDaySet",
     ["name", "daily", "hourly", "start_date", "end_date"]
@@ -859,17 +863,16 @@ class Thermostat(object):
 
         self._protect_cooling()
 
-        if method == 'tenth_percentile':
+        if method != 'tenth_percentile':
+            raise NotImplementedError
 
-            if source == 'cooling_setpoint':
-                return self.cooling_setpoint[core_cooling_day_set.hourly].dropna().quantile(.1)
-            elif source == 'temperature_in':
-                return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
-            else:
-                raise NotImplementedError
-
+        if source == 'cooling_setpoint':
+            return self.cooling_setpoint[core_cooling_day_set.hourly].dropna().quantile(.1)
+        elif source == 'temperature_in':
+            return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
         else:
             raise NotImplementedError
+
 
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
             method='ninetieth_percentile', source='temperature_in'):
@@ -896,17 +899,16 @@ class Thermostat(object):
 
         self._protect_heating()
 
-        if method == 'ninetieth_percentile':
+        if method != 'ninetieth_percentile':
+            raise NotImplementedError
 
-            if source == 'heating_setpoint':
-                return self.heating_setpoint[core_heating_day_set.hourly].dropna().quantile(.9)
-            elif source == 'temperature_in':
-                return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
-            else:
-                raise NotImplementedError
-
+        if source == 'heating_setpoint':
+            return self.heating_setpoint[core_heating_day_set.hourly].dropna().quantile(.9)
+        elif source == 'temperature_in':
+            return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
         else:
             raise NotImplementedError
+
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
@@ -1077,41 +1079,10 @@ class Thermostat(object):
             or cooling days.
         """
 
-        def _load_mapping(filename_or_buffer):
-            df = pd.read_csv(
-                filename_or_buffer,
-                usecols=["zipcode", "group"],
-                dtype={"zipcode": str, "group": str},
-            ).set_index('zipcode').drop('zipcode')
-            df = df.where((pd.notnull(df)), None)
-
-            return dict(df.to_records('index'))
-
-        if climate_zone_mapping is None:
-            with resource_stream('thermostat.resources',
-                                 'Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv') as f:
-                mapping = _load_mapping(f)
-        else:
-            try:
-                mapping = _load_mapping(climate_zone_mapping)
-            except: #!!! danger: wildcard except. Should specify exception.
-                raise ValueError("Could not load climate zone mapping")
-
-        with resource_stream('thermostat.resources', 'regional_baselines.csv') as f:
-            df = pd.read_csv(
-                f, usecols=[
-                    'EIA Climate Zone',
-                    'Baseline heating temp (F)',
-                    'Baseline cooling temp (F)'
-                ])
-            df = df.where((pd.notnull(df)), None)
-            df = df.set_index('EIA Climate Zone')
-            cooling_regional_baseline_temps = { k: v for k, v in df['Baseline cooling temp (F)'].iteritems()}
-            heating_regional_baseline_temps = { k: v for k, v in df['Baseline heating temp (F)'].iteritems()}
-
-        climate_zone = mapping.get(self.zipcode)
-        baseline_regional_cooling_comfort_temperature = cooling_regional_baseline_temps.get(climate_zone, None)
-        baseline_regional_heating_comfort_temperature = heating_regional_baseline_temps.get(climate_zone, None)
+        retval = retrieve_climate_zone(climate_zone_mapping, self.zipcode)
+        climate_zone = retval.climate_zone
+        baseline_regional_cooling_comfort_temperature = retval.baseline_regional_cooling_comfort_temperature
+        baseline_regional_heating_comfort_temperature = retval.baseline_regional_heating_comfort_temperature
 
         metrics = []
 
@@ -1221,6 +1192,9 @@ class Thermostat(object):
                 n_core_cooling_days = self.get_core_day_set_n_days(core_cooling_day_set)
                 n_days_in_inputfile_date_range = self.get_inputfile_date_range(core_cooling_day_set)
 
+                core_cooling_days_mean_indoor_temperature = self.temperature_in[core_cooling_day_set.hourly].mean()
+                core_cooling_days_mean_outdoor_temperature = self.temperature_out[core_cooling_day_set.hourly].mean()
+
                 outputs = {
                     "sw_version": get_version(),
 
@@ -1265,6 +1239,11 @@ class Thermostat(object):
                     "total_core_cooling_runtime": total_runtime_core_cooling,
 
                     "daily_mean_core_cooling_runtime": average_daily_cooling_runtime,
+
+                    "core_cooling_days_mean_indoor_temperature": core_cooling_days_mean_indoor_temperature,
+                    "core_cooling_days_mean_outdoor_temperature": core_cooling_days_mean_outdoor_temperature,
+                    "core_mean_indoor_temperature": core_cooling_days_mean_indoor_temperature,
+                    "core_mean_outdoor_temperature": core_cooling_days_mean_outdoor_temperature,
                 }
 
                 metrics.append(outputs)
@@ -1366,10 +1345,12 @@ class Thermostat(object):
                     baseline_total_core_day_runtime_baseline_regional = None
                     _daily_mean_core_day_demand_baseline_baseline_regional = None
 
-
                 n_days_both, n_days_insufficient_data = self.get_ignored_days(core_heating_day_set)
                 n_core_heating_days = self.get_core_day_set_n_days(core_heating_day_set)
                 n_days_in_inputfile_date_range = self.get_inputfile_date_range(core_heating_day_set)
+
+                core_heating_days_mean_indoor_temperature = self.temperature_in[core_heating_day_set.hourly].mean()
+                core_heating_days_mean_outdoor_temperature = self.temperature_out[core_heating_day_set.hourly].mean()
 
                 outputs = {
                     "sw_version": get_version(),
@@ -1379,7 +1360,7 @@ class Thermostat(object):
                     "heating_or_cooling": core_heating_day_set.name,
                     "zipcode": self.zipcode,
                     "station": self.station,
-                    "climate_zone": mapping.get(self.zipcode),
+                    "climate_zone": climate_zone,
 
                     "start_date": pd.Timestamp(core_heating_day_set.start_date).to_pydatetime().isoformat(),
                     "end_date": pd.Timestamp(core_heating_day_set.end_date).to_pydatetime().isoformat(),
@@ -1415,6 +1396,11 @@ class Thermostat(object):
                     "total_core_heating_runtime": total_runtime_core_heating,
 
                     "daily_mean_core_heating_runtime": average_daily_heating_runtime,
+
+                    "core_heating_days_mean_indoor_temperature": core_heating_days_mean_indoor_temperature,
+                    "core_heating_days_mean_outdoor_temperature": core_heating_days_mean_outdoor_temperature,
+                    "core_mean_indoor_temperature": core_heating_days_mean_indoor_temperature,
+                    "core_mean_outdoor_temperature": core_heating_days_mean_outdoor_temperature,
                 }
 
                 if self.equipment_type in self.AUX_EMERG_EQUIPMENT_TYPES:

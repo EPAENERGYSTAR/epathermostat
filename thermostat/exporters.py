@@ -69,6 +69,13 @@ def metrics_to_csv(metrics, filepath):
         'daily_mean_core_cooling_runtime',
         'daily_mean_core_heating_runtime',
 
+        'core_cooling_days_mean_indoor_temperature',
+        'core_cooling_days_mean_outdoor_temperature',
+        'core_heating_days_mean_indoor_temperature',
+        'core_heating_days_mean_outdoor_temperature',
+        'core_mean_indoor_temperature',
+        'core_mean_outdoor_temperature',
+
         'rhu_00F_to_05F',
         'rhu_05F_to_10F',
         'rhu_10F_to_15F',
