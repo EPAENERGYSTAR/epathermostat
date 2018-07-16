@@ -2,9 +2,6 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 
-from eemeter.location import _load_zipcode_to_lat_lng_index
-from eemeter.location import _load_zipcode_to_station_index
-
 from collections import OrderedDict
 from collections import defaultdict
 from itertools import chain

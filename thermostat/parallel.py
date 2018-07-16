@@ -1,5 +1,5 @@
 import pandas as pd
-from eemeter.location import _load_zipcode_to_station_index
+from eemeter.weather.location import _load_zipcode_to_usaf_station_index as _load_zipcode_to_station_index
 
 from collections import defaultdict
 from itertools import cycle
