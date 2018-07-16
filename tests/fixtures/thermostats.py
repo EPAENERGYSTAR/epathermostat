@@ -55,6 +55,11 @@ def thermostat_type_1_utc(request):
 def thermostat_type_1_utc_bad(request):
     thermostats = from_csv(get_data_path(request.param))
 
+@pytest.fixture(scope="session", params=["../data/metadata_multiple_same_key.csv"])
+def thermostats_multiple_same_key(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return thermostats
+
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
@@ -171,6 +176,10 @@ def metrics_type_1_data():
         'baseline_total_core_day_runtime_baseline_percentile': 130028.81783292838,
         'baseline_total_core_day_runtime_baseline_regional': 93158.984105375013,
         'climate_zone': 'Mixed-Humid',
+        'core_cooling_days_mean_indoor_temperature': 73.95971753003002,
+        'core_cooling_days_mean_outdoor_temperature': 79.85213142495174,
+        'core_mean_indoor_temperature': 73.95971753003002,
+        'core_mean_outdoor_temperature': 79.85213142495174,
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'cv_root_mean_sq_err': 0.076369208143191203,
         'daily_mean_core_cooling_runtime': 246.91554054054055,
@@ -191,7 +200,7 @@ def metrics_type_1_data():
         'root_mean_sq_err': 18.856744309329105,
         'start_date': '2011-01-01T00:00:00',
         'station': '725314',
-        'sw_version': '1.3.0',
+        'sw_version': '1.4.0',
         'tau': -0.77340507831642546,
         'total_core_cooling_runtime': 73087.0,
         'zipcode': '62223'
@@ -209,6 +218,10 @@ def metrics_type_1_data():
         'baseline_total_core_day_runtime_baseline_percentile': 774433.09421393159,
         'baseline_total_core_day_runtime_baseline_regional': 760708.77496827231,
         'climate_zone': 'Mixed-Humid',
+        'core_heating_days_mean_indoor_temperature': 66.6958723285375,
+        'core_heating_days_mean_outdoor_temperature': 44.681418096080556,
+        'core_mean_indoor_temperature': 66.6958723285375,
+        'core_mean_outdoor_temperature': 44.681418096080556,
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'cv_root_mean_sq_err': 0.10688726642785656,
         'daily_mean_core_heating_runtime': 773.07821229050285,
@@ -241,7 +254,7 @@ def metrics_type_1_data():
         'root_mean_sq_err': 82.63221684666604,
         'start_date': '2011-01-01T00:00:00',
         'station': '725314',
-        'sw_version': '1.3.0',
+        'sw_version': '1.4.0',
         'tau': -2.3424954770368576,
         'total_auxiliary_heating_core_day_runtime': 144794.0,
         'total_core_heating_runtime': 691905.0,

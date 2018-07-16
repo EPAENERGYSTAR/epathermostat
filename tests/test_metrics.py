@@ -1,4 +1,5 @@
 from thermostat.exporters import metrics_to_csv
+from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
 
 import pandas as pd
 import numpy as np
@@ -21,6 +22,11 @@ def metrics_type_1(thermostat_type_1):
     metrics_type_1 = thermostat_type_1.calculate_epa_field_savings_metrics()
     return metrics_type_1
 
+@pytest.fixture(scope="session")
+def metrics_type_1_multiple(thermostat_type_1):
+    metrics_type_1 = multiple_thermostat_calculate_epa_field_savings_metrics([thermostat_type_1])
+    return metrics_type_1
+
 RTOL = 1e-3
 ATOL = 1e-3
 
@@ -37,6 +43,26 @@ def test_calculate_epa_field_savings_metrics_type_1(metrics_type_1, metrics_type
 
     for key in metrics_type_1[1].keys():
         test_value = metrics_type_1[1][key]
+        target_value = metrics_type_1_data[1][key]
+        if isinstance(test_value, six.string_types):
+            assert test_value == target_value
+        else:
+            assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
+
+def test_multiple_thermostat_calculate_epa_field_savings_metrics_type_1(metrics_type_1_multiple, metrics_type_1_data):
+    # Test multiprocessing thermostat code
+    assert len(metrics_type_1_multiple) == len(metrics_type_1_data)
+
+    for key in metrics_type_1_multiple[0].keys():
+        test_value = metrics_type_1_multiple[0][key]
+        target_value = metrics_type_1_data[0][key]
+        if isinstance(test_value, six.string_types):
+            assert test_value == target_value
+        else:
+            assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
+
+    for key in metrics_type_1_multiple[1].keys():
+        test_value = metrics_type_1_multiple[1][key]
         target_value = metrics_type_1_data[1][key]
         if isinstance(test_value, six.string_types):
             assert test_value == target_value
@@ -128,6 +154,13 @@ def test_metrics_to_csv(metrics_type_1):
 
             'daily_mean_core_cooling_runtime',
             'daily_mean_core_heating_runtime',
+
+            'core_cooling_days_mean_indoor_temperature',
+            'core_cooling_days_mean_outdoor_temperature',
+            'core_heating_days_mean_indoor_temperature',
+            'core_heating_days_mean_outdoor_temperature',
+            'core_mean_indoor_temperature',
+            'core_mean_outdoor_temperature',
 
             'rhu_00F_to_05F',
             'rhu_05F_to_10F',
