@@ -84,6 +84,7 @@ author = u'Open Energy Efficiency, Inc.'
 # built documents.
 #
 # The short X.Y version.
+
 version = '1.5'
 # The full version, including alpha/beta/rc tags.
 release = '1.5.0'

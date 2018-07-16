@@ -3,6 +3,7 @@ from thermostat.core import Thermostat
 import pandas as pd
 # import numpy as np
 from eemeter.weather.location import zipcode_to_usaf_station
+
 from eemeter.weather import WeatherSource
 from eemeter.weather.cache import SqlJSONStore
 from eeweather.exceptions import ISDDataNotAvailableError
@@ -35,7 +36,6 @@ def __prime_eemeter_cache():
     sql_json = SqlJSONStore()
     sql_json.key_exists('0')
 
-
 def save_json_cache(index, thermostat_id, station, cache_path=None):
     """ Saves the cached results from eemeter into a JSON file.
 
@@ -65,6 +65,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
             raise
 
     json_cache = {}
+
     sqlite_json_store = SqlJSONStore()
     years = index.groupby(index.year).keys()
     for year in years:
@@ -198,6 +199,7 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
             "a zipcode which corresponds to a US Census Bureau ZCTA."
             .format(row.thermostat_id, row.zipcode))
         return
+
 
     except ISDDataNotAvailableError as e:
         warnings.warn(
