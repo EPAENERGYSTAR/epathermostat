@@ -3,6 +3,7 @@ from collections import namedtuple
 from itertools import repeat
 import inspect
 from warnings import warn
+import logging
 
 import pandas as pd
 import numpy as np
@@ -24,6 +25,9 @@ except TypeError:
 CoreDaySet = namedtuple("CoreDaySet",
     ["name", "daily", "hourly", "start_date", "end_date"]
 )
+
+logger = logging.getLogger('epathermostat')
+
 
 class Thermostat(object):
     """ Main thermostat data container. Each parameter which contains
@@ -541,8 +545,7 @@ class Thermostat(object):
                 try:
                     rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
                 except ZeroDivisionError:
-                    warn(
-                        'WARNING: '
+                    logger.debug(
                         'rhu calculation divided by zero (%s + %s / %s + %s) '
                         'for thermostat_id %s '
                         'from %s to %s inclusive' % (
@@ -624,8 +627,8 @@ class Thermostat(object):
             try:
                 result = int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
             except ZeroDivisionError:
-                warn(
-                    'WARNING: Date Range divided by zero: %s / %s '
+                logger.debug(
+                    'Date Range divided by zero: %s / %s '
                     'for thermostat_id %s' % (
                         delta.astype('timedelta64[D]'), np.timedelta64(1, 'D'),
                         self.thermostat_id))
@@ -715,8 +718,8 @@ class Thermostat(object):
             try:
                 alpha_estimate = total_runtime / total_cdd
             except ZeroDivisionError:
-                warn(
-                    'WARNING: Alpha Estimate divided by zero: %s / %s'
+                logger.debug(
+                    'Alpha Estimate divided by zero: %s / %s'
                     'for thermostat %s' % (
                         total_runtime, total_cdd,
                         self.thermostat_id))
@@ -745,8 +748,8 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            warn(
-                'WARNING: CVRMSE divided by zero: %s / %s '
+            logger.debug(
+                'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
                     self.thermostat_id))
@@ -837,8 +840,8 @@ class Thermostat(object):
             try:
                 alpha_estimate = total_runtime / total_hdd
             except ZeroDivisionError:
-                warn(
-                    'WARNING: alpha_estimate divided by zero: %s / %s '
+                logger.debug(
+                    'alpha_estimate divided by zero: %s / %s '
                     'for thermostat_id %s ' % (
                         total_runtime, total_hdd,
                         self.thermostat_id))
@@ -868,8 +871,8 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            warn(
-                'WARNING: CVRMSE divided by zero: %s / %s '
+            logger.warn(
+                'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
                     self.thermostat_id))
@@ -1145,8 +1148,8 @@ class Thermostat(object):
             try:
                 savings = (avoided.mean() / baseline.mean()) * 100.0
             except ZeroDivisionError:
-                warn(
-                    'WARNING: percent_savings divided by zero: %s / %s '
+                logger.debug(
+                    'percent_savings divided by zero: %s / %s '
                     'for thermostat_id %s ' % (
                         avoided.mean(), baseline.mean(),
                         self.thermostat_id))
