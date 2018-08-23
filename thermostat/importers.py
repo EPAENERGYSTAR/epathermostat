@@ -18,6 +18,7 @@ import errno
 import pytz
 from multiprocessing import Pool, cpu_count
 from functools import partial
+import logging
 
 try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
@@ -25,6 +26,9 @@ except AttributeError:
     NUMBER_OF_CORES = cpu_count()
 MAX_FTP_CONNECTIONS = 3
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
+
+
+logger = logging.getLogger('epathermostat')
 
 
 def __prime_eemeter_cache():
@@ -35,6 +39,7 @@ def __prime_eemeter_cache():
     """
     sql_json = SqlJSONStore()
     sql_json.key_exists('0')
+
 
 def save_json_cache(index, thermostat_id, station, cache_path=None):
     """ Saves the cached results from eemeter into a JSON file.
@@ -111,7 +116,7 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None):
+def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None, quiet=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -131,6 +136,9 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None
     thermostats : iterator over thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
+
+    if quiet:
+        logging.warning('quiet argument has been deprecated. Please remove this flag from your code.')
 
     __prime_eemeter_cache()
 
@@ -164,8 +172,11 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None
 
 
 def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
+    """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
+    It is not intended to be called directly."""
     i, row = metadata
-    if verbose:
+    logger.info("Importing thermostat {}".format(row.thermostat_id))
+    if verbose and logger.getEffectiveLevel() > logging.INFO:
         print("Importing thermostat {}".format(row.thermostat_id))
 
     # make sure this thermostat type is supported.
@@ -199,7 +210,6 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
             "a zipcode which corresponds to a US Census Bureau ZCTA."
             .format(row.thermostat_id, row.zipcode))
         return
-
 
     except ISDDataNotAvailableError as e:
         warnings.warn(

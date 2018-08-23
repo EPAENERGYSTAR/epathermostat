@@ -1,5 +1,7 @@
 import os
 import logging
+import logging.config
+import json
 from thermostat.importers import from_csv
 from thermostat.exporters import metrics_to_csv
 from thermostat.stats import compute_summary_statistics
@@ -15,13 +17,25 @@ from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_
 
 
 def main():
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+
+    logging.basicConfig()
+    # Example logging configuration for file and console output
+    # logging.json: Normal logging example
+    # logging_noisy.json: Turns on all debugging information
+    # logging_quiet.json: Only logs error messages
+    with open("logging.json", "r") as logging_config:
+        logging.config.dictConfig(json.load(logging_config))
+
+    logger = logging.getLogger('epathermostat')  # Uses the 'epathermostat' logging
+    logging.captureWarnings(True)  # Set to True to log additional warning messages, False to only display on console
 
     data_dir = os.path.join("..", "tests", "data")
     metadata_filename = os.path.join(data_dir, "metadata.csv")
 
+    # Use this to save the weather cache to local disk files
     # thermostats = from_csv(metadata_filename, verbose=True, save_cache=True, cache_path='/tmp/epa_weather_files/')
+
+    # Verbose will override logging to display the imported thermostats. Set to "False" to use the logging level instead
     thermostats = from_csv(metadata_filename, verbose=True)
 
     output_dir = "."
