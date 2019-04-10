@@ -1,11 +1,11 @@
 import pandas as pd
-from eemeter.weather.location import _load_zipcode_to_usaf_station_index as _load_zipcode_to_station_index
-
 from collections import defaultdict
 from itertools import cycle
 from zipfile import ZipFile
 import tempfile
 import os
+from thermostat.stations import get_closest_station_by_zipcode
+
 
 def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=None):
     """ Batch scheduler for large sets of thermostats. Can either create
@@ -44,19 +44,17 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             raise ValueError(message)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
-    index = _load_zipcode_to_station_index()
-    stations = [index[zipcode] for zipcode in metadata_df.zipcode]
+    stations = [get_closest_station_by_zipcode(zipcode) for zipcode in metadata_df.zipcode]
 
     n_rows = metadata_df.shape[0]
-
 
     # group rows by stations then order groups by number of stations.
     rows_by_station = defaultdict(list)
     for station, (i, row) in zip(stations, metadata_df.iterrows()):
         rows_by_station[station].append(row)
 
-    ordered_rows = [rows_by_station[i[0]] for i in sorted([ (s, len(rs))
-            for s, rs in rows_by_station.items()], key=(lambda x: x[1]))]
+    ordered_rows = [rows_by_station[i[0]] for i in sorted([(s, len(rs))
+                    for s, rs in rows_by_station.items()], key=(lambda x: x[1]))]
 
     # iterate over row groups, greedily adding contents to batches
 
@@ -106,6 +104,7 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
 
     else:
         return batch_dfs
+
 
 def _get_batch_sizes(n_rows, n_batches):
     n_base = int(n_rows / n_batches)

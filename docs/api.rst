@@ -60,3 +60,19 @@ thermostat.multiple
     :members:
     :undoc-members:
     :show-inheritance:
+
+thermostat.stations
+-------------------
+
+.. automodule:: thermostat.stations
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+thermostat.eeweather_wrapper
+----------------------------
+
+.. automodule:: thermostat.eeweather_wrapper
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -27,6 +27,7 @@ def main():
         logging.config.dictConfig(json.load(logging_config))
 
     logger = logging.getLogger('epathermostat')  # Uses the 'epathermostat' logging
+    logger.debug("Starting...")
     logging.captureWarnings(True)  # Set to True to log additional warning messages, False to only display on console
 
     data_dir = os.path.join("..", "tests", "data")

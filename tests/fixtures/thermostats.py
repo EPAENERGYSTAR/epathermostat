@@ -200,7 +200,7 @@ def metrics_type_1_data():
 	'root_mean_sq_err': 19.47517001343749,
 	'start_date': '2011-01-01T00:00:00',
 	'station': '725314',
-	'sw_version': '1.5.1',
+	'sw_version': '1.5.2',
 	'tau': -0.8165326352929079,
 	'total_core_cooling_runtime': 73087.0,
 	'zipcode': '62223'
@@ -254,7 +254,7 @@ def metrics_type_1_data():
 	'root_mean_sq_err': 83.04860314852706,
 	'start_date': '2011-01-01T00:00:00',
 	'station': '725314',
-	'sw_version': '1.5.1',
+	'sw_version': '1.5.2',
 	'tau': -2.3486605751007135,
 	'total_auxiliary_heating_core_day_runtime': 144794.0,
 	'total_core_heating_runtime': 691905.0,
