@@ -229,37 +229,57 @@ def test_thermostat_type_1_total_cooling_runtime(thermostat_type_1,
     assert_allclose(total_runtime, metrics_type_1_data[0]["total_core_cooling_runtime"], rtol=1e-3)
 
 
-def test_thermostat_type_1_get_resistance_heat_utilization_bins(thermostat_type_1,
+def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu1(thermostat_type_1,
         core_heating_day_set_type_1_entire, metrics_type_1_data):
 
-    bins = thermostat_type_1.get_resistance_heat_utilization_bins(core_heating_day_set_type_1_entire)
+    start = 0
+    stop = 60
+    step = 5
+    temperature_bins = list(t for t in range(start, stop+step, step))
+    rhu_runtime = thermostat_type_1.get_resistance_heat_utilization_runtime(
+            core_heating_day_set_type_1_entire)
+    rhu = thermostat_type_1.get_resistance_heat_utilization_bins(
+            rhu_runtime,
+            temperature_bins,
+            core_heating_day_set_type_1_entire)
 
-    bin_names = [
-        'rhu_00F_to_05F',
-        'rhu_05F_to_10F',
-        'rhu_10F_to_15F',
-        'rhu_15F_to_20F',
-        'rhu_20F_to_25F',
-        'rhu_25F_to_30F',
-        'rhu_30F_to_35F',
-        'rhu_35F_to_40F',
-        'rhu_40F_to_45F',
-        'rhu_45F_to_50F',
-        'rhu_50F_to_55F',
-        'rhu_55F_to_60F',
-    ]
+    assert len(rhu) == 12
 
-    assert len(bins) == 12
-
-    for i, (bin_value, bin_name) in enumerate(zip(bins, bin_names)):
+    for item in rhu.itertuples():
+        bin_name = thermostat_type_1._format_rhu('rhu1', item.Index.left, item.Index.right, duty_cycle=None)
+        bin_value = item.rhu
         assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
 
 
-def test_thermostat_types_2_get_resistance_heat_utilization_bins(
+def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_type_1,
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
+
+    start = 0
+    stop = 60
+    step = 5
+    VAR_MIN_RHU_RUNTIME = 30 * 60  # Unit is in minutes (30 hours * 60 minutes)
+    temperature_bins = list(t for t in range(start, stop+step, step))
+    rhu_runtime = thermostat_type_1.get_resistance_heat_utilization_runtime(
+            core_heating_day_set_type_1_entire)
+    rhu = thermostat_type_1.get_resistance_heat_utilization_bins(
+            rhu_runtime,
+            temperature_bins,
+            core_heating_day_set_type_1_entire,
+            VAR_MIN_RHU_RUNTIME)
+
+    assert len(rhu) == 12
+
+    for item in rhu.itertuples():
+        bin_name = thermostat_type_1._format_rhu('rhu2', item.Index.left, item.Index.right, duty_cycle=None)
+        bin_value = item.rhu
+        assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
+
+
+def test_thermostat_types_2_get_resistance_heat_utilization_runtime_rhu(
         core_heating_day_set_type_1_entire, thermostat_type_2):
 
     with pytest.raises(ValueError):
-        thermostat_type_2.get_resistance_heat_utilization_bins(
+        thermostat_type_2.get_resistance_heat_utilization_runtime(
             core_heating_day_set_type_1_entire)
 
 
