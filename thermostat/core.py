@@ -22,11 +22,25 @@ try:
 except TypeError:
     pass  # Documentation mocks out pd, so ignore if not present.
 
-CoreDaySet = namedtuple("CoreDaySet",
-    ["name", "daily", "hourly", "start_date", "end_date"]
-)
+CoreDaySet = namedtuple("CoreDaySet", ["name", "daily", "hourly", "start_date", "end_date"])
 
 logger = logging.getLogger('epathermostat')
+
+VAR_MIN_RHU_RUNTIME = 30 * 60  # Unit is in minutes (30 hours * 60 minutes)
+
+RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
+RESISTANCE_HEAT_USE_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
+RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
+RESISTANCE_HEAT_USE_BIN_FIRST = list(t for t in range(
+    RESISTANCE_HEAT_USE_BINS_MIN_TEMP,
+    RESISTANCE_HEAT_USE_BINS_MAX_TEMP + RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH,
+    RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH))
+RESISTANCE_HEAT_USE_BIN_TUPLE_FIRST = [(RESISTANCE_HEAT_USE_BIN_FIRST[i], RESISTANCE_HEAT_USE_BIN_FIRST[i+1])
+                                       for i in range(0, len(RESISTANCE_HEAT_USE_BIN_FIRST) - 1)]
+
+RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
+RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESISTANCE_HEAT_USE_BIN_SECOND[i+1])
+                                        for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
 
 
 class Thermostat(object):
@@ -106,11 +120,6 @@ class Thermostat(object):
     COOLING_EQUIPMENT_TYPES = set([1, 2, 3, 5])
     AUX_EMERG_EQUIPMENT_TYPES = set([1])
 
-    RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
-    RESISTANCE_HEAT_USE_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
-    RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
-
-
     def __init__(
             self, thermostat_id, equipment_type, zipcode, station,
             temperature_in, temperature_out, cooling_setpoint,
@@ -138,6 +147,23 @@ class Thermostat(object):
         self._validate_heating()
         self._validate_cooling()
         self._validate_aux_emerg()
+
+    def _format_rhu(self, rhu_type, low, high, duty_cycle):
+        format_string = "{rhu_type}_{low:02d}F_to_{high:02d}F"
+        if low == -np.inf:
+            format_string = "{rhu_type}_less{high:02d}F"
+            low = 0  # Don't need this value so we zero it out
+        if high == np.inf:
+            format_string = "{rhu_type}_greater{low:02d}F"
+            high = 0  # Don't need this value so we zero it out
+
+        result = format_string.format(
+                rhu_type=rhu_type,
+                low=int(low),
+                high=int(high))
+        if duty_cycle is not None:
+            result = '_'.join((result, duty_cycle))
+        return result
 
     def _validate_heating(self):
 
@@ -495,11 +521,9 @@ class Thermostat(object):
         self._protect_cooling()
         return self.cool_runtime[core_day_set.daily].sum()
 
-    def get_resistance_heat_utilization_bins(self, core_heating_day_set):
-        """ Calculates resistance heat utilization metrics in temperature
-        bins of RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
-        between RESISTANCE_HEAT_USE_BINS_MIN_TEMP and
-        RESISTANCE_HEAT_USE_BINS_MAX_TEMP Fahrenheit.
+    def get_resistance_heat_utilization_runtime(self, core_heating_day_set):
+        """ Calculates resistance heat utilization runtime and filters based on
+        the core heating days
 
         Parameters
         ----------
@@ -508,71 +532,110 @@ class Thermostat(object):
 
         Returns
         -------
-        RHUs : numpy.array or None
-            Resistance heat utilization for each temperature bin, ordered
-            ascending by temperature bin. Returns None if the thermostat does
-            not control the appropriate equipment
+        runtime_temp : pandas.DataFrame or None
+            A pandas DataFrame which includes the outdoor temperature, heat
+            runtime, aux runtime, and emergency runtime, filtered by the core
+            heating day set. Returns None if the thermostat does
+            not control the appropriate equipment.
         """
 
         self._protect_aux_emerg()
 
-        if self.equipment_type == 1:
-            RHUs = []
+        if self.equipment_type != 1:
+            return None
 
-            in_core_day_set_daily = self._get_range_boolean(
-                core_heating_day_set.daily.index,
-                core_heating_day_set.start_date,
-                core_heating_day_set.end_date)
+        in_core_day_set_daily = self._get_range_boolean(
+            core_heating_day_set.daily.index,
+            core_heating_day_set.start_date,
+            core_heating_day_set.end_date)
 
+        # convert hourly to daily
+        temp_out_daily = self.temperature_out.resample('D').mean()
+        aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
+        emg_daily = self.emergency_heat_runtime.resample('D').sum()
 
-            # convert hourly to daily
-            temp_out_daily = self.temperature_out.resample('D').mean()
-            aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
-            emg_daily = self.emergency_heat_runtime.resample('D').sum()
+        # Build the initial DataFrame based on daily readings
+        runtime_temp = pd.DataFrame()
+        runtime_temp['temperature'] = temp_out_daily
+        runtime_temp['heat_runtime'] = self.heat_runtime
+        runtime_temp['aux_runtime'] = aux_daily
+        runtime_temp['emg_runtime'] = emg_daily
+        runtime_temp['in_core_daily'] = in_core_day_set_daily
 
-            start = self.RESISTANCE_HEAT_USE_BINS_MIN_TEMP
-            stop = self.RESISTANCE_HEAT_USE_BINS_MAX_TEMP
-            step = self.RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
-            temperature_bins = ((t, t+step) for t in range(start, stop, step))
-            for low_temp, high_temp in temperature_bins:
-                temp_low_enough_daily = temp_out_daily < high_temp
-                temp_high_enough_daily = temp_out_daily >= low_temp
+        # Filter out records that aren't part of the core day set
+        runtime_temp = runtime_temp[runtime_temp['in_core_daily'].map(lambda x: x is True)]
 
-                temp_bin_daily = temp_low_enough_daily & temp_high_enough_daily & in_core_day_set_daily
-                R_heat = self.heat_runtime[temp_bin_daily].sum()
-                R_aux = aux_daily[temp_bin_daily].sum()
-                R_emg = emg_daily[temp_bin_daily].sum()
-                try:
-                    rhu = float(R_aux + R_emg) / float(R_heat + R_emg)
-                except ZeroDivisionError:
-                    logger.debug(
-                        'rhu calculation divided by zero (%s + %s / %s + %s) '
-                        'for thermostat_id %s '
-                        'from %s to %s inclusive' % (
-                            R_aux, R_emg, R_heat, R_emg,
-                            self.thermostat_id,
-                            core_heating_day_set.start_date,
-                            core_heating_day_set.end_date))
-                    rhu = np.nan
+        return runtime_temp
 
-                data_is_nonsense = R_aux > R_heat
-                if data_is_nonsense:
-                    rhu = np.nan
+    def get_resistance_heat_utilization_bins(self, runtime_temp, bins, core_heating_day_set, min_runtime_minutes=None):
+        """ Calculates the resistance heat utilization in
+        bins (provided by the bins parameter)
+
+        Parameters
+        ----------
+        runtime_temp: DataFrame
+            Runtime Temperatures Dataframe from get_resistance_heat_utilization_runtime
+        bins : list
+            List of the bins (rightmost-edge aligned) for binning
+        core_heating_day_set : thermostat.core.CoreDaySet
+            Core heating day set for which to calculate total runtime.
+
+        Returns
+        -------
+        RHUs : pandas.DataFrame or None
+            Resistance heat utilization for each temperature bin, ordered
+            ascending by temperature bin. Returns None if the thermostat does
+            not control the appropriate equipment or if the runtime_temp is None.
+        """
+        self._protect_aux_emerg()
+
+        if self.equipment_type != 1:
+            return None
+
+        if runtime_temp is None:
+            return None
+
+        # Create the bins and group by them
+        runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
+        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime'].sum()
+
+        # Calculate the RHU based on the bins
+        runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
+
+        runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.aux_runtime + runtime_rhu.emg_runtime
+        runtime_rhu['aux_duty_cycle'] = runtime_rhu.aux_runtime / runtime_rhu.total_runtime
+        runtime_rhu['emg_duty_cycle'] = runtime_rhu.emg_runtime / runtime_rhu.total_runtime
+        runtime_rhu['compressor_duty_cycle'] = runtime_rhu.heat_runtime / runtime_rhu.total_runtime
+
+        # If we're passed min_runtime_minutes (RHU2) then treat the thermostat as not having run during that period
+        if min_runtime_minutes:
+            runtime_rhu['rhu'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+            runtime_rhu['aux_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+            runtime_rhu['emg_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+            runtime_rhu['compressor_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+            runtime_rhu['total_runtime'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+
+        runtime_rhu['data_is_nonsense'] = (runtime_rhu['aux_runtime'] > runtime_rhu['heat_runtime'])
+        runtime_rhu.loc[runtime_rhu.data_is_nonsense == True, 'rhu'] = np.nan  # noqa: E712
+
+        if runtime_rhu.data_is_nonsense.any():
+            for item in runtime_rhu.itertuples():
+                if item.data_is_nonsense:
                     warn(
                         'WARNING: '
                         'aux heat runtime %s > compressor runtime %s '
                         'for %sF <= temperature < %sF '
                         'for thermostat_id %s '
                         'from %s to %s inclusive' % (
-                            R_aux, R_heat,
-                            low_temp, high_temp,
+                            item.aux_runtime,
+                            item.heat_runtime,
+                            item.Index.left,
+                            item.Index.right,
                             self.thermostat_id,
                             core_heating_day_set.start_date,
                             core_heating_day_set.end_date))
-                RHUs.append(rhu)
-            return np.array(RHUs)
-        else:
-            return None
+
+        return runtime_rhu
 
     def get_ignored_days(self, core_day_set):
         """ Determine how many days are ignored for a particular core day set
@@ -1478,23 +1541,80 @@ class Thermostat(object):
                                 core_heating_day_set),
                     }
 
-                    rhus = self.get_resistance_heat_utilization_bins(core_heating_day_set)
+                    # Add RHU Calculations
+                    for rhu_type in ('rhu1', 'rhu2'):
+                        if rhu_type == 'rhu2':
+                            min_runtime_minutes = VAR_MIN_RHU_RUNTIME
+                        else:
+                            min_runtime_minutes = None
 
-                    start = self.RESISTANCE_HEAT_USE_BINS_MIN_TEMP
-                    stop = self.RESISTANCE_HEAT_USE_BINS_MAX_TEMP
-                    step = self.RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH
-                    temperature_bins = (
-                        (t, t+step) for t in range(start, stop, step))
-                    if rhus is not None:
-                        iter_rhus = rhus
-                    else:
-                        iter_rhus = repeat(None)
+                        rhu_runtime = self.get_resistance_heat_utilization_runtime(core_heating_day_set)
 
-                    for rhu, (low, high) in zip(iter_rhus, temperature_bins):
-                        column = 'rhu_{:02d}F_to_{:02d}F'.format(low, high)
-                        additional_outputs[column] = rhu
+                        # Add duty cycle records
+                        heat_runtime = rhu_runtime.heat_runtime.sum()
+                        aux_runtime = rhu_runtime.aux_runtime.sum()
+                        emg_runtime = rhu_runtime.emg_runtime.sum()
+                        total_runtime = heat_runtime + aux_runtime + emg_runtime
+                        additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_runtime
+                        additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_runtime
+                        additional_outputs[rhu_type + '_compressor_duty_cycle'] = heat_runtime / total_runtime
+
+                        rhu_first = self.get_resistance_heat_utilization_bins(
+                                rhu_runtime,
+                                RESISTANCE_HEAT_USE_BIN_FIRST,
+                                core_heating_day_set,
+                                min_runtime_minutes)
+
+                        rhu_second = self.get_resistance_heat_utilization_bins(
+                                rhu_runtime,
+                                RESISTANCE_HEAT_USE_BIN_SECOND,
+                                core_heating_day_set,
+                                min_runtime_minutes)
+
+                        for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle'):
+
+                            if rhu_first is not None:
+
+                                for item in rhu_first.itertuples():
+                                    column = self._format_rhu(
+                                        rhu_type=rhu_type,
+                                        low=item.Index.left,
+                                        high=item.Index.right,
+                                        duty_cycle=duty_cycle)
+                                    if duty_cycle is None:
+                                        additional_outputs[column] = item.rhu
+                                    else:
+                                        additional_outputs[column] = getattr(item, duty_cycle)
+                            else:
+                                for (low, high) in RESISTANCE_HEAT_USE_BIN_FIRST_TUPLE:
+                                    column = self._format_rhu(
+                                            rhu_type,
+                                            low,
+                                            high,
+                                            duty_cycle)
+                                    additional_outputs[column] = None
+
+                            if rhu_second is not None:
+                                for item in rhu_second.itertuples():
+                                    column = self._format_rhu(
+                                        rhu_type=rhu_type,
+                                        low=item.Index.left,
+                                        high=item.Index.right,
+                                        duty_cycle=duty_cycle)
+                                    if duty_cycle is None:
+                                        additional_outputs[column] = item.rhu
+                                    else:
+                                        additional_outputs[column] = getattr(item, duty_cycle)
+                            else:
+                                for (low, high) in RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE:
+                                    column = self._format_rhu(
+                                            rhu_type,
+                                            low,
+                                            high,
+                                            duty_cycle)
+                                    additional_outputs[column] = None
 
                     outputs.update(additional_outputs)
-                metrics.append(outputs)
 
+                metrics.append(outputs)
         return metrics
