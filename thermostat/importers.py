@@ -1,17 +1,14 @@
 from thermostat.core import Thermostat
 
 import pandas as pd
-# import numpy as np
-from eemeter.weather.location import zipcode_to_usaf_station
+from thermostat.stations import get_closest_station_by_zipcode
 
-from eemeter.weather import WeatherSource
-from eemeter.weather.cache import SqlJSONStore
+from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
+from eeweather.cache import KeyValueStore
 from eeweather.exceptions import ISDDataNotAvailableError
 import json
 
 import warnings
-# from datetime import datetime
-# from datetime import timedelta
 import dateutil.parser
 import os
 import errno
@@ -28,21 +25,22 @@ MAX_FTP_CONNECTIONS = 3
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
 
 
-logger = logging.getLogger('epathermostat')
+logger = logging.getLogger(__name__)
 
 
-def __prime_eemeter_cache():
+def __prime_eeweather_cache():
     """ Primes the eemeter / eeweather caches by doing a non-existent query
     This creates the cache directories sooner than if they were created
     during normal processing (which can lead to a race condition and missing
     thermostats)
     """
-    sql_json = SqlJSONStore()
-    sql_json.key_exists('0')
+    sql_json = KeyValueStore()
+    if sql_json.key_exists('0') is not False:
+        raise Exception("eeweather cache was not properly primed. Aborting.")
 
 
 def save_json_cache(index, thermostat_id, station, cache_path=None):
-    """ Saves the cached results from eemeter into a JSON file.
+    """ Saves the cached results from eeweather into a JSON file.
 
     Parameters
     ----------
@@ -71,7 +69,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
 
     json_cache = {}
 
-    sqlite_json_store = SqlJSONStore()
+    sqlite_json_store = KeyValueStore()
     years = index.groupby(index.year).keys()
     for year in years:
         filename = "ISD-{station}-{year}.json".format(
@@ -140,7 +138,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None
     if quiet:
         logging.warning('quiet argument has been deprecated. Please remove this flag from your code.')
 
-    __prime_eemeter_cache()
+    __prime_eeweather_cache()
 
     metadata = pd.read_csv(
         metadata_filename,
@@ -198,7 +196,7 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
                 save_cache=save_cache,
                 cache_path=cache_path,
         )
-    except ValueError:
+    except ValueError as e:
         # Could not locate a station for the thermostat. Warn and skip.
         warnings.warn(
             "Skipping import of thermostat (id={}) for which "
@@ -294,16 +292,15 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         emergency_heat_runtime = None
 
     # load outdoor temperatures
-    station = zipcode_to_usaf_station(zipcode)
+    station = get_closest_station_by_zipcode(zipcode)
 
     if station is None:
         message = "Could not locate a valid source of outdoor temperature " \
                 "data for ZIP code {}".format(zipcode)
         raise ValueError(message)
 
-    ws_hourly = WeatherSource(station, normalized=False, use_cz2010=False)
     utc_offset = normalize_utc_offset(utc_offset)
-    temp_out = ws_hourly.indexed_temperatures(hourly_index_utc - utc_offset, "degF")
+    temp_out = get_indexed_temperatures_eeweather(station, hourly_index_utc - utc_offset)
     temp_out.index = hourly_index
 
     # Export the data from the cache

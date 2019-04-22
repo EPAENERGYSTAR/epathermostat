@@ -26,16 +26,8 @@
         }
     },
 
-    "loggers": {
-        "epathermostat": {
-            "level": "DEBUG",
-            "handlers": ["console"],
-            "propagate": "no"
-        }
-    },
-
     "root": {
-        "level": "INFO",
+        "level": "DEBUG",
         "handlers": ["console", "file_handler"]
     }
 }
