@@ -42,6 +42,9 @@ RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
 RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESISTANCE_HEAT_USE_BIN_SECOND[i+1])
                                         for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
 
+# FIXME: Turning off these warnings for now
+pd.set_option('mode.chained_assignment', None)
+
 
 class Thermostat(object):
     """ Main thermostat data container. Each parameter which contains
@@ -561,6 +564,7 @@ class Thermostat(object):
         runtime_temp['aux_runtime'] = aux_daily
         runtime_temp['emg_runtime'] = emg_daily
         runtime_temp['in_core_daily'] = in_core_day_set_daily
+        runtime_temp['total_minutes'] = 1440  # default number of minutes per day
 
         # Filter out records that aren't part of the core day set
         runtime_temp = runtime_temp[runtime_temp['in_core_daily'].map(lambda x: x is True)]
@@ -597,15 +601,16 @@ class Thermostat(object):
 
         # Create the bins and group by them
         runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime'].sum()
+        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes'].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
 
         runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.aux_runtime + runtime_rhu.emg_runtime
-        runtime_rhu['aux_duty_cycle'] = runtime_rhu.aux_runtime / runtime_rhu.total_runtime
-        runtime_rhu['emg_duty_cycle'] = runtime_rhu.emg_runtime / runtime_rhu.total_runtime
-        runtime_rhu['compressor_duty_cycle'] = runtime_rhu.heat_runtime / runtime_rhu.total_runtime
+        # Changed to use the number of minutes per eligible day
+        runtime_rhu['aux_duty_cycle'] = runtime_rhu.aux_runtime / runtime_rhu.total_minutes
+        runtime_rhu['emg_duty_cycle'] = runtime_rhu.emg_runtime / runtime_rhu.total_minutes
+        runtime_rhu['compressor_duty_cycle'] = runtime_rhu.heat_runtime / runtime_rhu.total_minutes
 
         # If we're passed min_runtime_minutes (RHU2) then treat the thermostat as not having run during that period
         if min_runtime_minutes:
@@ -1554,10 +1559,11 @@ class Thermostat(object):
                         heat_runtime = rhu_runtime.heat_runtime.sum()
                         aux_runtime = rhu_runtime.aux_runtime.sum()
                         emg_runtime = rhu_runtime.emg_runtime.sum()
-                        total_runtime = heat_runtime + aux_runtime + emg_runtime
-                        additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_runtime
-                        additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_runtime
-                        additional_outputs[rhu_type + '_compressor_duty_cycle'] = heat_runtime / total_runtime
+                        # total_runtime = heat_runtime + aux_runtime + emg_runtime
+                        total_minutes = rhu_runtime.total_minutes.sum()
+                        additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_minutes
+                        additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_minutes
+                        additional_outputs[rhu_type + '_compressor_duty_cycle'] = heat_runtime / total_minutes
 
                         rhu_first = self.get_resistance_heat_utilization_bins(
                                 rhu_runtime,

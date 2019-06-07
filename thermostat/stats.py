@@ -9,11 +9,17 @@ from warnings import warn
 import json
 from functools import reduce
 from pkg_resources import resource_stream
+import logging
 
 from thermostat import get_version
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
 IQR_FILTER_PARAMETER = 1.5
+TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
+UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
+
+logger = logging.getLogger('epathermostat')
+
 
 REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'n_days_in_inputfile_date_range',
@@ -528,12 +534,10 @@ def get_filtered_stats(
 
             # Calculate IQR for RHU2 and filter outliers
             if 'rhu2' in column_name:
-                q1 = column.quantile(.25)
-                q3 = column.quantile(.75)
-                median = column.quantile(.50)
-                iqr = q3 - q1
-                # Drop (do not keep) if the following condition is true
-                iqr_filter = (column <= (median + IQR_FILTER_PARAMETER * iqr)) & (column >= (median - IQR_FILTER_PARAMETER * iqr))
+                iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
+                if bool(iqr_filter.any()) is False:
+                    iqr_filter = (column == column)
+                    logging.warning("Filter removed entire dataset. Data is unfiltered.")
                 iqr_filtered_column = column.loc[iqr_filter]
 
                 # calculate quantiles and statistics for RHU2 IQR (IQFLT) and
@@ -547,6 +551,7 @@ def get_filtered_stats(
                 noiq_sem = np.nanstd(column) / (column.count() ** .5)
                 noiq_lower_bound = noiq_mean - (1.96 * noiq_sem)
                 noiq_upper_bound = noiq_mean + (1.96 * noiq_sem)
+
                 stats["{}_n_IQFLT".format(column_name)] = iqr_filtered_column.count()
                 stats["{}_upper_bound_95_perc_conf_IQFLT".format(column_name)] = iqr_upper_bound
                 stats["{}_mean_IQFLT".format(column_name)] = iqr_mean

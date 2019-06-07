@@ -1,0 +1,6 @@
+thermostat_id,equipment_type,zipcode,utc_offset,interval_data_filename
+thermostat_single_emg_aux_constant_on_outlier,1,04469,-7,thermostat_single_emg_aux_constant_on_outlier.csv
+f4080332-7bc7-40be-a4d1-26311b5ef726-1,1,04469,-7,thermostat_f4080332-7bc7-40be-a4d1-26311b5ef726.csv
+f4080332-7bc7-40be-a4d1-26311b5ef726-2,1,04469,-7,thermostat_f4080332-7bc7-40be-a4d1-26311b5ef726.csv
+f4080332-7bc7-40be-a4d1-26311b5ef726-3,1,04469,-7,thermostat_f4080332-7bc7-40be-a4d1-26311b5ef726.csv
+f4080332-7bc7-40be-a4d1-26311b5ef726-4,1,04469,-7,thermostat_f4080332-7bc7-40be-a4d1-26311b5ef726.csv
