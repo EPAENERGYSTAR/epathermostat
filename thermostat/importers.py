@@ -114,7 +114,7 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None, quiet=None):
+def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, cache_path=None, quiet=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -126,6 +126,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None
         Set to True to output a more detailed log of import activity.
     save_cache: boolean
         Set to True to save the cached data to a json file (based on Thermostat ID).
+    shuffle: boolean
+        Shuffles the thermostats to give them random ordering if desired (helps with caching).
     cache_path: str
         Directory path to save the cached data
 
@@ -150,6 +152,11 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, cache_path=None
             "interval_data_filename": str
         }
     )
+
+    # Shuffle the results to help alleviate cache issues
+    if shuffle:
+        logging.info("Metadata randomized to prevent collisions in cache.")
+        metadata = metadata.sample(frac=1).reset_index(drop=True)
 
     p = Pool(AVAILABLE_PROCESSES)
     multiprocess_func_partial = partial(
@@ -261,9 +268,9 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
 
     # load indices
     dates = pd.to_datetime(df["date"])
-    daily_index = pd.DatetimeIndex(start=dates[0], periods=dates.shape[0], freq="D")
-    hourly_index = pd.DatetimeIndex(start=dates[0], periods=dates.shape[0] * 24, freq="H")
-    hourly_index_utc = pd.DatetimeIndex(start=dates[0], periods=dates.shape[0] * 24, freq="H", tz=pytz.UTC)
+    daily_index = pd.date_range(start=dates[0], periods=dates.shape[0], freq="D")
+    hourly_index = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H")
+    hourly_index_utc = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H", tz=pytz.UTC)
 
     # raise an error if dates are not aligned
     if not all(dates == daily_index):

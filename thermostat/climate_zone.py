@@ -8,7 +8,7 @@ def _load_mapping(filename_or_buffer):
         filename_or_buffer,
         usecols=["zipcode", "group"],
         dtype={"zipcode": str, "group": str},
-    ).set_index('zipcode').drop('zipcode')
+    ).set_index('zipcode').drop('zipcode', errors='ignore')
     df = df.where((pd.notnull(df)), None)
 
     return dict(df.to_records('index'))

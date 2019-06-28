@@ -455,7 +455,7 @@ class Thermostat(object):
 
     def _get_hourly_boolean(self, daily_boolean):
         values = np.repeat(daily_boolean.values, 24)
-        index = pd.DatetimeIndex(start=daily_boolean.index[0],
+        index = pd.date_range(start=daily_boolean.index[0],
                 periods=daily_boolean.index.shape[0] * 24, freq="H")
         hourly_boolean = pd.Series(values, index)
         return hourly_boolean

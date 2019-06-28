@@ -61,6 +61,7 @@ def _get_closest_station_by_zcta_ranked(zcta):
         longitude for the search
     """
 
+    zcta = zcta.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
     lat, lon = zcta_to_lat_long(zcta)
     finding_station = True
     rank = 0
