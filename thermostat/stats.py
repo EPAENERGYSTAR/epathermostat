@@ -537,7 +537,7 @@ def get_filtered_stats(
                 iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
                 if bool(iqr_filter.any()) is False:
                     iqr_filter = (column == column)
-                    logging.warning("Filter removed entire dataset. Data is unfiltered.")
+                    logging.warning("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for this bin. Disabling filter.")
                 iqr_filtered_column = column.loc[iqr_filter]
 
                 # calculate quantiles and statistics for RHU2 IQR (IQFLT) and
@@ -731,7 +731,7 @@ def compute_summary_statistics(
             heating_stats(metrics_df, filter_0, "all_no_filter"),
             cooling_stats(metrics_df, filter_0, "all_no_filter"),
             heating_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
-            cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold"),
+            cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
             heating_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
             cooling_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
             heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
@@ -785,7 +785,7 @@ def compute_summary_statistics(
             heating_stats(metrics_df, filter_0, "all_no_filter"),
             cooling_stats(metrics_df, filter_0, "all_no_filter"),
             heating_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
-            cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold"),
+            cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
             heating_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
             cooling_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
             heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
