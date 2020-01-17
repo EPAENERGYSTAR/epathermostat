@@ -35,7 +35,7 @@ RESISTANCE_HEAT_USE_BIN_FIRST = list(t for t in range(
     RESISTANCE_HEAT_USE_BINS_MIN_TEMP,
     RESISTANCE_HEAT_USE_BINS_MAX_TEMP + RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH,
     RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH))
-RESISTANCE_HEAT_USE_BIN_TUPLE_FIRST = [(RESISTANCE_HEAT_USE_BIN_FIRST[i], RESISTANCE_HEAT_USE_BIN_FIRST[i+1])
+RESISTANCE_HEAT_USE_BIN_FIRST_TUPLE = [(RESISTANCE_HEAT_USE_BIN_FIRST[i], RESISTANCE_HEAT_USE_BIN_FIRST[i+1])
                                        for i in range(0, len(RESISTANCE_HEAT_USE_BIN_FIRST) - 1)]
 
 RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
@@ -606,6 +606,7 @@ class Thermostat(object):
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
 
+        # Currently treating aux_runtime as separate from heat_runtime
         runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.aux_runtime + runtime_rhu.emg_runtime
         # Changed to use the number of minutes per eligible day
         runtime_rhu['aux_duty_cycle'] = runtime_rhu.aux_runtime / runtime_rhu.total_minutes
@@ -1559,7 +1560,6 @@ class Thermostat(object):
                         heat_runtime = rhu_runtime.heat_runtime.sum()
                         aux_runtime = rhu_runtime.aux_runtime.sum()
                         emg_runtime = rhu_runtime.emg_runtime.sum()
-                        # total_runtime = heat_runtime + aux_runtime + emg_runtime
                         total_minutes = rhu_runtime.total_minutes.sum()
                         additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_minutes
                         additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_minutes
