@@ -13,6 +13,7 @@ Usage
    :maxdepth: 2
 
    tutorial
+   data_files
    api
 
 License
@@ -24,6 +25,6 @@ Contact
 -------
 
 Please feel free to reach out to either
-Dan Baldewicz (Dan.Baldewicz@icfi.com, 518-452-6426) or
-Phil Ngo (phil@theimpactlab.co) with questions or for
+Abhishek Jathar (Abhishek.Jathar@icf.com) or
+Craig Maloney (craig@intellovations.com) with questions or for
 technical support.
