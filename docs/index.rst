@@ -13,6 +13,7 @@ Usage
    :maxdepth: 2
 
    tutorial
+   data_files
    api
 
 License
