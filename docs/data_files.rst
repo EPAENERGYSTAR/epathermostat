@@ -72,7 +72,7 @@ Name                         Data Format             Units    Description
 - If only a single setpoint is used for the thermostat, please copy the same
   setpoint data in to the heating and cooling setpoint columns.
 - Outdoor temperature data need not be provided - it will be fetched
-  automatically from NCDC using the `eemeter package <https://eemeter.readthedocs.io/en/release-v0.4.8-alpha/weather.html#isdweathersource>`_ package.
+  automatically from NCDC using the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_ package.
 - Dates should be consecutive.
 
 .. [#] Options for :code:`equipment_type`:
@@ -88,8 +88,8 @@ Name                         Data Format             Units    Description
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
    the bounds of the heating and cooling season over which metrics will be
-   computed. For more information on the mapping between ZIP codes and
-   weather stations, please see `eemeter.weather.location <https://eemeter.readthedocs.io/en/release-v0.4.8-alpha/weather.html#eemeter.weather.location.zipcode_to_climate_zone>`_.
+   computed. For more information on the mapping between ZIP / ZCTA codes and
+   weather stations, please see `eeweather <http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion>`_ and :ref:`thermostat.stations`.
 
 .. [#] Should not include runtime for auxiliary or emergency heat - this should
    be provided separately in the columns `emergency_heat_HH` and

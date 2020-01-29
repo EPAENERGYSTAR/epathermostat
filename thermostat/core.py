@@ -606,9 +606,8 @@ class Thermostat(object):
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
 
-        # FIXME: Need a comment here on why runtime_rhu.aux_runtime is not added here
-        # runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.aux_runtime + runtime_rhu.emg_runtime
-        runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.emg_runtime
+        # Currently treating aux_runtime as separate from heat_runtime
+        runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.aux_runtime + runtime_rhu.emg_runtime
         # Changed to use the number of minutes per eligible day
         runtime_rhu['aux_duty_cycle'] = runtime_rhu.aux_runtime / runtime_rhu.total_minutes
         runtime_rhu['emg_duty_cycle'] = runtime_rhu.emg_runtime / runtime_rhu.total_minutes
