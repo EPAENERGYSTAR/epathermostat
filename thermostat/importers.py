@@ -267,33 +267,34 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     heating, cooling, aux_emerg = _get_equipment_type(equipment_type)
 
     # load indices
-    dates = pd.to_datetime(df["date"])
-    daily_index = pd.date_range(start=dates[0], periods=dates.shape[0], freq="D")
-    hourly_index = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H")
-    hourly_index_utc = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H", tz=pytz.UTC)
+    date_time = pd.to_datetime(df["datetime"])
+    df['datetime'] = date_time
+    # daily_index = pd.date_range(start=date_time[0], periods=date_time.shape[0] / 24, freq="D")
+    hourly_index = pd.date_range(start=date_time[0], periods=date_time.shape[0], freq="H")
+    hourly_index_utc = pd.date_range(start=date_time[0], periods=date_time.shape[0], freq="H", tz=pytz.UTC)
 
     # raise an error if dates are not aligned
-    if not all(dates == daily_index):
+    if not all(date_time == hourly_index):
         message = ("Dates provided for thermostat_id={} may contain some "
                    "which are out of order, missing, or duplicated.".format(thermostat_id))
         raise ValueError(message)
 
     # load hourly time series values
-    temp_in = pd.Series(_get_hourly_block(df, "temp_in"), hourly_index)
+    temp_in = _create_series(df.temp_in, hourly_index)
 
     if heating:
-        heating_setpoint = pd.Series(_get_hourly_block(df, "heating_setpoint"), hourly_index)
+        heating_setpoint = _create_series(df.heating_setpoint, hourly_index)
     else:
         heating_setpoint = None
 
     if cooling:
-        cooling_setpoint = pd.Series(_get_hourly_block(df, "cooling_setpoint"), hourly_index)
+        cooling_setpoint = _create_series(df.cooling_setpoint, hourly_index)
     else:
         cooling_setpoint = None
 
     if aux_emerg:
-        auxiliary_heat_runtime = pd.Series(_get_hourly_block(df, "auxiliary_heat_runtime"), hourly_index)
-        emergency_heat_runtime = pd.Series(_get_hourly_block(df, "emergency_heat_runtime"), hourly_index)
+        auxiliary_heat_runtime = _create_series(df.auxiliary_heat, hourly_index)
+        emergency_heat_runtime = _create_series(df.emergency_heat, hourly_index)
     else:
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
@@ -314,15 +315,35 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     if save_cache:
         save_json_cache(hourly_index, thermostat_id, station, cache_path)
 
+    #### FIXME: Need to figure out how to get this to work with the evt / s1 and s2 foo
     # load daily time series values
     if cooling:
-        cool_runtime = pd.Series(df["cool_runtime"].values, daily_index)
+        if df.cool_runtime_equiv.all():
+            df['cool_runtime'] = df.cool_runtime_equiv
+        else:
+            cool_runtime_stg1 = df.cool_runtime_stg1
+            cool_runtime_stg2 = df.cool_runtime_stg2
+            cool_runtime = (0.65 * cool_runtime_stg1) + cool_runtime_stg2
+            df['cool_runtime'] = cool_runtime
+        cool_runtime = _create_series(df.cool_runtime, hourly_index)
     else:
         cool_runtime = None
+
     if heating:
-        heat_runtime = pd.Series(df["heat_runtime"].values, daily_index)
+        if 0 == 1 and df.heat_runtime_equiv.all():
+            df['heat_runtime'] = df.heat_runtime_equiv
+        else:
+            heat_runtime_stg1 = df.heat_runtime_stg1
+            heat_runtime_stg2 = df.heat_runtime_stg2
+            heat_runtime = (0.65 * heat_runtime_stg1) + heat_runtime_stg2
+            df['heat_runtime'] = heat_runtime
+        heat_runtime = _create_series(df.heat_runtime, hourly_index)
     else:
         heat_runtime = None
+
+    # FIXME: Resample to daily for the time being
+    heat_runtime = heat_runtime.resample('D').sum()
+    cool_runtime = cool_runtime.resample('D').sum()
 
     # create thermostat instance
     thermostat = Thermostat(
@@ -340,6 +361,12 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         emergency_heat_runtime
     )
     return thermostat
+
+
+def _create_series(df, index):
+    series = df
+    series.index = index
+    return series
 
 
 def _get_hourly_block(df, prefix):
