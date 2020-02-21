@@ -317,8 +317,9 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
 
     #### FIXME: Need to figure out how to get this to work with the evt / s1 and s2 foo
     # load daily time series values
+    
     if cooling:
-        if df.cool_runtime_equiv.all():
+        if df.cool_runtime_equiv.any():
             df['cool_runtime'] = df.cool_runtime_equiv
         else:
             cool_runtime_stg1 = df.cool_runtime_stg1
@@ -330,7 +331,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         cool_runtime = None
 
     if heating:
-        if 0 == 1 and df.heat_runtime_equiv.all():
+        if df.heat_runtime_equiv.any():
             df['heat_runtime'] = df.heat_runtime_equiv
         else:
             heat_runtime_stg1 = df.heat_runtime_stg1
@@ -342,8 +343,10 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         heat_runtime = None
 
     # FIXME: Resample to daily for the time being
-    heat_runtime = heat_runtime.resample('D').sum()
-    cool_runtime = cool_runtime.resample('D').sum()
+    # if heat_runtime is not None:
+        # heat_runtime = heat_runtime.resample('D').sum()
+    # if cool_runtime is not None:
+        # cool_runtime = cool_runtime.resample('D').sum()
 
     # create thermostat instance
     thermostat = Thermostat(
