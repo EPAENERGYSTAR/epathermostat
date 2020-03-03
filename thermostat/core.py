@@ -148,7 +148,7 @@ class Thermostat(object):
         if heat_runtime is not None:
             self.heat_runtime_daily = heat_runtime.resample("D").sum()
         else:
-            self.heat_runtime = None
+            self.heat_runtime_daily = None
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
@@ -560,24 +560,29 @@ class Thermostat(object):
         if self.equipment_type != 1:
             return None
 
-        in_core_day_set_hourly = self._get_range_boolean(
-            core_heating_day_set.hourly.index,
+        in_core_day_set_daily = self._get_range_boolean(
+            core_heating_day_set.daily.index,
             core_heating_day_set.start_date,
             core_heating_day_set.end_date)
 
-        runtime_temp_hourly = pd.DataFrame()
-        runtime_temp_hourly['temperature'] = self.temperature_out
-        runtime_temp_hourly['heat_runtime'] = self.heat_runtime_hourly
-        runtime_temp_hourly['aux_runtime'] = self.auxiliary_heat_runtime
-        runtime_temp_hourly['emg_runtime'] = self.emergency_heat_runtime
-        runtime_temp_hourly['in_core_hourly'] = in_core_day_set_hourly
-        runtime_temp_hourly['total_minutes'] = 60  # default number of minutes per hour
+        # convert hourly to daily
+        temp_out_daily = self.temperature_out.resample('D').mean()
+        aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
+        emg_daily = self.emergency_heat_runtime.resample('D').sum()
+
+        # Build the initial DataFrame based on daily readings
+        runtime_temp_daily = pd.DataFrame()
+        runtime_temp_daily['temperature'] = temp_out_daily
+        runtime_temp_daily['heat_runtime'] = self.heat_runtime_daily
+        runtime_temp_daily['aux_runtime'] = aux_daily
+        runtime_temp_daily['emg_runtime'] = emg_daily
+        runtime_temp_daily['in_core_daily'] = in_core_day_set_daily
+        runtime_temp_daily['total_minutes'] = 1440  # default number of minutes per day
 
         # Filter out records that aren't part of the core day set
-        runtime_temp_hourly = runtime_temp_hourly[runtime_temp_hourly['in_core_hourly'].map(lambda x: x is True)]
+        runtime_temp_daily = runtime_temp_daily[runtime_temp_daily['in_core_daily'].map(lambda x: x is True)]
 
-        # return runtime_temp
-        return runtime_temp_hourly
+        return runtime_temp_daily
 
     def get_resistance_heat_utilization_bins(self, runtime_temp, bins, core_heating_day_set, min_runtime_minutes=None):
         """ Calculates the resistance heat utilization in
@@ -1078,11 +1083,10 @@ class Thermostat(object):
         hourly_temp_out = self.temperature_out[core_cooling_day_set.hourly]
 
         hourly_cdd = (tau - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
-        # demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
-        hourly_demand = np.array([cdd.sum() for hour, cdd in hourly_cdd.groupby(hourly_temp_out.index)])
+        demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
 
-        index = core_cooling_day_set.hourly[core_cooling_day_set.hourly].index
-        return pd.Series(hourly_demand, index=index)
+        index = core_cooling_day_set.daily[core_cooling_day_set.daily].index
+        return pd.Series(demand, index=index)
 
     def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline, tau):
         """ Calculate baseline heating demand for a particular core heating day
@@ -1119,12 +1123,10 @@ class Thermostat(object):
         hourly_temp_out = self.temperature_out[core_heating_day_set.hourly]
 
         hourly_hdd = (temp_baseline - hourly_temp_out - tau).apply(lambda x: np.maximum(x, 0))
-        hourly_demand = np.array([hdd.sum() for hour, hdd in hourly_hdd.groupby(hourly_temp_out.index)])
-        # demand = np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(hourly_temp_out.index.date)])
+        demand = np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(hourly_temp_out.index.date)])
 
-        # index = core_heating_day_set.daily[core_heating_day_set.daily].index
-        index = core_heating_day_set.hourly[core_heating_day_set.hourly].index
-        return pd.Series(hourly_demand, index=index)
+        index = core_heating_day_set.daily[core_heating_day_set.daily].index
+        return pd.Series(demand, index=index)
 
     def get_baseline_cooling_runtime(self, baseline_cooling_demand, alpha):
         """ Calculate baseline cooling runtime given baseline cooling demand
@@ -1243,7 +1245,7 @@ class Thermostat(object):
                 baseline10_comfort_temperature = \
                     self.get_core_cooling_day_baseline_setpoint(core_cooling_day_set)
 
-                hourly_runtime = self.cool_runtime_hourly[core_cooling_day_set.hourly]
+                daily_runtime = self.cool_runtime_daily[core_cooling_day_set.daily]
 
                 (
                     demand,
@@ -1256,7 +1258,7 @@ class Thermostat(object):
                     mae,
                 ) = self.get_cooling_demand(core_cooling_day_set)
 
-                total_runtime_core_cooling = hourly_runtime.sum()
+                total_runtime_core_cooling = daily_runtime.sum()
                 n_days = core_cooling_day_set.daily.sum()
                 n_hours = core_cooling_day_set.hourly.sum()
 
@@ -1273,8 +1275,7 @@ class Thermostat(object):
                 # Raise a division error if dividing by zero and replace with np.nan instead
                 old_err_state = np.seterr(divide='raise')
                 try:
-                    # average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
-                    average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_hours)
+                    average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
                 except FloatingPointError:
                     average_daily_cooling_runtime = np.nan
                 np.seterr(**old_err_state)
@@ -1290,7 +1291,7 @@ class Thermostat(object):
                     alpha
                 )
 
-                avoided_runtime_baseline10 = avoided(baseline10_runtime, hourly_runtime)
+                avoided_runtime_baseline10 = avoided(baseline10_runtime, daily_runtime)
 
                 savings_baseline10 = percent_savings(avoided_runtime_baseline10, baseline10_runtime)
 
@@ -1307,7 +1308,7 @@ class Thermostat(object):
                         alpha
                     )
 
-                    avoided_runtime_baseline_regional = avoided(baseline_regional_runtime, hourly_runtime)
+                    avoided_runtime_baseline_regional = avoided(baseline_regional_runtime, daily_runtime)
 
                     savings_baseline_regional = percent_savings(avoided_runtime_baseline_regional, baseline_regional_runtime)
 
