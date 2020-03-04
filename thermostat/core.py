@@ -142,11 +142,11 @@ class Thermostat(object):
         self.cool_runtime_hourly = cool_runtime
         self.heat_runtime_hourly = heat_runtime
         if cool_runtime is not None:
-            self.cool_runtime_daily = cool_runtime.resample("D").sum()
+            self.cool_runtime_daily = cool_runtime.resample('D').agg(pd.Series.sum, skipna=False)
         else:
             self.cool_runtime_daily = None
         if heat_runtime is not None:
-            self.heat_runtime_daily = heat_runtime.resample("D").sum()
+            self.heat_runtime_daily = heat_runtime.resample('D').agg(pd.Series.sum, skipna=False)
         else:
             self.heat_runtime_daily = None
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
@@ -680,15 +680,14 @@ class Thermostat(object):
             null_heating = pd.isnull(self.heat_runtime_daily)
         else:
             has_heating = False
-            null_heating = False # shouldn't be counted, so False, not True
+            null_heating = False  # shouldn't be counted, so False, not True
 
         if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
             has_cooling = self.cool_runtime_daily > 0
             null_cooling = pd.isnull(self.cool_runtime_daily)
         else:
             has_cooling = False
-            null_cooling = False # shouldn't be counted, so False, not True
-
+            null_cooling = False  # shouldn't be counted, so False, not True
 
         n_both = (in_range & has_heating & has_cooling).sum()
         n_days_insufficient = (in_range & (null_heating | null_cooling)).sum()
@@ -1269,8 +1268,7 @@ class Thermostat(object):
                         "(which is not supported).")
 
                 if n_days == 0:
-                    warn(
-                        "WARNING: Number of valid cooling days is zero.")
+                    warn("WARNING: Number of valid cooling days is zero.")
 
                 # Raise a division error if dividing by zero and replace with np.nan instead
                 old_err_state = np.seterr(divide='raise')
