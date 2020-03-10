@@ -1,4 +1,5 @@
 from multiprocessing import Pool
+import warnings
 
 
 def _calc_epa_func(thermostat):
@@ -43,10 +44,13 @@ def multiple_thermostat_calculate_epa_field_savings_metrics(thermostats):
 
     metrics_dict = {}
     for output in results:
-        thermostat_id = output[0]['ct_identifier']
-        metrics_dict[thermostat_id] = []
-        for individual_output in output:
-            metrics_dict[thermostat_id].append(individual_output)
+        try:
+            thermostat_id = output[0]['ct_identifier']
+            metrics_dict[thermostat_id] = []
+            for individual_output in output:
+                metrics_dict[thermostat_id].append(individual_output)
+        except IndexError:
+            warnings.warn("Missing thermostat output")
 
     # Get the order of the thermostats from the original input so the output
     # matches the order that was sent in

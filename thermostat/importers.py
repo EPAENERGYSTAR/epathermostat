@@ -1,4 +1,12 @@
 from thermostat.core import Thermostat
+from thermostat.equipment_type import (
+        has_heating,
+        has_cooling,
+        has_auxiliary,
+        has_emergency,
+        has_two_stage_cooling,
+        has_two_stage_heating,
+        )
 
 import pandas as pd
 from thermostat.stations import get_closest_station_by_zipcode
@@ -148,7 +156,10 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
             "thermostat_id": str,
             "zipcode": str,
             "utc_offset": str,
-            "equipment_type": int,
+            "heat_type": str,
+            "heat_stage": str,
+            "cool_type": str,
+            "cool_stage": str,
             "interval_data_filename": str
         }
     )
@@ -184,20 +195,16 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print("Importing thermostat {}".format(row.thermostat_id))
 
-    # make sure this thermostat type is supported.
-    if row.equipment_type not in [1, 2, 3, 4, 5]:
-        warnings.warn(
-            "Skipping import of thermostat controlling equipment"
-            " of unsupported type. (id={})".format(row.thermostat_id))
-        return
-
     interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
     try:
         thermostat = get_single_thermostat(
                 row.thermostat_id,
                 row.zipcode,
-                row.equipment_type,
+                row.heat_type,
+                row.heat_stage,
+                row.cool_type,
+                row.cool_stage,
                 row.utc_offset,
                 interval_data_filename,
                 save_cache=save_cache,
@@ -233,7 +240,8 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
     return thermostat
 
 
-def get_single_thermostat(thermostat_id, zipcode, equipment_type,
+def get_single_thermostat(thermostat_id, zipcode,
+                          heat_type, heat_stage, cool_type, cool_stage,
                           utc_offset, interval_data_filename, save_cache=False, cache_path=None):
     """ Load a single thermostat directly from an interval data file.
 
@@ -264,8 +272,6 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     """
     df = pd.read_csv(interval_data_filename)
 
-    heating, cooling, aux_emerg = _get_equipment_type(equipment_type)
-
     # load indices
     date_time = pd.to_datetime(df["datetime"])
     df['datetime'] = date_time
@@ -282,17 +288,17 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     # load hourly time series values
     temp_in = _create_series(df.temp_in, hourly_index)
 
-    if heating:
+    if has_heating(heat_type):
         heating_setpoint = _create_series(df.heating_setpoint, hourly_index)
     else:
         heating_setpoint = None
 
-    if cooling:
+    if has_cooling(cool_type):
         cooling_setpoint = _create_series(df.cooling_setpoint, hourly_index)
     else:
         cooling_setpoint = None
 
-    if aux_emerg:
+    if has_auxiliary(heat_type) and has_emergency(heat_type):
         auxiliary_heat_runtime = _create_series(df.auxiliary_heat_runtime, hourly_index)
         emergency_heat_runtime = _create_series(df.emergency_heat_runtime, hourly_index)
     else:
@@ -316,12 +322,8 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         save_json_cache(hourly_index, thermostat_id, station, cache_path)
 
     # load daily time series values
-    if cooling:
-        # Check if there are any stage 1 or stage 2 runtimes
-        # NOTE: Cannot test for "is False"; must use either == or not here
-        if not(df.cool_runtime_stg1.any()) and not(df.cool_runtime_stg2.any()):
-            df['cool_runtime'] = df.cool_runtime
-        else:
+    if has_cooling(cool_type):
+        if has_two_stage_cooling(cool_stage):
             cool_runtime_stg1 = df.cool_runtime_stg1
             cool_runtime_stg2 = df.cool_runtime_stg2
             cool_runtime_both_stg = (0.65 * cool_runtime_stg1) + cool_runtime_stg2
@@ -332,14 +334,14 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
                         'Skipping import of thermostat with staged cooling runtime '
                         'greater than cooling runtime. (id={})'.format(thermostat_id))
                 return
+        else:
+            df['cool_runtime'] = df.cool_runtime
         cool_runtime = _create_series(df.cool_runtime, hourly_index)
     else:
         cool_runtime = None
 
-    if heating:
-        # Check if there are any stage 1 or stage 2 runtimes
-        # NOTE: Cannot test for "is False"; must use either == or not here
-        if not(df.heat_runtime_stg1.any()) and not(df.heat_runtime_stg2.any()):
+    if has_heating(heat_type):
+        if has_two_stage_heating(heat_type):
             df['heat_runtime'] = df.heat_runtime
         else:
             heat_runtime_stg1 = df.heat_runtime_stg1
@@ -359,7 +361,10 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     # create thermostat instance
     thermostat = Thermostat(
         thermostat_id,
-        equipment_type,
+        heat_type,
+        heat_stage,
+        cool_type,
+        cool_stage,
         zipcode,
         station,
         temp_in,
@@ -384,26 +389,3 @@ def _get_hourly_block(df, prefix):
     columns = ["{}_{:02d}".format(prefix, i) for i in range(24)]
     values = df[columns].values
     return values.reshape((values.shape[0] * values.shape[1],))
-
-
-def _get_equipment_type(equipment_type):
-    """
-    Returns
-    -------
-    heating : boolean
-        True if the equipment type has heating equipment
-    cooling : boolean
-        True if the equipment type has cooling equipment
-    aux_emerg : boolean
-        True if the equipment type has auxiliary/emergency heat equipment
-    """
-    # heating, cooling, aux_emerg
-    equipment_type_dict = {
-        1: (True, True, True),
-        2: (True, True, False),
-        3: (True, True, False),
-        4: (True, False, False),
-        5: (False, True, False),
-        }
-
-    return(equipment_type_dict.get(equipment_type, None))

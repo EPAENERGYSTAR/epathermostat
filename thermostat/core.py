@@ -13,6 +13,13 @@ from pkg_resources import resource_stream
 from thermostat.regression import runtime_regression
 from thermostat import get_version
 from thermostat.climate_zone import retrieve_climate_zone
+from thermostat.equipment_type import (
+        has_heating,
+        has_cooling,
+        has_auxiliary,
+        has_emergency,
+        has_resistance_heat,
+        )
 
 try:
     if "0.21." in pd.__version__:
@@ -119,18 +126,26 @@ class Thermostat(object):
         :code:`freq='H'`).
     """
 
-    HEATING_EQUIPMENT_TYPES = set([1, 2, 3, 4])
-    COOLING_EQUIPMENT_TYPES = set([1, 2, 3, 5])
-    AUX_EMERG_EQUIPMENT_TYPES = set([1])
-
     def __init__(
-            self, thermostat_id, equipment_type, zipcode, station,
+            self, thermostat_id,
+            heat_type, heat_stage, cool_type, cool_stage,
+            zipcode, station,
             temperature_in, temperature_out, cooling_setpoint,
             heating_setpoint, cool_runtime, heat_runtime,
             auxiliary_heat_runtime, emergency_heat_runtime):
 
         self.thermostat_id = thermostat_id
-        self.equipment_type = equipment_type
+
+        self.heat_type = heat_type
+        self.heat_stage = heat_stage
+        self.cool_type = cool_type
+        self.cool_stage = cool_stage
+        self.has_cooling = has_cooling(cool_type)
+        self.has_heating = has_heating(heat_type)
+        self.has_auxiliary = has_auxiliary(heat_type)
+        self.has_emergency = has_emergency(heat_type)
+        self.has_resistance_heat = has_resistance_heat(heat_type)
+
         self.zipcode = zipcode
         self.station = station
 
@@ -178,10 +193,10 @@ class Thermostat(object):
 
     def _validate_heating(self):
 
-        if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
+        if self.has_heating:
             if self.heat_runtime_daily is None:
                 message = "For thermostat {}, heating runtime data was not provided," \
-                          " despite equipment type of {}, which requires heating data.".format(self.thermostat_id, self.equipment_type)
+                          " despite equipment type of {}, which requires heating data.".format(self.thermostat_id, self.heating_type)
                 raise ValueError(message)
 
             if self.heating_setpoint is None:
@@ -190,15 +205,15 @@ class Thermostat(object):
                           " If only one setpoint is used, (or if there is no distinction" \
                           " between the heating and cooling setpoints, please" \
                           " explicitly provide two copies of the available setpoint data" \
-                          .format(self.thermostat_id, self.equipment_type)
+                          .format(self.thermostat_id, self.heating_type)
                 raise ValueError(message)
 
     def _validate_cooling(self):
 
-        if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
+        if self.has_cooling:
             if self.cool_runtime_daily is None:
                 message = "For thermostat {}, cooling runtime data was not provided," \
-                          " despite equipment type of {}, which requires cooling data.".format(self.thermostat_id, self.equipment_type)
+                          " despite equipment type of {}, which requires cooling data.".format(self.thermostat_id, self.cool_type)
                 raise ValueError(message)
 
             if self.cooling_setpoint is None:
@@ -207,17 +222,17 @@ class Thermostat(object):
                           " If only one setpoint is used, (or if there is no distinction" \
                           " between the heating and cooling setpoints, please" \
                           " explicitly provide two copies of the available setpoint data" \
-                          .format(self.thermostat_id, self.equipment_type)
+                          .format(self.thermostat_id, self.cool_type)
                 raise ValueError(message)
 
     def _validate_aux_emerg(self):
 
-        if self.equipment_type in self.AUX_EMERG_EQUIPMENT_TYPES:
+        if self.has_auxiliary and self.has_emergency:
             if self.auxiliary_heat_runtime is None or self.emergency_heat_runtime is None:
                 message = "For thermostat {}, aux and emergency runtime data were not provided," \
-                          " despite equipment type of {}, which requires these columns of data."\
-                          " If none is available, please change to equipment_type 2," \
-                          " or provide columns of 0s".format(self.thermostat_id, self.equipment_type)
+                          " despite heat_type of {}, which requires these columns of data."\
+                          " If none is available, please change heat_type to 'heat_pump_no_electric_backup'," \
+                          " or provide columns of 0s".format(self.thermostat_id, self.heat_type)
                 raise ValueError(message)
 
     def _interpolate(self, series, method="linear"):
@@ -227,27 +242,27 @@ class Thermostat(object):
 
     def _protect_heating(self):
         function_name = inspect.stack()[1][3]
-        if self.equipment_type not in self.HEATING_EQUIPMENT_TYPES:
+        if not(self.has_heating):
             message = "The function '{}', which is heating specific, cannot be" \
-                      " called for equipment_type {}".format(function_name, self.equipment_type)
+                      " called for equipment_type {}".format(function_name, self.heat_type)
             raise ValueError(message)
 
     def _protect_cooling(self):
         function_name = inspect.stack()[1][3]
-        if self.equipment_type not in self.COOLING_EQUIPMENT_TYPES:
+        if not(self.has_cooling):
             message = "The function '{}', which is cooling specific, cannot be" \
-                      " called for equipment_type {}".format(function_name, self.equipment_type)
+                      " called for equipment_type {}".format(function_name, self.cool_type)
             raise ValueError(message)
 
     def _protect_aux_emerg(self):
         function_name = inspect.stack()[1][3]
-        if self.equipment_type not in self.AUX_EMERG_EQUIPMENT_TYPES:
+        if not(self.has_auxiliary and self.has_emergency):
             message = "The function '{}', which is auxiliary/emergency heating specific, cannot be" \
-                      " called for equipment_type {}".format(function_name, self.equipment_type)
+                      " called for equipment_type {}".format(function_name, self.heat_type)
             raise ValueError(message)
 
     def get_core_heating_days(self, method="entire_dataset",
-            min_minutes_heating=30, max_minutes_cooling=0):
+                              min_minutes_heating=30, max_minutes_cooling=0):
         """ Determine core heating days from data associated with this thermostat
 
         Parameters
@@ -291,7 +306,7 @@ class Thermostat(object):
         # compute inclusion thresholds
         meets_heating_thresholds = self.heat_runtime_daily >= min_minutes_heating
 
-        if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
+        if self.has_cooling:
             meets_cooling_thresholds = self.cool_runtime_daily <= max_minutes_cooling
         else:
             meets_cooling_thresholds = True
@@ -400,7 +415,7 @@ class Thermostat(object):
         data_end_date = np.datetime64(self.cool_runtime_daily.index[-1])
 
         # compute inclusion thresholds
-        if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
+        if self.has_heating:
             meets_heating_thresholds = self.heat_runtime_daily <= max_minutes_heating
         else:
             meets_heating_thresholds = True
@@ -557,7 +572,7 @@ class Thermostat(object):
 
         self._protect_aux_emerg()
 
-        if self.equipment_type != 1:
+        if not(self.has_resistance_heat):
             return None
 
         in_core_day_set_daily = self._get_range_boolean(
@@ -606,7 +621,7 @@ class Thermostat(object):
         """
         self._protect_aux_emerg()
 
-        if self.equipment_type != 1:
+        if not self.has_resistance_heat:
             return None
 
         if runtime_temp is None:
@@ -675,14 +690,14 @@ class Thermostat(object):
             core_day_set.start_date,
             core_day_set.end_date)
 
-        if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
+        if self.has_heating:
             has_heating = self.heat_runtime_daily > 0
             null_heating = pd.isnull(self.heat_runtime_daily)
         else:
             has_heating = False
             null_heating = False  # shouldn't be counted, so False, not True
 
-        if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
+        if self.has_cooling:
             has_cooling = self.cool_runtime_daily > 0
             null_cooling = pd.isnull(self.cool_runtime_daily)
         else:
@@ -1237,7 +1252,7 @@ class Thermostat(object):
                 savings = np.nan
             return savings
 
-        if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
+        if self.has_cooling:
             for core_cooling_day_set in self.get_core_cooling_days(
                     method=core_cooling_day_set_method):
 
@@ -1344,7 +1359,10 @@ class Thermostat(object):
                     "sw_version": get_version(),
 
                     "ct_identifier": self.thermostat_id,
-                    "equipment_type": self.equipment_type,
+                    "heat_type": self.heat_type,
+                    "heat_stage": self.heat_stage,
+                    "cool_type": self.cool_type,
+                    "cool_stage": self.cool_stage,
                     "heating_or_cooling": core_cooling_day_set.name,
                     "zipcode": self.zipcode,
                     "station": self.station,
@@ -1393,7 +1411,7 @@ class Thermostat(object):
 
                 metrics.append(outputs)
 
-        if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
+        if self.has_heating:
             for core_heating_day_set in self.get_core_heating_days(method=core_heating_day_set_method):
 
                 baseline90_comfort_temperature = \
@@ -1501,7 +1519,10 @@ class Thermostat(object):
                     "sw_version": get_version(),
 
                     "ct_identifier": self.thermostat_id,
-                    "equipment_type": self.equipment_type,
+                    "heat_type": self.heat_type,
+                    "heat_stage": self.heat_stage,
+                    "cool_type": self.cool_type,
+                    "cool_stage": self.cool_stage,
                     "heating_or_cooling": core_heating_day_set.name,
                     "zipcode": self.zipcode,
                     "station": self.station,
@@ -1548,7 +1569,7 @@ class Thermostat(object):
                     "core_mean_outdoor_temperature": core_heating_days_mean_outdoor_temperature,
                 }
 
-                if self.equipment_type in self.AUX_EMERG_EQUIPMENT_TYPES:
+                if self.has_auxiliary and self.has_emergency:
 
                     additional_outputs = {
                         "total_auxiliary_heating_core_day_runtime":
