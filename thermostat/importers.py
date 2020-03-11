@@ -335,15 +335,13 @@ def get_single_thermostat(thermostat_id, zipcode,
                         'greater than cooling runtime. (id={})'.format(thermostat_id))
                 return
         else:
-            df['cool_runtime'] = df.cool_runtime
+            df['cool_runtime'] = df.cool_runtime_equiv
         cool_runtime = _create_series(df.cool_runtime, hourly_index)
     else:
         cool_runtime = None
 
     if has_heating(heat_type):
         if has_two_stage_heating(heat_type):
-            df['heat_runtime'] = df.heat_runtime
-        else:
             heat_runtime_stg1 = df.heat_runtime_stg1
             heat_runtime_stg2 = df.heat_runtime_stg2
             heat_runtime_both_stg = (0.65 * heat_runtime_stg1) + heat_runtime_stg2
@@ -354,6 +352,8 @@ def get_single_thermostat(thermostat_id, zipcode,
                         'Skipping import of thermostat with staged heating runtime '
                         'greater than heating runtime. (id={})'.format(thermostat_id))
                 return
+        else:
+            df['heat_runtime'] = df.heat_runtime_equiv
         heat_runtime = _create_series(df.heat_runtime, hourly_index)
     else:
         heat_runtime = None

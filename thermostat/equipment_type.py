@@ -1,3 +1,5 @@
+import pandas
+
 HEAT_TYPE = [
     'non_heat_pump',  # Non heat pump heating (gas or oil furnace, electric resistance)
     'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
@@ -38,6 +40,8 @@ def has_heating(heat_type):
 def has_cooling(cool_type):
     if cool_type == 'none':
         return False
+    if pandas.isnull(cool_type):
+        return True
     if cool_type in COOL_TYPE:
         return True
     return False
