@@ -327,15 +327,15 @@ def get_single_thermostat(thermostat_id, zipcode,
             cool_runtime_stg1 = df.cool_runtime_stg1
             cool_runtime_stg2 = df.cool_runtime_stg2
             cool_runtime_both_stg = (0.65 * cool_runtime_stg1) + cool_runtime_stg2
-            df['cool_runtime'] = cool_runtime_both_stg
-            cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df['cool_runtime'].dropna()
+            cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df.cool_runtime_equiv.dropna()
             if not(cool_runtime_in_bounds.all()):
                 warnings.warn(
                         'Skipping import of thermostat with staged cooling runtime '
-                        'greater than cooling runtime. (id={})'.format(thermostat_id))
+                        'greater than cooling equivalent runtime. (id={})'.format(thermostat_id))
                 return
+            df['cool_runtime'] = cool_runtime_both_stg
         else:
-            df['cool_runtime'] = df.cool_runtime_equiv
+            df['cool_runtime'] = df.cool_runtime_stg1
         cool_runtime = _create_series(df.cool_runtime, hourly_index)
     else:
         cool_runtime = None
@@ -345,15 +345,15 @@ def get_single_thermostat(thermostat_id, zipcode,
             heat_runtime_stg1 = df.heat_runtime_stg1
             heat_runtime_stg2 = df.heat_runtime_stg2
             heat_runtime_both_stg = (0.65 * heat_runtime_stg1) + heat_runtime_stg2
-            df['heat_runtime'] = heat_runtime_both_stg
-            heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df['heat_runtime'].dropna()
+            heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_equiv_runtime.dropna()
             if not(heat_runtime_in_bounds.all()):
                 warnings.warn(
                         'Skipping import of thermostat with staged heating runtime '
-                        'greater than heating runtime. (id={})'.format(thermostat_id))
+                        'greater than heating equivalent runtime. (id={})'.format(thermostat_id))
                 return
+            df['heat_runtime'] = heat_runtime_both_stg
         else:
-            df['heat_runtime'] = df.heat_runtime_equiv
+            df['heat_runtime'] = df.heat_runtime_stg1
         heat_runtime = _create_series(df.heat_runtime, hourly_index)
     else:
         heat_runtime = None

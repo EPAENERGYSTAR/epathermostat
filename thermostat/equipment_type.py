@@ -65,8 +65,8 @@ def has_two_stage_heating(heat_stage):
     return False
 
 
-def has_two_stage_cooling(heat_stage):
-    if heat_stage == 'two_speed':
+def has_two_stage_cooling(cool_stage):
+    if cool_stage == 'two_speed':
         return True
     return False
 
