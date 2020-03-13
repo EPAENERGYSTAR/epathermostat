@@ -1,4 +1,14 @@
-import pandas
+# This is for old scripts that might still refer to the old mapping.
+# Usage: equipment = EQUIPMENT_MAPPING[equipment_type]
+# heat_type = equipment['heat_type']
+EQUIPMENT_MAPPING = [
+        {'heat_type': None, 'heat_stage': 'two_stage', 'cool_type': None, 'cool_stage': 'two_stage'},  # 0
+        {'heat_type': 'heat_pump_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 1
+        {'heat_type': 'heat_pump_no_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 2
+        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'central', 'cool_stage': 'single_stage'},  # 3
+        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'none', 'cool_stage': None},  # 4
+        {'heat_type': 'none', 'heat_stage': None, 'cool_type': 'central', 'cool_stage': 'single_stage'},  # 5
+        ]
 
 HEAT_TYPE = [
     'non_heat_pump',  # Non heat pump heating (gas or oil furnace, electric resistance)
@@ -17,6 +27,7 @@ HEAT_STAGE = [
     ]
 
 COOL_TYPE = [
+    'heat_pump',  # Heat pump w/ cooling
     'central',  # Central AC
     'other',  # Mini-split, evaporative cooler, ?
     'none',  # No central cooling system
@@ -40,8 +51,6 @@ def has_heating(heat_type):
 def has_cooling(cool_type):
     if cool_type == 'none':
         return False
-    if pandas.isnull(cool_type):
-        return True
     if cool_type in COOL_TYPE:
         return True
     return False

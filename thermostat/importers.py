@@ -154,15 +154,16 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
         metadata_filename,
         dtype={
             "thermostat_id": str,
-            "zipcode": str,
-            "utc_offset": str,
             "heat_type": str,
             "heat_stage": str,
             "cool_type": str,
             "cool_stage": str,
+            "zipcode": str,
+            "utc_offset": str,
             "interval_data_filename": str
         }
     )
+    metadata.fillna('', inplace=True)
 
     # Shuffle the results to help alleviate cache issues
     if shuffle:

@@ -1,0 +1,2 @@
+thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
+411999234671,none,,central,single_stage,33155,-7,411999234671.csv

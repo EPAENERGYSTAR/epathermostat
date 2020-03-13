@@ -1,5 +1,5 @@
 thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
-064ec4bc-5317-4ab1-a1e7-a214d1acd74a,none,,central,single_stage,33155,-7,thermostat_064ec4bc-5317-4ab1-a1e7-a214d1acd74a.csv
+export,none,,central,single_stage,33155,-7,thermostat_export.csv
 d28b18d0-4dc0-4010-ae3e-58ab19b5fd61,none,,central,single_stage,78660,-7,thermostat_d28b18d0-4dc0-4010-ae3e-58ab19b5fd61.csv
 959325a4-3347-4b43-aa24-2f1bd55195ee,heat_pump_no_electric_backup,single_stage,heat_pump,,39565,-7,thermostat_959325a4-3347-4b43-aa24-2f1bd55195ee.csv
 feadf000-44c3-45fc-8a67-177414868ae7,none,,central,single_stage,85234,-7,thermostat_feadf000-44c3-45fc-8a67-177414868ae7.csv
