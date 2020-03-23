@@ -15,7 +15,7 @@ class PyTest(Command):
     def run(self):
         import subprocess
         import sys
-        errno = subprocess.call([sys.executable, 'runtests.py', '--runslow', '--assert=plain', '--verbose','--cov-report', 'term-missing', '--cov', 'thermostat'  ])
+        errno = subprocess.call([sys.executable, 'runtests.py', '--runslow', '--assert=plain', '--verbose','--cov-report', 'term-missing', '--cov', 'thermostat', '--parallel'  ])
         raise SystemExit(errno)
 
 
@@ -39,7 +39,7 @@ setup(name='thermostat',
     install_requires=[
         'eemeter==2.5.2',
         'eeweather==0.3.20',
-        'pandas==0.24.2',
+        'pandas==0.25.3',
         'sqlalchemy==1.3.1',
         ],
 )
