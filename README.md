@@ -1,7 +1,7 @@
 Connected Thermostat draft field savings metrics module
 =======================================================
 
-[![Build Status](https://travis-ci.org/openeemeter/thermostat.svg?branch=develop)](https://travis-ci.org/openeemeter/thermostat)
+[![Build Status](https://travis-ci.org/EPAENERGYSTAR/epathermostat.svg?branch=master)](https://travis-ci.org/github/EPAENERGYSTAR/epathermostat)
 
 Calculate temperature/run-time savings for connected thermostats using this
 package.
