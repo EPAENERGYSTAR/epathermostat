@@ -1,4 +1,5 @@
 from thermostat.parallel import schedule_batches
+from thermostat.equipment_type import EQUIPMENT_MAPPING
 
 import os
 import tempfile
@@ -8,6 +9,7 @@ from uuid import uuid4
 import numpy as np
 import pandas as pd
 from scipy.stats import randint
+import random
 
 import pytest
 
@@ -15,7 +17,10 @@ import pytest
 def metadata_filename():
     columns = [
         "thermostat_id",
-        "equipment_type",
+        'heat_type',
+        'heat_stage',
+        'cool_type',
+        'cool_stage',
         "zipcode",
         "utc_offset",
         "interval_data_filename",
@@ -23,7 +28,11 @@ def metadata_filename():
 
     n_thermostats = 100
     thermostat_ids = [uuid4() for i in range(n_thermostats)]
-    equipment_types = randint.rvs(0, 6, size=n_thermostats)
+    equipment_types =  [random.randint(0, 5) for i in range(n_thermostats)]
+    heat_type = [EQUIPMENT_MAPPING[x]['heat_type'] for x in equipment_types]
+    heat_stage = [EQUIPMENT_MAPPING[x]['heat_stage'] for x in equipment_types]
+    cool_type = [EQUIPMENT_MAPPING[x]['cool_type'] for x in equipment_types]
+    cool_stage = [EQUIPMENT_MAPPING[x]['cool_stage'] for x in equipment_types]
     zipcodes = [
         "70754", "70722", "70726", "70449", "70442", # "722312" 50
         "70443", "70441", "70446", "70447", "70444", # "722312"
@@ -55,7 +64,10 @@ def metadata_filename():
 
     df = pd.DataFrame({
         "thermostat_id": thermostat_ids,
-        "equipment_type": equipment_types,
+        "heat_type": heat_type,
+        "heat_stage": heat_stage,
+        "cool_type": cool_type,
+        "cool_stage": cool_stage,
         "zipcode": zipcodes,
         "utc_offset": utc_offsets,
         "interval_data_filename": interval_data_filenames,

@@ -22,7 +22,10 @@ def get_fake_output_df(n_columns):
         'sw_version',
 
         'ct_identifier',
-        'equipment_type',
+        'heat_type',
+        'heat_stage',
+        'cool_type',
+        'cool_stage',
         'heating_or_cooling',
         'station',
         'zipcode',
@@ -264,7 +267,10 @@ def get_fake_output_df(n_columns):
         'sw_version': string_placeholder,
 
         'ct_identifier': string_placeholder,
-        'equipment_type': string_placeholder,
+        'heat_type': string_placeholder,
+        'heat_stage': string_placeholder,
+        'cool_type': string_placeholder,
+        'cool_stage': string_placeholder,
         'heating_or_cooling': core_day_set_name_column,
         'station': string_placeholder,
         'zipcode': zipcode_column,
@@ -506,7 +512,7 @@ def combined_dataframe():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 200)
+    assert combined.shape == (20, 203)
 
 
 def test_compute_summary_statistics(combined_dataframe):

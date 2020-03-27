@@ -12,6 +12,7 @@ from fixtures.thermostats import metrics_type_1_data
 from fixtures.thermostats import thermostat_template
 
 from thermostat.core import CoreDaySet
+from thermostat.equipment_type import (has_cooling, has_heating)
 from datetime import datetime
 
 RTOL = 1e-3
@@ -34,7 +35,11 @@ def test_get_core_heating_day_baseline_setpoint_null_temperature_in(thermostat_t
 
     index = pd.date_range(start=datetime(2011, 1, 1), periods=3, freq='D')
     thermostat_template.temperature_in = pd.Series([0, 1, 2], index=index)
-    thermostat_template.equipment_type = 1
+    thermostat_template.heat_type = 'heat_pump_electric_backup'
+    thermostat_template.heat_stage = 'single_stage'
+    thermostat_template.cool_type = 'heat_pump'
+    thermostat_template.has_cooling = has_cooling(thermostat_template.cool_type)
+    thermostat_template.has_heating = has_heating(thermostat_template.heat_type)
 
     season_selector = pd.Series([True, True, True], index=index)
     core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
@@ -61,7 +66,11 @@ def test_get_core_cooling_day_baseline_setpoint_null_temperature_in(thermostat_t
 
     index = pd.date_range(start=datetime(2011, 1, 1), periods=3, freq='D')
     thermostat_template.temperature_in = pd.Series([0, 1, 2], index=index)
-    thermostat_template.equipment_type = 1
+    thermostat_template.heat_type = 'heat_pump_electric_backup'
+    thermostat_template.heat_stage = 'single_stage'
+    thermostat_template.cool_type = 'heat_pump'
+    thermostat_template.has_cooling = has_cooling(thermostat_template.cool_type)
+    thermostat_template.has_heating = has_heating(thermostat_template.heat_type)
 
     season_selector = pd.Series([True, True, True], index=index)
     core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
@@ -88,7 +97,11 @@ def test_get_core_heating_day_baseline_setpoint_null_heating_setpoint(thermostat
 
     index = pd.date_range(start=datetime(2011, 1, 1), periods=3, freq='D')
     thermostat_template.heating_setpoint = pd.Series([0, 1, 2], index=index)
-    thermostat_template.equipment_type = 1
+    thermostat_template.heat_type = 'heat_pump_electric_backup'
+    thermostat_template.heat_stage = 'single_stage'
+    thermostat_template.cool_type = 'heat_pump'
+    thermostat_template.has_cooling = has_cooling(thermostat_template.cool_type)
+    thermostat_template.has_heating = has_heating(thermostat_template.heat_type)
 
     season_selector = pd.Series([True, True, True], index=index)
     core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
@@ -115,7 +128,11 @@ def test_get_core_cooling_day_baseline_setpoint_null_cooling_setpoint(thermostat
 
     index = pd.date_range(start=datetime(2011, 1, 1), periods=3, freq='D')
     thermostat_template.cooling_setpoint = pd.Series([0, 1, 2], index=index)
-    thermostat_template.equipment_type = 1
+    thermostat_template.heat_type = 'heat_pump_electric_backup'
+    thermostat_template.heat_stage = 'single_stage'
+    thermostat_template.cool_type = 'heat_pump'
+    thermostat_template.has_cooling = has_cooling(thermostat_template.cool_type)
+    thermostat_template.has_heating = has_heating(thermostat_template.heat_type)
 
     season_selector = pd.Series([True, True, True], index=index)
     core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)

@@ -107,7 +107,10 @@ def test_metrics_to_csv(metrics_type_1):
             'sw_version',
 
             'ct_identifier',
-            'equipment_type',
+            'heat_type',
+            'heat_stage',
+            'cool_type',
+            'cool_stage',
             'heating_or_cooling',
             'zipcode',
             'station',

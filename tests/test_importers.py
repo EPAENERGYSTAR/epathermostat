@@ -18,8 +18,11 @@ def test_import_csv(thermostat_type_1):
         assert isinstance(series, pd.Series)
         assert series.shape == shape
 
-    assert_is_series_with_shape(thermostat_type_1.cool_runtime, (1461,))
-    assert_is_series_with_shape(thermostat_type_1.heat_runtime, (1461,))
+    assert_is_series_with_shape(thermostat_type_1.cool_runtime_daily, (1461,))
+    assert_is_series_with_shape(thermostat_type_1.heat_runtime_daily, (1461,))
+
+    assert_is_series_with_shape(thermostat_type_1.cool_runtime_hourly, (35064,))
+    assert_is_series_with_shape(thermostat_type_1.heat_runtime_hourly, (35064,))
 
     assert_is_series_with_shape(thermostat_type_1.auxiliary_heat_runtime, (35064,))
     assert_is_series_with_shape(thermostat_type_1.emergency_heat_runtime, (35064,))
@@ -44,5 +47,6 @@ def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
     assert "Invalid UTC" in str(excinfo)
 
     # Load a thermostat with utc offset == 0
-    assert(isinstance(thermostat_type_1_utc.cool_runtime, pd.Series))
+    assert(isinstance(thermostat_type_1_utc.cool_runtime_daily, pd.Series))
+    assert(isinstance(thermostat_type_1_utc.cool_runtime_hourly, pd.Series))
     assert(thermostat_type_1_utc_bad is None)
