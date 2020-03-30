@@ -39,7 +39,7 @@ setup(name='thermostat',
     install_requires=[
         'eemeter==2.5.2',
         'eeweather==0.3.20',
-        'pandas==0.25.3',
+        'pandas==1.0.3',
         'sqlalchemy==1.3.1',
         ],
 )
