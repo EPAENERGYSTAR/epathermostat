@@ -29,7 +29,6 @@ setup(name='thermostat',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
     cmdclass = {'test': PyTest},
@@ -39,7 +38,7 @@ setup(name='thermostat',
     install_requires=[
         'eemeter==2.5.2',
         'eeweather==0.3.20',
-        'pandas==1.0.3',
+        'pandas==0.25.3',
         'sqlalchemy==1.3.1',
         ],
 )

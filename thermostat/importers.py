@@ -329,6 +329,7 @@ def get_single_thermostat(thermostat_id, zipcode,
             cool_runtime_stg2 = df.cool_runtime_stg2
             cool_runtime_both_stg = (0.65 * cool_runtime_stg1) + cool_runtime_stg2
             cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df.cool_runtime_equiv.dropna()
+
             if not(cool_runtime_in_bounds.all()):
                 warnings.warn(
                         'Skipping import of thermostat with staged cooling runtime '

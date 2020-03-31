@@ -833,7 +833,7 @@ class Thermostat(object):
             y, _ = leastsq(estimate_errors, tau_starting_guess)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
-            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         tau_estimate = y[0]
 
@@ -956,7 +956,7 @@ class Thermostat(object):
             y, _ = leastsq(estimate_errors, tau_starting_guess)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
-            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         tau_estimate = y[0]
 
