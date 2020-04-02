@@ -26,6 +26,13 @@ try:
         warn(
             "WARNING: Pandas version 0.21.x has known issues and is not supported. "
             "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
+    # Pandas 1.x causes issues. Need to warn about this at the moment.
+    if "1.0." in pd.__version__:
+        warn(
+            "WARNING: Pandas version 1.0.x has changed significantly, and causes "
+            "issues with this software. We are working on supporting Pandas 1.0.x, but "
+            "that work has not been completed yet.")
+
 except TypeError:
     pass  # Documentation mocks out pd, so ignore if not present.
 
