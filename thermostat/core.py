@@ -1214,7 +1214,8 @@ class Thermostat(object):
             self, baseline_runtime, core_heating_day_set):
         return baseline_runtime - self.heat_runtime_daily[core_heating_day_set]
 
-    def calculate_epa_field_savings_metrics(self,
+    def calculate_epa_field_savings_metrics(
+            self,
             core_cooling_day_set_method="entire_dataset",
             core_heating_day_set_method="entire_dataset",
             climate_zone_mapping=None):
@@ -1648,9 +1649,7 @@ class Thermostat(object):
                     min_runtime_minutes)
 
             for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle'):
-
                 if rhu_first is not None:
-
                     for item in rhu_first.itertuples():
                         column = self._format_rhu(
                             rhu_type=rhu_type,
