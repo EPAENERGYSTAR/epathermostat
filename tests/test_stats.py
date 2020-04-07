@@ -544,25 +544,29 @@ def test_compute_summary_statistics(combined_dataframe):
 
 def test_iqr_filteringa(thermostat_emg_aux_constant_on_outlier):
 
-    thermostats = list(thermostat_emg_aux_constant_on_outlier)
+    thermostats_iqflt = list(thermostat_emg_aux_constant_on_outlier)
     # Run the metrics / statistics with the outlier thermostat in place
-    iqflt_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
+    iqflt_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats_iqflt)
     iqflt_output_dataframe = pd.DataFrame(iqflt_metrics, columns=COLUMNS)
     iqflt_summary_statistics = compute_summary_statistics(iqflt_output_dataframe)
 
     # Remove the outlier thermostat
-    for i in range(0, len(thermostats) - 1):
-        if thermostats[i].thermostat_id == 'thermostat_single_emg_aux_constant_on_outlier':
-            outlier_thermostat = thermostats.pop(i)
+    thermostats_noiq = []
+    for thermostat in list(thermostats_iqflt):
+        if thermostat.thermostat_id != 'thermostat_single_emg_aux_constant_on_outlier':
+            thermostats_noiq.append(thermostat)
+
+    if len(thermostats_noiq) == 5:
+        raise ValueError("Try again")
 
     # Re-run the metrics / statistics with the outlier thermostat removed
-    noiq_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
+    noiq_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats_noiq)
     noiq_output_dataframe = pd.DataFrame(noiq_metrics, columns=COLUMNS)
     noiq_summary_statistics = compute_summary_statistics(noiq_output_dataframe)
 
     # Verify that the IQFLT removed the outliers by comparing this with the
     # metrics with the outlier thermostat already removed.
-    for column in range(0, len(iqflt_summary_statistics) - 1):
+    for column in range(0, len(iqflt_summary_statistics)):
         fields_iqflt = [x for x in iqflt_summary_statistics[column] if '_IQFLT' in x]
         for field_iqflt in fields_iqflt:
             field_noiq = field_iqflt.replace('IQFLT', 'NOIQ')
