@@ -19,6 +19,10 @@ from thermostat.equipment_type import (
         has_auxiliary,
         has_emergency,
         has_resistance_heat,
+        validate_heat_type,
+        validate_cool_type,
+        validate_heat_stage,
+        validate_cool_stage,
         )
 
 try:
@@ -30,8 +34,8 @@ try:
     if "1.0." in pd.__version__:
         warn(
             "WARNING: Pandas version 1.0.x has changed significantly, and causes "
-            "issues with this software. We are working on supporting Pandas 1.0.x, but "
-            "that work has not been completed yet.")
+            "issues with this software. We are working on supporting Pandas 1.0.x in"
+            "a future release.")
 
 except TypeError:
     pass  # Documentation mocks out pd, so ignore if not present.
@@ -87,18 +91,19 @@ class Thermostat(object):
     thermostat_id : object
         An identifier for the thermostat. Can be anything, but should be
         identifying (e.g., an ID provided by the manufacturer).
-    equipment_type : { 0, 1, 2, 3, 4, 5 }
-        - :code:`0`: Other - e.g. multi-zone multi-stage, modulating. Note: module will
-          not output savings data for this type.
-        - :code:`1`: Single stage heat pump with aux and/or emergency heat
-        - :code:`2`: Single stage heat pump without aux or emergency heat
-        - :code:`3`: Single stage non heat pump with single-stage central air conditioning
-        - :code:`4`: Single stage non heat pump without central air conditioning
-        - :code:`5`: Single stage central air conditioning without central heating
+    heat_type : str
+        Name of the Heating Type.
+    heat_stage : str
+        Name of the Heating Stage.
+    cool_type : str
+        Name of the Cooling Type.
+    cool_stage : str
+        Name of the Cooling Stage.
     zipcode : str
         Installation ZIP code for the thermostat.
     station : str
-        USAF identifier for weather station used to pull outdoor temperature data.
+        USAF identifier for weather station used to pull outdoor temperature
+        data.
     temperature_in : pandas.Series
         Contains internal temperature data in degrees Fahrenheit (F),
         with resolution of at least 0.5F.
@@ -121,17 +126,18 @@ class Thermostat(object):
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     cool_runtime : pandas.Series,
-        Daily runtimes for cooling equipment controlled by the thermostat, measured
-        in minutes. No datapoint should exceed 1440 mins, which would indicate
-        over a day of runtime (impossible).
-        Should be indexed by a pandas.DatetimeIndex with daily frequency (i.e.
-        :code:`freq='D'`).
+        Daily runtimes for cooling equipment controlled by the thermostat,
+        measured in minutes. No datapoint should exceed 60 mins, which would
+        indicate over a day of runtime (impossible).
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
     heat_runtime : pandas.Series,
-        Daily runtimes for heating equipment controlled by the thermostat, measured
-        in minutes. No datapoint should exceed 1440 mins, which would indicate
+        Daily runtimes for heating equipment controlled by the thermostat,
+        measured in minutes. No datapoint should exceed 60 mins, which would
+        indicate
         over a day of runtime (impossible).
-        Should be indexed by a pandas.DatetimeIndex with daily frequency (i.e.
-        :code:`freq='D'`).
+        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
+        :code:`freq='H'`).
     auxiliary_heat_runtime : pandas.Series,
         Hourly runtimes for auxiliary heating equipment controlled by the
         thermostat, measured in minutes. Auxiliary heat runtime is counted when
@@ -164,6 +170,7 @@ class Thermostat(object):
         self.heat_stage = heat_stage
         self.cool_type = cool_type
         self.cool_stage = cool_stage
+
         self.has_cooling = has_cooling(cool_type)
         self.has_heating = has_heating(heat_type)
         self.has_auxiliary = has_auxiliary(heat_type)
@@ -194,6 +201,13 @@ class Thermostat(object):
         self.validate()
 
     def validate(self):
+        # Generate warnings for invalid heating / cooling types and stages
+        validate_heat_type(self.heat_type)
+        validate_cool_type(self.cool_type)
+        validate_heat_stage(self.heat_stage)
+        validate_cool_stage(self.cool_stage)
+
+        # Validate the heating, cooling, and aux/emerg settings
         self._validate_heating()
         self._validate_cooling()
         self._validate_aux_emerg()
@@ -216,7 +230,6 @@ class Thermostat(object):
         return result
 
     def _validate_heating(self):
-
         if self.has_heating:
             if self.heat_runtime_daily is None:
                 message = "For thermostat {}, heating runtime data was not provided," \
@@ -233,7 +246,6 @@ class Thermostat(object):
                 raise ValueError(message)
 
     def _validate_cooling(self):
-
         if self.has_cooling:
             if self.cool_runtime_daily is None:
                 message = "For thermostat {}, cooling runtime data was not provided," \
@@ -250,7 +262,6 @@ class Thermostat(object):
                 raise ValueError(message)
 
     def _validate_aux_emerg(self):
-
         if self.has_auxiliary and self.has_emergency:
             if self.auxiliary_heat_runtime is None or self.emergency_heat_runtime is None:
                 message = "For thermostat {}, aux and emergency runtime data were not provided," \

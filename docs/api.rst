@@ -76,3 +76,11 @@ thermostat.eeweather_wrapper
     :members:
     :undoc-members:
     :show-inheritance:
+
+thermostat.equipment_type
+-------------------------
+
+.. automodule:: thermostat.equipment_type
+    :members:
+    :undoc-members:
+    :show-inheritance:
