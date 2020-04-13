@@ -126,16 +126,15 @@ class Thermostat(object):
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     cool_runtime : pandas.Series,
-        Daily runtimes for cooling equipment controlled by the thermostat,
+        Hourly runtimes for cooling equipment controlled by the thermostat,
         measured in minutes. No datapoint should exceed 60 mins, which would
-        indicate over a day of runtime (impossible).
+        indicate over an hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     heat_runtime : pandas.Series,
-        Daily runtimes for heating equipment controlled by the thermostat,
+        Hourly runtimes for heating equipment controlled by the thermostat,
         measured in minutes. No datapoint should exceed 60 mins, which would
-        indicate
-        over a day of runtime (impossible).
+        indicate over an hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     auxiliary_heat_runtime : pandas.Series,
@@ -1277,7 +1276,7 @@ class Thermostat(object):
             for core_cooling_day_set in self.get_core_cooling_days(
                     method=core_cooling_day_set_method):
 
-                outputs = self.calculate_cooling_epa_field_savings_metrics(
+                outputs = self._calculate_cooling_epa_field_savings_metrics(
                         climate_zone,
                         core_cooling_day_set,
                         core_cooling_day_set_method,
@@ -1286,20 +1285,20 @@ class Thermostat(object):
 
         if self.has_heating:
             for core_heating_day_set in self.get_core_heating_days(method=core_heating_day_set_method):
-                outputs = self.calculate_heating_epa_field_savings_metrics(
+                outputs = self._calculate_heating_epa_field_savings_metrics(
                         climate_zone,
                         core_heating_day_set,
                         core_heating_day_set_method,
                         baseline_regional_heating_comfort_temperature)
 
                 if self.has_auxiliary and self.has_emergency:
-                    additional_outputs = self.calculate_aux_emerg_epa_field_savings_metrics(core_heating_day_set)
+                    additional_outputs = self._calculate_aux_emerg_epa_field_savings_metrics(core_heating_day_set)
                     outputs.update(additional_outputs)
 
                 metrics.append(outputs)
         return metrics
 
-    def calculate_cooling_epa_field_savings_metrics(
+    def _calculate_cooling_epa_field_savings_metrics(
             self,
             climate_zone,
             core_cooling_day_set,
@@ -1457,7 +1456,7 @@ class Thermostat(object):
         }
         return outputs
 
-    def calculate_heating_epa_field_savings_metrics(
+    def _calculate_heating_epa_field_savings_metrics(
             self,
             climate_zone,
             core_heating_day_set,
@@ -1619,7 +1618,7 @@ class Thermostat(object):
 
         return outputs
 
-    def calculate_aux_emerg_epa_field_savings_metrics(self, core_heating_day_set):
+    def _calculate_aux_emerg_epa_field_savings_metrics(self, core_heating_day_set):
         additional_outputs = {
             "total_auxiliary_heating_core_day_runtime":
                 self.total_auxiliary_heating_runtime(
