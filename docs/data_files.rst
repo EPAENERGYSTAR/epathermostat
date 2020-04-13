@@ -49,24 +49,28 @@ Name                         Data Format             Units    Description
 ---------------------------- ----------------------- ------- -----------
 :code:`thermostat_id`        string                  N/A     Uniquely identifying marker for the thermostat.
 :code:`date`                 YYYY-MM-DD (ISO-8601)   N/A     Date of this set of readings.
-:code:`cool_runtime`         decimal or integer      minutes Daily runtime of cooling equipment.
-:code:`heat_runtime`         decimal or integer      minutes Daily runtime of heating equipment. [#]_
-:code:`auxiliary_heat_HH`    decimal or integer      minutes Hourly runtime of auxiliary heat equipment (HH=00-23).
-:code:`emergency_heat_HH`    decimal or integer      minutes Hourly runtime of emergency heat equipment (HH=00-23).
-:code:`temp_in_HH`           decimal, to nearest 0.5 °F      Hourly average conditioned space temperature over the period of the reading (HH=00-23).
-:code:`heating_setpoint_HH`  decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
-:code:`cooling_setpoint_HH`  decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading (HH=00-23).
+:code:`cool_runtime_stg1`    decimal or integer      minutes Hourly runtime of cooling equipment (all units).
+:code:`cool_runtime_stg2`    decimal or integer      minutes Hourly runtime of cooling equipment second stage (two-stage units only).
+:code:`cool_runtime_equiv`   decimal or integer      minutes Hourly full load equivalent runtime of cooling equipment (multi-stage units only).
+:code:`heat_runtime_stg1`    decimal or integer      minutes Hourly runtime of heating equipment second stage (two-stage units only).
+:code:`heat_runtime_stg2`    decimal or integer      minutes Hourly runtime of heating equipment, stage 2.
+:code:`heat_runtime_equiv`   decimal or integer      minutes Hourly full load equivalent runtime of heating equipment (multi-stage units only).
+:code:`auxiliary_heat`       decimal or integer      minutes Hourly runtime of auxiliary heat equipment.
+:code:`emergency_heat`       decimal or integer      minutes Hourly runtime of emergency heat equipment.
+:code:`temp_in`              decimal, to nearest 0.5 °F      Hourly average conditioned space temperature over the period of the reading.
+:code:`heating_setpoint`     decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading.
+:code:`cooling_setpoint`     decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading.
 ============================ ======================= ======= ===========
 
-- Each row should correspond to a single daily reading from a thermostat.
+- Each row should correspond to a single hourly reading from a thermostat. [#]_
 - Nulls should be specified by leaving the field blank.
 - Zero values should be specified as 0, rather than as blank.
 - If data is missing for a particular row of one column, data should still be
   provided for other columns in that row. For example, if runtime is missing
   for a particular date, please still provide indoor conditioned space
   temperature and setpoints for that date, if available.
-- Runtimes should be less than or equal to 1440 min (1 day).
-- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19`).
+- Runtimes should be less than or equal to 60 min (1 hour).
+- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
 - If no distinction is made between heating and cooling setpoint, set both
   equal to the single setpoint.
@@ -76,7 +80,7 @@ Name                         Data Format             Units    Description
   setpoint data in to the heating and cooling setpoint columns.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_ package.
-- Dates should be consecutive.
+- Dates and times should be consecutive. (e.g.: :code:`2020-01-01 22:00:00` should be on the next line after :code:`2020-01-01 21:00:00`)
 
 .. [#] Possible values for :code:`heat_type` are:
 
@@ -112,10 +116,7 @@ Name                         Data Format             Units    Description
    computed. For more information on the mapping between ZIP / ZCTA codes and
    weather stations, please see `eeweather <http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion>`_ and :ref:`thermostat.stations`.
 
-.. [#] Should not include runtime for auxiliary or emergency heat - this should
-   be provided separately in the columns `emergency_heat_HH` and
-   `auxiliary_heat_HH`.
-
+.. [#] Previous versions of this software had each row as one daily result. This version changes this to use hourly rows instead.
 
 .. _thermostat-output:
 
