@@ -24,8 +24,11 @@ Columns
 Name                           Data Format      Units Description
 ------------------------------ ---------------- ----- -----------
 :code:`thermostat_id`          string           N/A   A uniquely identifying marker for the thermostat.
-:code:`equipment_type`         enum, {0..5}     N/A   The type of controlled HVAC heating and cooling equipment. [#]_
-:code:`zipcode`                string, 5 digits N/A   The ZIP code in which the thermostat is installed [#]_.
+:code:`heat_type`              string           N/A   The type of controlled HVAC heating equipment. [#]_ 
+:code:`heat_stage`             string           N/A   The stages of controlled HVAC heating equipment. [#]_
+:code:`cool_type`              string           N/A   The type of controlled HVAC cooling equipment. [#]_
+:code:`cool_stage`             string           N/A   The stages of controlled HVAC cooling equipment. [#]_
+:code:`zipcode`                string, 5 digits N/A   The ZIP code in which the thermostat is installed. [#]_
 :code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
 :code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
 ============================== ================ ===== ===========
@@ -75,15 +78,33 @@ Name                         Data Format             Units    Description
   automatically from NCDC using the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_ package.
 - Dates should be consecutive.
 
-.. [#] Options for :code:`equipment_type`:
+.. [#] Possible values for :code:`heat_type` are:
 
-   - :code:`0`: Other – e.g. multi-zone multi-stage, modulating. Note: module will
-     not output savings data for this type.
-   - :code:`1`: Single stage heat pump with electric resistance aux and/or emergency heat (i.e., strip heat)
-   - :code:`2`: Single stage heat pump without additional and/or supplemental heating sources (excludes aux/emergency heat as well as dual fuel systems, i.e., heat pump plus gas- or oil-fired furnace)
-   - :code:`3`: Single stage non heat pump with single-stage central air conditioning
-   - :code:`4`: Single stage non heat pump without central air conditioning
-   - :code:`5`: Single stage central air conditioning without central heating
+    - :code:`non_heat_pump`: Non heat pump heating (gas or oil furnace, electric resistance)
+    - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
+    - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
+    - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
+    - :code:`other`: Multi-zone, etc.
+    - :code:`none`: No central heating system
+
+.. [#] Possible values for :code:`heat_stage` are:
+
+    - :code:`single_stage`: Single capacity heater or single stage compressor
+    - :code:`two_stage`: Dual capacity heater or dual stage compressor
+    - :code:`modulating`: Modulating or variable capacity unit
+
+.. [#] Possible values for :code:`cool_type` are:
+
+    - :code:`heat_pump`: Heat pump w/ cooling
+    - :code:`central`: Central AC
+    - :code:`other`: Mini-split, evaporative cooler, etc.
+    - :code:`none`: No central cooling system
+
+.. [#] Possible values for :code:`cool_stage` are:
+
+    - :code:`single_speed`: Single stage compressor
+    - :code:`two_speed`: Dual stage compressor
+    - :code:`modulating`: Modulating or variable capacity compressor
 
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
