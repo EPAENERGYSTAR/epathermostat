@@ -520,7 +520,11 @@ def get_filtered_stats(
 
             # calculate quantiles and statistics
             mean = np.nanmean(pd.to_numeric(column))
-            sem = np.nanstd(column) / (column.count() ** .5)
+
+            if column.count() != 0:
+                sem = np.nanstd(column) / (column.count() ** .5)
+            else:
+                sem = np.nan
             lower_bound = mean - (1.96 * sem)
             upper_bound = mean + (1.96 * sem)
             stats["{}_n".format(column_name)] = column.count()

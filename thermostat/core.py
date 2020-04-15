@@ -845,15 +845,15 @@ class Thermostat(object):
         def calc_estimates(tau):
             cdd = calc_cdd(tau)
             total_cdd = np.sum(cdd)
-            try:
+            if total_cdd != 0.0:
                 alpha_estimate = total_runtime / total_cdd
-            except ZeroDivisionError:
+            else:
+                alpha_estimate = np.nan
                 logger.debug(
                     'Alpha Estimate divided by zero: %s / %s'
                     'for thermostat %s' % (
                         total_runtime, total_cdd,
                         self.thermostat_id))
-                alpha_estimate = np.nan
             runtime_estimate = cdd * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
@@ -967,15 +967,15 @@ class Thermostat(object):
         def calc_estimates(tau):
             hdd = calc_hdd(tau)
             total_hdd = np.sum(hdd)
-            try:
+            if total_hdd != 0.0:
                 alpha_estimate = total_runtime / total_hdd
-            except ZeroDivisionError:
+            else:
+                alpha_estimate = np.nan
                 logger.debug(
                     'alpha_estimate divided by zero: %s / %s '
                     'for thermostat_id %s ' % (
                         total_runtime, total_hdd,
                         self.thermostat_id))
-                alpha_estimate = np.nan
             runtime_estimate = hdd * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return hdd, alpha_estimate, errors
