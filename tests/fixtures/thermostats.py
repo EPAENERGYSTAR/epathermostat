@@ -1,4 +1,5 @@
 from thermostat.importers import from_csv
+from thermostat.importers import get_single_thermostat
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
 from thermostat.core import Thermostat, CoreDaySet
@@ -66,6 +67,11 @@ def thermostat_type_1_utc_bad(request):
 def thermostats_multiple_same_key(request):
     thermostats = from_csv(get_data_path(request.param))
     return thermostats
+
+@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_too_many_minutes.csv"])
+def thermostat_type_1_too_many_minutes(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return list(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):

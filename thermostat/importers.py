@@ -302,6 +302,16 @@ def get_single_thermostat(thermostat_id, zipcode,
     if has_auxiliary(heat_type) and has_emergency(heat_type):
         auxiliary_heat_runtime = _create_series(df.auxiliary_heat_runtime, hourly_index)
         emergency_heat_runtime = _create_series(df.emergency_heat_runtime, hourly_index)
+        if auxiliary_heat_runtime.gt(60).any():
+            warnings.warn("For thermostat {}, auxiliary runtime data was larger than 60 minutes"
+                          " for one or more hours, which is impossible. Please check the data file."
+                          .format(thermostat_id))
+            return
+        if emergency_heat_runtime.gt(60).any():
+            warnings.warn("For thermostat {}, emergency runtime data was larger than 60 minutes"
+                          " for one or more hours, which is impossible. Please check the data file."
+                          .format(thermostat_id))
+            return
     else:
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None

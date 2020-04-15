@@ -10,7 +10,9 @@ import pytest
 from fixtures.thermostats import (
         thermostat_type_1,
         thermostat_type_1_utc,
-        thermostat_type_1_utc_bad,)
+        thermostat_type_1_utc_bad,
+        thermostat_type_1_too_many_minutes,
+        )
 
 def test_import_csv(thermostat_type_1):
 
@@ -50,3 +52,7 @@ def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
     assert(isinstance(thermostat_type_1_utc.cool_runtime_daily, pd.Series))
     assert(isinstance(thermostat_type_1_utc.cool_runtime_hourly, pd.Series))
     assert(thermostat_type_1_utc_bad is None)
+
+def test_too_many_minutes(thermostat_type_1_too_many_minutes):
+    # None of the thermostats in this list should import
+    assert len(thermostat_type_1_too_many_minutes) == 0
