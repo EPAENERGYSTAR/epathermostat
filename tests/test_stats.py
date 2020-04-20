@@ -249,6 +249,11 @@ def get_fake_output_df(n_columns):
         'rhu2_40F_to_50F_compressor_duty_cycle',
         'rhu2_50F_to_60F_compressor_duty_cycle',
 
+        'rhu2_30F_to_45F',
+        'rhu2_30F_to_45F_aux_duty_cycle',
+        'rhu2_30F_to_45F_emg_duty_cycle',
+        'rhu2_30F_to_45F_compressor_duty_cycle',
+
     ]
 
     string_placeholder = ["PLACEHOLDER"] * n_columns
@@ -491,6 +496,11 @@ def get_fake_output_df(n_columns):
         'rhu2_30F_to_40F_compressor_duty_cycle': float_column,
         'rhu2_40F_to_50F_compressor_duty_cycle': float_column,
         'rhu2_50F_to_60F_compressor_duty_cycle': float_column,
+
+        'rhu2_30F_to_45F': float_column,
+        'rhu2_30F_to_45F_aux_duty_cycle': float_column,
+        'rhu2_30F_to_45F_emg_duty_cycle': float_column,
+        'rhu2_30F_to_45F_compressor_duty_cycle': float_column,
     }
     df = pd.DataFrame(data, columns=columns)
     return df
@@ -512,14 +522,14 @@ def combined_dataframe():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 203)
+    assert combined.shape == (20, 207)
 
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
             49, 49, 49, 49,
-            9105, 901, 9105, 901,
+            9441, 901, 9441, 901,
             ]
 
     def test_compute_summary_statistics_advanced(combined_dataframe):
@@ -527,7 +537,7 @@ def test_compute_summary_statistics(combined_dataframe):
                 advanced_filtering=True)
         assert [len(s) for s in summary_statistics] == [
                 49, 49, 49, 49, 49, 49, 49, 49,
-                9105, 901, 9105, 901, 9105, 901, 9105, 901,
+                9441, 901, 9441, 901, 9441, 901, 9441, 901,
                 ]
 
         def test_summary_statistics_to_csv(combined_dataframe):
@@ -539,7 +549,7 @@ def test_compute_summary_statistics(combined_dataframe):
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (9241, 9)
+    assert stats_df_reread.shape == (9577, 9)
 
 
 def test_iqr_filteringa(thermostat_emg_aux_constant_on_outlier):

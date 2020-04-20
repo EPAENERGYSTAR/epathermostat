@@ -204,6 +204,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'rhu2_30F_to_40F',
     'rhu2_40F_to_50F',
     'rhu2_50F_to_60F',
+    'rhu2_30F_to_45F',
 
     'rhu2_less10F_aux_duty_cycle',
     'rhu2_10F_to_20F_aux_duty_cycle',
@@ -211,6 +212,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'rhu2_30F_to_40F_aux_duty_cycle',
     'rhu2_40F_to_50F_aux_duty_cycle',
     'rhu2_50F_to_60F_aux_duty_cycle',
+    'rhu2_30F_to_45F_aux_duty_cycle',
 
     'rhu2_less10F_emg_duty_cycle',
     'rhu2_10F_to_20F_emg_duty_cycle',
@@ -218,6 +220,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'rhu2_30F_to_40F_emg_duty_cycle',
     'rhu2_40F_to_50F_emg_duty_cycle',
     'rhu2_50F_to_60F_emg_duty_cycle',
+    'rhu2_30F_to_45F_emg_duty_cycle',
 
     'rhu2_less10F_compressor_duty_cycle',
     'rhu2_10F_to_20F_compressor_duty_cycle',
@@ -225,6 +228,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
     'rhu2_30F_to_40F_compressor_duty_cycle',
     'rhu2_40F_to_50F_compressor_duty_cycle',
     'rhu2_50F_to_60F_compressor_duty_cycle',
+    'rhu2_30F_to_45F_compressor_duty_cycle',
+
 
 ]
 
@@ -454,6 +459,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'rhu2_30F_to_40F',
     'rhu2_40F_to_50F',
     'rhu2_50F_to_60F',
+    'rhu2_30F_to_45F',
 
     'rhu2_less10F_aux_duty_cycle',
     'rhu2_10F_to_20F_aux_duty_cycle',
@@ -461,6 +467,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'rhu2_30F_to_40F_aux_duty_cycle',
     'rhu2_40F_to_50F_aux_duty_cycle',
     'rhu2_50F_to_60F_aux_duty_cycle',
+    'rhu2_30F_to_45F_aux_duty_cycle',
 
     'rhu2_less10F_emg_duty_cycle',
     'rhu2_10F_to_20F_emg_duty_cycle',
@@ -468,6 +475,7 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'rhu2_30F_to_40F_emg_duty_cycle',
     'rhu2_40F_to_50F_emg_duty_cycle',
     'rhu2_50F_to_60F_emg_duty_cycle',
+    'rhu2_30F_to_45F_emg_duty_cycle',
 
     'rhu2_less10F_compressor_duty_cycle',
     'rhu2_10F_to_20F_compressor_duty_cycle',
@@ -475,6 +483,8 @@ REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
     'rhu2_30F_to_40F_compressor_duty_cycle',
     'rhu2_40F_to_50F_compressor_duty_cycle',
     'rhu2_50F_to_60F_compressor_duty_cycle',
+    'rhu2_30F_to_45F_compressor_duty_cycle',
+
 ]
 
 

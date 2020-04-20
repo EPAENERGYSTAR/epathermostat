@@ -34,7 +34,7 @@ try:
     if "1.0." in pd.__version__:
         warn(
             "WARNING: Pandas version 1.0.x has changed significantly, and causes "
-            "issues with this software. We are working on supporting Pandas 1.0.x in"
+            "issues with this software. We are working on supporting Pandas 1.0.x in "
             "a future release.")
 
 except TypeError:
@@ -59,6 +59,9 @@ RESISTANCE_HEAT_USE_BIN_FIRST_TUPLE = [(RESISTANCE_HEAT_USE_BIN_FIRST[i], RESIST
 RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
 RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESISTANCE_HEAT_USE_BIN_SECOND[i+1])
                                         for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
+
+RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
+RESISTANCE_HEAT_USE_WIDE_BIN_TUPLE = [(30, 45)]
 
 # FIXME: Turning off these warnings for now
 pd.set_option('mode.chained_assignment', None)
@@ -1618,6 +1621,30 @@ class Thermostat(object):
 
         return outputs
 
+    def _rhu_outputs(self, rhu_type, rhu_bins, rhu_usage_bins, duty_cycle):
+        local_outputs = {}
+        if rhu_bins is not None:
+            for item in rhu_bins.itertuples():
+                column = self._format_rhu(
+                    rhu_type=rhu_type,
+                    low=item.Index.left,
+                    high=item.Index.right,
+                    duty_cycle=duty_cycle)
+                if duty_cycle is None:
+                    local_outputs[column] = item.rhu
+                else:
+                    local_outputs[column] = getattr(item, duty_cycle)
+        else:
+            for (low, high) in rhu_usage_bins:
+                column = self._format_rhu(
+                        rhu_type,
+                        low,
+                        high,
+                        duty_cycle)
+
+                local_outputs[column] = None
+        return local_outputs
+
     def _calculate_aux_emerg_epa_field_savings_metrics(self, core_heating_day_set):
         additional_outputs = {
             "total_auxiliary_heating_core_day_runtime":
@@ -1658,44 +1685,27 @@ class Thermostat(object):
                     core_heating_day_set,
                     min_runtime_minutes)
 
-            for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle'):
-                if rhu_first is not None:
-                    for item in rhu_first.itertuples():
-                        column = self._format_rhu(
-                            rhu_type=rhu_type,
-                            low=item.Index.left,
-                            high=item.Index.right,
-                            duty_cycle=duty_cycle)
-                        if duty_cycle is None:
-                            additional_outputs[column] = item.rhu
-                        else:
-                            additional_outputs[column] = getattr(item, duty_cycle)
-                else:
-                    for (low, high) in RESISTANCE_HEAT_USE_BIN_FIRST_TUPLE:
-                        column = self._format_rhu(
-                                rhu_type,
-                                low,
-                                high,
-                                duty_cycle)
-                        additional_outputs[column] = None
+            rhu_second_wide = self.get_resistance_heat_utilization_bins(
+                    rhu_runtime,
+                    RESISTANCE_HEAT_USE_WIDE_BIN,
+                    core_heating_day_set,
+                    min_runtime_minutes)
 
-                if rhu_second is not None:
-                    for item in rhu_second.itertuples():
-                        column = self._format_rhu(
-                            rhu_type=rhu_type,
-                            low=item.Index.left,
-                            high=item.Index.right,
-                            duty_cycle=duty_cycle)
-                        if duty_cycle is None:
-                            additional_outputs[column] = item.rhu
-                        else:
-                            additional_outputs[column] = getattr(item, duty_cycle)
-                else:
-                    for (low, high) in RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE:
-                        column = self._format_rhu(
-                                rhu_type,
-                                low,
-                                high,
-                                duty_cycle)
-                        additional_outputs[column] = None
+            for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle'):
+                additional_outputs.update(self._rhu_outputs(
+                    rhu_type=rhu_type,
+                    rhu_bins=rhu_first,
+                    rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_FIRST,
+                    duty_cycle=duty_cycle))
+                additional_outputs.update(self._rhu_outputs(
+                    rhu_type=rhu_type,
+                    rhu_bins=rhu_second,
+                    rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_SECOND,
+                    duty_cycle=duty_cycle))
+                additional_outputs.update(self._rhu_outputs(
+                    rhu_type=rhu_type,
+                    rhu_bins=rhu_second_wide,
+                    rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN,
+                    duty_cycle=duty_cycle))
+
         return additional_outputs

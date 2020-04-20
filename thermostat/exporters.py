@@ -225,6 +225,11 @@ COLUMNS = [
     'rhu2_30F_to_40F_compressor_duty_cycle',
     'rhu2_40F_to_50F_compressor_duty_cycle',
     'rhu2_50F_to_60F_compressor_duty_cycle',
+
+    'rhu2_30F_to_45F',
+    'rhu2_30F_to_45F_aux_duty_cycle',
+    'rhu2_30F_to_45F_emg_duty_cycle',
+    'rhu2_30F_to_45F_compressor_duty_cycle',
     ]
 
 
