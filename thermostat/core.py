@@ -215,6 +215,21 @@ class Thermostat(object):
         self._validate_aux_emerg()
 
     def _format_rhu(self, rhu_type, low, high, duty_cycle):
+        """ Formats the RHU scores for output
+        rhu_type : str
+            String representation of the RHU type (rhu1, rhu2)
+        low : int
+            Lower-bound of the RHU bin
+        high : int
+            Upper-bound of the RHU bin
+        duty_cycle : int
+            The duty cycle (e.g.: None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle')
+
+        Returns
+        -------
+        result : str
+            Formatted string for the RHU type (e.g. 'rhu1_05F_to_10F_aux_duty_cycle')
+        """
         format_string = "{rhu_type}_{low:02d}F_to_{high:02d}F"
         if low == -np.inf:
             format_string = "{rhu_type}_less{high:02d}F"
@@ -1622,6 +1637,21 @@ class Thermostat(object):
         return outputs
 
     def _rhu_outputs(self, rhu_type, rhu_bins, rhu_usage_bins, duty_cycle):
+        """ Helper function for formatting the RHU scores.
+            rhu_type : str
+                String representation of the RHU type (rhu1, rhu2)
+            rhu_bins : Pandas series
+                Data for the RHU calculation from get_resistance_heat_utilization_bins
+            rhu_usage_bins :  list of tuples
+                List of the lower and upper bounds for the given RHU bin to fill with None if rhu_bin is None
+            duty_cycle : str
+                The duty cycle (e.g.: None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle')
+
+        Returns
+        -------
+        local_outputs : dict
+            Dictionary of the columns and RHU data for output
+        """
         local_outputs = {}
         if rhu_bins is not None:
             for item in rhu_bins.itertuples():
