@@ -12,11 +12,13 @@ make it easier to debug.
 
 .. code-block:: bash
 
-    # if using virtualenvwrapper (see https://virtualenvwrapper.readthedocs.org/en/latest/install.html)
+    # if using virtualenvwrapper
+    # (https://virtualenvwrapper.readthedocs.org/en/latest/install.html)
     $ mkvirtualenv thermostat
     (thermostat)$ pip install thermostat
 
-    # if using Python 3 with venv (see https://docs.python.org/3/library/venv.html)
+    # if using Python 3 with venv
+    # (https://docs.python.org/3/library/venv.html)
     # (cd to directory with data files)
     $ python3 -m venv venv
     $ source venv/bin/activate
@@ -43,6 +45,9 @@ If you already have an environment, use the following:
     $ source activate thermostat
     (thermostat)$
 
+    # if using venv, or virtualenv directly
+    $ source path/to/venv/bin/activate
+
 To deactivate the environment when you've finished, use the following:
 
 .. code-block:: bash
@@ -61,7 +66,7 @@ Check to make sure you are on the most recent version of the package.
 
     >>> import thermostat; thermostat.get_version()
 
-    '1.7.2'
+    '2.0.0'
 
 If you are not on the correct version, you should upgrade:
 
@@ -69,8 +74,8 @@ If you are not on the correct version, you should upgrade:
 
     $ pip install thermostat --upgrade
 
-The command above will update dependencies as well. If you wish to skip this,
-use the :code:`--no-deps` flag:
+The command above will update dependencies as well. If you wish to skip
+updating dependencies, use the :code:`--no-deps` flag:
 
 .. code-block:: bash
 
