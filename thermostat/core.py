@@ -790,15 +790,15 @@ class Thermostat(object):
         Starting with an assumed value of zero for Tau :math:`(\\tau_c)`,
         calculate the daily Cooling Thermal Demand :math:`(\\text{daily CTD}_d)`, as follows
 
-        :math:`\\text{daily CTD}_d = \\frac{\sum_{i=1}^{24} [\\tau_c - \\text{hourly} \Delta T_{d.n}]_{+}}{24}`, where
+        :math:`\\text{daily CTD}_d = \\frac{\\sum_{i=1}^{24} [\\tau_c - \\text{hourly} \\Delta T_{d.n}]_{+}}{24}`, where
 
-        :math:`\\text{hourly} \Delta T_{d.n} (^{\circ} F) = \\text{hourly indoor} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+        :math:`\\text{hourly} \\Delta T_{d.n} (^{\\circ} F) = \\text{hourly indoor} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
 
-        :math:`d` is the core cooling day; :math:`\left(001, 002, 003 ... x \\right)`,
+        :math:`d` is the core cooling day; :math:`\\left(001, 002, 003 ... x \\right)`,
 
-        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+        :math:`n` is the hour; :math:`\\left(01, 02, 03 ... 24 \\right)`,
 
-        :math:`\\tau_c` (cooling) is the :math:`\Delta T` associated with :math:`CTD=0` (zero cooling runtime), and
+        :math:`\\tau_c` (cooling) is the :math:`\\Delta T` associated with :math:`CTD=0` (zero cooling runtime), and
 
         :math:`[]_{+}` indicates that the term is zero if its value would be negative.
 
@@ -806,7 +806,7 @@ class Thermostat(object):
         ratio estimation to calculate :math:`\\alpha_c`, the home's
         responsiveness to cooling, which should be positive.
 
-        :math:`\\alpha_c \left(\\frac{\\text{minutes}}{^{\circ} F}\\right) = \\frac{RT_\\text{actual cool}}{\sum_{d=1}^{x} \\text{daily CTD}_d}`, where
+        :math:`\\alpha_c \\left(\\frac{\\text{minutes}}{^{\\circ} F}\\right) = \\frac{RT_\\text{actual cool}}{\\sum_{d=1}^{x} \\text{daily CTD}_d}`, where
 
         :math:`RT_\\text{actual cool}` is the sum of cooling run times for all core cooling days in the CT interval data file.
 
@@ -816,7 +816,7 @@ class Thermostat(object):
         and calculated daily cooling run times.
 
         Next recalculate :math:`\\alpha_c` (in accordance with the above step)
-        and record the model's parameters :math:`\left(\\alpha_c, \\tau_c \\right)`
+        and record the model's parameters :math:`\\left(\\alpha_c, \\tau_c \\right)`
 
         Parameters
         ----------
@@ -912,15 +912,15 @@ class Thermostat(object):
         """
         Calculates a measure of heating demand using the hourlyavgCTD method.
 
-        :math:`\\text{daily HTD}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly} \Delta T_{d.n} - \\tau_h]_{+}}{24}`, where
+        :math:`\\text{daily HTD}_d = \\frac{\\sum_{i=1}^{24} [\\text{hourly} \\Delta T_{d.n} - \\tau_h]_{+}}{24}`, where
 
-        :math:`\\text{hourly} \Delta T_{d.n} (^{\circ} F) = \\text{hourly indoor} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+        :math:`\\text{hourly} \\Delta T_{d.n} (^{\\circ} F) = \\text{hourly indoor} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
 
-        :math:`d` is the core heating day; :math:`\left(001, 002, 003 ... x \\right)`,
+        :math:`d` is the core heating day; :math:`\\left(001, 002, 003 ... x \\right)`,
 
-        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+        :math:`n` is the hour; :math:`\\left(01, 02, 03 ... 24 \\right)`,
 
-        :math:`\\tau_h` (heating) is the :math:`\Delta T` associated with :math:`HTD=0`, reflecting that homes with no heat running tend to be warmer that the outdoors, and
+        :math:`\\tau_h` (heating) is the :math:`\\Delta T` associated with :math:`HTD=0`, reflecting that homes with no heat running tend to be warmer that the outdoors, and
 
         :math:`[]_{+}` indicates that the term is zero if its value would be negative.
 
@@ -928,7 +928,7 @@ class Thermostat(object):
         ratio estimation to calculate :math:`\\alpha_h`, the home's
         responsiveness to heating, which should be positive.
 
-        :math:`\\alpha_h \left(\\frac{\\text{minutes}}{^{\circ} F}\\right) = \\frac{RT_\\text{actual heat}}{\sum_{d=1}^{x} \\text{daily HTD}_d}`, where
+        :math:`\\alpha_h \\left(\\frac{\\text{minutes}}{^{\\circ} F}\\right) = \\frac{RT_\\text{actual heat}}{\\sum_{d=1}^{x} \\text{daily HTD}_d}`, where
 
         :math:`RT_\\text{actual heat}` is the sum of heating run times for all core heating days in the CT interval data file.
 
@@ -938,7 +938,7 @@ class Thermostat(object):
         and calculated daily heating run times.
 
         Next recalculate :math:`\\alpha_h` (in accordance with the above step)
-        and record the model's parameters :math:`\left(\\alpha_h, \\tau_h \\right)`
+        and record the model's parameters :math:`\\left(\\alpha_h, \\tau_h \\right)`
 
         Parameters
         ----------
@@ -1117,13 +1117,13 @@ class Thermostat(object):
         """ Calculate baseline cooling demand for a particular core cooling
         day set and fitted physical parameters.
 
-        :math:`\\text{daily CTD base}_d = \\frac{\sum_{i=1}^{24} [\\tau_c - \\text{hourly } \Delta T \\text{ base cool}_{d.n}]_{+}}{24}`, where
+        :math:`\\text{daily CTD base}_d = \\frac{\\sum_{i=1}^{24} [\\tau_c - \\text{hourly } \\Delta T \\text{ base cool}_{d.n}]_{+}}{24}`, where
 
-        :math:`\\text{hourly } \Delta T \\text{ base cool}_{d.n} (^{\circ} F) = \\text{base heat} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+        :math:`\\text{hourly } \\Delta T \\text{ base cool}_{d.n} (^{\\circ} F) = \\text{base heat} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
 
-        :math:`d` is the core cooling day; :math:`\left(001, 002, 003 ... x \\right)`,
+        :math:`d` is the core cooling day; :math:`\\left(001, 002, 003 ... x \\right)`,
 
-        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+        :math:`n` is the hour; :math:`\\left(01, 02, 03 ... 24 \\right)`,
 
         :math:`\\tau_c` (cooling), determined earlier, is a constant that is part of the CT/home's thermal/HVAC cooling run time model, and
 
@@ -1158,13 +1158,13 @@ class Thermostat(object):
         """ Calculate baseline heating demand for a particular core heating day
         set and fitted physical parameters.
 
-        :math:`\\text{daily HTD base}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly } \Delta T \\text{ base heat}_{d.n} - \\tau_h]_{+}}{24}`, where
+        :math:`\\text{daily HTD base}_d = \\frac{\\sum_{i=1}^{24} [\\text{hourly } \\Delta T \\text{ base heat}_{d.n} - \\tau_h]_{+}}{24}`, where
 
-        :math:`\\text{hourly } \Delta T \\text{ base heat}_{d.n} (^{\circ} F) = \\text{base cool} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
+        :math:`\\text{hourly } \\Delta T \\text{ base heat}_{d.n} (^{\\circ} F) = \\text{base cool} T_{d.n} - \\text{hourly outdoor} T_{d.n}`, and
 
-        :math:`d` is the core heating day; :math:`\left(001, 002, 003 ... x \\right)`,
+        :math:`d` is the core heating day; :math:`\\left(001, 002, 003 ... x \\right)`,
 
-        :math:`n` is the hour; :math:`\left(01, 02, 03 ... 24 \\right)`,
+        :math:`n` is the hour; :math:`\\left(01, 02, 03 ... 24 \\right)`,
 
         :math:`\\tau_h` (heating), determined earlier, is a constant that is part of the CT/home's thermal/HVAC heating run time model, and
 
@@ -1198,7 +1198,7 @@ class Thermostat(object):
         """ Calculate baseline cooling runtime given baseline cooling demand
         and fitted physical parameters.
 
-        :math:`RT_{\\text{base cool}} (\\text{minutes}) = \\alpha_c \cdot \\text{daily CTD base}_d`
+        :math:`RT_{\\text{base cool}} (\\text{minutes}) = \\alpha_c \\cdot \\text{daily CTD base}_d`
 
         Parameters
         ----------
@@ -1218,7 +1218,7 @@ class Thermostat(object):
         """ Calculate baseline heating runtime given baseline heating demand.
         and fitted physical parameters.
 
-        :math:`RT_{\\text{base heat}} (\\text{minutes}) = \\alpha_h \cdot \\text{daily HTD base}_d`
+        :math:`RT_{\\text{base heat}} (\\text{minutes}) = \\alpha_h \\cdot \\text{daily HTD base}_d`
 
         Parameters
         ----------
