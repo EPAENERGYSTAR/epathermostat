@@ -184,6 +184,18 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     # Bad thermostats return None so remove those.
     results = [x for x in result_list if x is not None]
 
+    # Check for thermostats that were not loaded and log them
+    metadata_thermostat_ids = set(metadata.thermostat_id)
+    loaded_thermostat_ids = set([x.thermostat_id for x in results])
+    missing_thermostats = metadata_thermostat_ids.difference(loaded_thermostat_ids)
+    missing_thermostats_num = len(missing_thermostats)
+    if missing_thermostats_num > 0:
+        logging.warning("Unable to load {} thermostat records because of "
+                        "errors. Please check the logs for the following thermostats:".format(
+                            missing_thermostats_num))
+        for thermostat in missing_thermostats:
+            logging.warning(thermostat)
+
     # Convert this to an iterator to maintain compatibility
     return iter(results)
 
