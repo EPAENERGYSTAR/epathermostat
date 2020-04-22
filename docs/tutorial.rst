@@ -172,6 +172,18 @@ logger, which this uses.
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
+    # another example is in the script directory
+
+    logging.basicConfig()
+    # Example logging configuration for file and console output
+    # logging.json: Normal logging example
+    # logging_noisy.json: Turns on all debugging information
+    # logging_quiet.json: Only logs error messages
+    with open("logging.json", "r") as logging_config:
+        logging.config.dictConfig(json.load(logging_config))
+
+    logger = logging.getLogger('epathermostat')  # Uses the 'epathermostat' logging
+
 .. note::
 
     The thermostat package depends on the eemeter and eeweather packages for weather data
@@ -209,8 +221,11 @@ the weather cache is enabled (see note above). This is because loading
 thermostat data involves downloading hourly weather data from a remote
 source - in this case, the NCDC.
 
-The following loads an lazy iterator over the thermostats. The thermostats
-will be loaded into memory as necessary in the following steps.
+The following loads an lazy iterator over the thermostats. This will set up up
+to three connections to the NCDC at a time to download thermostat data. This
+maximum is the maximum number of FTP connections the NCDC will allow from one
+IP address. The thermostats will be loaded into memory as necessary in the
+following steps.
 
 .. code-block:: python
 
