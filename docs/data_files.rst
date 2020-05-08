@@ -63,13 +63,13 @@ Name                         Data Format             Units    Description
 ============================ ======================= ======= ===========
 
 - Each row should correspond to a single hourly reading from a thermostat. [#]_
-- Nulls should be specified by leaving the field blank.
+- `NULL` should be specified by leaving the field blank.
 - Zero values should be specified as 0, rather than as blank.
 - If data is missing for a particular row of one column, data should still be
   provided for other columns in that row. For example, if runtime is missing
   for a particular date, please still provide indoor conditioned space
   temperature and setpoints for that date, if available.
-- Runtimes should be less than or equal to 60 min (1 hour).
+- Runtimes should be less than or equal to 60 minutes (1 hour).
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
 - If no distinction is made between heating and cooling setpoint, set both
@@ -80,7 +80,8 @@ Name                         Data Format             Units    Description
   setpoint data in to the heating and cooling setpoint columns.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_ package.
-- Dates and times should be consecutive. (e.g.: :code:`2020-01-01 22:00:00` should be on the next line after :code:`2020-01-01 21:00:00`)
+- Dates and times should be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
+  should have :code:`2020-01-02 00:00:00` follow it on the next line.)
 
 .. [#] Possible values for :code:`heat_type` are:
 

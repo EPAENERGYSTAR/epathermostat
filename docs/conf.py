@@ -254,7 +254,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   (master_doc, 'thermostat.tex', u'thermostat Documentation',
-   u'Open Energy Efficiency, Inc.', 'manual'),
+   u'EPA Energy Star Connected Thermostats', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
