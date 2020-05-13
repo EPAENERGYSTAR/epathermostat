@@ -36,7 +36,7 @@ AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
 logger = logging.getLogger(__name__)
 
 
-def __prime_eeweather_cache():
+def _prime_eeweather_cache():
     """ Primes the eemeter / eeweather caches by doing a non-existent query
     This creates the cache directories sooner than if they were created
     during normal processing (which can lead to a race condition and missing
@@ -148,7 +148,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     if quiet:
         logging.warning('quiet argument has been deprecated. Please remove this flag from your code.')
 
-    __prime_eeweather_cache()
+    _prime_eeweather_cache()
 
     metadata = pd.read_csv(
         metadata_filename,
@@ -172,7 +172,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
 
     p = Pool(AVAILABLE_PROCESSES)
     multiprocess_func_partial = partial(
-            multiprocess_func,
+            _multiprocess_func,
             metadata_filename=metadata_filename,
             verbose=verbose,
             save_cache=save_cache,
@@ -200,7 +200,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     return iter(results)
 
 
-def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
+def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
     i, row = metadata
@@ -212,14 +212,14 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
 
     try:
         thermostat = get_single_thermostat(
-                row.thermostat_id,
-                row.zipcode,
-                row.heat_type,
-                row.heat_stage,
-                row.cool_type,
-                row.cool_stage,
-                row.utc_offset,
-                interval_data_filename,
+                thermostat_id=row.thermostat_id,
+                zipcode=row.zipcode,
+                heat_type=row.heat_type,
+                heat_stage=row.heat_stage,
+                cool_type=row.cool_type,
+                cool_stage=row.cool_stage,
+                utc_offset=row.utc_offset,
+                interval_data_filename=interval_data_filename,
                 save_cache=save_cache,
                 cache_path=cache_path,
         )
