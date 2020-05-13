@@ -130,13 +130,13 @@ class Thermostat(object):
         :code:`freq='H'`).
     cool_runtime : pandas.Series,
         Hourly runtimes for cooling equipment controlled by the thermostat,
-        measured in minutes. No datapoint should exceed 60 mins, which would
+        measured in minutes. No datapoint should exceed 60 minutes, which would
         indicate over an hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     heat_runtime : pandas.Series,
         Hourly runtimes for heating equipment controlled by the thermostat,
-        measured in minutes. No datapoint should exceed 60 mins, which would
+        measured in minutes. No datapoint should exceed 60 minutes, which would
         indicate over an hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
@@ -144,7 +144,7 @@ class Thermostat(object):
         Hourly runtimes for auxiliary heating equipment controlled by the
         thermostat, measured in minutes. Auxiliary heat runtime is counted when
         both resistance heating and the compressor are running (for heat pump
-        systems). No datapoint should exceed 60 mins, which would indicate
+        systems). No datapoint should exceed 60 minutes, which would indicate
         over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
@@ -152,7 +152,7 @@ class Thermostat(object):
         Hourly runtimes for emergency heating equipment controlled by the
         thermostat, measured in minutes. Emergency heat runtime is counted when
         resistance heating is running when the compressor is not (for heat pump
-        systems). No datapoint should exceed 60 mins, which would indicate
+        systems). No datapoint should exceed 60 minutes, which would indicate
         over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
