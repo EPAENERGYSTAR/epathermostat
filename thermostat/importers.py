@@ -6,6 +6,7 @@ from thermostat.equipment_type import (
         has_emergency,
         has_two_stage_cooling,
         has_two_stage_heating,
+        first_stage_capacity_fraction,
         )
 
 import pandas as pd
@@ -359,7 +360,7 @@ def get_single_thermostat(thermostat_id, zipcode,
             return
 
         if has_two_stage_cooling(cool_stage):
-            cool_runtime_both_stg = (0.65 * cool_runtime_stg1) + cool_runtime_stg2
+            cool_runtime_both_stg = (first_stage_capacity_fraction(cool_type) * cool_runtime_stg1) + cool_runtime_stg2
             cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df.cool_runtime_equiv.dropna()
 
             if not(cool_runtime_in_bounds.all()):
@@ -388,7 +389,7 @@ def get_single_thermostat(thermostat_id, zipcode,
             return
 
         if has_two_stage_heating(heat_type):
-            heat_runtime_both_stg = (0.65 * heat_runtime_stg1) + heat_runtime_stg2
+            heat_runtime_both_stg = (first_stage_capacity_fraction(heat_type) * heat_runtime_stg1) + heat_runtime_stg2
             heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_equiv_runtime.dropna()
             if not(heat_runtime_in_bounds.all()):
                 warnings.warn(
