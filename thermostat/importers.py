@@ -229,7 +229,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
         warnings.warn(
             "Skipping import of thermostat (id={}) for which "
             "a sufficient source of outdoor weather data could not"
-            "be located using the given ZIP code ({}). This likely "
+            "be located using the given ZIP code ({}). This is likely "
             "due to the discrepancy between US Postal Service ZIP "
             "codes (which do not always map well to locations) and "
             "Census Bureau ZCTAs (which usually do). Please supply "
