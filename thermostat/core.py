@@ -22,6 +22,10 @@ try:
 except TypeError:
     pass  # Documentation mocks out pd, so ignore if not present.
 
+# Ignore divide-by-zero errors
+np.seterr(divide='ignore', invalid='ignore')
+
+
 CoreDaySet = namedtuple("CoreDaySet", ["name", "daily", "hourly", "start_date", "end_date"])
 
 logger = logging.getLogger('epathermostat')
