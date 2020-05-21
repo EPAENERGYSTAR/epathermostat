@@ -22,6 +22,13 @@ Interface
    data_files
    api
 
+Tips
+----
+.. toctree::
+   :maxdepth: 2
+
+   tips
+
 License
 -------
 
