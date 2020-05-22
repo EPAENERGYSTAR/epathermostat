@@ -121,7 +121,7 @@ Columns
    ":code:`station`","string, USAF ID","N/A","USAF identifier for station used to fetch hourly temperature data."
    ":code:`climate_zone`","string","N/A","EIC climate zone (consolidated)."
    ":code:`start_date`","date","ISO-8601","Earliest date in input file."
-   ":code:`end_zone`","date","ISO-8601","Latest date in input file."
+   ":code:`end_date`","date","ISO-8601","Latest date in input file."
    ":code:`n_days_both_heating_and_cooling`","integer","# days","Number of days not included as core days due to presence of both heating and cooling."
    ":code:`n_days_insufficient_data`","integer","# days","Number of days not included as core days due to missing data."
    ":code:`n_core_cooling_days`","integer","# days","Number of days meeting criteria for inclusion in core cooling day set."
