@@ -25,6 +25,7 @@ class Mock(MagicMock):
         return Mock()
 
 MOCK_MODULES = [
+    'numpy',
     'pandas',
     'eemeter',
     'eemeter.consumption',
