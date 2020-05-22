@@ -234,7 +234,8 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             "codes (which do not always map well to locations) and "
             "Census Bureau ZCTAs (which usually do). Please supply "
             "a zipcode which corresponds to a US Census Bureau ZCTA."
-            .format(row.thermostat_id, row.zipcode))
+            "\nError Message: {}"
+            .format(row.thermostat_id, row.zipcode, e))
         return
 
     except ISDDataNotAvailableError as e:
@@ -297,7 +298,7 @@ def get_single_thermostat(thermostat_id, zipcode,
     if not all(date_time == hourly_index):
         message = ("Dates provided for thermostat_id={} may contain some "
                    "which are out of order, missing, or duplicated.".format(thermostat_id))
-        raise ValueError(message)
+        raise RuntimeError(message)
 
     # load hourly time series values
     temp_in = _create_series(df.temp_in, hourly_index)
