@@ -5,11 +5,11 @@ from numpy.testing import assert_allclose
 
 import pytest
 
-from fixtures.thermostats import thermostat_type_1
-from fixtures.thermostats import core_heating_day_set_type_1_entire
-from fixtures.thermostats import core_cooling_day_set_type_1_entire
-from fixtures.thermostats import metrics_type_1_data
-from fixtures.thermostats import thermostat_template
+from .fixtures.thermostats import thermostat_type_1
+from .fixtures.thermostats import core_heating_day_set_type_1_entire
+from .fixtures.thermostats import core_cooling_day_set_type_1_entire
+from .fixtures.thermostats import metrics_type_1_data
+from .fixtures.thermostats import thermostat_template
 
 from thermostat.core import CoreDaySet
 from thermostat.equipment_type import (has_cooling, has_heating)

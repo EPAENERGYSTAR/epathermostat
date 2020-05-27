@@ -8,22 +8,22 @@ from datetime import datetime
 
 import pytest
 
-from fixtures.thermostats import thermostat_type_1
-from fixtures.thermostats import thermostat_type_2
-from fixtures.thermostats import thermostat_type_3
-from fixtures.thermostats import thermostat_type_4
-from fixtures.thermostats import thermostat_type_5
-from fixtures.thermostats import core_heating_day_set_type_1_entire
-from fixtures.thermostats import core_heating_day_set_type_2
-from fixtures.thermostats import core_heating_day_set_type_3
-from fixtures.thermostats import core_heating_day_set_type_4
-from fixtures.thermostats import core_cooling_day_set_type_1_entire
-from fixtures.thermostats import core_cooling_day_set_type_2
-from fixtures.thermostats import core_cooling_day_set_type_3
-from fixtures.thermostats import core_cooling_day_set_type_5
-from fixtures.thermostats import metrics_type_1_data
-from fixtures.thermostats import thermostat_zero_days
-from fixtures.thermostats import thermostats_multiple_same_key
+from .fixtures.thermostats import thermostat_type_1
+from .fixtures.thermostats import thermostat_type_2
+from .fixtures.thermostats import thermostat_type_3
+from .fixtures.thermostats import thermostat_type_4
+from .fixtures.thermostats import thermostat_type_5
+from .fixtures.thermostats import core_heating_day_set_type_1_entire
+from .fixtures.thermostats import core_heating_day_set_type_2
+from .fixtures.thermostats import core_heating_day_set_type_3
+from .fixtures.thermostats import core_heating_day_set_type_4
+from .fixtures.thermostats import core_cooling_day_set_type_1_entire
+from .fixtures.thermostats import core_cooling_day_set_type_2
+from .fixtures.thermostats import core_cooling_day_set_type_3
+from .fixtures.thermostats import core_cooling_day_set_type_5
+from .fixtures.thermostats import metrics_type_1_data
+from .fixtures.thermostats import thermostat_zero_days
+from .fixtures.thermostats import thermostats_multiple_same_key
 
 from numpy.testing import assert_allclose
 from numpy import isnan
