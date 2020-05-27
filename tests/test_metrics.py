@@ -9,12 +9,12 @@ import tempfile
 
 import pytest
 
-from fixtures.thermostats import thermostat_type_1
-from fixtures.thermostats import thermostat_type_2
-from fixtures.thermostats import thermostat_type_3
-from fixtures.thermostats import thermostat_type_4
-from fixtures.thermostats import thermostat_type_5
-from fixtures.thermostats import metrics_type_1_data
+from .fixtures.thermostats import thermostat_type_1
+from .fixtures.thermostats import thermostat_type_2
+from .fixtures.thermostats import thermostat_type_3
+from .fixtures.thermostats import thermostat_type_4
+from .fixtures.thermostats import thermostat_type_5
+from .fixtures.thermostats import metrics_type_1_data
 import six
 
 @pytest.fixture(scope="session")

@@ -1,7 +1,7 @@
 from thermostat.stats import combine_output_dataframes
 from thermostat.stats import compute_summary_statistics
 from thermostat.stats import summary_statistics_to_csv
-from fixtures.thermostats import thermostat_emg_aux_constant_on_outlier
+from .fixtures.thermostats import thermostat_emg_aux_constant_on_outlier
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
 from thermostat.exporters import COLUMNS
 

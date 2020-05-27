@@ -4,12 +4,12 @@ from numpy.testing import assert_allclose
 
 import pytest
 
-from fixtures.thermostats import thermostat_type_1
-from fixtures.thermostats import core_heating_day_set_type_1_entire as core_heating_day_set_type_1
-from fixtures.thermostats import core_cooling_day_set_type_1_entire as core_cooling_day_set_type_1
-from fixtures.thermostats import core_heating_day_set_type_1_empty
-from fixtures.thermostats import core_cooling_day_set_type_1_empty
-from fixtures.thermostats import metrics_type_1_data
+from .fixtures.thermostats import thermostat_type_1
+from .fixtures.thermostats import core_heating_day_set_type_1_entire as core_heating_day_set_type_1
+from .fixtures.thermostats import core_cooling_day_set_type_1_entire as core_cooling_day_set_type_1
+from .fixtures.thermostats import core_heating_day_set_type_1_empty
+from .fixtures.thermostats import core_cooling_day_set_type_1_empty
+from .fixtures.thermostats import metrics_type_1_data
 
 RTOL = 1e-3
 ATOL = 1e-3

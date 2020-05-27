@@ -7,7 +7,7 @@ import pandas as pd
 
 import pytest
 
-from fixtures.thermostats import (
+from .fixtures.thermostats import (
         thermostat_type_1,
         thermostat_type_1_utc,
         thermostat_type_1_utc_bad,)
