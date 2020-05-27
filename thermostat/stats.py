@@ -519,8 +519,12 @@ def get_filtered_stats(
             column = filtered_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
 
             # calculate quantiles and statistics
-            mean = np.nanmean(column)
-            sem = np.nanstd(column) / (column.count() ** .5)
+            mean = np.nanmean(pd.to_numeric(column))
+
+            if column.count() != 0:
+                sem = np.nanstd(column) / (column.count() ** .5)
+            else:
+                sem = np.nan
             lower_bound = mean - (1.96 * sem)
             upper_bound = mean + (1.96 * sem)
             stats["{}_n".format(column_name)] = column.count()
@@ -537,17 +541,17 @@ def get_filtered_stats(
                 iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
                 if bool(iqr_filter.any()) is False:
                     iqr_filter = (column == column)
-                    warn("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for this bin. Disabling filter.")
+                    warn("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
                 iqr_filtered_column = column.loc[iqr_filter]
 
                 # calculate quantiles and statistics for RHU2 IQR (IQFLT) and
                 # non-IQR filtering (NOIQ)
-                iqr_mean = np.nanmean(iqr_filtered_column)
+                iqr_mean = np.nanmean(pd.to_numeric(iqr_filtered_column))
                 iqr_sem = np.nanstd(iqr_filtered_column) / (iqr_filtered_column.count() ** .5)
                 iqr_lower_bound = iqr_mean - (1.96 * iqr_sem)
                 iqr_upper_bound = iqr_mean + (1.96 * iqr_sem)
 
-                noiq_mean = np.nanmean(column)
+                noiq_mean = np.nanmean(pd.to_numeric(column))
                 noiq_sem = np.nanstd(column) / (column.count() ** .5)
                 noiq_lower_bound = noiq_mean - (1.96 * noiq_sem)
                 noiq_upper_bound = noiq_mean + (1.96 * noiq_sem)
