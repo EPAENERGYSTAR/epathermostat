@@ -251,29 +251,11 @@ class Thermostat(object):
                           " despite equipment type of {}, which requires heating data.".format(self.thermostat_id, self.heating_type)
                 raise ValueError(message)
 
-            if self.heating_setpoint is None:
-                message = "For thermostat {}, heating setpoint data was not provided," \
-                          " despite equipment type of {}, which requires heating data." \
-                          " If only one setpoint is used, (or if there is no distinction" \
-                          " between the heating and cooling setpoints, please" \
-                          " explicitly provide two copies of the available setpoint data" \
-                          .format(self.thermostat_id, self.heating_type)
-                raise ValueError(message)
-
     def _validate_cooling(self):
         if self.has_cooling:
             if self.cool_runtime_daily is None:
                 message = "For thermostat {}, cooling runtime data was not provided," \
                           " despite equipment type of {}, which requires cooling data.".format(self.thermostat_id, self.cool_type)
-                raise ValueError(message)
-
-            if self.cooling_setpoint is None:
-                message = "For thermostat {}, cooling setpoint data was not provided," \
-                          " despite equipment type of {}, which requires heating data." \
-                          " If only one setpoint is used, (or if there is no distinction" \
-                          " between the heating and cooling setpoints, please" \
-                          " explicitly provide two copies of the available setpoint data" \
-                          .format(self.thermostat_id, self.cool_type)
                 raise ValueError(message)
 
     def _validate_aux_emerg(self):
@@ -1051,7 +1033,7 @@ class Thermostat(object):
             Method to use in calculation of the baseline.
 
             - "tenth_percentile": 10th percentile of source temperature.
-              (Either cooling setpoint or temperature in).
+              (temperature in).
         source : {"cooling_setpoint", "temperature_in"}, default "temperature_in"
             The source of temperatures to use in baseline calculation.
 
@@ -1068,7 +1050,8 @@ class Thermostat(object):
             raise NotImplementedError
 
         if source == 'cooling_setpoint':
-            return self.cooling_setpoint[core_cooling_day_set.hourly].dropna().quantile(.1)
+            warn("Cooling Setpoint method is no longer implemented.")
+            raise NotImplementedError
         elif source == 'temperature_in':
             return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
         else:
@@ -1087,7 +1070,7 @@ class Thermostat(object):
             Method to use in calculation of the baseline.
 
             - "ninetieth_percentile": 90th percentile of source temperature.
-              (Either heating setpoint or indoor temperature).
+              (indoor temperature).
         source : {"heating_setpoint", "temperature_in"}, default "temperature_in"
             The source of temperatures to use in baseline calculation.
 
@@ -1104,7 +1087,8 @@ class Thermostat(object):
             raise NotImplementedError
 
         if source == 'heating_setpoint':
-            return self.heating_setpoint[core_heating_day_set.hourly].dropna().quantile(.9)
+            warn("Heating setpoint method is no longer implemented")
+            raise NotImplementedError
         elif source == 'temperature_in':
             return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
         else:

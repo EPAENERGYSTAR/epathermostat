@@ -44,9 +44,6 @@ def test_get_core_heating_day_baseline_setpoint_null_temperature_in(thermostat_t
     season_selector = pd.Series([True, True, True], index=index)
     core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
 
-    sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='heating_setpoint')
-    assert pd.isnull(sp)
-
     sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='temperature_in')
     assert_allclose(sp, 1.8)
 
@@ -75,9 +72,6 @@ def test_get_core_cooling_day_baseline_setpoint_null_temperature_in(thermostat_t
     season_selector = pd.Series([True, True, True], index=index)
     core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
 
-    sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='cooling_setpoint')
-    assert pd.isnull(sp)
-
     sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='temperature_in')
     assert_allclose(sp, 0.2)
 
@@ -91,66 +85,4 @@ def test_get_core_cooling_day_baseline_setpoint_null_temperature_in(thermostat_t
 
     thermostat_template.temperature_in = pd.Series([np.nan, np.nan, np.nan], index=index)
     sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='temperature_in')
-    assert pd.isnull(sp)
-
-def test_get_core_heating_day_baseline_setpoint_null_heating_setpoint(thermostat_template):
-
-    index = pd.date_range(start=datetime(2011, 1, 1), periods=3, freq='D')
-    thermostat_template.heating_setpoint = pd.Series([0, 1, 2], index=index)
-    thermostat_template.heat_type = 'heat_pump_electric_backup'
-    thermostat_template.heat_stage = 'single_stage'
-    thermostat_template.cool_type = 'heat_pump'
-    thermostat_template.has_cooling = has_cooling(thermostat_template.cool_type)
-    thermostat_template.has_heating = has_heating(thermostat_template.heat_type)
-
-    season_selector = pd.Series([True, True, True], index=index)
-    core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
-
-    sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='temperature_in')
-    assert pd.isnull(sp)
-
-    sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='heating_setpoint')
-    assert_allclose(sp, 1.8)
-
-    thermostat_template.heating_setpoint = pd.Series([np.nan, 1, 2], index=index)
-    sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='heating_setpoint')
-    assert_allclose(sp, 1.9)
-
-    thermostat_template.heating_setpoint = pd.Series([0, 1, np.nan], index=index)
-    sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='heating_setpoint')
-    assert_allclose(sp, 0.9)
-
-    thermostat_template.heating_setpoint = pd.Series([np.nan, np.nan, np.nan], index=index)
-    sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='heating_setpoint')
-    assert pd.isnull(sp)
-
-def test_get_core_cooling_day_baseline_setpoint_null_cooling_setpoint(thermostat_template):
-
-    index = pd.date_range(start=datetime(2011, 1, 1), periods=3, freq='D')
-    thermostat_template.cooling_setpoint = pd.Series([0, 1, 2], index=index)
-    thermostat_template.heat_type = 'heat_pump_electric_backup'
-    thermostat_template.heat_stage = 'single_stage'
-    thermostat_template.cool_type = 'heat_pump'
-    thermostat_template.has_cooling = has_cooling(thermostat_template.cool_type)
-    thermostat_template.has_heating = has_heating(thermostat_template.heat_type)
-
-    season_selector = pd.Series([True, True, True], index=index)
-    core_day_set = CoreDaySet("FAKE", season_selector, season_selector, None, None)
-
-    sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='temperature_in')
-    assert pd.isnull(sp)
-
-    sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='cooling_setpoint')
-    assert_allclose(sp, 0.2)
-
-    thermostat_template.cooling_setpoint = pd.Series([np.nan, 1, 2], index=index)
-    sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='cooling_setpoint')
-    assert_allclose(sp, 1.1)
-
-    thermostat_template.cooling_setpoint = pd.Series([0, 1, np.nan], index=index)
-    sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='cooling_setpoint')
-    assert_allclose(sp, 0.1)
-
-    thermostat_template.cooling_setpoint = pd.Series([np.nan, np.nan, np.nan], index=index)
-    sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='cooling_setpoint')
     assert pd.isnull(sp)

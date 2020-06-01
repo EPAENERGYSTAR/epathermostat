@@ -404,6 +404,8 @@ def get_single_thermostat(thermostat_id, zipcode,
     else:
         heat_runtime = None
 
+    cooling_setpoint = None
+    heating_setpoint = None
     # create thermostat instance
     thermostat = Thermostat(
         thermostat_id,
