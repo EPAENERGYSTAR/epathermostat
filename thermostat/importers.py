@@ -303,16 +303,6 @@ def get_single_thermostat(thermostat_id, zipcode,
     # load hourly time series values
     temp_in = _create_series(df.temp_in, hourly_index)
 
-    if has_heating(heat_type):
-        heating_setpoint = _create_series(df.heating_setpoint, hourly_index)
-    else:
-        heating_setpoint = None
-
-    if has_cooling(cool_type):
-        cooling_setpoint = _create_series(df.cooling_setpoint, hourly_index)
-    else:
-        cooling_setpoint = None
-
     if has_auxiliary(heat_type) and has_emergency(heat_type):
         auxiliary_heat_runtime = _create_series(df.auxiliary_heat_runtime, hourly_index)
         emergency_heat_runtime = _create_series(df.emergency_heat_runtime, hourly_index)
@@ -404,8 +394,6 @@ def get_single_thermostat(thermostat_id, zipcode,
     else:
         heat_runtime = None
 
-    cooling_setpoint = None
-    heating_setpoint = None
     # create thermostat instance
     thermostat = Thermostat(
         thermostat_id,
@@ -417,8 +405,6 @@ def get_single_thermostat(thermostat_id, zipcode,
         station,
         temp_in,
         temp_out,
-        cooling_setpoint,
-        heating_setpoint,
         cool_runtime,
         heat_runtime,
         auxiliary_heat_runtime,

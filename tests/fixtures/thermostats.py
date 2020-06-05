@@ -22,8 +22,6 @@ def thermostat_template():
     station = "FAKE"
     temperature_in = pd.Series([], dtype="Float64")
     temperature_out = pd.Series([], dtype="Float64")
-    cooling_setpoint = pd.Series([], dtype="Float64")
-    heating_setpoint = pd.Series([], dtype="Float64")
     cool_runtime = pd.Series([], dtype="Float64")
     heat_runtime = pd.Series([], dtype="Float64")
     auxiliary_heat_runtime = pd.Series([], dtype="Float64")
@@ -39,8 +37,6 @@ def thermostat_template():
         station,
         temperature_in,
         temperature_out,
-        cooling_setpoint,
-        heating_setpoint,
         cool_runtime,
         heat_runtime,
         auxiliary_heat_runtime,

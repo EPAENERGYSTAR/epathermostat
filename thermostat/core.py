@@ -116,16 +116,6 @@ class Thermostat(object):
         0.5F.
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
-    cooling_setpoint : pandas.Series
-        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
-        with resolution of at least 0.5F used to control cooling equipment.
-        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
-        :code:`freq='H'`).
-    heating_setpoint : pandas.Series
-        Contains target temperature (setpoint) data in degrees Fahrenheit (F),
-        with resolution of at least 0.5F used to control heating equipment.
-        Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
-        :code:`freq='H'`).
     cool_runtime : pandas.Series,
         Hourly runtimes for cooling equipment controlled by the thermostat,
         measured in minutes. No datapoint should exceed 60 minutes, which would
@@ -160,8 +150,8 @@ class Thermostat(object):
             self, thermostat_id,
             heat_type, heat_stage, cool_type, cool_stage,
             zipcode, station,
-            temperature_in, temperature_out, cooling_setpoint,
-            heating_setpoint, cool_runtime, heat_runtime,
+            temperature_in, temperature_out,
+            cool_runtime, heat_runtime,
             auxiliary_heat_runtime, emergency_heat_runtime):
 
         self.thermostat_id = thermostat_id
@@ -182,8 +172,6 @@ class Thermostat(object):
 
         self.temperature_in = self._interpolate(temperature_in, method="linear")
         self.temperature_out = self._interpolate(temperature_out, method="linear")
-        self.cooling_setpoint = cooling_setpoint
-        self.heating_setpoint = heating_setpoint
 
         self.cool_runtime_hourly = cool_runtime
         self.heat_runtime_hourly = heat_runtime
@@ -1034,7 +1022,7 @@ class Thermostat(object):
 
             - "tenth_percentile": 10th percentile of source temperature.
               (temperature in).
-        source : {"cooling_setpoint", "temperature_in"}, default "temperature_in"
+        source : {"temperature_in"}, default "temperature_in"
             The source of temperatures to use in baseline calculation.
 
         Returns
@@ -1071,7 +1059,7 @@ class Thermostat(object):
 
             - "ninetieth_percentile": 90th percentile of source temperature.
               (indoor temperature).
-        source : {"heating_setpoint", "temperature_in"}, default "temperature_in"
+        source : {"temperature_in"}, default "temperature_in"
             The source of temperatures to use in baseline calculation.
 
         Returns
