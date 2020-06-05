@@ -11,7 +11,6 @@ FIELDNAMES = [
         'heat_runtime_stg1', 'heat_runtime_stg2', 'heat_equiv_runtime',
         'emergency_heat_runtime',
         'auxiliary_heat_runtime',
-        'heating_setpoint', 'cooling_setpoint',
         'temp_in',
         ]
 
@@ -69,11 +68,6 @@ def main():
                         header = 'temp_in_%02d' % hour
                         current_row['temp_in'] = row[header]
 
-                        header = 'heating_setpoint_%02d' % hour
-                        current_row['heating_setpoint'] = row[header]
-
-                        header = 'cooling_setpoint_%02d' % hour
-                        current_row['cooling_setpoint'] = row[header]
                         csv_out.writerow(current_row)
 
 
