@@ -49,10 +49,10 @@ def main():
     stats_advanced = compute_summary_statistics(metrics_out, advanced_filtering=True)
 
     product_id = "test_product"
-    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
+    stats_filepath = os.path.join(output_dir, "thermostat_example_stats.csv")
     summary_statistics_to_csv(stats, stats_filepath, product_id)
 
-    stats_advanced_filepath = os.path.join(data_dir, "thermostat_example_stats_advanced.csv")
+    stats_advanced_filepath = os.path.join(output_dir, "thermostat_example_stats_advanced.csv")
     summary_statistics_to_csv(stats_advanced, stats_advanced_filepath, product_id)
 
 
