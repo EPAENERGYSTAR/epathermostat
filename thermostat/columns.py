@@ -358,3 +358,14 @@ EXPORT_COLUMNS = [
     'core_mean_indoor_temperature',
     'core_mean_outdoor_temperature',
     ] + RHU_COLUMNS
+
+CERTIFICATION_HEADERS = [
+        'product_id',
+        'sw_version',
+        'metric',
+        'filter',
+        'region',
+        'statistic',
+        'season',
+        'value',
+        ]
