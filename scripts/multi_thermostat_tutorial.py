@@ -52,13 +52,13 @@ def main():
 
     stats_filepath = os.path.join(output_dir, "thermostat_example_stats.csv")
     # Need to save the stats to pass to the certification_to_csv exporter for certification data
-    regular_stats = summary_statistics_to_csv(stats, stats_filepath, product_id)
+    summary_stats = summary_statistics_to_csv(stats, stats_filepath, product_id)
 
     stats_advanced_filepath = os.path.join(output_dir, "thermostat_example_stats_advanced.csv")
     summary_statistics_to_csv(stats_advanced, stats_advanced_filepath, product_id)
 
     certification_filepath = os.path.join(output_dir, "thermostat_example_certification.csv")
-    certification_to_csv(regular_stats, certification_filepath)
+    certification_to_csv(summary_stats, certification_filepath)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from thermostat.stats import compute_summary_statistics
 from thermostat.stats import summary_statistics_to_csv
 from .fixtures.thermostats import thermostat_emg_aux_constant_on_outlier
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
+from thermostat.exporters import certification_to_csv
 from thermostat.columns import EXPORT_COLUMNS
 
 from scipy.stats import norm, randint
@@ -258,6 +259,16 @@ def test_compute_summary_statistics(combined_dataframe):
 
     stats_df_reread = pd.read_csv(fname)
     assert stats_df_reread.shape == (5405, 9)
+
+
+def test_certification(combined_dataframe):
+    _, fname_stats = tempfile.mkstemp()
+    _, fname_cert = tempfile.mkstemp()
+    product_id = "FAKE"
+    summary_stats = compute_summary_statistics(combined_dataframe)
+    summary_stats_csv = summary_statistics_to_csv(summary_stats, fname_stats, product_id)
+    certification_df = certification_to_csv(summary_stats_csv, fname_cert)
+    assert certification_df.shape == (5, 8)
 
 
 def test_iqr_filtering(thermostat_emg_aux_constant_on_outlier):
