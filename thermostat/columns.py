@@ -15,6 +15,7 @@ RHU_COLUMNS = [
     'rhu1_45F_to_50F',
     'rhu1_50F_to_55F',
     'rhu1_55F_to_60F',
+    'rhu1_30F_to_45F',
 
     'rhu1_05F_to_10F_aux_duty_cycle',
     'rhu1_10F_to_15F_aux_duty_cycle',
@@ -27,6 +28,7 @@ RHU_COLUMNS = [
     'rhu1_45F_to_50F_aux_duty_cycle',
     'rhu1_50F_to_55F_aux_duty_cycle',
     'rhu1_55F_to_60F_aux_duty_cycle',
+    'rhu1_30F_to_45F_aux_duty_cycle',
 
     'rhu1_00F_to_05F_emg_duty_cycle',
     'rhu1_05F_to_10F_emg_duty_cycle',
@@ -40,6 +42,7 @@ RHU_COLUMNS = [
     'rhu1_45F_to_50F_emg_duty_cycle',
     'rhu1_50F_to_55F_emg_duty_cycle',
     'rhu1_55F_to_60F_emg_duty_cycle',
+    'rhu1_30F_to_45F_emg_duty_cycle',
 
     'rhu1_00F_to_05F_compressor_duty_cycle',
     'rhu1_05F_to_10F_compressor_duty_cycle',
@@ -53,6 +56,7 @@ RHU_COLUMNS = [
     'rhu1_45F_to_50F_compressor_duty_cycle',
     'rhu1_50F_to_55F_compressor_duty_cycle',
     'rhu1_55F_to_60F_compressor_duty_cycle',
+    'rhu1_30F_to_45F_compressor_duty_cycle',
 
     'rhu2_00F_to_05F',
     'rhu2_05F_to_10F',

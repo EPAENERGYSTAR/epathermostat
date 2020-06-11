@@ -231,14 +231,14 @@ def combined_dataframe():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 155)
+    assert combined.shape == (20, 159)
 
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
             49, 49, 49, 49,
-            5269, 901, 5269, 901,
+            5381, 901, 5381, 901,
             ]
 
     def test_compute_summary_statistics_advanced(combined_dataframe):
@@ -246,7 +246,7 @@ def test_compute_summary_statistics(combined_dataframe):
                 advanced_filtering=True)
         assert [len(s) for s in summary_statistics] == [
                 49, 49, 49, 49, 49, 49, 49, 49,
-                5269, 901, 5269, 901, 5269, 901, 5269, 901,
+                5381, 901, 5381, 901, 5381, 901, 5381, 901,
                 ]
 
         def test_summary_statistics_to_csv(combined_dataframe):
@@ -258,15 +258,15 @@ def test_compute_summary_statistics(combined_dataframe):
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (5405, 9)
+    assert stats_df_reread.shape == (5517, 9)
 
 
 def test_certification(combined_dataframe):
     _, fname_stats = tempfile.mkstemp()
     _, fname_cert = tempfile.mkstemp()
     product_id = "FAKE"
-    summary_stats = compute_summary_statistics(combined_dataframe)
-    summary_stats_csv = summary_statistics_to_csv(summary_stats, fname_stats, product_id)
+    stats_df = compute_summary_statistics(combined_dataframe)
+    summary_stats_csv = summary_statistics_to_csv(stats_df, fname_stats, product_id)
     certification_df = certification_to_csv(summary_stats_csv, fname_cert)
     assert certification_df.shape == (5, 8)
 
