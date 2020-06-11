@@ -80,7 +80,7 @@ def certification_to_csv(stats, filepath):
             ['all_tau_cvrmse_savings_p01_filter_heating', 'rhu2IQFLT_30F_to_45F_compressor_duty_cycle_upper_bound_95_perc_conf']]
 
     product_id = stats['national_weighted_mean_heating_tau_cvrmse_savings_p01_filter']['product_id']
-    sw_version = stats['national_weighted_mean_heating_tau_cvrmse_savings_p01_filter']['sw_version']  # FIXME: Need to find a better spot to get this
+    sw_version = stats['all_tau_cvrmse_savings_p01_filter_heating']['sw_version']
 
     certification_data = []
 
@@ -99,5 +99,5 @@ def certification_to_csv(stats, filepath):
         certification_data.append(row)
 
     output_dataframe = pd.DataFrame(certification_data, columns=CERTIFICATION_HEADERS)
-    output_dataframe.to_csv(filepath, index=False, columns=CERTIFICATION_HEADERS)
+    output_dataframe.to_csv(filepath, index=False, columns=CERTIFICATION_HEADERS, float_format='%.2f')
     return output_dataframe
