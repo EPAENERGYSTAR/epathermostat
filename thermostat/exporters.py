@@ -10,7 +10,7 @@ COLUMN_LOOKUP = {
             "metric": "percent_savings_baseline_percentile",
             "statistic": "q20",
             },
-        "rhu2IQFLT_30F_to_45F_compressor_duty_cycle_upper_bound_95_perc_conf": {
+        "rhu2IQFLT_30F_to_45F_upper_bound_95_perc_conf": {
             "metric": "rhu_30F_to_45F",
             "statistic": "upper_bound_95",
             }
@@ -38,7 +38,7 @@ DATA_COLUMNS = [
         ['national_weighted_mean_cooling_tau_cvrmse_savings_p01_filter', 'percent_savings_baseline_percentile_lower_bound_95_perc_conf_national_weighted_mean'],
         ['national_weighted_mean_heating_tau_cvrmse_savings_p01_filter', 'percent_savings_baseline_percentile_q20_national_weighted_mean'],
         ['national_weighted_mean_cooling_tau_cvrmse_savings_p01_filter', 'percent_savings_baseline_percentile_q20_national_weighted_mean'],
-        ['all_tau_cvrmse_savings_p01_filter_heating', 'rhu2IQFLT_30F_to_45F_compressor_duty_cycle_upper_bound_95_perc_conf']]
+        ['all_tau_cvrmse_savings_p01_filter_heating', 'rhu2IQFLT_30F_to_45F_upper_bound_95_perc_conf']]
 
 
 def metrics_to_csv(metrics, filepath):
