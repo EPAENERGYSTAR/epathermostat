@@ -11,7 +11,7 @@ COLUMN_LOOKUP = {
             "statistic": "q20",
             },
         "rhu2IQFLT_30F_to_45F_compressor_duty_cycle_upper_bound_95_perc_conf": {
-            "metric": "rhu_30F_to_45F_upper_bound_95",
+            "metric": "rhu_30F_to_45F",
             "statistic": "upper_bound_95",
             }
         }
@@ -63,7 +63,7 @@ def metrics_to_csv(metrics, filepath):
     return output_dataframe
 
 
-def certification_to_csv(stats, filepath):
+def certification_to_csv(stats, filepath, product_id):
     """ Writes certification outputs to the file specified.
 
     Parameters
@@ -79,13 +79,14 @@ def certification_to_csv(stats, filepath):
     df : pd.DataFrame
         DataFrame containing data output to CSV.
     """
-    product_id = stats['national_weighted_mean_heating_tau_cvrmse_savings_p01_filter']['product_id']
-    sw_version = stats['all_tau_cvrmse_savings_p01_filter_heating']['sw_version']
+    labels = [i.get('label') for i in stats]
+    sw_version = stats[labels.index('all_tau_cvrmse_savings_p01_filter_heating')]['sw_version']
 
     certification_data = []
 
     for column_filter, column_data in DATA_COLUMNS:
-        value = stats[column_filter][column_data]
+        stats_column_number = labels.index(column_filter)
+        value = stats[stats_column_number][column_data]
         row = [
                 product_id,
                 sw_version,

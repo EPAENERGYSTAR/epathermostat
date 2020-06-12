@@ -558,44 +558,6 @@ def summary_statistics_to_csv(stats, filepath, product_id):
         "sw_version",
     ]
 
-    methods = [
-        "baseline_percentile",
-        "baseline_regional",
-    ]
-
-    national_weighting_columns = list(chain.from_iterable([
-        [
-            "percent_savings_{}_mean_national_weighted_mean".format(method),
-            "percent_savings_{}_q1_national_weighted_mean".format(method),
-            "percent_savings_{}_q2.5_national_weighted_mean".format(method),
-            "percent_savings_{}_q5_national_weighted_mean".format(method),
-            "percent_savings_{}_q10_national_weighted_mean".format(method),
-            "percent_savings_{}_q15_national_weighted_mean".format(method),
-            "percent_savings_{}_q20_national_weighted_mean".format(method),
-            "percent_savings_{}_q25_national_weighted_mean".format(method),
-            "percent_savings_{}_q30_national_weighted_mean".format(method),
-            "percent_savings_{}_q35_national_weighted_mean".format(method),
-            "percent_savings_{}_q40_national_weighted_mean".format(method),
-            "percent_savings_{}_q45_national_weighted_mean".format(method),
-            "percent_savings_{}_q50_national_weighted_mean".format(method),
-            "percent_savings_{}_q55_national_weighted_mean".format(method),
-            "percent_savings_{}_q60_national_weighted_mean".format(method),
-            "percent_savings_{}_q65_national_weighted_mean".format(method),
-            "percent_savings_{}_q70_national_weighted_mean".format(method),
-            "percent_savings_{}_q75_national_weighted_mean".format(method),
-            "percent_savings_{}_q80_national_weighted_mean".format(method),
-            "percent_savings_{}_q85_national_weighted_mean".format(method),
-            "percent_savings_{}_q90_national_weighted_mean".format(method),
-            "percent_savings_{}_q95_national_weighted_mean".format(method),
-            "percent_savings_{}_q98_national_weighted_mean".format(method),
-            "percent_savings_{}_q99_national_weighted_mean".format(method),
-            "percent_savings_{}_lower_bound_95_perc_conf_national_weighted_mean".format(method),
-            "percent_savings_{}_upper_bound_95_perc_conf_national_weighted_mean".format(method),
-        ] for method in methods
-    ]))
-
-    columns.extend(national_weighting_columns)
-
     columns.extend([
         "n_thermostat_core_day_sets_total",
         "n_thermostat_core_day_sets_kept",
@@ -616,5 +578,13 @@ def summary_statistics_to_csv(stats, filepath, product_id):
 
     # transpose for readability.
     stats_dataframe = pd.DataFrame(stats, columns=columns).set_index('label').transpose()
+    # Remove certification columns that are no longer in the stats file
+    stats_dataframe = stats_dataframe.drop([
+        'national_weighted_mean_heating_no_filter',
+        'national_weighted_mean_heating_tau_cvrmse_savings_p01_filter',
+        'national_weighted_mean_cooling_no_filter',
+        'national_weighted_mean_cooling_tau_cvrmse_savings_p01_filter'
+        ],
+        axis=1)
     stats_dataframe.to_csv(filepath)
     return stats_dataframe

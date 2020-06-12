@@ -328,8 +328,7 @@ data set.
 
     product_id = "INSERT ALPHANUMERIC PRODUCT ID HERE"
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    # Need to save the stats to pass to the certification_to_csv exporter for certification data
-    stats_df = summary_statistics_to_csv(stats, stats_filepath, product_id)
+    summary_statistics_to_csv(stats, stats_filepath, product_id)
 
     # or with advanced filter outputs
     # stats_advanced_filepath = os.path.join(data_dir,
@@ -346,14 +345,15 @@ available :download:`for download <../thermostat/resources/NationalAverageClimat
 Certification File
 ------------------
 
-Once you have saved the summary statistics you may then create the
+Once you have computed the summary statistics you may then create the
 certification file, which is also submitted to the EPA.
 
 .. code-block:: python
 
     certification_filepath = os.path.join(data_dir,
                                           "thermostat_example_certification.csv")
-    certification_to_csv(stats_df, certification_filepath)
+    # stats is the results from compute_summary_statistics above
+    certification_to_csv(stats, certification_filepath, product_id)
 
 Notes for Windows Users
 -----------------------
