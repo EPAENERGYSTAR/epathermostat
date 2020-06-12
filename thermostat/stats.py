@@ -552,6 +552,16 @@ def summary_statistics_to_csv(stats, filepath, product_id):
 
     """
 
+    drop_columns = [
+        'national_weighted_mean_heating_no_filter',
+        'national_weighted_mean_heating_tau_cvrmse_savings_p01_filter',
+        'national_weighted_mean_cooling_no_filter',
+        'national_weighted_mean_cooling_tau_cvrmse_savings_p01_filter',
+        'national_weighted_mean_heating_tau_filter',
+        'national_weighted_mean_heating_tau_cvrmse_filter',
+        'national_weighted_mean_cooling_tau_filter',
+        'national_weighted_mean_cooling_tau_cvrmse_filter',
+        ]
     columns = [
         "label",
         "product_id",
@@ -579,12 +589,10 @@ def summary_statistics_to_csv(stats, filepath, product_id):
     # transpose for readability.
     stats_dataframe = pd.DataFrame(stats, columns=columns).set_index('label').transpose()
     # Remove certification columns that are no longer in the stats file
-    stats_dataframe = stats_dataframe.drop([
-        'national_weighted_mean_heating_no_filter',
-        'national_weighted_mean_heating_tau_cvrmse_savings_p01_filter',
-        'national_weighted_mean_cooling_no_filter',
-        'national_weighted_mean_cooling_tau_cvrmse_savings_p01_filter'
-        ],
-        axis=1)
+    stats_dataframe.drop(
+        drop_columns,
+        axis=1,
+        errors='ignore',
+        inplace=True)
     stats_dataframe.to_csv(filepath)
     return stats_dataframe
