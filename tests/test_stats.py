@@ -258,7 +258,7 @@ def test_compute_summary_statistics(combined_dataframe):
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (5517, 9)
+    assert stats_df_reread.shape == (5465, 5)
 
 
 def test_certification(combined_dataframe):
@@ -266,8 +266,7 @@ def test_certification(combined_dataframe):
     _, fname_cert = tempfile.mkstemp()
     product_id = "FAKE"
     stats_df = compute_summary_statistics(combined_dataframe)
-    summary_stats_csv = summary_statistics_to_csv(stats_df, fname_stats, product_id)
-    certification_df = certification_to_csv(summary_stats_csv, fname_cert)
+    certification_df = certification_to_csv(stats_df, fname_cert, product_id)
     assert certification_df.shape == (5, 8)
 
 

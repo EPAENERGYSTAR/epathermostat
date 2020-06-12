@@ -86,7 +86,7 @@ def certification_to_csv(stats, filepath, product_id):
 
     for column_filter, column_data in DATA_COLUMNS:
         stats_column_number = labels.index(column_filter)
-        value = stats[stats_column_number][column_data]
+        value = stats[stats_column_number].get(column_data, None)
         row = [
                 product_id,
                 sw_version,
