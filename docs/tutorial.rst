@@ -328,10 +328,10 @@ data set.
 
     product_id = "INSERT ALPHANUMERIC PRODUCT ID HERE"
     stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    stats_df = summary_statistics_to_csv(stats, stats_filepath, product_id)
+    summary_statistics_to_csv(stats, stats_filepath, product_id)
 
     # or with advanced filter outputs
-    # stats_advanced_filepath = os.path.join(data_dir
+    # stats_advanced_filepath = os.path.join(data_dir,
     #                                        "thermostat_example_stats_advanced.csv")
     # stats_advanced_df = summary_statistics_to_csv(stats_advanced,
     #                                               stats_advanced_filepath,
@@ -341,6 +341,19 @@ National savings are computed by weighted average of percent savings results
 grouped by climate zone. Heavier weights are applied to results in climate
 zones which, regionally, tend to have longer runtimes. Weightings used are
 available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
+
+Certification File
+------------------
+
+Once you have computed the summary statistics you may then create the
+certification file, which is also submitted to the EPA.
+
+.. code-block:: python
+
+    certification_filepath = os.path.join(data_dir,
+                                          "thermostat_example_certification.csv")
+    # stats is the results from compute_summary_statistics above
+    certification_to_csv(stats, certification_filepath, product_id)
 
 Notes for Windows Users
 -----------------------

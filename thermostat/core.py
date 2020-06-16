@@ -52,11 +52,10 @@ VAR_MIN_RHU_RUNTIME = 30 * 60  # Unit is in minutes (30 hours * 60 minutes)
 RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
 RESISTANCE_HEAT_USE_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
 RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
-RESISTANCE_HEAT_USE_BIN_FIRST = list(t for t in range(
+RESISTANCE_HEAT_USE_BIN = list(t for t in range(
     RESISTANCE_HEAT_USE_BINS_MIN_TEMP,
     RESISTANCE_HEAT_USE_BINS_MAX_TEMP + RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH,
     RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH))
-RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
 
 RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
 RESISTANCE_HEAT_USE_WIDE_BIN_TUPLE = [(30, 45)]
@@ -656,17 +655,10 @@ class Thermostat(object):
 
         # Currently treating aux_runtime as separate from heat_runtime
         runtime_rhu['total_runtime'] = runtime_rhu.heat_runtime + runtime_rhu.aux_runtime + runtime_rhu.emg_runtime
-        # Changed to use the number of minutes per eligible day
-        runtime_rhu['aux_duty_cycle'] = runtime_rhu.aux_runtime / runtime_rhu.total_minutes
-        runtime_rhu['emg_duty_cycle'] = runtime_rhu.emg_runtime / runtime_rhu.total_minutes
-        runtime_rhu['compressor_duty_cycle'] = runtime_rhu.heat_runtime / runtime_rhu.total_minutes
 
         # If we're passed min_runtime_minutes (RHU2) then treat the thermostat as not having run during that period
         if min_runtime_minutes:
             runtime_rhu['rhu'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['aux_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['emg_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['compressor_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
             runtime_rhu['total_runtime'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
 
         runtime_rhu['data_is_nonsense'] = (runtime_rhu['aux_runtime'] > runtime_rhu['heat_runtime'])
@@ -1664,48 +1656,29 @@ class Thermostat(object):
 
             rhu_runtime = self.get_resistance_heat_utilization_runtime(core_heating_day_set)
 
-            # Add duty cycle records
-            heat_runtime = rhu_runtime.heat_runtime.sum()
-            aux_runtime = rhu_runtime.aux_runtime.sum()
-            emg_runtime = rhu_runtime.emg_runtime.sum()
-            total_minutes = rhu_runtime.total_minutes.sum()
-            additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_minutes
-            additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_minutes
-            additional_outputs[rhu_type + '_compressor_duty_cycle'] = heat_runtime / total_minutes
-
-            rhu_first = self.get_resistance_heat_utilization_bins(
+            rhu = self.get_resistance_heat_utilization_bins(
                     rhu_runtime,
-                    RESISTANCE_HEAT_USE_BIN_FIRST,
+                    RESISTANCE_HEAT_USE_BIN,
                     core_heating_day_set,
                     min_runtime_minutes)
 
-            rhu_second = self.get_resistance_heat_utilization_bins(
-                    rhu_runtime,
-                    RESISTANCE_HEAT_USE_BIN_SECOND,
-                    core_heating_day_set,
-                    min_runtime_minutes)
-
-            rhu_second_wide = self.get_resistance_heat_utilization_bins(
+            rhu_wide = self.get_resistance_heat_utilization_bins(
                     rhu_runtime,
                     RESISTANCE_HEAT_USE_WIDE_BIN,
                     core_heating_day_set,
                     min_runtime_minutes)
 
-            for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle'):
-                additional_outputs.update(self._rhu_outputs(
-                    rhu_type=rhu_type,
-                    rhu_bins=rhu_first,
-                    rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_FIRST,
-                    duty_cycle=duty_cycle))
-                additional_outputs.update(self._rhu_outputs(
-                    rhu_type=rhu_type,
-                    rhu_bins=rhu_second,
-                    rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_SECOND,
-                    duty_cycle=duty_cycle))
-                additional_outputs.update(self._rhu_outputs(
-                    rhu_type=rhu_type,
-                    rhu_bins=rhu_second_wide,
-                    rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN,
-                    duty_cycle=duty_cycle))
+            duty_cycle = None
+
+            additional_outputs.update(self._rhu_outputs(
+                rhu_type=rhu_type,
+                rhu_bins=rhu,
+                rhu_usage_bins=RESISTANCE_HEAT_USE_BIN,
+                duty_cycle=duty_cycle))
+            additional_outputs.update(self._rhu_outputs(
+                rhu_type=rhu_type,
+                rhu_bins=rhu_wide,
+                rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN,
+                duty_cycle=duty_cycle))
 
         return additional_outputs

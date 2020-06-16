@@ -3,7 +3,7 @@ import logging
 import logging.config
 import json
 from thermostat.importers import from_csv
-from thermostat.exporters import metrics_to_csv
+from thermostat.exporters import metrics_to_csv, certification_to_csv
 from thermostat.stats import compute_summary_statistics
 from thermostat.stats import summary_statistics_to_csv
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
@@ -49,10 +49,14 @@ def main():
     stats_advanced = compute_summary_statistics(metrics_out, advanced_filtering=True)
 
     product_id = "test_product"
-    stats_filepath = os.path.join(output_dir, "thermostat_example_stats.csv")
+
+    certification_filepath = os.path.join(data_dir, "thermostat_example_certification.csv")
+    certification_to_csv(stats, certification_filepath, product_id)
+
+    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
     summary_statistics_to_csv(stats, stats_filepath, product_id)
 
-    stats_advanced_filepath = os.path.join(output_dir, "thermostat_example_stats_advanced.csv")
+    stats_advanced_filepath = os.path.join(data_dir, "thermostat_example_stats_advanced.csv")
     summary_statistics_to_csv(stats_advanced, stats_advanced_filepath, product_id)
 
 

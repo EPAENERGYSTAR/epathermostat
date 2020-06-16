@@ -3,7 +3,8 @@ from thermostat.stats import compute_summary_statistics
 from thermostat.stats import summary_statistics_to_csv
 from .fixtures.thermostats import thermostat_emg_aux_constant_on_outlier
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
-from thermostat.exporters import COLUMNS
+from thermostat.exporters import certification_to_csv
+from thermostat.columns import EXPORT_COLUMNS
 
 from scipy.stats import norm, randint
 import pandas as pd
@@ -18,243 +19,7 @@ import pytest
 
 
 def get_fake_output_df(n_columns):
-    columns = [
-        'sw_version',
-
-        'ct_identifier',
-        'heat_type',
-        'heat_stage',
-        'cool_type',
-        'cool_stage',
-        'heating_or_cooling',
-        'station',
-        'zipcode',
-        'climate_zone',
-
-        'start_date',
-        'end_date',
-
-        'n_days_in_inputfile_date_range',
-        'n_days_both_heating_and_cooling',
-        'n_days_insufficient_data',
-        'n_core_cooling_days',
-        'n_core_heating_days',
-
-        'baseline_percentile_core_cooling_comfort_temperature',
-        'baseline_percentile_core_heating_comfort_temperature',
-        'regional_average_baseline_cooling_comfort_temperature',
-        'regional_average_baseline_heating_comfort_temperature',
-
-        'percent_savings_baseline_percentile',
-        'avoided_daily_mean_core_day_runtime_baseline_percentile',
-        'avoided_total_core_day_runtime_baseline_percentile',
-        'baseline_daily_mean_core_day_runtime_baseline_percentile',
-        'baseline_total_core_day_runtime_baseline_percentile',
-        '_daily_mean_core_day_demand_baseline_baseline_percentile',
-        'percent_savings_baseline_regional',
-        'avoided_daily_mean_core_day_runtime_baseline_regional',
-        'avoided_total_core_day_runtime_baseline_regional',
-        'baseline_daily_mean_core_day_runtime_baseline_regional',
-        'baseline_total_core_day_runtime_baseline_regional',
-        '_daily_mean_core_day_demand_baseline_baseline_regional',
-        'mean_demand',
-        'alpha',
-        'tau',
-        'mean_sq_err',
-        'root_mean_sq_err',
-        'cv_root_mean_sq_err',
-        'mean_abs_err',
-        'mean_abs_pct_err',
-
-        'total_core_cooling_runtime',
-        'total_core_heating_runtime',
-        'total_auxiliary_heating_core_day_runtime',
-        'total_emergency_heating_core_day_runtime',
-
-        'daily_mean_core_cooling_runtime',
-        'daily_mean_core_heating_runtime',
-
-        'core_cooling_days_mean_indoor_temperature',
-        'core_cooling_days_mean_outdoor_temperature',
-        'core_heating_days_mean_indoor_temperature',
-        'core_heating_days_mean_outdoor_temperature',
-        'core_mean_indoor_temperature',
-        'core_mean_outdoor_temperature',
-
-        'rhu1_aux_duty_cycle',
-        'rhu1_emg_duty_cycle',
-        'rhu1_compressor_duty_cycle',
-
-        'rhu1_00F_to_05F',
-        'rhu1_05F_to_10F',
-        'rhu1_10F_to_15F',
-        'rhu1_15F_to_20F',
-        'rhu1_20F_to_25F',
-        'rhu1_25F_to_30F',
-        'rhu1_30F_to_35F',
-        'rhu1_35F_to_40F',
-        'rhu1_40F_to_45F',
-        'rhu1_45F_to_50F',
-        'rhu1_50F_to_55F',
-        'rhu1_55F_to_60F',
-
-        'rhu1_less10F',
-        'rhu1_10F_to_20F',
-        'rhu1_20F_to_30F',
-        'rhu1_30F_to_40F',
-        'rhu1_40F_to_50F',
-        'rhu1_50F_to_60F',
-
-        'rhu1_00F_to_05F_aux_duty_cycle',
-        'rhu1_05F_to_10F_aux_duty_cycle',
-        'rhu1_10F_to_15F_aux_duty_cycle',
-        'rhu1_15F_to_20F_aux_duty_cycle',
-        'rhu1_20F_to_25F_aux_duty_cycle',
-        'rhu1_25F_to_30F_aux_duty_cycle',
-        'rhu1_30F_to_35F_aux_duty_cycle',
-        'rhu1_35F_to_40F_aux_duty_cycle',
-        'rhu1_40F_to_45F_aux_duty_cycle',
-        'rhu1_45F_to_50F_aux_duty_cycle',
-        'rhu1_50F_to_55F_aux_duty_cycle',
-        'rhu1_55F_to_60F_aux_duty_cycle',
-
-        'rhu1_less10F_aux_duty_cycle',
-        'rhu1_10F_to_20F_aux_duty_cycle',
-        'rhu1_20F_to_30F_aux_duty_cycle',
-        'rhu1_30F_to_40F_aux_duty_cycle',
-        'rhu1_40F_to_50F_aux_duty_cycle',
-        'rhu1_50F_to_60F_aux_duty_cycle',
-
-        'rhu1_00F_to_05F_emg_duty_cycle',
-        'rhu1_05F_to_10F_emg_duty_cycle',
-        'rhu1_10F_to_15F_emg_duty_cycle',
-        'rhu1_15F_to_20F_emg_duty_cycle',
-        'rhu1_20F_to_25F_emg_duty_cycle',
-        'rhu1_25F_to_30F_emg_duty_cycle',
-        'rhu1_30F_to_35F_emg_duty_cycle',
-        'rhu1_35F_to_40F_emg_duty_cycle',
-        'rhu1_40F_to_45F_emg_duty_cycle',
-        'rhu1_45F_to_50F_emg_duty_cycle',
-        'rhu1_50F_to_55F_emg_duty_cycle',
-        'rhu1_55F_to_60F_emg_duty_cycle',
-
-        'rhu1_less10F_emg_duty_cycle',
-        'rhu1_10F_to_20F_emg_duty_cycle',
-        'rhu1_20F_to_30F_emg_duty_cycle',
-        'rhu1_30F_to_40F_emg_duty_cycle',
-        'rhu1_40F_to_50F_emg_duty_cycle',
-        'rhu1_50F_to_60F_emg_duty_cycle',
-
-        'rhu1_00F_to_05F_compressor_duty_cycle',
-        'rhu1_05F_to_10F_compressor_duty_cycle',
-        'rhu1_10F_to_15F_compressor_duty_cycle',
-        'rhu1_15F_to_20F_compressor_duty_cycle',
-        'rhu1_20F_to_25F_compressor_duty_cycle',
-        'rhu1_25F_to_30F_compressor_duty_cycle',
-        'rhu1_30F_to_35F_compressor_duty_cycle',
-        'rhu1_35F_to_40F_compressor_duty_cycle',
-        'rhu1_40F_to_45F_compressor_duty_cycle',
-        'rhu1_45F_to_50F_compressor_duty_cycle',
-        'rhu1_50F_to_55F_compressor_duty_cycle',
-        'rhu1_55F_to_60F_compressor_duty_cycle',
-
-        'rhu1_less10F_compressor_duty_cycle',
-        'rhu1_10F_to_20F_compressor_duty_cycle',
-        'rhu1_20F_to_30F_compressor_duty_cycle',
-        'rhu1_30F_to_40F_compressor_duty_cycle',
-        'rhu1_40F_to_50F_compressor_duty_cycle',
-        'rhu1_50F_to_60F_compressor_duty_cycle',
-
-        'rhu2_aux_duty_cycle',
-        'rhu2_emg_duty_cycle',
-        'rhu2_compressor_duty_cycle',
-
-        'rhu2_00F_to_05F',
-        'rhu2_05F_to_10F',
-        'rhu2_10F_to_15F',
-        'rhu2_15F_to_20F',
-        'rhu2_20F_to_25F',
-        'rhu2_25F_to_30F',
-        'rhu2_30F_to_35F',
-        'rhu2_35F_to_40F',
-        'rhu2_40F_to_45F',
-        'rhu2_45F_to_50F',
-        'rhu2_50F_to_55F',
-        'rhu2_55F_to_60F',
-
-        'rhu2_less10F',
-        'rhu2_10F_to_20F',
-        'rhu2_20F_to_30F',
-        'rhu2_30F_to_40F',
-        'rhu2_40F_to_50F',
-        'rhu2_50F_to_60F',
-
-        'rhu2_00F_to_05F_aux_duty_cycle',
-        'rhu2_05F_to_10F_aux_duty_cycle',
-        'rhu2_10F_to_15F_aux_duty_cycle',
-        'rhu2_15F_to_20F_aux_duty_cycle',
-        'rhu2_20F_to_25F_aux_duty_cycle',
-        'rhu2_25F_to_30F_aux_duty_cycle',
-        'rhu2_30F_to_35F_aux_duty_cycle',
-        'rhu2_35F_to_40F_aux_duty_cycle',
-        'rhu2_40F_to_45F_aux_duty_cycle',
-        'rhu2_45F_to_50F_aux_duty_cycle',
-        'rhu2_50F_to_55F_aux_duty_cycle',
-        'rhu2_55F_to_60F_aux_duty_cycle',
-
-        'rhu2_less10F_aux_duty_cycle',
-        'rhu2_10F_to_20F_aux_duty_cycle',
-        'rhu2_20F_to_30F_aux_duty_cycle',
-        'rhu2_30F_to_40F_aux_duty_cycle',
-        'rhu2_40F_to_50F_aux_duty_cycle',
-        'rhu2_50F_to_60F_aux_duty_cycle',
-
-        'rhu2_00F_to_05F_emg_duty_cycle',
-        'rhu2_05F_to_10F_emg_duty_cycle',
-        'rhu2_10F_to_15F_emg_duty_cycle',
-        'rhu2_15F_to_20F_emg_duty_cycle',
-        'rhu2_20F_to_25F_emg_duty_cycle',
-        'rhu2_25F_to_30F_emg_duty_cycle',
-        'rhu2_30F_to_35F_emg_duty_cycle',
-        'rhu2_35F_to_40F_emg_duty_cycle',
-        'rhu2_40F_to_45F_emg_duty_cycle',
-        'rhu2_45F_to_50F_emg_duty_cycle',
-        'rhu2_50F_to_55F_emg_duty_cycle',
-        'rhu2_55F_to_60F_emg_duty_cycle',
-
-        'rhu2_less10F_emg_duty_cycle',
-        'rhu2_10F_to_20F_emg_duty_cycle',
-        'rhu2_20F_to_30F_emg_duty_cycle',
-        'rhu2_30F_to_40F_emg_duty_cycle',
-        'rhu2_40F_to_50F_emg_duty_cycle',
-        'rhu2_50F_to_60F_emg_duty_cycle',
-
-        'rhu2_00F_to_05F_compressor_duty_cycle',
-        'rhu2_05F_to_10F_compressor_duty_cycle',
-        'rhu2_10F_to_15F_compressor_duty_cycle',
-        'rhu2_15F_to_20F_compressor_duty_cycle',
-        'rhu2_20F_to_25F_compressor_duty_cycle',
-        'rhu2_25F_to_30F_compressor_duty_cycle',
-        'rhu2_30F_to_35F_compressor_duty_cycle',
-        'rhu2_35F_to_40F_compressor_duty_cycle',
-        'rhu2_40F_to_45F_compressor_duty_cycle',
-        'rhu2_45F_to_50F_compressor_duty_cycle',
-        'rhu2_50F_to_55F_compressor_duty_cycle',
-        'rhu2_55F_to_60F_compressor_duty_cycle',
-
-        'rhu2_less10F_compressor_duty_cycle',
-        'rhu2_10F_to_20F_compressor_duty_cycle',
-        'rhu2_20F_to_30F_compressor_duty_cycle',
-        'rhu2_30F_to_40F_compressor_duty_cycle',
-        'rhu2_40F_to_50F_compressor_duty_cycle',
-        'rhu2_50F_to_60F_compressor_duty_cycle',
-
-        'rhu2_30F_to_45F',
-        'rhu2_30F_to_45F_aux_duty_cycle',
-        'rhu2_30F_to_45F_emg_duty_cycle',
-        'rhu2_30F_to_45F_compressor_duty_cycle',
-
-    ]
+    columns = EXPORT_COLUMNS
 
     string_placeholder = ["PLACEHOLDER"] * n_columns
     zero_column = [0 if randint.rvs(0, 30) > 0 else  (None if randint.rvs(0, 2) > 0 else np.inf)
@@ -346,13 +111,6 @@ def get_fake_output_df(n_columns):
         'rhu1_50F_to_55F': float_column,
         'rhu1_55F_to_60F': float_column,
 
-        'rhu1_less10F': float_column,
-        'rhu1_10F_to_20F': float_column,
-        'rhu1_20F_to_30F': float_column,
-        'rhu1_30F_to_40F': float_column,
-        'rhu1_40F_to_50F': float_column,
-        'rhu1_50F_to_60F': float_column,
-
         'rhu1_00F_to_05F_aux_duty_cycle': float_column,
         'rhu1_05F_to_10F_aux_duty_cycle': float_column,
         'rhu1_10F_to_15F_aux_duty_cycle': float_column,
@@ -365,13 +123,6 @@ def get_fake_output_df(n_columns):
         'rhu1_45F_to_50F_aux_duty_cycle': float_column,
         'rhu1_50F_to_55F_aux_duty_cycle': float_column,
         'rhu1_55F_to_60F_aux_duty_cycle': float_column,
-
-        'rhu1_less10F_aux_duty_cycle': float_column,
-        'rhu1_10F_to_20F_aux_duty_cycle': float_column,
-        'rhu1_20F_to_30F_aux_duty_cycle': float_column,
-        'rhu1_30F_to_40F_aux_duty_cycle': float_column,
-        'rhu1_40F_to_50F_aux_duty_cycle': float_column,
-        'rhu1_50F_to_60F_aux_duty_cycle': float_column,
 
         'rhu1_00F_to_05F_emg_duty_cycle': float_column,
         'rhu1_05F_to_10F_emg_duty_cycle': float_column,
@@ -386,13 +137,6 @@ def get_fake_output_df(n_columns):
         'rhu1_50F_to_55F_emg_duty_cycle': float_column,
         'rhu1_55F_to_60F_emg_duty_cycle': float_column,
 
-        'rhu1_less10F_emg_duty_cycle': float_column,
-        'rhu1_10F_to_20F_emg_duty_cycle': float_column,
-        'rhu1_20F_to_30F_emg_duty_cycle': float_column,
-        'rhu1_30F_to_40F_emg_duty_cycle': float_column,
-        'rhu1_40F_to_50F_emg_duty_cycle': float_column,
-        'rhu1_50F_to_60F_emg_duty_cycle': float_column,
-
         'rhu1_00F_to_05F_compressor_duty_cycle': float_column,
         'rhu1_05F_to_10F_compressor_duty_cycle': float_column,
         'rhu1_10F_to_15F_compressor_duty_cycle': float_column,
@@ -405,13 +149,6 @@ def get_fake_output_df(n_columns):
         'rhu1_45F_to_50F_compressor_duty_cycle': float_column,
         'rhu1_50F_to_55F_compressor_duty_cycle': float_column,
         'rhu1_55F_to_60F_compressor_duty_cycle': float_column,
-
-        'rhu1_less10F_compressor_duty_cycle': float_column,
-        'rhu1_10F_to_20F_compressor_duty_cycle': float_column,
-        'rhu1_20F_to_30F_compressor_duty_cycle': float_column,
-        'rhu1_30F_to_40F_compressor_duty_cycle': float_column,
-        'rhu1_40F_to_50F_compressor_duty_cycle': float_column,
-        'rhu1_50F_to_60F_compressor_duty_cycle': float_column,
 
         'rhu2_aux_duty_cycle': float_column,
         'rhu2_emg_duty_cycle': float_column,
@@ -430,13 +167,6 @@ def get_fake_output_df(n_columns):
         'rhu2_50F_to_55F': float_column,
         'rhu2_55F_to_60F': float_column,
 
-        'rhu2_less10F': float_column,
-        'rhu2_10F_to_20F': float_column,
-        'rhu2_20F_to_30F': float_column,
-        'rhu2_30F_to_40F': float_column,
-        'rhu2_40F_to_50F': float_column,
-        'rhu2_50F_to_60F': float_column,
-
         'rhu2_00F_to_05F_aux_duty_cycle': float_column,
         'rhu2_05F_to_10F_aux_duty_cycle': float_column,
         'rhu2_10F_to_15F_aux_duty_cycle': float_column,
@@ -449,13 +179,6 @@ def get_fake_output_df(n_columns):
         'rhu2_45F_to_50F_aux_duty_cycle': float_column,
         'rhu2_50F_to_55F_aux_duty_cycle': float_column,
         'rhu2_55F_to_60F_aux_duty_cycle': float_column,
-
-        'rhu2_less10F_aux_duty_cycle': float_column,
-        'rhu2_10F_to_20F_aux_duty_cycle': float_column,
-        'rhu2_20F_to_30F_aux_duty_cycle': float_column,
-        'rhu2_30F_to_40F_aux_duty_cycle': float_column,
-        'rhu2_40F_to_50F_aux_duty_cycle': float_column,
-        'rhu2_50F_to_60F_aux_duty_cycle': float_column,
 
         'rhu2_00F_to_05F_emg_duty_cycle': float_column,
         'rhu2_05F_to_10F_emg_duty_cycle': float_column,
@@ -470,13 +193,6 @@ def get_fake_output_df(n_columns):
         'rhu2_50F_to_55F_emg_duty_cycle': float_column,
         'rhu2_55F_to_60F_emg_duty_cycle': float_column,
 
-        'rhu2_less10F_emg_duty_cycle': float_column,
-        'rhu2_10F_to_20F_emg_duty_cycle': float_column,
-        'rhu2_20F_to_30F_emg_duty_cycle': float_column,
-        'rhu2_30F_to_40F_emg_duty_cycle': float_column,
-        'rhu2_40F_to_50F_emg_duty_cycle': float_column,
-        'rhu2_50F_to_60F_emg_duty_cycle': float_column,
-
         'rhu2_00F_to_05F_compressor_duty_cycle': float_column,
         'rhu2_05F_to_10F_compressor_duty_cycle': float_column,
         'rhu2_10F_to_15F_compressor_duty_cycle': float_column,
@@ -489,13 +205,6 @@ def get_fake_output_df(n_columns):
         'rhu2_45F_to_50F_compressor_duty_cycle': float_column,
         'rhu2_50F_to_55F_compressor_duty_cycle': float_column,
         'rhu2_55F_to_60F_compressor_duty_cycle': float_column,
-
-        'rhu2_less10F_compressor_duty_cycle': float_column,
-        'rhu2_10F_to_20F_compressor_duty_cycle': float_column,
-        'rhu2_20F_to_30F_compressor_duty_cycle': float_column,
-        'rhu2_30F_to_40F_compressor_duty_cycle': float_column,
-        'rhu2_40F_to_50F_compressor_duty_cycle': float_column,
-        'rhu2_50F_to_60F_compressor_duty_cycle': float_column,
 
         'rhu2_30F_to_45F': float_column,
         'rhu2_30F_to_45F_aux_duty_cycle': float_column,
@@ -522,14 +231,14 @@ def combined_dataframe():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 207)
+    assert combined.shape == (20, 79)
 
 
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
             49, 49, 49, 49,
-            9441, 901, 9441, 901,
+            2049, 901, 2049, 901,
             ]
 
     def test_compute_summary_statistics_advanced(combined_dataframe):
@@ -537,7 +246,7 @@ def test_compute_summary_statistics(combined_dataframe):
                 advanced_filtering=True)
         assert [len(s) for s in summary_statistics] == [
                 49, 49, 49, 49, 49, 49, 49, 49,
-                9441, 901, 9441, 901, 9441, 901, 9441, 901,
+                2049, 901, 2049, 901, 2049, 901, 2049, 901,
                 ]
 
         def test_summary_statistics_to_csv(combined_dataframe):
@@ -549,15 +258,24 @@ def test_compute_summary_statistics(combined_dataframe):
     assert isinstance(stats_df, pd.DataFrame)
 
     stats_df_reread = pd.read_csv(fname)
-    assert stats_df_reread.shape == (9577, 9)
+    assert stats_df_reread.shape == (2133, 5)
 
 
-def test_iqr_filteringa(thermostat_emg_aux_constant_on_outlier):
+def test_certification(combined_dataframe):
+    _, fname_stats = tempfile.mkstemp()
+    _, fname_cert = tempfile.mkstemp()
+    product_id = "FAKE"
+    stats_df = compute_summary_statistics(combined_dataframe)
+    certification_df = certification_to_csv(stats_df, fname_cert, product_id)
+    assert certification_df.shape == (5, 8)
+
+
+def test_iqr_filtering(thermostat_emg_aux_constant_on_outlier):
 
     thermostats_iqflt = list(thermostat_emg_aux_constant_on_outlier)
     # Run the metrics / statistics with the outlier thermostat in place
     iqflt_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats_iqflt)
-    iqflt_output_dataframe = pd.DataFrame(iqflt_metrics, columns=COLUMNS)
+    iqflt_output_dataframe = pd.DataFrame(iqflt_metrics, columns=EXPORT_COLUMNS)
     iqflt_summary_statistics = compute_summary_statistics(iqflt_output_dataframe)
 
     # Remove the outlier thermostat
@@ -571,15 +289,15 @@ def test_iqr_filteringa(thermostat_emg_aux_constant_on_outlier):
 
     # Re-run the metrics / statistics with the outlier thermostat removed
     noiq_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats_noiq)
-    noiq_output_dataframe = pd.DataFrame(noiq_metrics, columns=COLUMNS)
+    noiq_output_dataframe = pd.DataFrame(noiq_metrics, columns=EXPORT_COLUMNS)
     noiq_summary_statistics = compute_summary_statistics(noiq_output_dataframe)
 
     # Verify that the IQFLT removed the outliers by comparing this with the
     # metrics with the outlier thermostat already removed.
     for column in range(0, len(iqflt_summary_statistics)):
-        fields_iqflt = [x for x in iqflt_summary_statistics[column] if '_IQFLT' in x]
+        fields_iqflt = [x for x in iqflt_summary_statistics[column] if 'IQFLT' in x]
         for field_iqflt in fields_iqflt:
-            field_noiq = field_iqflt.replace('IQFLT', 'NOIQ')
+            field_noiq = field_iqflt.replace('rhu2IQFLT', 'rhu2')
             left_side = iqflt_summary_statistics[column][field_iqflt]
             right_side = noiq_summary_statistics[column][field_noiq]
 

@@ -12,6 +12,11 @@ from pkg_resources import resource_stream
 import logging
 
 from thermostat import get_version
+from thermostat.columns import (
+        REAL_OR_INTEGER_VALUED_COLUMNS_HEATING,
+        REAL_OR_INTEGER_VALUED_COLUMNS_COOLING,
+        REAL_OR_INTEGER_VALUED_COLUMNS_ALL
+        )
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
 IQR_FILTER_PARAMETER = 1.5
@@ -19,473 +24,6 @@ TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
 UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
 
 logger = logging.getLogger('epathermostat')
-
-
-REAL_OR_INTEGER_VALUED_COLUMNS_HEATING = [
-    'n_days_in_inputfile_date_range',
-    'n_days_both_heating_and_cooling',
-    'n_days_insufficient_data',
-    'n_core_heating_days',
-
-    'baseline_percentile_core_heating_comfort_temperature',
-    'regional_average_baseline_heating_comfort_temperature',
-
-    'percent_savings_baseline_percentile',
-    'avoided_daily_mean_core_day_runtime_baseline_percentile',
-    'avoided_total_core_day_runtime_baseline_percentile',
-    'baseline_daily_mean_core_day_runtime_baseline_percentile',
-    'baseline_total_core_day_runtime_baseline_percentile',
-    '_daily_mean_core_day_demand_baseline_baseline_percentile',
-    'percent_savings_baseline_regional',
-    'avoided_daily_mean_core_day_runtime_baseline_regional',
-    'avoided_total_core_day_runtime_baseline_regional',
-    'baseline_daily_mean_core_day_runtime_baseline_regional',
-    'baseline_total_core_day_runtime_baseline_regional',
-    '_daily_mean_core_day_demand_baseline_baseline_regional',
-    'mean_demand',
-    'alpha',
-    'tau',
-    'mean_sq_err',
-    'root_mean_sq_err',
-    'cv_root_mean_sq_err',
-    'mean_abs_err',
-    'mean_abs_pct_err',
-
-    'total_core_heating_runtime',
-    'total_auxiliary_heating_core_day_runtime',
-    'total_emergency_heating_core_day_runtime',
-
-    'daily_mean_core_heating_runtime',
-
-    'core_heating_days_mean_indoor_temperature',
-    'core_heating_days_mean_outdoor_temperature',
-    'core_mean_indoor_temperature',
-    'core_mean_outdoor_temperature',
-
-    'rhu1_aux_duty_cycle',
-    'rhu1_emg_duty_cycle',
-    'rhu1_compressor_duty_cycle',
-
-    'rhu1_00F_to_05F',
-    'rhu1_05F_to_10F',
-    'rhu1_10F_to_15F',
-    'rhu1_15F_to_20F',
-    'rhu1_20F_to_25F',
-    'rhu1_25F_to_30F',
-    'rhu1_30F_to_35F',
-    'rhu1_35F_to_40F',
-    'rhu1_40F_to_45F',
-    'rhu1_45F_to_50F',
-    'rhu1_50F_to_55F',
-    'rhu1_55F_to_60F',
-
-    'rhu1_05F_to_10F_aux_duty_cycle',
-    'rhu1_10F_to_15F_aux_duty_cycle',
-    'rhu1_15F_to_20F_aux_duty_cycle',
-    'rhu1_20F_to_25F_aux_duty_cycle',
-    'rhu1_25F_to_30F_aux_duty_cycle',
-    'rhu1_30F_to_35F_aux_duty_cycle',
-    'rhu1_35F_to_40F_aux_duty_cycle',
-    'rhu1_40F_to_45F_aux_duty_cycle',
-    'rhu1_45F_to_50F_aux_duty_cycle',
-    'rhu1_50F_to_55F_aux_duty_cycle',
-    'rhu1_55F_to_60F_aux_duty_cycle',
-
-    'rhu1_00F_to_05F_emg_duty_cycle',
-    'rhu1_05F_to_10F_emg_duty_cycle',
-    'rhu1_10F_to_15F_emg_duty_cycle',
-    'rhu1_15F_to_20F_emg_duty_cycle',
-    'rhu1_20F_to_25F_emg_duty_cycle',
-    'rhu1_25F_to_30F_emg_duty_cycle',
-    'rhu1_30F_to_35F_emg_duty_cycle',
-    'rhu1_35F_to_40F_emg_duty_cycle',
-    'rhu1_40F_to_45F_emg_duty_cycle',
-    'rhu1_45F_to_50F_emg_duty_cycle',
-    'rhu1_50F_to_55F_emg_duty_cycle',
-    'rhu1_55F_to_60F_emg_duty_cycle',
-
-    'rhu1_00F_to_05F_compressor_duty_cycle',
-    'rhu1_05F_to_10F_compressor_duty_cycle',
-    'rhu1_10F_to_15F_compressor_duty_cycle',
-    'rhu1_15F_to_20F_compressor_duty_cycle',
-    'rhu1_20F_to_25F_compressor_duty_cycle',
-    'rhu1_25F_to_30F_compressor_duty_cycle',
-    'rhu1_30F_to_35F_compressor_duty_cycle',
-    'rhu1_35F_to_40F_compressor_duty_cycle',
-    'rhu1_40F_to_45F_compressor_duty_cycle',
-    'rhu1_45F_to_50F_compressor_duty_cycle',
-    'rhu1_50F_to_55F_compressor_duty_cycle',
-    'rhu1_55F_to_60F_compressor_duty_cycle',
-
-    'rhu1_less10F',
-    'rhu1_10F_to_20F',
-    'rhu1_20F_to_30F',
-    'rhu1_30F_to_40F',
-    'rhu1_40F_to_50F',
-    'rhu1_50F_to_60F',
-    'rhu1_00F_to_05F_aux_duty_cycle',
-
-    'rhu1_less10F_aux_duty_cycle',
-    'rhu1_10F_to_20F_aux_duty_cycle',
-    'rhu1_20F_to_30F_aux_duty_cycle',
-    'rhu1_30F_to_40F_aux_duty_cycle',
-    'rhu1_40F_to_50F_aux_duty_cycle',
-    'rhu1_50F_to_60F_aux_duty_cycle',
-
-    'rhu1_less10F_emg_duty_cycle',
-    'rhu1_10F_to_20F_emg_duty_cycle',
-    'rhu1_20F_to_30F_emg_duty_cycle',
-    'rhu1_30F_to_40F_emg_duty_cycle',
-    'rhu1_40F_to_50F_emg_duty_cycle',
-    'rhu1_50F_to_60F_emg_duty_cycle',
-
-    'rhu1_less10F_compressor_duty_cycle',
-    'rhu1_10F_to_20F_compressor_duty_cycle',
-    'rhu1_20F_to_30F_compressor_duty_cycle',
-    'rhu1_30F_to_40F_compressor_duty_cycle',
-    'rhu1_40F_to_50F_compressor_duty_cycle',
-    'rhu1_50F_to_60F_compressor_duty_cycle',
-
-    'rhu2_00F_to_05F',
-    'rhu2_05F_to_10F',
-    'rhu2_10F_to_15F',
-    'rhu2_15F_to_20F',
-    'rhu2_20F_to_25F',
-    'rhu2_25F_to_30F',
-    'rhu2_30F_to_35F',
-    'rhu2_35F_to_40F',
-    'rhu2_40F_to_45F',
-    'rhu2_45F_to_50F',
-    'rhu2_50F_to_55F',
-    'rhu2_55F_to_60F',
-
-    'rhu2_00F_to_05F_aux_duty_cycle',
-    'rhu2_05F_to_10F_aux_duty_cycle',
-    'rhu2_10F_to_15F_aux_duty_cycle',
-    'rhu2_15F_to_20F_aux_duty_cycle',
-    'rhu2_20F_to_25F_aux_duty_cycle',
-    'rhu2_25F_to_30F_aux_duty_cycle',
-    'rhu2_30F_to_35F_aux_duty_cycle',
-    'rhu2_35F_to_40F_aux_duty_cycle',
-    'rhu2_40F_to_45F_aux_duty_cycle',
-    'rhu2_45F_to_50F_aux_duty_cycle',
-    'rhu2_50F_to_55F_aux_duty_cycle',
-    'rhu2_55F_to_60F_aux_duty_cycle',
-
-    'rhu2_00F_to_05F_emg_duty_cycle',
-    'rhu2_05F_to_10F_emg_duty_cycle',
-    'rhu2_10F_to_15F_emg_duty_cycle',
-    'rhu2_15F_to_20F_emg_duty_cycle',
-    'rhu2_20F_to_25F_emg_duty_cycle',
-    'rhu2_25F_to_30F_emg_duty_cycle',
-    'rhu2_30F_to_35F_emg_duty_cycle',
-    'rhu2_35F_to_40F_emg_duty_cycle',
-    'rhu2_40F_to_45F_emg_duty_cycle',
-    'rhu2_45F_to_50F_emg_duty_cycle',
-    'rhu2_50F_to_55F_emg_duty_cycle',
-    'rhu2_55F_to_60F_emg_duty_cycle',
-
-    'rhu2_00F_to_05F_compressor_duty_cycle',
-    'rhu2_05F_to_10F_compressor_duty_cycle',
-    'rhu2_10F_to_15F_compressor_duty_cycle',
-    'rhu2_15F_to_20F_compressor_duty_cycle',
-    'rhu2_20F_to_25F_compressor_duty_cycle',
-    'rhu2_25F_to_30F_compressor_duty_cycle',
-    'rhu2_30F_to_35F_compressor_duty_cycle',
-    'rhu2_35F_to_40F_compressor_duty_cycle',
-    'rhu2_40F_to_45F_compressor_duty_cycle',
-    'rhu2_45F_to_50F_compressor_duty_cycle',
-    'rhu2_50F_to_55F_compressor_duty_cycle',
-    'rhu2_55F_to_60F_compressor_duty_cycle',
-
-    'rhu2_less10F',
-    'rhu2_10F_to_20F',
-    'rhu2_20F_to_30F',
-    'rhu2_30F_to_40F',
-    'rhu2_40F_to_50F',
-    'rhu2_50F_to_60F',
-    'rhu2_30F_to_45F',
-
-    'rhu2_less10F_aux_duty_cycle',
-    'rhu2_10F_to_20F_aux_duty_cycle',
-    'rhu2_20F_to_30F_aux_duty_cycle',
-    'rhu2_30F_to_40F_aux_duty_cycle',
-    'rhu2_40F_to_50F_aux_duty_cycle',
-    'rhu2_50F_to_60F_aux_duty_cycle',
-    'rhu2_30F_to_45F_aux_duty_cycle',
-
-    'rhu2_less10F_emg_duty_cycle',
-    'rhu2_10F_to_20F_emg_duty_cycle',
-    'rhu2_20F_to_30F_emg_duty_cycle',
-    'rhu2_30F_to_40F_emg_duty_cycle',
-    'rhu2_40F_to_50F_emg_duty_cycle',
-    'rhu2_50F_to_60F_emg_duty_cycle',
-    'rhu2_30F_to_45F_emg_duty_cycle',
-
-    'rhu2_less10F_compressor_duty_cycle',
-    'rhu2_10F_to_20F_compressor_duty_cycle',
-    'rhu2_20F_to_30F_compressor_duty_cycle',
-    'rhu2_30F_to_40F_compressor_duty_cycle',
-    'rhu2_40F_to_50F_compressor_duty_cycle',
-    'rhu2_50F_to_60F_compressor_duty_cycle',
-    'rhu2_30F_to_45F_compressor_duty_cycle',
-
-
-]
-
-REAL_OR_INTEGER_VALUED_COLUMNS_COOLING = [
-    'n_days_in_inputfile_date_range',
-    'n_days_both_heating_and_cooling',
-    'n_days_insufficient_data',
-    'n_core_cooling_days',
-
-    'baseline_percentile_core_cooling_comfort_temperature',
-    'regional_average_baseline_cooling_comfort_temperature',
-
-    'percent_savings_baseline_percentile',
-    'avoided_daily_mean_core_day_runtime_baseline_percentile',
-    'avoided_total_core_day_runtime_baseline_percentile',
-    'baseline_daily_mean_core_day_runtime_baseline_percentile',
-    'baseline_total_core_day_runtime_baseline_percentile',
-    '_daily_mean_core_day_demand_baseline_baseline_percentile',
-    'percent_savings_baseline_regional',
-    'avoided_daily_mean_core_day_runtime_baseline_regional',
-    'avoided_total_core_day_runtime_baseline_regional',
-    'baseline_daily_mean_core_day_runtime_baseline_regional',
-    'baseline_total_core_day_runtime_baseline_regional',
-    '_daily_mean_core_day_demand_baseline_baseline_regional',
-    'mean_demand',
-    'alpha',
-    'tau',
-    'mean_sq_err',
-    'root_mean_sq_err',
-    'cv_root_mean_sq_err',
-    'mean_abs_err',
-    'mean_abs_pct_err',
-
-    'total_core_cooling_runtime',
-
-    'daily_mean_core_cooling_runtime',
-
-    'core_cooling_days_mean_indoor_temperature',
-    'core_cooling_days_mean_outdoor_temperature',
-    'core_mean_indoor_temperature',
-    'core_mean_outdoor_temperature',
-]
-
-REAL_OR_INTEGER_VALUED_COLUMNS_ALL = [
-    'n_days_in_inputfile_date_range',
-    'n_days_both_heating_and_cooling',
-    'n_days_insufficient_data',
-    'n_core_cooling_days',
-    'n_core_heating_days',
-
-    'baseline_percentile_core_cooling_comfort_temperature',
-    'baseline_percentile_core_heating_comfort_temperature',
-    'regional_average_baseline_cooling_comfort_temperature',
-    'regional_average_baseline_heating_comfort_temperature',
-
-    'percent_savings_baseline_percentile',
-    'avoided_daily_mean_core_day_runtime_baseline_percentile',
-    'avoided_total_core_day_runtime_baseline_percentile',
-    'baseline_daily_mean_core_day_runtime_baseline_percentile',
-    'baseline_total_core_day_runtime_baseline_percentile',
-    '_daily_mean_core_day_demand_baseline_baseline_percentile',
-    'percent_savings_baseline_regional',
-    'avoided_daily_mean_core_day_runtime_baseline_regional',
-    'avoided_total_core_day_runtime_baseline_regional',
-    'baseline_daily_mean_core_day_runtime_baseline_regional',
-    'baseline_total_core_day_runtime_baseline_regional',
-    '_daily_mean_core_day_demand_baseline_baseline_regional',
-    'mean_demand',
-    'alpha',
-    'tau',
-    'mean_sq_err',
-    'root_mean_sq_err',
-    'cv_root_mean_sq_err',
-    'mean_abs_err',
-    'mean_abs_pct_err',
-
-    'total_core_cooling_runtime',
-    'total_core_heating_runtime',
-    'total_auxiliary_heating_core_day_runtime',
-    'total_emergency_heating_core_day_runtime',
-
-    'daily_mean_core_cooling_runtime',
-    'daily_mean_core_heating_runtime',
-
-    'core_mean_indoor_temperature',
-    'core_mean_outdoor_temperature',
-
-    'rhu1_aux_duty_cycle',
-    'rhu1_emg_duty_cycle',
-    'rhu1_compressor_duty_cycle',
-
-    'rhu1_00F_to_05F',
-    'rhu1_05F_to_10F',
-    'rhu1_10F_to_15F',
-    'rhu1_15F_to_20F',
-    'rhu1_20F_to_25F',
-    'rhu1_25F_to_30F',
-    'rhu1_30F_to_35F',
-    'rhu1_35F_to_40F',
-    'rhu1_40F_to_45F',
-    'rhu1_45F_to_50F',
-    'rhu1_50F_to_55F',
-    'rhu1_55F_to_60F',
-
-    'rhu1_05F_to_10F_aux_duty_cycle',
-    'rhu1_10F_to_15F_aux_duty_cycle',
-    'rhu1_15F_to_20F_aux_duty_cycle',
-    'rhu1_20F_to_25F_aux_duty_cycle',
-    'rhu1_25F_to_30F_aux_duty_cycle',
-    'rhu1_30F_to_35F_aux_duty_cycle',
-    'rhu1_35F_to_40F_aux_duty_cycle',
-    'rhu1_40F_to_45F_aux_duty_cycle',
-    'rhu1_45F_to_50F_aux_duty_cycle',
-    'rhu1_50F_to_55F_aux_duty_cycle',
-    'rhu1_55F_to_60F_aux_duty_cycle',
-
-    'rhu1_00F_to_05F_emg_duty_cycle',
-    'rhu1_05F_to_10F_emg_duty_cycle',
-    'rhu1_10F_to_15F_emg_duty_cycle',
-    'rhu1_15F_to_20F_emg_duty_cycle',
-    'rhu1_20F_to_25F_emg_duty_cycle',
-    'rhu1_25F_to_30F_emg_duty_cycle',
-    'rhu1_30F_to_35F_emg_duty_cycle',
-    'rhu1_35F_to_40F_emg_duty_cycle',
-    'rhu1_40F_to_45F_emg_duty_cycle',
-    'rhu1_45F_to_50F_emg_duty_cycle',
-    'rhu1_50F_to_55F_emg_duty_cycle',
-    'rhu1_55F_to_60F_emg_duty_cycle',
-
-    'rhu1_00F_to_05F_compressor_duty_cycle',
-    'rhu1_05F_to_10F_compressor_duty_cycle',
-    'rhu1_10F_to_15F_compressor_duty_cycle',
-    'rhu1_15F_to_20F_compressor_duty_cycle',
-    'rhu1_20F_to_25F_compressor_duty_cycle',
-    'rhu1_25F_to_30F_compressor_duty_cycle',
-    'rhu1_30F_to_35F_compressor_duty_cycle',
-    'rhu1_35F_to_40F_compressor_duty_cycle',
-    'rhu1_40F_to_45F_compressor_duty_cycle',
-    'rhu1_45F_to_50F_compressor_duty_cycle',
-    'rhu1_50F_to_55F_compressor_duty_cycle',
-    'rhu1_55F_to_60F_compressor_duty_cycle',
-
-    'rhu1_less10F',
-    'rhu1_10F_to_20F',
-    'rhu1_20F_to_30F',
-    'rhu1_30F_to_40F',
-    'rhu1_40F_to_50F',
-    'rhu1_50F_to_60F',
-    'rhu1_00F_to_05F_aux_duty_cycle',
-
-    'rhu1_less10F_aux_duty_cycle',
-    'rhu1_10F_to_20F_aux_duty_cycle',
-    'rhu1_20F_to_30F_aux_duty_cycle',
-    'rhu1_30F_to_40F_aux_duty_cycle',
-    'rhu1_40F_to_50F_aux_duty_cycle',
-    'rhu1_50F_to_60F_aux_duty_cycle',
-
-    'rhu1_less10F_emg_duty_cycle',
-    'rhu1_10F_to_20F_emg_duty_cycle',
-    'rhu1_20F_to_30F_emg_duty_cycle',
-    'rhu1_30F_to_40F_emg_duty_cycle',
-    'rhu1_40F_to_50F_emg_duty_cycle',
-    'rhu1_50F_to_60F_emg_duty_cycle',
-
-    'rhu1_less10F_compressor_duty_cycle',
-    'rhu1_10F_to_20F_compressor_duty_cycle',
-    'rhu1_20F_to_30F_compressor_duty_cycle',
-    'rhu1_30F_to_40F_compressor_duty_cycle',
-    'rhu1_40F_to_50F_compressor_duty_cycle',
-    'rhu1_50F_to_60F_compressor_duty_cycle',
-
-    'rhu2_00F_to_05F',
-    'rhu2_05F_to_10F',
-    'rhu2_10F_to_15F',
-    'rhu2_15F_to_20F',
-    'rhu2_20F_to_25F',
-    'rhu2_25F_to_30F',
-    'rhu2_30F_to_35F',
-    'rhu2_35F_to_40F',
-    'rhu2_40F_to_45F',
-    'rhu2_45F_to_50F',
-    'rhu2_50F_to_55F',
-    'rhu2_55F_to_60F',
-
-    'rhu2_00F_to_05F_aux_duty_cycle',
-    'rhu2_05F_to_10F_aux_duty_cycle',
-    'rhu2_10F_to_15F_aux_duty_cycle',
-    'rhu2_15F_to_20F_aux_duty_cycle',
-    'rhu2_20F_to_25F_aux_duty_cycle',
-    'rhu2_25F_to_30F_aux_duty_cycle',
-    'rhu2_30F_to_35F_aux_duty_cycle',
-    'rhu2_35F_to_40F_aux_duty_cycle',
-    'rhu2_40F_to_45F_aux_duty_cycle',
-    'rhu2_45F_to_50F_aux_duty_cycle',
-    'rhu2_50F_to_55F_aux_duty_cycle',
-    'rhu2_55F_to_60F_aux_duty_cycle',
-
-    'rhu2_00F_to_05F_emg_duty_cycle',
-    'rhu2_05F_to_10F_emg_duty_cycle',
-    'rhu2_10F_to_15F_emg_duty_cycle',
-    'rhu2_15F_to_20F_emg_duty_cycle',
-    'rhu2_20F_to_25F_emg_duty_cycle',
-    'rhu2_25F_to_30F_emg_duty_cycle',
-    'rhu2_30F_to_35F_emg_duty_cycle',
-    'rhu2_35F_to_40F_emg_duty_cycle',
-    'rhu2_40F_to_45F_emg_duty_cycle',
-    'rhu2_45F_to_50F_emg_duty_cycle',
-    'rhu2_50F_to_55F_emg_duty_cycle',
-    'rhu2_55F_to_60F_emg_duty_cycle',
-
-    'rhu2_00F_to_05F_compressor_duty_cycle',
-    'rhu2_05F_to_10F_compressor_duty_cycle',
-    'rhu2_10F_to_15F_compressor_duty_cycle',
-    'rhu2_15F_to_20F_compressor_duty_cycle',
-    'rhu2_20F_to_25F_compressor_duty_cycle',
-    'rhu2_25F_to_30F_compressor_duty_cycle',
-    'rhu2_30F_to_35F_compressor_duty_cycle',
-    'rhu2_35F_to_40F_compressor_duty_cycle',
-    'rhu2_40F_to_45F_compressor_duty_cycle',
-    'rhu2_45F_to_50F_compressor_duty_cycle',
-    'rhu2_50F_to_55F_compressor_duty_cycle',
-    'rhu2_55F_to_60F_compressor_duty_cycle',
-
-    'rhu2_less10F',
-    'rhu2_10F_to_20F',
-    'rhu2_20F_to_30F',
-    'rhu2_30F_to_40F',
-    'rhu2_40F_to_50F',
-    'rhu2_50F_to_60F',
-    'rhu2_30F_to_45F',
-
-    'rhu2_less10F_aux_duty_cycle',
-    'rhu2_10F_to_20F_aux_duty_cycle',
-    'rhu2_20F_to_30F_aux_duty_cycle',
-    'rhu2_30F_to_40F_aux_duty_cycle',
-    'rhu2_40F_to_50F_aux_duty_cycle',
-    'rhu2_50F_to_60F_aux_duty_cycle',
-    'rhu2_30F_to_45F_aux_duty_cycle',
-
-    'rhu2_less10F_emg_duty_cycle',
-    'rhu2_10F_to_20F_emg_duty_cycle',
-    'rhu2_20F_to_30F_emg_duty_cycle',
-    'rhu2_30F_to_40F_emg_duty_cycle',
-    'rhu2_40F_to_50F_emg_duty_cycle',
-    'rhu2_50F_to_60F_emg_duty_cycle',
-    'rhu2_30F_to_45F_emg_duty_cycle',
-
-    'rhu2_less10F_compressor_duty_cycle',
-    'rhu2_10F_to_20F_compressor_duty_cycle',
-    'rhu2_20F_to_30F_compressor_duty_cycle',
-    'rhu2_30F_to_40F_compressor_duty_cycle',
-    'rhu2_40F_to_50F_compressor_duty_cycle',
-    'rhu2_50F_to_60F_compressor_duty_cycle',
-    'rhu2_30F_to_45F_compressor_duty_cycle',
-
-]
 
 
 def combine_output_dataframes(dfs):
@@ -547,7 +85,9 @@ def get_filtered_stats(
                 stats["{}_q{}".format(column_name, quantile)] = column.quantile(quantile / 100.)
 
             # Calculate IQR for RHU2 and filter outliers
-            if 'rhu2' in column_name:
+            # This adds an rhu2IQFLT version of the rhu2 column to the output data.
+            if 'rhu2_' in column_name:
+                iqr_column_name = column_name.replace('rhu2', 'rhu2IQFLT')
                 iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
                 if bool(iqr_filter.any()) is False:
                     iqr_filter = (column == column)
@@ -561,25 +101,14 @@ def get_filtered_stats(
                 iqr_lower_bound = iqr_mean - (1.96 * iqr_sem)
                 iqr_upper_bound = iqr_mean + (1.96 * iqr_sem)
 
-                noiq_mean = np.nanmean(pd.to_numeric(column))
-                noiq_sem = np.nanstd(column) / (column.count() ** .5)
-                noiq_lower_bound = noiq_mean - (1.96 * noiq_sem)
-                noiq_upper_bound = noiq_mean + (1.96 * noiq_sem)
-
-                stats["{}_n_IQFLT".format(column_name)] = iqr_filtered_column.count()
-                stats["{}_upper_bound_95_perc_conf_IQFLT".format(column_name)] = iqr_upper_bound
-                stats["{}_mean_IQFLT".format(column_name)] = iqr_mean
-                stats["{}_lower_bound_95_perc_conf_IQFLT".format(column_name)] = iqr_lower_bound
-                stats["{}_sem_IQFLT".format(column_name)] = iqr_sem
-                stats["{}_n_NOIQ".format(column_name)] = column.count()
-                stats["{}_upper_bound_95_perc_conf_NOIQ".format(column_name)] = noiq_upper_bound
-                stats["{}_mean_NOIQ".format(column_name)] = noiq_mean
-                stats["{}_lower_bound_95_perc_conf_NOIQ".format(column_name)] = noiq_lower_bound
-                stats["{}_sem_NOIQ".format(column_name)] = noiq_sem
+                stats["{}_n".format(iqr_column_name)] = iqr_filtered_column.count()
+                stats["{}_upper_bound_95_perc_conf".format(iqr_column_name)] = iqr_upper_bound
+                stats["{}_mean".format(iqr_column_name)] = iqr_mean
+                stats["{}_lower_bound_95_perc_conf".format(iqr_column_name)] = iqr_lower_bound
+                stats["{}_sem".format(iqr_column_name)] = iqr_sem
 
                 for quantile in QUANTILE:
-                    stats["{}_q{}_IQFLT".format(column_name, quantile)] = iqr_filtered_column.quantile(quantile / 100.)
-                    stats["{}_q{}_NOIQ".format(column_name, quantile)] = column.quantile(quantile / 100.)
+                    stats["{}_q{}".format(iqr_column_name, quantile)] = iqr_filtered_column.quantile(quantile / 100.)
 
         return [stats]
     else:
@@ -1023,49 +552,21 @@ def summary_statistics_to_csv(stats, filepath, product_id):
 
     """
 
+    drop_columns = [
+        'national_weighted_mean_heating_no_filter',
+        'national_weighted_mean_heating_tau_cvrmse_savings_p01_filter',
+        'national_weighted_mean_cooling_no_filter',
+        'national_weighted_mean_cooling_tau_cvrmse_savings_p01_filter',
+        'national_weighted_mean_heating_tau_filter',
+        'national_weighted_mean_heating_tau_cvrmse_filter',
+        'national_weighted_mean_cooling_tau_filter',
+        'national_weighted_mean_cooling_tau_cvrmse_filter',
+        ]
     columns = [
         "label",
         "product_id",
         "sw_version",
     ]
-
-    methods = [
-        "baseline_percentile",
-        "baseline_regional",
-    ]
-
-    national_weighting_columns = list(chain.from_iterable([
-        [
-            "percent_savings_{}_mean_national_weighted_mean".format(method),
-            "percent_savings_{}_q1_national_weighted_mean".format(method),
-            "percent_savings_{}_q2.5_national_weighted_mean".format(method),
-            "percent_savings_{}_q5_national_weighted_mean".format(method),
-            "percent_savings_{}_q10_national_weighted_mean".format(method),
-            "percent_savings_{}_q15_national_weighted_mean".format(method),
-            "percent_savings_{}_q20_national_weighted_mean".format(method),
-            "percent_savings_{}_q25_national_weighted_mean".format(method),
-            "percent_savings_{}_q30_national_weighted_mean".format(method),
-            "percent_savings_{}_q35_national_weighted_mean".format(method),
-            "percent_savings_{}_q40_national_weighted_mean".format(method),
-            "percent_savings_{}_q45_national_weighted_mean".format(method),
-            "percent_savings_{}_q50_national_weighted_mean".format(method),
-            "percent_savings_{}_q55_national_weighted_mean".format(method),
-            "percent_savings_{}_q60_national_weighted_mean".format(method),
-            "percent_savings_{}_q65_national_weighted_mean".format(method),
-            "percent_savings_{}_q70_national_weighted_mean".format(method),
-            "percent_savings_{}_q75_national_weighted_mean".format(method),
-            "percent_savings_{}_q80_national_weighted_mean".format(method),
-            "percent_savings_{}_q85_national_weighted_mean".format(method),
-            "percent_savings_{}_q90_national_weighted_mean".format(method),
-            "percent_savings_{}_q95_national_weighted_mean".format(method),
-            "percent_savings_{}_q98_national_weighted_mean".format(method),
-            "percent_savings_{}_q99_national_weighted_mean".format(method),
-            "percent_savings_{}_lower_bound_95_perc_conf_national_weighted_mean".format(method),
-            "percent_savings_{}_upper_bound_95_perc_conf_national_weighted_mean".format(method),
-        ] for method in methods
-    ]))
-
-    columns.extend(national_weighting_columns)
 
     columns.extend([
         "n_thermostat_core_day_sets_total",
@@ -1081,17 +582,17 @@ def summary_statistics_to_csv(stats, filepath, product_id):
         for quantile in QUANTILE:
             columns.append("{}_q{}".format(column_name, quantile))
 
-    for rhu_column in [column for column in columns if 'rhu2' in column]:
-        columns.append(rhu_column + '_IQFLT')
-
-    for rhu_column in [column for column in columns if 'IQFLT' in column]:
-        columns.append(rhu_column.replace('IQFLT', 'NOIQ'))
-
     # add product_id
     for row in stats:
         row["product_id"] = product_id
 
     # transpose for readability.
     stats_dataframe = pd.DataFrame(stats, columns=columns).set_index('label').transpose()
+    # Remove certification columns that are no longer in the stats file
+    stats_dataframe.drop(
+        drop_columns,
+        axis=1,
+        errors='ignore',
+        inplace=True)
     stats_dataframe.to_csv(filepath)
     return stats_dataframe

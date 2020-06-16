@@ -19,6 +19,8 @@ zipcode_usaf = json.loads(zipcode_usaf_json)
 # Sort order for rough_quality (returned by eeweather).
 QUALITY_SORT = {'high': 0, 'medium': 1, 'low': 2}
 
+MINIMUM_QUALITY = 'low'
+
 
 def _rank_stations_by_distance_and_quality(lat, lon):
     """ Ranks the stations by distance and quality based on latitude / longitude
@@ -35,7 +37,7 @@ def _rank_stations_by_distance_and_quality(lat, lon):
     station_ranking : Pandas.DataFrame
     """
 
-    station_ranking = rank_stations(lat, lon)
+    station_ranking = rank_stations(lat, lon, minimum_quality=MINIMUM_QUALITY)
     station_ranking['enumerated_quality'] = station_ranking['rough_quality'].map(QUALITY_SORT)
     station_ranking = station_ranking.sort_values(by=['distance_meters', 'enumerated_quality'])
     return station_ranking

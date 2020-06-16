@@ -58,8 +58,6 @@ Name                         Data Format             Units    Description
 :code:`auxiliary_heat`       decimal or integer      minutes Hourly runtime of auxiliary heat equipment.
 :code:`emergency_heat`       decimal or integer      minutes Hourly runtime of emergency heat equipment.
 :code:`temp_in`              decimal, to nearest 0.5 °F      Hourly average conditioned space temperature over the period of the reading.
-:code:`heating_setpoint`     decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading.
-:code:`cooling_setpoint`     decimal, to nearest 0.5 °F      Hourly average thermostat setpoint temperature over the period of the reading.
 ============================ ======================= ======= ===========
 
 - Each row should correspond to a single hourly reading from a thermostat. [#]_
@@ -68,20 +66,16 @@ Name                         Data Format             Units    Description
 - If data is missing for a particular row of one column, data should still be
   provided for other columns in that row. For example, if runtime is missing
   for a particular date, please still provide indoor conditioned space
-  temperature and setpoints for that date, if available.
+  temperature for that hour, if available.
 - Runtimes should be less than or equal to 60 minutes (1 hour).
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
-- If no distinction is made between heating and cooling setpoint, set both
-  equal to the single setpoint.
 - All runtime data MUST have the same UTC offset, as provided in the
   corresponding metadata file.
-- If only a single setpoint is used for the thermostat, please copy the same
-  setpoint data in to the heating and cooling setpoint columns.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_ package.
 - Dates and times should be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
-  should have :code:`2020-01-02 00:00:00` follow it on the next line.)
+  should have :code:`2020-01-02 00:00:00` on the next line.)
 
 .. [#] Possible values for :code:`heat_type` are:
 
@@ -188,9 +182,6 @@ Columns
    ":code:`core_mean_indoor_temperature`","float","°F","Mean of indoor temperature"
    ":code:`core_mean_outdoor_temperature`","float","°F","Mean of outdoor temperature"
    "**Resistance heat outputs**"
-   ":code:`rhu1_aux_duty_cycle`","float","minutes","Resistance heat utilization auxiliary duty cycle"
-   ":code:`rhu1_emg_duty_cycle`","float","minutes","Resistance heat utilization emergency duty cycle"
-   ":code:`rhu1_compressor_duty_cycle`","float","minutes","Resistance heat utilization compressor duty cycle"
    ":code:`rhu1_00F_to_05F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 5`"
    ":code:`rhu1_05F_to_10F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`5 \leq T_{out} < 10`"
    ":code:`rhu1_10F_to_15F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 15`"
@@ -203,69 +194,7 @@ Columns
    ":code:`rhu1_45F_to_50F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`45 \leq T_{out} < 50`"
    ":code:`rhu1_50F_to_55F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq T_{out} < 55`"
    ":code:`rhu1_55F_to_60F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`55 \leq T_{out} < 60`"
-   ":code:`rhu1_00F_to_05F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{aux}}{T_{out}} < 5`"
-   ":code:`rhu1_05F_to_10F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`5 \leq \frac{T_{aux}}{T_{out}} < 10`"
-   ":code:`rhu1_10F_to_15F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{aux}}{T_{out}} < 15`"
-   ":code:`rhu1_15F_to_20F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`15 \leq \frac{T_{aux}}{T_{out}} < 20`"
-   ":code:`rhu1_20F_to_25F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{aux}}{T_{out}} < 25`"
-   ":code:`rhu1_25F_to_30F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`25 \leq \frac{T_{aux}}{T_{out}} < 30`"
-   ":code:`rhu1_30F_to_35F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{aux}}{T_{out}} < 35`"
-   ":code:`rhu1_35F_to_40F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`35 \leq \frac{T_{aux}}{T_{out}} < 40`"
-   ":code:`rhu1_40F_to_45F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{aux}}{T_{out}}< 45`"
-   ":code:`rhu1_45F_to_50F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`45 \leq \frac{T_{aux}}{T_{out}} < 50`"
-   ":code:`rhu1_50F_to_55F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{aux}}{T_{out}} < 55`"
-   ":code:`rhu1_55F_to_60F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{aux}}{T_{out}} < 5`"
-   ":code:`rhu1_00F_to_05F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{emerg}}{T_{out}} < 5`"
-   ":code:`rhu1_05F_to_10F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`5 \leq \frac{T_{emerg}}{T_{out}} < 10`"
-   ":code:`rhu1_10F_to_15F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{emerg}}{T_{out}} < 15`"
-   ":code:`rhu1_15F_to_20F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`15 \leq \frac{T_{emerg}}{T_{out}} < 20`"
-   ":code:`rhu1_20F_to_25F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{emerg}}{T_{out}} < 25`"
-   ":code:`rhu1_25F_to_30F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`25 \leq \frac{T_{emerg}}{T_{out}} < 30`"
-   ":code:`rhu1_30F_to_35F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{emerg}}{T_{out}} < 35`"
-   ":code:`rhu1_35F_to_40F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`35 \leq \frac{T_{emerg}}{T_{out}} < 40`"
-   ":code:`rhu1_40F_to_45F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{emerg}}{T_{out}} < 45`"
-   ":code:`rhu1_45F_to_50F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`45 \leq \frac{T_{emerg}}{T_{out}} < 50`"
-   ":code:`rhu1_50F_to_55F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{emerg}}{T_{out}} < 55`"
-   ":code:`rhu1_55F_to_60F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`55 \leq \frac{T_{emerg}}{T_{out}} < 60`"
-   ":code:`rhu1_00F_to_05F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{comp}}{T_{out}} < 5`"
-   ":code:`rhu1_05F_to_10F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`5 \leq \frac{T_{comp}}{T_{out}} < 10`"
-   ":code:`rhu1_10F_to_15F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{comp}}{T_{out}} < 15`"
-   ":code:`rhu1_15F_to_20F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`15 \leq \frac{T_{comp}}{T_{out}} < 20`"
-   ":code:`rhu1_20F_to_25F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{comp}}{T_{out}} < 25`"
-   ":code:`rhu1_25F_to_30F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`25 \leq \frac{T_{comp}}{T_{out}} < 30`"
-   ":code:`rhu1_30F_to_35F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{comp}}{T_{out}} < 35`"
-   ":code:`rhu1_35F_to_40F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`35 \leq \frac{T_{comp}}{T_{out}} < 40`"
-   ":code:`rhu1_40F_to_45F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{comp}}{T_{out}} < 45`"
-   ":code:`rhu1_45F_to_50F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`45 \leq \frac{T_{comp}}{T_{out}} < 50`"
-   ":code:`rhu1_50F_to_55F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{comp}}{T_{out}} < 55`"
-   ":code:`rhu1_55F_to_60F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`55 \leq \frac{T_{comp}}{T_{out}} < 60`"
-   ":code:`rhu1_less10F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 10`"
-   ":code:`rhu1_10F_to_20F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 20`"
-   ":code:`rhu1_20F_to_30F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq T_{out} < 30`"
-   ":code:`rhu1_30F_to_40F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 40`"
-   ":code:`rhu1_40F_to_50F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq T_{out} < 50`"
-   ":code:`rhu1_50F_to_60F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq T_{out} < 60`"
-   ":code:`rhu1_less10F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{aux}}{T_{out}}  < 10`"
-   ":code:`rhu1_10F_to_20F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{aux}}{T_{out}} < 20`"
-   ":code:`rhu1_20F_to_30F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{aux}}{T_{out}} < 30`"
-   ":code:`rhu1_30F_to_40F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{aux}}{T_{out}} < 40`"
-   ":code:`rhu1_40F_to_50F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{aux}}{T_{out}} < 50`"
-   ":code:`rhu1_50F_to_60F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{aux}}{T_{out}} < 60`"
-   ":code:`rhu1_less10F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{emerg}}{T_{out}}  < 10`"
-   ":code:`rhu1_10F_to_20F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{emerg}}{T_{out}} < 20`"
-   ":code:`rhu1_20F_to_30F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{emerg}}{T_{out}} < 30`"
-   ":code:`rhu1_30F_to_40F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{emerg}}{T_{out}} < 40`"
-   ":code:`rhu1_40F_to_50F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{emerg}}{T_{out}} < 50`"
-   ":code:`rhu1_50F_to_60F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{emerg}}{T_{out}} < 60`"
-   ":code:`rhu1_less10F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{comp}}{T_{out}}  < 10`"
-   ":code:`rhu1_10F_to_20F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{comp}}{T_{out}} < 20`"
-   ":code:`rhu1_20F_to_30F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{comp}}{T_{out}} < 30`"
-   ":code:`rhu1_30F_to_40F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{comp}}{T_{out}} < 40`"
-   ":code:`rhu1_40F_to_50F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{comp}}{T_{out}} < 50`"
-   ":code:`rhu1_50F_to_60F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{comp}}{T_{out}} < 60`"
-   ":code:`rhu2_aux_duty_cycle`","float","minutes","Resistance heat utilization auxiliary duty cycle"
-   ":code:`rhu2_emg_duty_cycle`","float","minutes","Resistance heat utilization emergency duty cycle"
-   ":code:`rhu2_compressor_duty_cycle`","float","minutes","Resistance heat utilization compressor duty cycle"
+   ":code:`rhu1_30F_to_45F`","decmial","0.0=0%, 1.0=100%","Resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 45`"
    ":code:`rhu2_00F_to_05F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 5`"
    ":code:`rhu2_05F_to_10F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`5 \leq T_{out} < 10`"
    ":code:`rhu2_10F_to_15F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 15`"
@@ -278,69 +207,20 @@ Columns
    ":code:`rhu2_45F_to_50F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`45 \leq T_{out} < 50`"
    ":code:`rhu2_50F_to_55F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq T_{out} < 55`"
    ":code:`rhu2_55F_to_60F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`55 \leq T_{out} < 60`"
-   ":code:`rhu2_00F_to_05F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{aux}}{T_{out}} < 5`"
-   ":code:`rhu2_05F_to_10F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`5 \leq \frac{T_{aux}}{T_{out}} < 10`"
-   ":code:`rhu2_10F_to_15F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{aux}}{T_{out}} < 15`"
-   ":code:`rhu2_15F_to_20F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`15 \leq \frac{T_{aux}}{T_{out}} < 20`"
-   ":code:`rhu2_20F_to_25F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{aux}}{T_{out}} < 25`"
-   ":code:`rhu2_25F_to_30F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`25 \leq \frac{T_{aux}}{T_{out}} < 30`"
-   ":code:`rhu2_30F_to_35F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{aux}}{T_{out}} < 35`"
-   ":code:`rhu2_35F_to_40F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`35 \leq \frac{T_{aux}}{T_{out}} < 40`"
-   ":code:`rhu2_40F_to_45F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{aux}}{T_{out}}< 45`"
-   ":code:`rhu2_45F_to_50F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`45 \leq \frac{T_{aux}}{T_{out}} < 50`"
-   ":code:`rhu2_50F_to_55F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{aux}}{T_{out}} < 55`"
-   ":code:`rhu2_55F_to_60F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{aux}}{T_{out}} < 5`"
-   ":code:`rhu2_00F_to_05F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{emerg}}{T_{out}} < 5`"
-   ":code:`rhu2_05F_to_10F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`5 \leq \frac{T_{emerg}}{T_{out}} < 10`"
-   ":code:`rhu2_10F_to_15F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{emerg}}{T_{out}} < 15`"
-   ":code:`rhu2_15F_to_20F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`15 \leq \frac{T_{emerg}}{T_{out}} < 20`"
-   ":code:`rhu2_20F_to_25F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{emerg}}{T_{out}} < 25`"
-   ":code:`rhu2_25F_to_30F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`25 \leq \frac{T_{emerg}}{T_{out}} < 30`"
-   ":code:`rhu2_30F_to_35F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{emerg}}{T_{out}} < 35`"
-   ":code:`rhu2_35F_to_40F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`35 \leq \frac{T_{emerg}}{T_{out}} < 40`"
-   ":code:`rhu2_40F_to_45F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{emerg}}{T_{out}} < 45`"
-   ":code:`rhu2_45F_to_50F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`45 \leq \frac{T_{emerg}}{T_{out}} < 50`"
-   ":code:`rhu2_50F_to_55F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{emerg}}{T_{out}} < 55`"
-   ":code:`rhu2_55F_to_60F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`55 \leq \frac{T_{emerg}}{T_{out}} < 60`"
-   ":code:`rhu2_00F_to_05F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{comp}}{T_{out}} < 5`"
-   ":code:`rhu2_05F_to_10F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`5 \leq \frac{T_{comp}}{T_{out}} < 10`"
-   ":code:`rhu2_10F_to_15F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{comp}}{T_{out}} < 15`"
-   ":code:`rhu2_15F_to_20F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`15 \leq \frac{T_{comp}}{T_{out}} < 20`"
-   ":code:`rhu2_20F_to_25F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{comp}}{T_{out}} < 25`"
-   ":code:`rhu2_25F_to_30F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`25 \leq \frac{T_{comp}}{T_{out}} < 30`"
-   ":code:`rhu2_30F_to_35F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{comp}}{T_{out}} < 35`"
-   ":code:`rhu2_35F_to_40F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`35 \leq \frac{T_{comp}}{T_{out}} < 40`"
-   ":code:`rhu2_40F_to_45F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{comp}}{T_{out}} < 45`"
-   ":code:`rhu2_45F_to_50F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`45 \leq \frac{T_{comp}}{T_{out}} < 50`"
-   ":code:`rhu2_50F_to_55F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{comp}}{T_{out}} < 55`"
-   ":code:`rhu2_55F_to_60F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`55 \leq \frac{T_{comp}}{T_{out}} < 60`"
-   ":code:`rhu2_less10F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 10`"
-   ":code:`rhu2_10F_to_20F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 20`"
-   ":code:`rhu2_20F_to_30F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq T_{out} < 30`"
-   ":code:`rhu2_30F_to_40F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 40`"
-   ":code:`rhu2_40F_to_50F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq T_{out} < 50`"
    ":code:`rhu2_30F_to_45F`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 45`"
-   ":code:`rhu2_less10F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{aux}}{T_{out}}  < 10`"
-   ":code:`rhu2_10F_to_20F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{aux}}{T_{out}} < 20`"
-   ":code:`rhu2_20F_to_30F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{aux}}{T_{out}} < 30`"
-   ":code:`rhu2_30F_to_40F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{aux}}{T_{out}} < 40`"
-   ":code:`rhu2_40F_to_50F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{aux}}{T_{out}} < 50`"
-   ":code:`rhu2_50F_to_60F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{aux}}{T_{out}} < 60`"
-   ":code:`rhu2_30F_to_45F_aux_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{aux}}{T_{out}} < 45`"
-   ":code:`rhu2_less10F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{emerg}}{T_{out}}  < 10`"
-   ":code:`rhu2_10F_to_20F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{emerg}}{T_{out}} < 20`"
-   ":code:`rhu2_20F_to_30F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{emerg}}{T_{out}} < 30`"
-   ":code:`rhu2_30F_to_40F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{emerg}}{T_{out}} < 40`"
-   ":code:`rhu2_40F_to_50F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{emerg}}{T_{out}} < 50`"
-   ":code:`rhu2_50F_to_60F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{emerg}}{T_{out}} < 60`"
-   ":code:`rhu2_30F_to_45F_emg_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{emerg}}{T_{out}} < 45`"
-   ":code:`rhu2_less10F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`0 \leq \frac{T_{comp}}{T_{out}}  < 10`"
-   ":code:`rhu2_10F_to_20F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`10 \leq \frac{T_{comp}}{T_{out}} < 20`"
-   ":code:`rhu2_20F_to_30F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`20 \leq \frac{T_{comp}}{T_{out}} < 30`"
-   ":code:`rhu2_30F_to_40F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{comp}}{T_{out}} < 40`"
-   ":code:`rhu2_40F_to_50F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`40 \leq \frac{T_{comp}}{T_{out}} < 50`"
-   ":code:`rhu2_50F_to_60F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`50 \leq \frac{T_{comp}}{T_{out}} < 60`"
-   ":code:`rhu2_30F_to_45F_compressor_duty_cycle`","decmial","0.0=0%, 1.0=100%","RHU2 filtered resistance heat utilization for hourly temperature bin :math:`30 \leq \frac{T_{comp}}{T_{out}} < 45`"
+   ":code:`rhu2IQFLT_00F_to_05F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`0 \leq T_{out} < 5`"
+   ":code:`rhu2IQFLT_05F_to_10F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`5 \leq T_{out} < 10`"
+   ":code:`rhu2IQFLT_10F_to_15F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`10 \leq T_{out} < 15`"
+   ":code:`rhu2IQFLT_15F_to_20F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`15 \leq T_{out} < 20`"
+   ":code:`rhu2IQFLT_20F_to_25F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`20 \leq T_{out} < 25`"
+   ":code:`rhu2IQFLT_25F_to_30F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`25 \leq T_{out} < 30`"
+   ":code:`rhu2IQFLT_30F_to_35F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 35`"
+   ":code:`rhu2IQFLT_35F_to_40F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`35 \leq T_{out} < 40`"
+   ":code:`rhu2IQFLT_40F_to_45F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`40 \leq T_{out} < 45`"
+   ":code:`rhu2IQFLT_45F_to_50F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`45 \leq T_{out} < 50`"
+   ":code:`rhu2IQFLT_50F_to_55F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`50 \leq T_{out} < 55`"
+   ":code:`rhu2IQFLT_55F_to_60F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`55 \leq T_{out} < 60`"
+   ":code:`rhu2IQFLT_30F_to_45F`","decmial","0.0=0%, 1.0=100%","RHU2 IQR filtered resistance heat utilization for hourly temperature bin :math:`30 \leq T_{out} < 45`"
 
 
 .. _thermostat-output-statistics:
@@ -402,67 +282,32 @@ Columns
    ":code:`n_thermostat_core_day_sets_kept`","Number of relevant rows from thermostat module not filtered out"
    ":code:`n_thermostat_core_day_sets_discarded`","Number of relevant rows from thermostat module filtered out"
 
+
+.. _thermostat-output-certification:
+
+Certification File
+~~~~~~~~~~~~~~~~~~
+
+The following file is output for certification:
+
+Columns
+```````
+
+.. csv-table::
+   :header: "Name", "Description"
+
+    ":code:`product_id`","Product ID"
+    ":code:`sw_version`","Software Version"
+    ":code:`metric`","Metric (:code:`percent_savings_baseline_percentile` or :code:`rhu_30F_to_45F`)"
+    ":code:`filter`","Filter Used (:code:`tau_cvrmse_savings_p01`)"
+    ":code:`region`","Region (:code:`national_weighted_mean` or :code:`all`)"
+    ":code:`statistic`","Statistic (:code:`lower_bound_95` (95% confidence lower bound on mean value), :code:`q20` (20th percentile) or :code:`upper_bound_95` (95% confidence upper bound on mean value))"
+    ":code:`season`","Season (:code:`heating` or :code:`cooling`)"
+    ":code:`value`","Value"
+
 The following national weighted percent savings columns are also available.
 
 National savings are computed by weighted average of percent savings results
 grouped by climate zone. Heavier weights are applied to results in climate
 zones which, regionally, tend to have longer runtimes. Weightings used are
 available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
-
-Columns
-```````
-.. csv-table::
-   :header: "Name", "Description"
-
-   ":code:`percent_savings_baseline_percentile_mean_national_weighted_mean`","National weighted mean percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q1_national_weighted_mean`","National weighted 1st percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q2.5_national_weighted_mean`","National weighted 2.5th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q5_national_weighted_mean`","National weighted 5th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q10_national_weighted_mean`","National weighted 10th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q15_national_weighted_mean`","National weighted 15th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q20_national_weighted_mean`","National weighted 20th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q25_national_weighted_mean`","National weighted 25th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q30_national_weighted_mean`","National weighted 30th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q35_national_weighted_mean`","National weighted 35th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q40_national_weighted_mean`","National weighted 40th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q45_national_weighted_mean`","National weighted 45th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q50_national_weighted_mean`","National weighted 50th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q55_national_weighted_mean`","National weighted 55th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q60_national_weighted_mean`","National weighted 60th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q65_national_weighted_mean`","National weighted 65th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q70_national_weighted_mean`","National weighted 70th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q75_national_weighted_mean`","National weighted 75th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q80_national_weighted_mean`","National weighted 80th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q85_national_weighted_mean`","National weighted 85th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q90_national_weighted_mean`","National weighted 90th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q95_national_weighted_mean`","National weighted 95th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q98_national_weighted_mean`","National weighted 98th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_q99_national_weighted_mean`","National weighted 99th percentile percent savings as given by baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_lower_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings lower bound as given by a 95% confidence interval and the baseline_percentile method."
-   ":code:`percent_savings_baseline_percentile_upper_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings upper bound as given by a 95% confidence interval and the baseline_percentile method."
-   ":code:`percent_savings_baseline_regional_mean_national_weighted_mean`","National weighted mean percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q1_national_weighted_mean`","National weighted 1st percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q2.5_national_weighted_mean`","National weighted 2.5th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q5_national_weighted_mean`","National weighted 5th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q10_national_weighted_mean`","National weighted 10th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q15_national_weighted_mean`","National weighted 15th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q20_national_weighted_mean`","National weighted 20th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q25_national_weighted_mean`","National weighted 25th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q30_national_weighted_mean`","National weighted 30th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q35_national_weighted_mean`","National weighted 35th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q40_national_weighted_mean`","National weighted 40th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q45_national_weighted_mean`","National weighted 45th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q50_national_weighted_mean`","National weighted 50th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q55_national_weighted_mean`","National weighted 55th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q60_national_weighted_mean`","National weighted 60th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q65_national_weighted_mean`","National weighted 65th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q70_national_weighted_mean`","National weighted 70th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q75_national_weighted_mean`","National weighted 75th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q80_national_weighted_mean`","National weighted 80th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q85_national_weighted_mean`","National weighted 85th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q90_national_weighted_mean`","National weighted 90th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q95_national_weighted_mean`","National weighted 95th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q98_national_weighted_mean`","National weighted 98th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_q99_national_weighted_mean`","National weighted 99th percentile percent savings as given by baseline_regional method."
-   ":code:`percent_savings_baseline_regional_lower_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings lower bound as given by a 95% confidence interval and the baseline_regional method."
-   ":code:`percent_savings_baseline_regional_upper_bound_95_perc_conf_national_weighted_mean`","National weighted mean percent savings upper bound as given by a 95% confidence interval and the baseline_regional method."
