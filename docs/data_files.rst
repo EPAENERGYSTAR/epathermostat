@@ -28,7 +28,7 @@ Name                           Data Format      Units Description
 :code:`heat_stage`             string           N/A   The stages of controlled HVAC heating equipment. [#]_
 :code:`cool_type`              string           N/A   The type of controlled HVAC cooling equipment. [#]_
 :code:`cool_stage`             string           N/A   The stages of controlled HVAC cooling equipment. [#]_
-:code:`zipcode`                string, 5 digits N/A   The ZIP code in which the thermostat is installed. [#]_
+:code:`zipcode`                string, 5 digits N/A   The `ZCTA`_ code in which the thermostat is installed. [#]_
 :code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
 :code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
 ============================== ================ ===== ===========
@@ -44,28 +44,28 @@ Thermostat Interval Data CSV format
 Columns
 ```````
 
-============================ ======================= ======= ===========
-Name                         Data Format             Units    Description
----------------------------- ----------------------- ------- -----------
-:code:`thermostat_id`        string                  N/A     Uniquely identifying marker for the thermostat.
-:code:`date`                 YYYY-MM-DD (ISO-8601)   N/A     Date of this set of readings.
-:code:`cool_runtime_stg1`    decimal or integer      minutes Hourly runtime of cooling equipment (all units).
-:code:`cool_runtime_stg2`    decimal or integer      minutes Hourly runtime of cooling equipment second stage (two-stage units only).
-:code:`cool_runtime_equiv`   decimal or integer      minutes Hourly full load equivalent runtime of cooling equipment (multi-stage units only).
-:code:`heat_runtime_stg1`    decimal or integer      minutes Hourly runtime of heating equipment second stage (two-stage units only).
-:code:`heat_runtime_stg2`    decimal or integer      minutes Hourly runtime of heating equipment, stage 2.
-:code:`heat_runtime_equiv`   decimal or integer      minutes Hourly full load equivalent runtime of heating equipment (multi-stage units only).
-:code:`auxiliary_heat`       decimal or integer      minutes Hourly runtime of auxiliary heat equipment.
-:code:`emergency_heat`       decimal or integer      minutes Hourly runtime of emergency heat equipment.
-:code:`temp_in`              decimal, to nearest 0.5 °F      Hourly average conditioned space temperature over the period of the reading.
-============================ ======================= ======= ===========
+============================ ================================ ======= ===========
+Name                         Data Format                      Units   Description
+---------------------------- -------------------------------- ------- -----------
+:code:`thermostat_id`        string                           N/A     Uniquely identifying marker for the thermostat.
+:code:`datetime`             YYYY-MM-DD hh:mm:ss (ISO-8601)   N/A     Date and time of this set of readings.
+:code:`cool_runtime_stg1`    decimal or integer               minutes Hourly runtime of cooling equipment (all units).
+:code:`cool_runtime_stg2`    decimal or integer               minutes Hourly runtime of cooling equipment second stage (two-stage units only).
+:code:`cool_runtime_equiv`   decimal or integer               minutes Hourly full load equivalent runtime of cooling equipment (multi-stage units only).
+:code:`heat_runtime_stg1`    decimal or integer               minutes Hourly runtime of heating equipment (all units).
+:code:`heat_runtime_stg2`    decimal or integer               minutes Hourly runtime of heating equipment second stage (two-stage units only).
+:code:`heat_runtime_equiv`   decimal or integer               minutes Hourly full load equivalent runtime of heating equipment (multi-stage units only).
+:code:`auxiliary_heat`       decimal or integer               minutes Hourly runtime of auxiliary heat equipment.
+:code:`emergency_heat`       decimal or integer               minutes Hourly runtime of emergency heat equipment.
+:code:`temp_in`              decimal, to nearest 0.5 °F       °F      Hourly average conditioned space temperature over the period of the reading.
+============================ ================================ ======= ===========
 
 - Each row should correspond to a single hourly reading from a thermostat. [#]_
 - `NULL` should be specified by leaving the field blank.
 - Zero values should be specified as 0, rather than as blank.
 - If data is missing for a particular row of one column, data should still be
   provided for other columns in that row. For example, if runtime is missing
-  for a particular date, please still provide indoor conditioned space
+  for a particular hour, please still provide indoor conditioned space
   temperature for that hour, if available.
 - Runtimes should be less than or equal to 60 minutes (1 hour).
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
@@ -73,7 +73,7 @@ Name                         Data Format             Units    Description
 - All runtime data MUST have the same UTC offset, as provided in the
   corresponding metadata file.
 - Outdoor temperature data need not be provided - it will be fetched
-  automatically from NCDC using the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_ package.
+  automatically from NCDC using the `eeweather`_ package.
 - Dates and times should be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
   should have :code:`2020-01-02 00:00:00` on the next line.)
 
@@ -108,8 +108,9 @@ Name                         Data Format             Units    Description
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
    the bounds of the heating and cooling season over which metrics will be
-   computed. For more information on the mapping between ZIP / ZCTA codes and
-   weather stations, please see `eeweather <http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion>`_ and :ref:`thermostat.stations`.
+   computed. For more information on the mapping between ZIP / `ZCTA`_ codes and
+   weather stations, please refer to `eeweather ZCTA to latitide / longitude conversion`_
+   and :ref:`thermostat.stations`.
 
 .. [#] Previous versions of this software had each row as one daily result. This version changes this to use hourly rows instead.
 
@@ -121,7 +122,7 @@ Output data
 Individual thermostat-season
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following columns are a intermediate output generated for each thermostat-season.
+The following columns are an intermediate output generated for each thermostat-season.
 
 Columns
 ```````
@@ -132,7 +133,10 @@ Columns
    "**General outputs**"
    ":code:`sw_version`","string","N/A","Software version."
    ":code:`ct_identifier`","string","N/A","Identifier for thermostat as provided in the metadata file."
-   ":code:`equipment_type`","enum {0..5}","N/A","Equipment type of this thermostat (1, 2, 3, 4, or 5)."
+   ":code:`heat_type`","string","N/A","Heating type for the thermostat"
+   ":code:`heat_stage`","string","N/A","Heating stage for the thermostat"
+   ":code:`cool_type`","string","N/A","Cooling type for the thermostat"
+   ":code:`cool_stage`","string","N/A","Cooling stage for the thermostat"
    ":code:`heating_or_cooling`","string","N/A","Label for the core day set (e.g. 'heating_2012-2013')."
    ":code:`zipcode`","string, 5 digits ","N/A","ZIP code provided in the metadata file."
    ":code:`station`","string, USAF ID","N/A","USAF identifier for station used to fetch hourly temperature data."
@@ -305,9 +309,11 @@ Columns
     ":code:`season`","Season (:code:`heating` or :code:`cooling`)"
     ":code:`value`","Value"
 
-The following national weighted percent savings columns are also available.
-
-National savings are computed by weighted average of percent savings results
+National weighted percent savings are computed by weighted average of percent savings results
 grouped by climate zone. Heavier weights are applied to results in climate
-zones which, regionally, tend to have longer runtimes. Weightings used are
+zones which tend to have longer runtimes. Weightings used are
 available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
+
+.. _ZCTA: http://www.census.gov/programs-surveys/geography/guidance/geo-areas/zctas.html
+.. _eeweather ZCTA to latitide / longitude conversion: http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion
+.. _eeweather: http://eeweather.openee.io/en/latest/index.html 
