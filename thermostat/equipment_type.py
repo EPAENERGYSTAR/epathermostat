@@ -1,32 +1,5 @@
 import logging
 
-#: This mapping is for old scripts that need to refer to the old mapping, but want to use the new functionality.
-#:
-#: Usage:
-#:
-#: ``equipment = EQUIPMENT_MAPPING[equipment_type]``
-#:
-#: ``heat_type = equipment['heat_type']``
-#:
-#: Note: Newer scripts should explicitly set the ``heat_type``, ``cool_type``, ``heat_stage``, and ``cool_stage``
-#:
-#:    ``equipment_type : { 0, 1, 2, 3, 4, 5 }``
-#:        - :code:`0`: Other - e.g. multi-zone multi-stage, modulating. Note: module will
-#:          not output savings data for this type.
-#:        - :code:`1`: Single stage heat pump with aux and/or emergency heat
-#:        - :code:`2`: Single stage heat pump without aux or emergency heat
-#:        - :code:`3`: Single stage non heat pump with single-stage central air conditioning
-#:        - :code:`4`: Single stage non heat pump without central air conditioning
-#:        - :code:`5`: Single stage central air conditioning without central heating
-EQUIPMENT_MAPPING = [
-        {'heat_type': None, 'heat_stage': 'two_stage', 'cool_type': None, 'cool_stage': 'two_speed'},  # 0
-        {'heat_type': 'heat_pump_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 1
-        {'heat_type': 'heat_pump_no_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 2
-        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 3
-        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'none', 'cool_stage': None},  # 4
-        {'heat_type': 'none', 'heat_stage': None, 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 5
-        ]
-
 HEAT_TYPE = [
     'non_heat_pump',  # Non heat pump heating (gas or oil furnace, electric resistance)
     'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
@@ -55,6 +28,33 @@ COOL_STAGE = [
     'two_speed',  # Dual stage compressor
     'modulating',  # Modulating or variable capacity compressor
     ]
+
+#: This mapping is for old scripts that need to refer to the old mapping, but want to use the new functionality.
+#:
+#: Usage:
+#:
+#: ``equipment = EQUIPMENT_MAPPING[equipment_type]``
+#:
+#: ``heat_type = equipment['heat_type']``
+#:
+#: Note: Newer scripts should explicitly set the ``heat_type``, ``cool_type``, ``heat_stage``, and ``cool_stage``
+#:
+#:    ``equipment_type : { 0, 1, 2, 3, 4, 5 }``
+#:        - :code:`0`: Other - e.g. multi-zone multi-stage, modulating. Note: module will
+#:          not output savings data for this type.
+#:        - :code:`1`: Single stage heat pump with aux and/or emergency heat
+#:        - :code:`2`: Single stage heat pump without aux or emergency heat
+#:        - :code:`3`: Single stage non heat pump with single-stage central air conditioning
+#:        - :code:`4`: Single stage non heat pump without central air conditioning
+#:        - :code:`5`: Single stage central air conditioning without central heating
+EQUIPMENT_MAPPING = [
+        {'heat_type': None, 'heat_stage': 'two_stage', 'cool_type': None, 'cool_stage': 'two_speed'},  # 0
+        {'heat_type': 'heat_pump_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 1
+        {'heat_type': 'heat_pump_no_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 2
+        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 3
+        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'none', 'cool_stage': None},  # 4
+        {'heat_type': 'none', 'heat_stage': None, 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 5
+        ]
 
 
 def has_heating(heat_type):
