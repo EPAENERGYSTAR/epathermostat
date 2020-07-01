@@ -21,16 +21,9 @@ QUALITY_SORT = {'high': 0, 'medium': 1, 'low': 2}
 
 MINIMUM_QUALITY = 'low'
 METHOD = [
-        ['high', 10000],
-        ['high', 20000],
-        ['high', 30000],
         ['high', 40000],
-        ['medium', 40000],
-        ['high', 50000],
-        ['medium', 50000],
-        ['high', 80000],
-        ['medium', 80000],
         ['high', 100000],
+        ['medium', 100000],
         ]
 
 
