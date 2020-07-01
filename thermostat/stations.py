@@ -19,9 +19,9 @@ zipcode_usaf = json.loads(zipcode_usaf_json)
 # Sort order for rough_quality (returned by eeweather).
 QUALITY_SORT = {'high': 0, 'medium': 1, 'low': 2}
 
-MINIMUM_QUALITY = 'low'
 METHOD = [
         ['high', 40000],
+        ['medium', 40000],
         ['high', 100000],
         ['medium', 100000],
         ]
