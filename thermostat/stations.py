@@ -19,28 +19,12 @@ zipcode_usaf = json.loads(zipcode_usaf_json)
 # Sort order for rough_quality (returned by eeweather).
 QUALITY_SORT = {'high': 0, 'medium': 1, 'low': 2}
 
-MINIMUM_QUALITY = 'low'
-
-
-def _rank_stations_by_distance_and_quality(lat, lon):
-    """ Ranks the stations by distance and quality based on latitude / longitude
-
-    Parameters
-    ----------
-    lat : float
-        latitude for the search
-    lon : float
-        longitude for the search
-
-    Returns
-    -------
-    station_ranking : Pandas.DataFrame
-    """
-
-    station_ranking = rank_stations(lat, lon, minimum_quality=MINIMUM_QUALITY)
-    station_ranking['enumerated_quality'] = station_ranking['rough_quality'].map(QUALITY_SORT)
-    station_ranking = station_ranking.sort_values(by=['distance_meters', 'enumerated_quality'])
-    return station_ranking
+METHOD = [
+        ['high', 40000],
+        ['medium', 40000],
+        ['high', 100000],
+        ['medium', 100000],
+        ]
 
 
 def _get_closest_station_by_zcta_ranked(zcta):
@@ -65,17 +49,15 @@ def _get_closest_station_by_zcta_ranked(zcta):
 
     zcta = zcta.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
     lat, lon = zcta_to_lat_long(zcta)
-    finding_station = True
-    rank = 0
-    while finding_station:
-        rank = rank + 1
-        station_ranking = _rank_stations_by_distance_and_quality(lat, lon)
-        station, warnings = select_station(station_ranking, rank=rank)
+    for min_quality, max_distance_meters in METHOD:
+        station_ranking = rank_stations(lat, lon, minimum_quality=min_quality, max_distance_meters=max_distance_meters)
+        station, warnings = select_station(station_ranking, distance_warnings=(max_distance_meters, 200000))
+        if station and station.name[0] != 'A' and len(warnings) == 0:
+            break
 
-        # Ignore stations that begin with A
-        if str(station)[0] != 'A':
-            finding_station = False
-
+    if warnings != []:
+        from pudb.remote import set_trace
+        set_trace()
     return station, warnings, lat, lon
 
 
