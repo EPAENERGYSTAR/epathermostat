@@ -4,7 +4,8 @@ sudo: false
 cache:
   directories:
     - $HOME/.pip-cache/
-    - .tox
+    - $HOME/.cache/pip
+    - .tox/
 
 language: python
 python:
@@ -19,6 +20,8 @@ notifications:
 install:
   - pip install -U 'setuptools > 36' && pip install tox-travis
   - pip install coveralls
+  - mkdir $HOME/.eeweather
+  - zcat $TRAVIS_BUILD_DIR/thermostat/resources/cache.sql.gz | sqlite3 $HOME/.eeweather/cache.db
 
 script:
   - tox
