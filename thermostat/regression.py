@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import leastsq
 
+
 def runtime_regression(daily_runtime, daily_demand, method):
     """
     Least squares regession of runtime against a measure of demand.

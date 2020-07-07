@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
-from itertools import repeat
 import inspect
 from warnings import warn
 import logging
@@ -8,9 +7,7 @@ import logging
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
-from pkg_resources import resource_stream
 
-from thermostat.regression import runtime_regression
 from thermostat import get_version
 from thermostat.climate_zone import retrieve_climate_zone
 from thermostat.equipment_type import (
@@ -352,7 +349,7 @@ class Thermostat(object):
             start_year = data_start_date.item().year - 1
             end_year = data_end_date.item().year + 1
             potential_core_day_sets = zip(range(start_year, end_year),
-                                    range(start_year + 1, end_year + 1))
+                                          range(start_year + 1, end_year + 1))
 
             # for each potential core day set, look for core heating days.
             core_heating_day_sets = []
@@ -362,15 +359,15 @@ class Thermostat(object):
                 start_date = max(core_day_set_start_date, data_start_date).item()
                 end_date = min(core_day_set_end_date, data_end_date).item()
                 in_range = self._get_range_boolean(self.heat_runtime_daily.index,
-                        start_date, end_date)
+                                                   start_date, end_date)
                 inclusion_daily = pd.Series(in_range & meets_thresholds,
-                        index=self.heat_runtime_daily.index)
+                                            index=self.heat_runtime_daily.index)
 
                 if any(inclusion_daily):
                     name = "heating_{}-{}".format(start_year_, end_year_)
                     inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
                     core_day_set = CoreDaySet(name, inclusion_daily, inclusion_hourly,
-                            start_date, end_date)
+                                              start_date, end_date)
                     core_heating_day_sets.append(core_day_set)
 
             return core_heating_day_sets
@@ -389,7 +386,7 @@ class Thermostat(object):
             return core_heating_day_sets
 
     def get_core_cooling_days(self, method="entire_dataset",
-            min_minutes_cooling=30, max_minutes_heating=0):
+                              min_minutes_cooling=30, max_minutes_heating=0):
         """ Determine core cooling days from data associated with this
         thermostat.
 
@@ -444,12 +441,12 @@ class Thermostat(object):
 
         # enough temperature_in
         enough_temp_in = \
-                self.temperature_in.groupby(self.temperature_in.index.date) \
-                .apply(lambda x: x.isnull().sum() <= 2)
+            self.temperature_in.groupby(self.temperature_in.index.date) \
+            .apply(lambda x: x.isnull().sum() <= 2)
 
         enough_temp_out = \
-                self.temperature_out.groupby(self.temperature_out.index.date) \
-                .apply(lambda x: x.isnull().sum() <= 2)
+            self.temperature_out.groupby(self.temperature_out.index.date) \
+            .apply(lambda x: x.isnull().sum() <= 2)
 
         meets_thresholds &= enough_temp_in & enough_temp_out
 
@@ -457,7 +454,6 @@ class Thermostat(object):
             start_year = data_start_date.item().year
             end_year = data_end_date.item().year
             potential_core_day_sets = range(start_year, end_year + 1)
-
 
             # for each potential core day set, look for cooling days.
             core_cooling_day_sets = []
@@ -467,9 +463,9 @@ class Thermostat(object):
                 start_date = max(core_day_set_start_date, data_start_date).item()
                 end_date = min(core_day_set_end_date, data_end_date).item()
                 in_range = self._get_range_boolean(self.cool_runtime_daily.index,
-                        start_date, end_date)
+                                                   start_date, end_date)
                 inclusion_daily = pd.Series(in_range & meets_thresholds,
-                        index=self.cool_runtime_daily.index)
+                                            index=self.cool_runtime_daily.index)
 
                 if any(inclusion_daily):
                     name = "cooling_{}".format(year)
@@ -503,7 +499,7 @@ class Thermostat(object):
     def _get_hourly_boolean(self, daily_boolean):
         values = np.repeat(daily_boolean.values, 24)
         index = pd.date_range(start=daily_boolean.index[0],
-                periods=daily_boolean.index.shape[0] * 24, freq="H")
+                              periods=daily_boolean.index.shape[0] * 24, freq="H")
         hourly_boolean = pd.Series(values, index)
         return hourly_boolean
 
@@ -843,8 +839,8 @@ class Thermostat(object):
         tau_starting_guess = 0
         try:
             y, _ = leastsq(estimate_errors, tau_starting_guess)
-        except TypeError: # len 0
-            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
+        except TypeError:  # len 0
+            assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         tau_estimate = y[0]
@@ -880,7 +876,8 @@ class Thermostat(object):
 
         :math:`n` is the hour; :math:`\\left(01, 02, 03 ... 24 \\right)`,
 
-        :math:`\\tau_h` (heating) is the :math:`\\Delta T` associated with :math:`HTD=0`, reflecting that homes with no heat running tend to be warmer that the outdoors, and
+        :math:`\\tau_h` (heating) is the :math:`\\Delta T` associated with :math:`HTD=0`, reflecting that homes with no heat running tend to be warmer \
+        that the outdoors, and
 
         :math:`[]_{+}` indicates that the term is zero if its value would be negative.
 
@@ -1001,7 +998,7 @@ class Thermostat(object):
         )
 
     def get_core_cooling_day_baseline_setpoint(self, core_cooling_day_set,
-            method='tenth_percentile', source='temperature_in'):
+                                               method='tenth_percentile', source='temperature_in'):
         """ Calculate the core cooling day baseline setpoint (comfort
         temperature).
 
@@ -1037,9 +1034,8 @@ class Thermostat(object):
         else:
             raise NotImplementedError
 
-
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
-            method='ninetieth_percentile', source='temperature_in'):
+                                               method='ninetieth_percentile', source='temperature_in'):
         """ Calculate the core heating day baseline setpoint (comfort temperature).
 
         Parameters
@@ -1073,7 +1069,6 @@ class Thermostat(object):
             return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
         else:
             raise NotImplementedError
-
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
@@ -1313,6 +1308,9 @@ class Thermostat(object):
 
         if n_days == 0:
             warn("WARNING: Number of valid cooling days is zero.")
+
+        if n_hours == 0:
+            warn("WARNING: Number of valid cooling hours is zero.")
 
         # Raise a division error if dividing by zero and replace with np.nan instead
         old_err_state = np.seterr(divide='raise')

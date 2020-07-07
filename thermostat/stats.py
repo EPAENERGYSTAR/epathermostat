@@ -1,12 +1,9 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import norm
 
 from collections import OrderedDict
-from collections import defaultdict
 from itertools import chain
 from warnings import warn
-import json
 from functools import reduce
 from pkg_resources import resource_stream
 import logging
@@ -389,7 +386,7 @@ def compute_summary_statistics(
             if len(results) == 0:
                 return None
             else:
-                weighted_sum = sum([weight * value for weight, value in results])
+                weighted_sum = sum([weight * value for weight, value in results])  # noqa: F812
                 sum_of_weights = sum([weight for weight, _ in results])
                 return weighted_sum / sum_of_weights
 
@@ -454,12 +451,14 @@ def compute_summary_statistics(
                 return {}
             else:
                 weighted_sum = sum([
-                    weight * mean for weight, mean in zip(weights_, means)
+                    weight * mean for weight, mean in zip(weights_, means)  # noqa: F812
+
                 ])
                 weighted_mean = weighted_sum / sum(weights_)  # renormalize
 
                 weighted_sem = sum([
-                    (weight*sem) ** 2 for weight, sem in zip(weights_, sems)
+                    (weight*sem) ** 2 for weight, sem in zip(weights_, sems)  # noqa: F812
+
                 ]) ** 0.5
 
                 lower_bound = weighted_mean - (1.96 * weighted_sem)

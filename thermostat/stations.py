@@ -16,9 +16,6 @@ logging.getLogger(__name__)
 zipcode_usaf_json = resource_stream('thermostat.resources', 'zipcode_usaf_station.json').read().decode()
 zipcode_usaf = json.loads(zipcode_usaf_json)
 
-# Sort order for rough_quality (returned by eeweather).
-QUALITY_SORT = {'high': 0, 'medium': 1, 'low': 2}
-
 METHOD = [
         ['high', 40000],
         ['medium', 40000],
