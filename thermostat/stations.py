@@ -55,9 +55,6 @@ def _get_closest_station_by_zcta_ranked(zcta):
         if station and station.name[0] != 'A' and len(warnings) == 0:
             break
 
-    if warnings != []:
-        from pudb.remote import set_trace
-        set_trace()
     return station, warnings, lat, lon
 
 
