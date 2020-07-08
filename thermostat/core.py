@@ -1666,6 +1666,7 @@ class Thermostat(object):
                     core_heating_day_set,
                     min_runtime_minutes)
 
+            # We no longer track different duty cycles (aux, emg, compressor, etc.)
             duty_cycle = None
 
             additional_outputs.update(self._rhu_outputs(
@@ -1673,6 +1674,7 @@ class Thermostat(object):
                 rhu_bins=rhu,
                 rhu_usage_bins=RESISTANCE_HEAT_USE_BIN,
                 duty_cycle=duty_cycle))
+
             additional_outputs.update(self._rhu_outputs(
                 rhu_type=rhu_type,
                 rhu_bins=rhu_wide,
