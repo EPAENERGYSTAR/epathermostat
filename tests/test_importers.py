@@ -12,6 +12,7 @@ from .fixtures.thermostats import (
         thermostat_type_1_utc,
         thermostat_type_1_utc_bad,
         thermostat_type_1_too_many_minutes,
+        thermostat_type_1_zip_bad,
         )
 
 def test_import_csv(thermostat_type_1):
@@ -53,3 +54,6 @@ def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
 def test_too_many_minutes(thermostat_type_1_too_many_minutes):
     # None of the thermostats in this list should import
     assert len(thermostat_type_1_too_many_minutes) == 0
+
+def test_bad_zipcode(thermostat_type_1_zip_bad):
+    assert(thermostat_type_1_zip_bad is None)

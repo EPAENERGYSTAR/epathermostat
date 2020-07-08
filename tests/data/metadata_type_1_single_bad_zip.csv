@@ -1,0 +1,2 @@
+thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
+8465829e-df0d-449e-97bf-96317c24dec3,heat_pump_electric_backup,single_stage,heat_pump,,99090,6,thermostat_8465829e-df0d-449e-97bf-96317c24dec3.csv

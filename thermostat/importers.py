@@ -289,6 +289,15 @@ def get_single_thermostat(thermostat_id, zipcode,
     thermostat : thermostat.Thermostat
         The loaded thermostat object.
     """
+
+    # load outdoor temperatures
+    station = get_closest_station_by_zipcode(zipcode)
+
+    if station is None:
+        message = "Could not locate a valid source of outdoor temperature " \
+                "data for ZIP code {}".format(zipcode)
+        raise ZCTAError(message)
+
     df = pd.read_csv(interval_data_filename)
 
     # load indices
@@ -323,14 +332,6 @@ def get_single_thermostat(thermostat_id, zipcode,
     else:
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
-
-    # load outdoor temperatures
-    station = get_closest_station_by_zipcode(zipcode)
-
-    if station is None:
-        message = "Could not locate a valid source of outdoor temperature " \
-                "data for ZIP code {}".format(zipcode)
-        raise ZCTAError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
     temp_out = get_indexed_temperatures_eeweather(station, hourly_index_utc - utc_offset)
