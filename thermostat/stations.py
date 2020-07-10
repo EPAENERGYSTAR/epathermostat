@@ -48,14 +48,19 @@ def _get_closest_station_by_zcta_ranked(zcta):
 
     zcta = zcta.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
     lat, lon = zcta_to_lat_long(zcta)
+
+    station = None
+    warnings = []
+
     for min_quality, max_distance_meters in METHOD:
         station_ranking = rank_stations(lat, lon, minimum_quality=min_quality, max_distance_meters=max_distance_meters)
         # Remove airport stations like A00008
-        station_ranking = station_ranking[station_ranking.index.str.contains('^[0-9]')]
+        if len(station_ranking) > 0:
+            station_ranking = station_ranking[station_ranking.index.str.contains('^[0-9]')]
 
-        station, warnings = select_station(station_ranking, distance_warnings=(max_distance_meters, TOO_FAR_METERS))
-        if station and len(warnings) == 0:
-            break
+            station, warnings = select_station(station_ranking, distance_warnings=(max_distance_meters, TOO_FAR_METERS))
+            if station and len(warnings) == 0:
+                break
 
     return station, warnings, lat, lon
 
