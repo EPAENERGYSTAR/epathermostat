@@ -13,6 +13,7 @@ from .fixtures.thermostats import (
         thermostat_type_1_utc_bad,
         thermostat_type_1_too_many_minutes,
         thermostat_type_1_zip_bad,
+        thermostat_type_1_data_out_of_order,
         )
 
 def test_import_csv(thermostat_type_1):
@@ -56,4 +57,7 @@ def test_too_many_minutes(thermostat_type_1_too_many_minutes):
     assert len(thermostat_type_1_too_many_minutes) == 0
 
 def test_bad_zipcode(thermostat_type_1_zip_bad):
-    assert(thermostat_type_1_zip_bad is None)
+    assert len(thermostat_type_1_zip_bad) == 0
+
+def test_data_out_of_order(thermostat_type_1_data_out_of_order):
+    assert len(thermostat_type_1_data_out_of_order) == 0

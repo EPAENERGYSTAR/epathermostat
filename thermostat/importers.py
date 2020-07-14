@@ -127,7 +127,7 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, cache_path=None, quiet=None):
+def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, cache_path=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -149,9 +149,6 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     thermostats : iterator over thermostat.Thermostat objects
         Thermostats imported from the given CSV input files.
     """
-
-    if quiet:
-        logging.warning('quiet argument has been deprecated. Please remove this flag from your code.')
 
     _prime_eeweather_cache()
 
