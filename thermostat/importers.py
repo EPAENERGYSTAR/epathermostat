@@ -419,9 +419,3 @@ def _create_series(df, index):
     series = df
     series.index = index
     return series
-
-
-def _get_hourly_block(df, prefix):
-    columns = ["{}_{:02d}".format(prefix, i) for i in range(24)]
-    values = df[columns].values
-    return values.reshape((values.shape[0] * values.shape[1],))
