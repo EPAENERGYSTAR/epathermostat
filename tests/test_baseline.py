@@ -47,6 +47,9 @@ def test_get_core_heating_day_baseline_setpoint_null_temperature_in(thermostat_t
     sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='temperature_in')
     assert_allclose(sp, 1.8)
 
+    with pytest.raises(NotImplementedError) as record:
+        sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='heating_setpoint')
+
     thermostat_template.temperature_in = pd.Series([np.nan, 1, 2], index=index)
     sp = thermostat_template.get_core_heating_day_baseline_setpoint(core_day_set, source='temperature_in')
     assert_allclose(sp, 1.9)
@@ -74,6 +77,9 @@ def test_get_core_cooling_day_baseline_setpoint_null_temperature_in(thermostat_t
 
     sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='temperature_in')
     assert_allclose(sp, 0.2)
+
+    with pytest.raises(NotImplementedError) as record:
+        sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='cooling_setpoint')
 
     thermostat_template.temperature_in = pd.Series([np.nan, 1, 2], index=index)
     sp = thermostat_template.get_core_cooling_day_baseline_setpoint(core_day_set, source='temperature_in')
