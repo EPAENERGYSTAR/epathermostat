@@ -98,12 +98,20 @@ def test_thermostat_type_1_get_core_heating_days(thermostat_type_1):
             method="year_mid_to_mid")
     assert len(core_heating_day_sets) == 5
 
+def test_thermostat_type_1_get_core_heating_days_bad_methods(thermostat_type_1):
+    with pytest.raises(NotImplementedError) as record:
+        core_heating_day_sets = thermostat_type_1.get_core_heating_days(
+                method="bad_method")
 
 def test_thermostat_type_1_get_core_cooling_days(thermostat_type_1):
     core_cooling_day_sets = thermostat_type_1.get_core_cooling_days(
             method="year_end_to_end")
     assert len(core_cooling_day_sets) == 4
 
+def test_thermostat_type_1_get_core_cooling_days_bad_methods(thermostat_type_1):
+    with pytest.raises(NotImplementedError) as record:
+        core_cooling_day_sets = thermostat_type_1.get_core_cooling_days(
+                method="bad_method")
 
 def test_thermostat_type_2_get_core_heating_days(thermostat_type_2):
     core_heating_day_sets = thermostat_type_2.get_core_heating_days(

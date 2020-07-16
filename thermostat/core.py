@@ -587,7 +587,7 @@ class Thermostat(object):
 
         self._protect_aux_emerg()
 
-        if not(self.has_resistance_heat):
+        if not self.has_resistance_heat:
             return None
 
         in_core_day_set_daily = self._get_range_boolean(
