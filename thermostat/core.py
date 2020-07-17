@@ -232,7 +232,7 @@ class Thermostat(object):
         if self.has_heating:
             if self.heat_runtime_daily is None:
                 message = "For thermostat {}, heating runtime data was not provided," \
-                          " despite equipment type of {}, which requires heating data.".format(self.thermostat_id, self.heating_type)
+                          " despite equipment type of {}, which requires heating data.".format(self.thermostat_id, self.heat_type)
                 raise ValueError(message)
 
     def _validate_cooling(self):

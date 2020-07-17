@@ -113,6 +113,28 @@ def test_thermostat_type_1_get_core_cooling_days_bad_methods(thermostat_type_1):
         core_cooling_day_sets = thermostat_type_1.get_core_cooling_days(
                 method="bad_method")
 
+def test_thermostat_type_1_no_data(thermostat_type_1):
+    heat_runtime_daily = thermostat_type_1.heat_runtime_daily
+    thermostat_type_1.heat_runtime_daily = None
+    with pytest.raises(ValueError) as record:
+        thermostat_type_1.validate()
+    thermostat_type_1.heat_runtime_daily = heat_runtime_daily
+
+    cool_runtime_daily = thermostat_type_1.cool_runtime_daily
+    thermostat_type_1.cool_runtime_daily = None
+    with pytest.raises(ValueError) as record:
+        thermostat_type_1.validate()
+    thermostat_type_1.cool_runtime_daily = cool_runtime_daily
+
+    aux_heat_runtime = thermostat_type_1.auxiliary_heat_runtime
+    emg_heat_runtime = thermostat_type_1.emergency_heat_runtime
+    thermostat_type_1.auxiliary_heat_runtime = None
+    thermostat_type_1.emergency_heat_runtime = None
+    with pytest.raises(ValueError) as record:
+        thermostat_type_1.validate()
+    thermostat_type_1.auxiliary_heat_runtime = aux_heat_runtime
+    thermostat_type_1.emergency_heat_runtime = emg_heat_runtime
+
 def test_thermostat_type_2_get_core_heating_days(thermostat_type_2):
     core_heating_day_sets = thermostat_type_2.get_core_heating_days(
             method="year_mid_to_mid")
