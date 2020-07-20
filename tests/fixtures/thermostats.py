@@ -3,6 +3,7 @@ from thermostat.importers import get_single_thermostat
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
 from thermostat.core import Thermostat, CoreDaySet
+from tempfile import TemporaryDirectory
 
 import pandas as pd
 import numpy as np
@@ -83,6 +84,12 @@ def thermostat_type_1_data_out_of_order(request):
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
+def thermostat_type_1_cache(request):
+    with TemporaryDirectory() as tempdir:
+        thermostats = from_csv(get_data_path(request.param), save_cache=True, cache_path=tempdir)
+        return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_2_single.csv"])
 def thermostat_type_2(request):

@@ -14,6 +14,7 @@ from .fixtures.thermostats import (
         thermostat_type_1_too_many_minutes,
         thermostat_type_1_zip_bad,
         thermostat_type_1_data_out_of_order,
+        thermostat_type_1_cache,
         )
 
 def test_import_csv(thermostat_type_1):
@@ -33,6 +34,9 @@ def test_import_csv(thermostat_type_1):
 
     assert_is_series_with_shape(thermostat_type_1.temperature_in, (35064,))
     assert_is_series_with_shape(thermostat_type_1.temperature_out, (35064,))
+
+def test_import_csv_cache(thermostat_type_1_cache):
+    assert thermostat_type_1_cache is not None
 
 def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
     assert(normalize_utc_offset("+0") == datetime.timedelta(0))
