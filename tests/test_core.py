@@ -29,6 +29,14 @@ from numpy.testing import assert_allclose
 from numpy import isnan
 
 
+def test_rhu_formatting(thermostat_type_1):
+
+    assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
+    assert('rhu1_greater55F' == thermostat_type_1._format_rhu('rhu1', 55, np.inf, None))
+    assert('rhu1_30F_to_45F' == thermostat_type_1._format_rhu('rhu1', 30, 45, None))
+
+
+
 def test_zero_days_warning(thermostat_zero_days):
     output = thermostat_zero_days.calculate_epa_field_savings_metrics()
     assert isnan(output[0]['daily_mean_core_cooling_runtime'])
