@@ -1,7 +1,6 @@
 from thermostat.importers import from_csv
 from thermostat.importers import get_single_thermostat
 from thermostat.util.testing import get_data_path
-from thermostat.regression import runtime_regression
 from thermostat.core import Thermostat, CoreDaySet
 from tempfile import TemporaryDirectory
 
