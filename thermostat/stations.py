@@ -83,8 +83,6 @@ def get_closest_station_by_zipcode(zipcode):
     6. If the station selected is not the station that would be selected via
        the zip code method then we log a debug message for what we would have previously returned
 
-    7. If the station is over 50,000 meters from the ZCTA location then we log a warning message and revert to the backup method.
-
     Parameters
     ----------
     zipcode : string
