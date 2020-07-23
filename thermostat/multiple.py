@@ -44,27 +44,17 @@ def multiple_thermostat_calculate_epa_field_savings_metrics(thermostats):
 
     metrics_dict = {}
     for output in results:
-        try:
+        if len(output) > 0:
             thermostat_id = output[0]['ct_identifier']
-            metrics_dict[thermostat_id] = []
-            for individual_output in output:
-                metrics_dict[thermostat_id].append(individual_output)
-        except IndexError:
-            warnings.warn("Missing thermostat output")
+            metrics_dict[thermostat_id] = output
 
     # Get the order of the thermostats from the original input so the output
     # matches the order that was sent in
-    thermostat_ids = \
-        [thermostat.thermostat_id for thermostat in thermostats_list]
     metrics = []
-    for thermostat_id in thermostat_ids:
-        try:
-            for metric in metrics_dict[thermostat_id]:
-                metrics.append(metric)
-            # Prevent duplicate thermostat IDs from being double-counted
-            metrics_dict.pop(thermostat_id, None)
-        # Trap for missing keys
-        except KeyError:
-            pass
+    for thermostat in thermostats_list:
+        for metric in metrics_dict.get(thermostat.thermostat_id, []):
+            metrics.append(metric)
+        # Prevent duplicate thermostat IDs from being double-counted
+        metrics_dict.pop(thermostat_id, None)
 
     return metrics
