@@ -16,13 +16,13 @@ logging.getLogger(__name__)
 zipcode_usaf_json = resource_stream('thermostat.resources', 'zipcode_usaf_station.json').read().decode()
 zipcode_usaf = json.loads(zipcode_usaf_json)
 
-TOO_FAR_METERS = 200000
+MAX_METERS = 100000
 
 METHOD = [
         ['high', 40000],
         ['medium', 40000],
-        ['high', 100000],
-        ['medium', 100000],
+        ['high', MAX_METERS],
+        ['medium', MAX_METERS],
         ]
 
 
@@ -58,7 +58,7 @@ def _get_closest_station_by_zcta_ranked(zcta):
         if len(station_ranking) > 0:
             station_ranking = station_ranking[station_ranking.index.str.contains('^[0-9]')]
 
-            station, warnings = select_station(station_ranking, distance_warnings=(max_distance_meters, TOO_FAR_METERS))
+            station, warnings = select_station(station_ranking, distance_warnings=(max_distance_meters, MAX_METERS))
             if station and len(warnings) == 0:
                 break
 
