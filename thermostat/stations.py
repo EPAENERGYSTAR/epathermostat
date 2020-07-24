@@ -38,8 +38,6 @@ def _get_closest_station_by_zcta_ranked(zcta):
     -------
     station : string
         Station that was found
-    warnings : list
-        List of warnings for the returned station (includes distance warnings)
     lat : float
         latitude for the search
     lon : float
@@ -50,7 +48,6 @@ def _get_closest_station_by_zcta_ranked(zcta):
     lat, lon = zcta_to_lat_long(zcta)
 
     station = None
-    warnings = []
 
     for min_quality, max_distance_meters in METHOD:
         station_ranking = rank_stations(lat, lon, minimum_quality=min_quality, max_distance_meters=max_distance_meters)
@@ -58,11 +55,11 @@ def _get_closest_station_by_zcta_ranked(zcta):
         if len(station_ranking) > 0:
             station_ranking = station_ranking[station_ranking.index.str.contains('^[0-9]')]
 
-            station, warnings = select_station(station_ranking, distance_warnings=(max_distance_meters, MAX_METERS))
-            if station and len(warnings) == 0:
+            station, _ = select_station(station_ranking)
+            if station:
                 break
 
-    return station, warnings, lat, lon
+    return station, lat, lon
 
 
 def get_closest_station_by_zipcode(zipcode):
@@ -96,7 +93,7 @@ def get_closest_station_by_zipcode(zipcode):
 
     station_lookup_method_by_zipcode = lookup_usaf_station_by_zipcode(zipcode)
     try:
-        station, warnings, lat, lon = _get_closest_station_by_zcta_ranked(zipcode)
+        station, lat, lon = _get_closest_station_by_zcta_ranked(zipcode)
 
         isd_metadata = get_isd_file_metadata(str(station))
         if len(isd_metadata) == 0:
@@ -119,21 +116,6 @@ def get_closest_station_by_zipcode(zipcode):
             station_lookup_method_by_zipcode,
             str(station),
             zipcode))
-
-    if warnings:
-        logging.warning("Station %s is %d meters over maximum %d meters (%d meters) (zip code %s is at lat/lon %f, %f)" % (
-            str(station),
-            int(warnings[0].data['distance_meters'] - warnings[0].data['max_distance_meters']),
-            int(warnings[0].data['max_distance_meters']),
-            int(warnings[0].data['distance_meters']),
-            zipcode,
-            lat,
-            lon,
-            ))
-        logging.warning("Closest station %s is too far. Using backup-method station %s instead." % (
-            str(station),
-            station_lookup_method_by_zipcode))
-        return station_lookup_method_by_zipcode
 
     return str(station)
 
