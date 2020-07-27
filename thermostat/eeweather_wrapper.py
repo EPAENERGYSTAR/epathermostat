@@ -52,12 +52,12 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
         Average temperatures over series indexed by :code:`index`.
     """
 
-    if index.shape == (0,):
+    if index.shape == (0, 0) or index.shape == (0,):
         return pd.Series([], index=index, dtype=float)
     years = sorted(index.groupby(index.year).keys())
     start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
     end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
-    tempC, warnings = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
+    tempC, _ = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF
