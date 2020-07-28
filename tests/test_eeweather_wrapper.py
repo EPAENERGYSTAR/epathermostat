@@ -15,7 +15,7 @@ def test_get_indexed_temperatures_eeweather_empty_index():
 
 def test_get_index_temperatures_eeweather():
     begin_timestamp = pd.Timestamp('2011-01-01 00:00:00')
-    periods = 35064
+    periods = 8766
     hourly_index = pd.date_range(begin_timestamp, periods=periods, freq="H")
     results = get_indexed_temperatures_eeweather('720113', hourly_index)
-    assert results.shape == (35064,)
+    assert results.shape == (8766,)
