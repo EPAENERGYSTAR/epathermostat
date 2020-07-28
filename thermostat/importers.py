@@ -66,19 +66,6 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
     cache_path : str
         Directory path to save the cached data
     """
-    if cache_path is None:
-        directory = os.path.join(
-            os.curdir,
-            "epathermostat_weather_data")
-    else:
-        directory = os.path.normpath(
-            cache_path)
-
-    try:
-        os.mkdir(directory)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise e
 
     json_cache = {}
 
@@ -90,9 +77,18 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
                 year=year)
         json_cache[filename] = sqlite_json_store.retrieve_json(filename)
 
+    if cache_path is None:
+        directory = os.path.join(
+            os.curdir,
+            "epathermostat_weather_data")
+    else:
+        directory = os.path.normpath(
+            cache_path)
+
     thermostat_filename = "{thermostat_id}.json".format(thermostat_id=thermostat_id)
     thermostat_path = os.path.join(directory, thermostat_filename)
     try:
+        os.makedirs(os.path.dirname(directory), exist_ok=True)
         with open(thermostat_path, 'w') as outfile:
             json.dump(json_cache, outfile)
 
