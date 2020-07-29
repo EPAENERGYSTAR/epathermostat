@@ -1,10 +1,12 @@
 thermostat
 ==========
 
+Purpose
+-------
 This package and the savings calculation methods implemented herein are being
 developed in association with the EPA and industry stakeholders to help
 standardize calculations of temperature/run-time savings due to connected
-thermostats.
+thermostats. Learn more about `connected thermostats <https://www.energystar.gov/products/connected_thermostats/partners>`_.
 
 Getting Started
 ---------------

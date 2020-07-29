@@ -91,8 +91,8 @@ Previous versions of the package are available on `github`_.
     as `numpy` or `scipy`, we recommend installing and using the free
     `Anaconda <https://www.continuum.io/downloads>`_ Python distribution by
     Continuum Analytics. It contains many of the numeric and scientific
-    packages used by this package and has installers for Python 2.7 and 3.5 for
-    Windows, Mac OS X and Linux.
+    packages used by this package and has installers for Windows, macOS, and
+    Linux.
 
 Once you have verified a correct installation, import the necessary methods
 and set a directory for finding and storing data.

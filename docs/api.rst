@@ -29,14 +29,6 @@ thermostat.core
     :members:
     :show-inheritance:
 
-thermostat.regression
----------------------
-
-.. automodule:: thermostat.regression
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 thermostat.stats
 ----------------
 

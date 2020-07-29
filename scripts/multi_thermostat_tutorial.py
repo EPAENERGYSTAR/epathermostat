@@ -26,38 +26,59 @@ def main():
     with open("logging.json", "r") as logging_config:
         logging.config.dictConfig(json.load(logging_config))
 
-    logger = logging.getLogger('epathermostat')  # Uses the 'epathermostat' logging
+    # Uses the 'epathermostat' logging
+    logger = logging.getLogger('epathermostat')
     logger.debug("Starting...")
-    logging.captureWarnings(True)  # Set to True to log additional warning messages, False to only display on console
+    # Set to True to log additional warning messages, False to only display on
+    # console
+    logging.captureWarnings(True)
 
     data_dir = os.path.join("..", "tests", "data")
     metadata_filename = os.path.join(data_dir, "metadata.csv")
 
     # Use this to save the weather cache to local disk files
-    # thermostats = from_csv(metadata_filename, verbose=True, save_cache=True, cache_path='/tmp/epa_weather_files/')
+    # thermostats = from_csv(metadata_filename, verbose=True, save_cache=True,
+    #                        cache_path='/tmp/epa_weather_files/')
 
-    # Verbose will override logging to display the imported thermostats. Set to "False" to use the logging level instead
+    # Verbose will override logging to display the imported thermostats. Set to
+    # "False" to use the logging level instead
     thermostats = from_csv(metadata_filename, verbose=True)
 
     output_dir = "."
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
-    output_filename = os.path.join(output_dir, "thermostat_example_output.csv")
+    output_filename = os.path.join(
+            output_dir,
+            "thermostat_example_output.csv")
     metrics_out = metrics_to_csv(metrics, output_filename)
 
     stats = compute_summary_statistics(metrics_out)
-    stats_advanced = compute_summary_statistics(metrics_out, advanced_filtering=True)
+    stats_advanced = compute_summary_statistics(
+            metrics_out,
+            advanced_filtering=True)
 
     product_id = "test_product"
 
-    certification_filepath = os.path.join(data_dir, "thermostat_example_certification.csv")
+    certification_filepath = os.path.join(
+            data_dir,
+            "thermostat_example_certification.csv")
     certification_to_csv(stats, certification_filepath, product_id)
 
-    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    summary_statistics_to_csv(stats, stats_filepath, product_id)
+    stats_filepath = os.path.join(
+            data_dir,
+            "thermostat_example_stats.csv")
+    summary_statistics_to_csv(
+            stats,
+            stats_filepath,
+            product_id)
 
-    stats_advanced_filepath = os.path.join(data_dir, "thermostat_example_stats_advanced.csv")
-    summary_statistics_to_csv(stats_advanced, stats_advanced_filepath, product_id)
+    stats_advanced_filepath = os.path.join(
+            data_dir,
+            "thermostat_example_stats_advanced.csv")
+    summary_statistics_to_csv(
+            stats_advanced,
+            stats_advanced_filepath,
+            product_id)
 
 
 if __name__ == "__main__":
