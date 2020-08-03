@@ -100,8 +100,10 @@ Name                         Data Format                      Units   Descriptio
 
 .. [#] Possible values for :code:`cool_stage` are:
 
-    - :code:`single_speed`: Single stage compressor
-    - :code:`two_speed`: Dual stage compressor
+    - :code:`single_stage`: Single stage compressor
+    - :code:`two_stage`: Dual stage compressor
+    - :code:`single_speed`: Single stage compressor (synonym for single_stage)
+    - :code:`two_speed`: Dual stage compressor (synonym for two_stage)
     - :code:`modulating`: Modulating or variable capacity compressor
 
 .. [#] Will be used for matching with a weather station that provides external

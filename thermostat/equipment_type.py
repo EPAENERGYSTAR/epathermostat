@@ -26,6 +26,8 @@ COOL_TYPE = [
 COOL_STAGE = [
     'single_speed',  # Single stage compressor
     'two_speed',  # Dual stage compressor
+    'single_stage',  # Single stage compressor (synonym)
+    'two_stage',  # Dual stage compressor (synonym)
     'modulating',  # Modulating or variable capacity compressor
     ]
 
@@ -167,7 +169,7 @@ def has_two_stage_cooling(cool_stage):
     -------
     boolean
     """
-    if cool_stage == 'two_speed':
+    if cool_stage == 'two_speed' or cool_stage == 'two_stage':
         return True
     return False
 

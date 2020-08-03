@@ -365,6 +365,7 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
         cool_runtime_stg2 = df.cool_runtime_stg2
         cool_runtime_equiv = df.cool_runtime_equiv
 
+
         if cool_runtime_stg1.gt(60).any() or \
                 cool_runtime_stg2.gt(60).any() or \
                 cool_runtime_equiv.gt(60).any():
@@ -375,12 +376,15 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
 
         if has_two_stage_cooling(cool_stage):
             cool_runtime_both_stg = (first_stage_capacity_fraction(cool_type) * cool_runtime_stg1) + cool_runtime_stg2
-            cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df.cool_runtime_equiv.dropna()
+            if len(cool_runtime_equiv.dropna()) == len(cool_runtime_both_stg.dropna()):
+                cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df.cool_runtime_equiv.dropna()
+            else:
+                cool_runtime_in_bounds = cool_runtime_both_stg.dropna() < 103.20
 
             if not(cool_runtime_in_bounds.all()):
                 warnings.warn(
                         'Skipping import of thermostat with staged cooling runtime '
-                        'greater than cooling equivalent runtime. (id={})'.format(thermostat_id))
+                        'greater than cooling runtime equivalent. (id={})'.format(thermostat_id))
                 return
 
             cool_runtime = _create_series(cool_runtime_both_stg, hourly_index)
@@ -407,11 +411,15 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
 
         if has_two_stage_heating(heat_stage):
             heat_runtime_both_stg = (first_stage_capacity_fraction(heat_type) * heat_runtime_stg1) + heat_runtime_stg2
-            heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_runtime_equiv.dropna()
+            if len(heat_runtime_equiv.dropna()) == len(heat_runtime_both_stg.dropna()):
+                heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_runtime_equiv.dropna()
+            else:
+                heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= 103.20
+
             if not(heat_runtime_in_bounds.all()):
                 warnings.warn(
                         'Skipping import of thermostat with staged heating runtime '
-                        'greater than heating equivalent runtime. (id={})'.format(thermostat_id))
+                        'greater than heating runtime equivalent. (id={})'.format(thermostat_id))
                 return
             heat_runtime = _create_series(heat_runtime_both_stg, hourly_index)
         else:
