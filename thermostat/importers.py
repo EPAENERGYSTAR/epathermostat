@@ -36,6 +36,18 @@ AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
 
 logger = logging.getLogger(__name__)
 
+INTERVAL_COLUMNS = {
+        'datetime',
+        'cool_runtime_stg1',
+        'cool_runtime_stg2',
+        'cool_runtime_equiv',
+        'heat_runtime_stg1',
+        'heat_runtime_stg2',
+        'heat_runtime_equiv',
+        'emergency_heat_runtime',
+        'auxiliary_heat_runtime',
+        'temp_in',
+        }
 
 class ZCTAError(Exception):
     pass
@@ -293,6 +305,12 @@ def get_single_thermostat(thermostat_id, zipcode,
 
     df = pd.read_csv(interval_data_filename)
 
+    df.columns = map(str.lower, df.columns)
+    if not INTERVAL_COLUMNS.issubset(df.columns):
+        missing_columns = list(INTERVAL_COLUMNS.difference(df.columns))
+        message = "Columns missing from interval data file: {}".format(missing_columns)
+        raise ValueError(message)
+
     # load indices
     date_time = pd.to_datetime(df["datetime"])
     df['datetime'] = date_time
@@ -345,11 +363,11 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
     if has_cooling(cool_type):
         cool_runtime_stg1 = df.cool_runtime_stg1
         cool_runtime_stg2 = df.cool_runtime_stg2
-        cool_equiv_runtime = df.cool_equiv_runtime
+        cool_runtime_equiv = df.cool_runtime_equiv
 
         if cool_runtime_stg1.gt(60).any() or \
                 cool_runtime_stg2.gt(60).any() or \
-                cool_equiv_runtime.gt(60).any():
+                cool_runtime_equiv.gt(60).any():
             warnings.warn("For thermostat {}, cooling runtime data was larger than 60 minutes"
                           " for one or more hours, which is impossible. Please check the data file."
                           .format(thermostat_id))
@@ -377,11 +395,11 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
     if has_heating(heat_type):
         heat_runtime_stg1 = df.heat_runtime_stg1
         heat_runtime_stg2 = df.heat_runtime_stg2
-        heat_equiv_runtime = df.heat_equiv_runtime
+        heat_runtime_equiv = df.heat_runtime_equiv
 
         if heat_runtime_stg1.gt(60).any() or \
                 heat_runtime_stg2.gt(60).any() or \
-                heat_equiv_runtime.gt(60).any():
+                heat_runtime_equiv.gt(60).any():
             warnings.warn("For thermostat {}, heating runtime data was larger than 60 minutes"
                           " for one or more hours, which is impossible. Please check the data file."
                           .format(thermostat_id))
@@ -389,7 +407,7 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
 
         if has_two_stage_heating(heat_stage):
             heat_runtime_both_stg = (first_stage_capacity_fraction(heat_type) * heat_runtime_stg1) + heat_runtime_stg2
-            heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_equiv_runtime.dropna()
+            heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_runtime_equiv.dropna()
             if not(heat_runtime_in_bounds.all()):
                 warnings.warn(
                         'Skipping import of thermostat with staged heating runtime '

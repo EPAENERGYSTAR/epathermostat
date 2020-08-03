@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 FIELDNAMES = [
         'datetime',
-        'cool_runtime_stg1', 'cool_runtime_stg2', 'cool_equiv_runtime',
-        'heat_runtime_stg1', 'heat_runtime_stg2', 'heat_equiv_runtime',
+        'cool_runtime_stg1', 'cool_runtime_stg2', 'cool_runtime_equiv',
+        'heat_runtime_stg1', 'heat_runtime_stg2', 'heat_runtime_equiv',
         'emergency_heat_runtime',
         'auxiliary_heat_runtime',
         'temp_in',
@@ -47,7 +47,7 @@ def main():
                         else:
                             cool_runtime = None
                         current_row['cool_runtime_stg1'] = cool_runtime
-                        current_row['cool_equiv_runtime'] = None
+                        current_row['cool_runtime_equiv'] = None
 
                         current_row['heat_runtime_stg2'] = None
 
@@ -57,7 +57,7 @@ def main():
                         else:
                             heat_runtime = None
                         current_row['heat_runtime_stg1'] = heat_runtime
-                        current_row['heat_equiv_runtime'] = None
+                        current_row['heat_runtime_equiv'] = None
 
                         header = 'auxiliary_heat_runtime_%02d' % hour
                         current_row['auxiliary_heat_runtime'] = row[header]

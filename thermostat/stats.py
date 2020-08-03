@@ -237,6 +237,10 @@ def compute_summary_statistics(
             "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING,
             target_baseline_method)
 
+    if len(metrics_df) == 0:
+        warn("No data to compute for summary statistics.")
+        return None
+
     very_cold_cold_df = metrics_df[[
         (cz is not None) and "Very-Cold/Cold" in cz
         for cz in metrics_df["climate_zone"]
@@ -550,6 +554,11 @@ def summary_statistics_to_csv(stats, filepath, product_id):
         A pandas dataframe containing the output data.
 
     """
+
+    if stats is None:
+        warn("No summary statistics to export.")
+        return None
+
 
     drop_columns = [
         'national_weighted_mean_heating_no_filter',

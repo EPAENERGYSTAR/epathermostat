@@ -1,4 +1,4 @@
-datetime,cool_equiv_runtime,cool_runtime_stg1,cool_runtime_stg2,heat_runtime,heat_runtime_stg1,heat_runtime_stg2,emergency_heat_runtime,auxiliary_heat_runtime,heating_setpoint,cooling_setpoint,temp_in
+datetime,cool_runtime_equiv,cool_runtime_stg1,cool_runtime_stg2,heat_runtime,heat_runtime_stg1,heat_runtime_stg2,emergency_heat_runtime,auxiliary_heat_runtime,heating_setpoint,cooling_setpoint,temp_in
 2018-01-01 00:00:00,,,,,,,,,,,
 2018-01-01 01:00:00,,,,,,,,,,,
 2018-01-01 02:00:00,,,,,,,,,,,

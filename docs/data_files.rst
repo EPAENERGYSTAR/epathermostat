@@ -47,7 +47,6 @@ Columns
 ============================ ================================ ======= ===========
 Name                         Data Format                      Units   Description
 ---------------------------- -------------------------------- ------- -----------
-:code:`thermostat_id`        string                           N/A     Uniquely identifying marker for the thermostat.
 :code:`datetime`             YYYY-MM-DD hh:mm:ss (ISO-8601)   N/A     Date and time of this set of readings.
 :code:`cool_runtime_stg1`    decimal or integer               minutes Hourly runtime of cooling equipment (all units).
 :code:`cool_runtime_stg2`    decimal or integer               minutes Hourly runtime of cooling equipment second stage (two-stage units only).

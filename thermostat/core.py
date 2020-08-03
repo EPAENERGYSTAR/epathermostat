@@ -204,7 +204,7 @@ class Thermostat(object):
             Lower-bound of the RHU bin
         high : int
             Upper-bound of the RHU bin
-        duty_cycle : int
+        duty_cycle : str
             The duty cycle (e.g.: None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle')
 
         Returns

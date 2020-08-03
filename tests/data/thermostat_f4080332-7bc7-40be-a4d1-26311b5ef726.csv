@@ -1,4 +1,4 @@
-datetime,cool_runtime_stg1,cool_runtime_stg2,cool_equiv_runtime,heat_runtime_stg1,heat_runtime_stg2,heat_equiv_runtime,emergency_heat_runtime,auxiliary_heat_runtime,temp_in
+datetime,cool_runtime_stg1,cool_runtime_stg2,cool_runtime_equiv,heat_runtime_stg1,heat_runtime_stg2,heat_runtime_equiv,emergency_heat_runtime,auxiliary_heat_runtime,temp_in
 2011-01-01 00:00:00,0.0,,,44.25,,,0.0,5.0,64.0
 2011-01-01 01:00:00,0.0,,,44.25,,,0.0,30.0,64.0
 2011-01-01 02:00:00,0.0,,,44.25,,,,21.0,65.5

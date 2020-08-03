@@ -1,4 +1,5 @@
 import pandas as pd
+from warnings import warn
 from thermostat.columns import EXPORT_COLUMNS, CERTIFICATION_HEADERS
 
 COLUMN_LOOKUP = {
@@ -79,6 +80,10 @@ def certification_to_csv(stats, filepath, product_id):
     df : pd.DataFrame
         DataFrame containing data output to CSV.
     """
+    if stats is None:
+        warn("No certification data to export.")
+        return None
+
     labels = [i.get('label') for i in stats]
     sw_version = stats[labels.index('all_tau_cvrmse_savings_p01_filter_heating')]['sw_version']
 
