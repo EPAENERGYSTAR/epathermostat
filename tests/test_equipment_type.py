@@ -11,7 +11,7 @@ from thermostat.equipment_type import (
     validate_cool_type,
     validate_heat_stage,
     validate_cool_stage,
-    first_stage_capacity_fraction,
+    first_stage_capacity_ratio,
     )
 
 
@@ -100,6 +100,6 @@ def test_has_resistance_heat():
     assert(has_resistance_heat('heat_pump_dual_fuel') is False)
 
 
-def test_fraction():
-    assert(first_stage_capacity_fraction('non_heat_pump') == .65)
-    assert(first_stage_capacity_fraction('heat_pump') == .72)
+def test_ratio():
+    assert(first_stage_capacity_ratio('non_heat_pump') == .65)
+    assert(first_stage_capacity_ratio('heat_pump') == .72)

@@ -220,7 +220,7 @@ def validate_cool_stage(cool_stage):
     return False
 
 
-def first_stage_capacity_fraction(heat_or_cool_type):
+def first_stage_capacity_ratio(heat_or_cool_type):
     if heat_or_cool_type == "non_heat_pump":
         return 0.65
     else:
