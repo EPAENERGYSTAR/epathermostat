@@ -373,7 +373,8 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
             # Calculate both stages and use the equiv runtime as a check, if it exists
             cool_runtime_both_stg = (first_stage_capacity_ratio(cool_type) * df.cool_runtime_stg1) + df.cool_runtime_stg2
             if len(df.cool_runtime_equiv.dropna()) == len(cool_runtime_both_stg.dropna()):
-                cool_runtime_in_bounds = cool_runtime_both_stg.dropna() <= df.cool_runtime_equiv.dropna()
+                cool_runtime_in_bounds = df.cool_runtime_equiv.dropna() <= df.cool_runtime_stg1.dropna()
+                cool_runtime_in_bounds &= df.cool_runtime_stg2.dropna() <= df.cool_runtime_equiv.dropna()
             else:
                 cool_runtime_in_bounds = cool_runtime_both_stg.dropna() < 103.20
 
@@ -408,7 +409,8 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
             # Calculate both stages and use the equiv runtime as a check, if it exists
             heat_runtime_both_stg = (first_stage_capacity_ratio(heat_type) * df.heat_runtime_stg1) + df.heat_runtime_stg2
             if len(df.heat_runtime_equiv.dropna()) == len(heat_runtime_both_stg.dropna()):
-                heat_runtime_in_bounds = heat_runtime_both_stg.dropna() <= df.heat_runtime_equiv.dropna()
+                heat_runtime_in_bounds = df.heat_runtime_equiv.dropna() <= df.heat_runtime_stg1.dropna()
+                heat_runtime_in_bounds &= df.heat_runtime_stg2.dropna() <= df.heat_runtime_equiv.dropna()
             else:
                 heat_runtime_in_bounds = heat_runtime_both_stg.dropna() < 103.20
 
