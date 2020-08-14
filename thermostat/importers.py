@@ -370,23 +370,11 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
             return
 
         if has_two_stage_cooling(cool_stage):
-            # Calculate both stages and use the equiv runtime as a check, if it exists
-            cool_runtime_both_stg = (first_stage_capacity_ratio(cool_type) * (df.cool_runtime_stg1 - df.cool_runtime_stg2)) + df.cool_runtime_stg2
-            if len(df.cool_runtime_equiv.dropna()) == len(cool_runtime_both_stg.dropna()):
-                cool_runtime_in_bounds = df.cool_runtime_equiv.dropna() <= df.cool_runtime_stg1.dropna()
-                cool_runtime_in_bounds &= df.cool_runtime_stg2.dropna() <= df.cool_runtime_equiv.dropna()
-            else:
-                cool_runtime_in_bounds = cool_runtime_both_stg.dropna() < 103.20
-
-            if not(cool_runtime_in_bounds.all()):
-                warnings.warn(
-                        'Skipping import of thermostat with staged cooling runtime '
-                        'greater than cooling runtime equivalent. (id={})'.format(thermostat_id))
-                return
-            # Prefer to use the runtime equiv if it exists and is non-zero
+            # Use cool equivalent runtime if it exists, otherwise calculate it
             if df.cool_runtime_equiv.max() > 0.0:
                 cool_runtime = _create_series(df.cool_runtime_equiv, hourly_index)
             else:
+                cool_runtime_both_stg = (first_stage_capacity_ratio(cool_type) * (df.cool_runtime_stg1 - df.cool_runtime_stg2)) + df.cool_runtime_stg2
                 cool_runtime = _create_series(cool_runtime_both_stg, hourly_index)
         else:
             cool_runtime = _create_series(df.cool_runtime_stg1, hourly_index)
@@ -406,23 +394,11 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
             return
 
         if has_two_stage_heating(heat_stage):
-            # Calculate both stages and use the equiv runtime as a check, if it exists
-            heat_runtime_both_stg = (first_stage_capacity_ratio(heat_type) * (df.heat_runtime_stg1 - df.heat_runtime_stg2)) + df.heat_runtime_stg2
-            if len(df.heat_runtime_equiv.dropna()) == len(heat_runtime_both_stg.dropna()):
-                heat_runtime_in_bounds = df.heat_runtime_equiv.dropna() <= df.heat_runtime_stg1.dropna()
-                heat_runtime_in_bounds &= df.heat_runtime_stg2.dropna() <= df.heat_runtime_equiv.dropna()
-            else:
-                heat_runtime_in_bounds = heat_runtime_both_stg.dropna() < 103.20
-
-            if not(heat_runtime_in_bounds.all()):
-                warnings.warn(
-                        'Skipping import of thermostat with staged heating runtime '
-                        'greater than heating runtime equivalent. (id={})'.format(thermostat_id))
-                return
-            # Prefer to use the runtime equiv if it exists and is non-zero
+            # Use heat equivalent runtime if it exists, otherwise calculate it
             if df.heat_runtime_equiv.max() > 0.0:
                 heat_runtime = _create_series(df.heat_runtime_equiv, hourly_index)
             else:
+                heat_runtime_both_stg = (first_stage_capacity_ratio(heat_type) * (df.heat_runtime_stg1 - df.heat_runtime_stg2)) + df.heat_runtime_stg2
                 heat_runtime = _create_series(heat_runtime_both_stg, hourly_index)
         else:
             heat_runtime = _create_series(df.heat_runtime_stg1, hourly_index)
