@@ -1,5 +1,6 @@
 import logging
 import json
+import zipcodes
 from pkg_resources import resource_stream
 from eeweather import (
         get_isd_file_metadata,
@@ -26,6 +27,18 @@ METHOD = [
         ]
 
 
+def _zip_to_lat_long(zipcode):
+    """ Returns the lat / long for a zip code, or None if none is found. """
+    zip_location_list = zipcodes.matching(zipcode)
+    try:
+        first_location = zip_location_list.pop()
+        lat = float(first_location.get('lat'))
+        lon = float(first_location.get('long'))
+    except Exception:
+        return None, None
+    return lat, lon
+
+
 def _get_closest_station_by_zcta_ranked(zcta):
     """ Selects the nth ranked station from a list of ranked stations
 
@@ -45,7 +58,11 @@ def _get_closest_station_by_zcta_ranked(zcta):
     """
 
     zcta = zcta.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
-    lat, lon = zcta_to_lat_long(zcta)
+    try:
+        lat, lon = zcta_to_lat_long(zcta)
+    except UnrecognizedZCTAError:
+        logging.warning("%s is not a valid ZCTA. Treating as a ZIP Code instead." % zcta)
+        lat, lon = _zip_to_lat_long(zcta)
 
     station = None
 
@@ -64,8 +81,10 @@ def _get_closest_station_by_zcta_ranked(zcta):
 
 def get_closest_station_by_zipcode(zipcode):
     """ Look up the station by ZCTA / Zip Code from eeweather
-    Searches for a particular station using the ZCTA lookup for a particular zip code (from eeweather).
+    Searches for the closest station using ZCTA or Zip Codes
     The algorithm is as follows:
+
+    1. Get the location of the ZCTA, and fall back to ZIP
 
     1. Get a ranking of stations by distance and rough quality (quality is defined as high, medium, or low).
 
@@ -91,50 +110,36 @@ def get_closest_station_by_zipcode(zipcode):
         Station that maps to the specified zipcode / ZCTA
     """
 
-    station_lookup_method_by_zipcode = lookup_usaf_station_by_zipcode(zipcode)
     try:
         station, lat, lon = _get_closest_station_by_zcta_ranked(zipcode)
+
+        if station is None:
+            zipcode_mapping = zipcodes.matching(zipcode)
+            logging.warning("No station found for ZCTA / ZIP %s (%s, %s)." % (
+                zipcode,
+                zipcode_mapping[0].get('city'),
+                zipcode_mapping[0].get('state')
+                ))
+            return None
 
         isd_metadata = get_isd_file_metadata(str(station))
         if len(isd_metadata) == 0:
             logging.warning("Zipcode %s mapped to station %s, but no ISD metadata was found." % (zipcode, station))
-            return station_lookup_method_by_zipcode
+            return None
 
-    except UnrecognizedUSAFIDError as e:
-        logging.warning("Closest station %s is not a recognized station. Using backup-method station %s for zipcode %s instead." % (
+    except UnrecognizedUSAFIDError:
+        zipcode_mapping = zipcodes.matching(zipcode)
+        logging.warning("Closest station %s is not a recognized station for ZCTA / ZIP %s (%s, %s)." % (
             str(station),
-            station_lookup_method_by_zipcode,
-            zipcode))
-        return station_lookup_method_by_zipcode
-
-    except UnrecognizedZCTAError as e:
-        logging.warning("Unrecognized ZCTA %s" % e)
+            zipcode,
+            zipcode_mapping[0].get('city'),
+            zipcode_mapping[0].get('state')
+            ))
         return None
 
-    if str(station) != station_lookup_method_by_zipcode:
-        logging.debug("Previously would have selected station %s instead of %s for zip code %s" % (
-            station_lookup_method_by_zipcode,
-            str(station),
-            zipcode))
+    except TypeError as e:
+        logging.warning("Unable to perform look-up for ZCTA / ZIP %s. Skipping." % zipcode)
+        logging.warning(e)
+        return None
 
     return str(station)
-
-
-def lookup_usaf_station_by_zipcode(zipcode):
-    """ Backup method for determining which station matches which zipcode
-
-    Parameters
-    ----------
-
-    zipcode : string
-        zipcode to search
-
-    Returns
-    -------
-
-    station : string or None
-       Station that matches the zipcode
-    """
-
-    usaf = zipcode_usaf.get(zipcode, None)
-    return usaf
