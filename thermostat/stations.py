@@ -1,6 +1,7 @@
 import logging
 import json
 import zipcodes
+import warnings
 from pkg_resources import resource_stream
 from eeweather import (
         get_isd_file_metadata,
@@ -61,7 +62,7 @@ def _get_closest_station_by_zcta_ranked(zcta):
     try:
         lat, lon = zcta_to_lat_long(zcta)
     except UnrecognizedZCTAError:
-        logging.warning("%s is not a valid ZCTA. Treating as a ZIP Code instead." % zcta)
+        warnings.warn("%s is not recognized as a ZCTA. Treating as a ZIP Code instead." % zcta)
         lat, lon = _zip_to_lat_long(zcta)
 
     station = None
@@ -84,30 +85,27 @@ def get_closest_station_by_zipcode(zipcode):
     Searches for the closest station using ZCTA or Zip Codes
     The algorithm is as follows:
 
-    1. Get the location of the ZCTA, and fall back to ZIP
+    1. Get the location of the ZCTA, and fall back to ZIP if the ZCTA isn't recognized
 
-    1. Get a ranking of stations by distance and rough quality (quality is defined as high, medium, or low).
+    2. Select the station that is the closest with the highest quality using the following method:
+        * high quality stations within 40,000 meters
+        * medium quality stations within 40,000 meters
+        * high quality stations within 100,000 meters
+        * medium quality stations within 100,000 meters
 
-    2. Select the station that is the closest with the highest quality.
+    3. If no station is returned then we log a warning message. Nothing is returned.
 
-    3. Check to see if there are any ISD files associated with the station. If not revert to the backup method.
-
-    4. If the station is unrecognized (:code:`UnrecognizedUSAFIDError`) then revert to the backup method.
-
-    5. If the ZCTA is unrecognized (:code:`UnrecognizedZCTAError`) then return `None`. No station will be selected.
-
-    6. If the station selected is not the station that would be selected via
-       the zip code method then we log a debug message for what we would have previously returned
+    4. If the station is unrecognized (:code:`UnrecognizedUSAFIDError`) then we log a warning message. Nothing is returned.
 
     Parameters
     ----------
     zipcode : string
-        zipcode / ZCTA to look up (referred to as zipcode because this is also used for the backup method)
+        ZCTA / ZIP code to look up (referred to as zipcode in the code)
 
     Returns
     -------
     station : string or None
-        Station that maps to the specified zipcode / ZCTA
+        Station that maps to the specified ZCTA / ZIP code
     """
 
     try:
@@ -115,7 +113,7 @@ def get_closest_station_by_zipcode(zipcode):
 
         if station is None:
             zipcode_mapping = zipcodes.matching(zipcode)
-            logging.warning("No station found for ZCTA / ZIP %s (%s, %s)." % (
+            warn("No station found for ZCTA / ZIP %s (%s, %s)." % (
                 zipcode,
                 zipcode_mapping[0].get('city'),
                 zipcode_mapping[0].get('state')
