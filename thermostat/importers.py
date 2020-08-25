@@ -6,6 +6,8 @@ from thermostat.equipment_type import (
         has_emergency,
         has_two_stage_cooling,
         has_two_stage_heating,
+        has_multi_stage_cooling,
+        has_multi_stage_heating,
         first_stage_capacity_ratio,
         )
 
@@ -369,6 +371,10 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
                           .format(thermostat_id))
             return
 
+        if has_multi_stage_cooling(cool_stage):
+            warnings.warn("Multi-stage cooling isn't supported (yet)")
+            return
+
         if has_two_stage_cooling(cool_stage):
             # Use cool equivalent runtime if it exists, otherwise calculate it
             if df.cool_runtime_equiv.max() > 0.0:
@@ -391,6 +397,10 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
             warnings.warn("For thermostat {}, heating runtime data was larger than 60 minutes"
                           " for one or more hours, which is impossible. Please check the data file."
                           .format(thermostat_id))
+            return
+
+        if has_multi_stage_heating(heat_stage):
+            warnings.warn("Multi-stage cooling isn't supported (yet)")
             return
 
         if has_two_stage_heating(heat_stage):

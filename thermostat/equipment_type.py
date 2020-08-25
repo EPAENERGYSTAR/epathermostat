@@ -176,6 +176,42 @@ def has_two_stage_cooling(cool_stage):
     return False
 
 
+def has_multi_stage_cooling(cool_stage):
+    """ Determines if the cooling stage has multi-stage capability
+
+    Parameters
+    ----------
+    cool_stage : str
+        The name of the cooling stage
+
+
+    Returns
+    -------
+    boolean
+    """
+    if cool_stage == 'variable_speed' or cool_stage == 'modulating':
+        return True
+    return False
+
+
+def has_multi_stage_heating(heat_stage):
+    """ Determines if the heating stage has multi-stage capability
+
+    Parameters
+    ----------
+    cool_stage : str
+        The name of the cooling stage
+
+
+    Returns
+    -------
+    boolean
+    """
+    if heat_stage == 'variable_speed' or heat_stage == 'modulating':
+        return True
+    return False
+
+
 def has_resistance_heat(heat_type):
     """ Determines if the heat type has resistance heating capability
 
