@@ -8,6 +8,7 @@ from thermostat.equipment_type import (
         has_two_stage_heating,
         has_multi_stage_cooling,
         has_multi_stage_heating,
+        is_line_voltage,
         first_stage_capacity_ratio,
         )
 
@@ -336,6 +337,12 @@ def get_single_thermostat(thermostat_id, zipcode,
     utc_offset = normalize_utc_offset(utc_offset)
     temp_out = get_indexed_temperatures_eeweather(station, hourly_index_utc - utc_offset)
     temp_out.index = hourly_index
+
+    # Validate line-voltage heat-type doesn't have cooling
+    if is_line_voltage(heat_type) and has_cooling(cool_type):
+        message = ("Line-voltage thermostat thermostat_id={} has cooling type set. "
+                   "This thermostat-type doesn't support cooling.".format(thermostat_id))
+        raise RuntimeError(message)
 
     # load daily time series values
     auxiliary_heat_runtime, emergency_heat_runtime = _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)

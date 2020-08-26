@@ -82,6 +82,7 @@ Name                         Data Format                      Units   Descriptio
     - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
     - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
+    - :code:`electric_resistance`: Electric resistance heat (Line-voltage thermostat)
     - :code:`other`: Multi-zone, etc.
     - :code:`none`: No central heating system
 

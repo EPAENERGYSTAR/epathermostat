@@ -5,6 +5,7 @@ HEAT_TYPE = [
     'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
     'heat_pump_no_electric_backup',  # Heat pump without electric resistance heat
     'heat_pump_dual_fuel',  # Dual fuel heat pump (e.g. gas or oil fired)
+    'electric_resistance',  # Line voltage thermostat electric resistance heat
     'other',  # Multi-zone, ?
     'none',  # No central heating system
     ]
@@ -226,6 +227,24 @@ def has_resistance_heat(heat_type):
     boolean
     """
     if heat_type == 'heat_pump_electric_backup':
+        return True
+    return False
+
+
+def is_line_voltage(heat_type):
+    """ Determines if the heat type is valid for line-voltage thermostats
+
+    Parameters
+    ----------
+    heat_type : str
+        The name of the heating type
+
+
+    Returns
+    -------
+    boolean
+    """
+    if heat_type == 'electric_resistance':
         return True
     return False
 
