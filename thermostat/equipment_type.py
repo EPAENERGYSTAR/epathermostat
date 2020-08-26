@@ -1,7 +1,7 @@
 import logging
 
 HEAT_TYPE = [
-    'non_heat_pump',  # Non heat pump heating (gas or oil furnace, electric resistance)
+    'furnace',  # Non heat pump heating (gas or oil furnace, electric resistance)
     'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
     'heat_pump_no_electric_backup',  # Heat pump without electric resistance heat
     'heat_pump_dual_fuel',  # Dual fuel heat pump (e.g. gas or oil fired)
@@ -55,8 +55,8 @@ EQUIPMENT_MAPPING = [
         {'heat_type': None, 'heat_stage': 'two_stage', 'cool_type': None, 'cool_stage': 'two_speed'},  # 0
         {'heat_type': 'heat_pump_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 1
         {'heat_type': 'heat_pump_no_electric_backup', 'heat_stage': 'single_stage', 'cool_type': 'heat_pump', 'cool_stage': None},  # 2
-        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 3
-        {'heat_type': 'non_heat_pump', 'heat_stage': 'single_stage', 'cool_type': 'none', 'cool_stage': None},  # 4
+        {'heat_type': 'furnace', 'heat_stage': 'single_stage', 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 3
+        {'heat_type': 'furnace', 'heat_stage': 'single_stage', 'cool_type': 'none', 'cool_stage': None},  # 4
         {'heat_type': 'none', 'heat_stage': None, 'cool_type': 'central', 'cool_stage': 'single_speed'},  # 5
         ]
 
@@ -259,7 +259,7 @@ def validate_cool_stage(cool_stage):
 
 
 def first_stage_capacity_ratio(heat_or_cool_type):
-    if heat_or_cool_type == "non_heat_pump":
+    if heat_or_cool_type == "furnace":
         return 0.65
     else:
         return 0.72
