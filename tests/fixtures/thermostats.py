@@ -50,72 +50,72 @@ def thermostat_template():
 # travis.)
 # To speed this up, spoof the weather source.
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_utc_offset_0.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_utc_offset_0.csv"])
 def thermostat_type_1_utc(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_utc_offset_bad.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_utc_offset_bad.csv"])
 def thermostat_type_1_utc_bad(request):
     thermostats = from_csv(get_data_path(request.param))
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_bad_zip.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_bad_zip.csv"])
 def thermostat_type_1_zip_bad(request):
     thermostats = from_csv(get_data_path(request.param))
     return list(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_multiple_same_key.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_multiple_same_key.csv"])
 def thermostats_multiple_same_key(request):
     thermostats = from_csv(get_data_path(request.param))
     return thermostats
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_too_many_minutes.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_too_many_minutes.csv"])
 def thermostat_type_1_too_many_minutes(request):
     thermostats = from_csv(get_data_path(request.param))
     return list(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single_data_out_of_order.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_data_out_of_order.csv"])
 def thermostat_type_1_data_out_of_order(request):
     thermostats = from_csv(get_data_path(request.param))
     return list(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single.csv"])
 def thermostat_type_1_cache(request):
     with TemporaryDirectory() as tempdir:
         thermostats = from_csv(get_data_path(request.param), save_cache=True, cache_path=tempdir)
         return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_2_single.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_2_single.csv"])
 def thermostat_type_2(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_3_single.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_3_single.csv"])
 def thermostat_type_3(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_4_single.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_4_single.csv"])
 def thermostat_type_4(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_type_5_single.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_5_single.csv"])
 def thermostat_type_5(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_single_zero_days.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_single_zero_days.csv"])
 def thermostat_zero_days(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
-@pytest.fixture(scope="session", params=["../data/metadata_single_emg_aux_constant_on_outlier.csv"])
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_single_emg_aux_constant_on_outlier.csv"])
 def thermostat_emg_aux_constant_on_outlier(request):
     thermostats = from_csv(get_data_path(request.param))
     return thermostats
