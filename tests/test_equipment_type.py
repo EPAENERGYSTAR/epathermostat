@@ -38,7 +38,7 @@ def test_missing_or_blank_cool_stage():
 
 def test_has_heating():
     for i in [
-        'furnace',  # Non heat pump heating (gas or oil furnace, electric resistance)
+        'furnace_or_boiler',  # Non heat pump heating (gas or oil furnace, electric resistance)
         'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
         'heat_pump_no_electric_backup',  # Heat pump without electric resistance heat
         'heat_pump_dual_fuel',  # Dual fuel heat pump (e.g. gas or oil fired)
@@ -47,7 +47,7 @@ def test_has_heating():
         assert(has_heating(i) is True)
     assert(has_heating('none') is False)
     assert(has_heating(None) is False)
-    assert(validate_heat_type('furnace') is True)
+    assert(validate_heat_type('furnace_or_boiler') is True)
     assert(validate_heat_type('bogus_heat_pump') is False)
 
 
@@ -101,5 +101,5 @@ def test_has_resistance_heat():
 
 
 def test_ratio():
-    assert(first_stage_capacity_ratio('furnace') == .65)
+    assert(first_stage_capacity_ratio('furnace_or_boiler') == .65)
     assert(first_stage_capacity_ratio('heat_pump') == .72)
