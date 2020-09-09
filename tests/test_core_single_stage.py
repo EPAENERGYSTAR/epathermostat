@@ -1,12 +1,13 @@
-from thermostat.importers import from_csv
-from thermostat.util.testing import get_data_path
-
+import pytest
 import numpy as np
+from numpy.testing import assert_allclose
+from numpy import isnan
 import pandas as pd
 
 from datetime import datetime
 
-import pytest
+from thermostat.importers import from_csv
+from thermostat.util.testing import get_data_path
 
 from .fixtures.single_stage import (
         thermostat_type_1,
@@ -14,9 +15,6 @@ from .fixtures.single_stage import (
         thermostat_type_3,
         thermostat_type_4,
         thermostat_type_5,
-        )
-
-from .fixtures.single_stage import (
         core_heating_day_set_type_1_entire,
         core_heating_day_set_type_2,
         core_heating_day_set_type_3,
@@ -29,17 +27,6 @@ from .fixtures.single_stage import (
         thermostats_multiple_same_key,
         metrics_type_1_data,
         )
-
-from .fixtures.two_stage import (
-        thermostat_none_two_stage_heat_pump_two_stage,
-        thermostat_furnace_or_boiler_two_stage_central_two_stage,
-        thermostat_furnace_or_boiler_two_stage_none_single_stage,
-        thermostat_heat_pump_electric_backup_two_stage_heat_pump_two_stage,
-        )
-
-
-from numpy.testing import assert_allclose
-from numpy import isnan
 
 
 def test_rhu_formatting(thermostat_type_1):
