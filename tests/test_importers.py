@@ -1,13 +1,15 @@
-from thermostat.importers import from_csv
-from thermostat.importers import normalize_utc_offset
-from thermostat.util.testing import get_data_path
 import datetime
-
 import pandas as pd
-
 import pytest
 
-from .fixtures.thermostats import (
+from thermostat.importers import (
+        from_csv,
+        normalize_utc_offset,
+        )
+
+from thermostat.util.testing import get_data_path
+
+from .fixtures.single_stage import (
         thermostat_type_1,
         thermostat_type_1_utc,
         thermostat_type_1_utc_bad,

@@ -8,22 +8,35 @@ from datetime import datetime
 
 import pytest
 
-from .fixtures.thermostats import thermostat_type_1
-from .fixtures.thermostats import thermostat_type_2
-from .fixtures.thermostats import thermostat_type_3
-from .fixtures.thermostats import thermostat_type_4
-from .fixtures.thermostats import thermostat_type_5
-from .fixtures.thermostats import core_heating_day_set_type_1_entire
-from .fixtures.thermostats import core_heating_day_set_type_2
-from .fixtures.thermostats import core_heating_day_set_type_3
-from .fixtures.thermostats import core_heating_day_set_type_4
-from .fixtures.thermostats import core_cooling_day_set_type_1_entire
-from .fixtures.thermostats import core_cooling_day_set_type_2
-from .fixtures.thermostats import core_cooling_day_set_type_3
-from .fixtures.thermostats import core_cooling_day_set_type_5
-from .fixtures.thermostats import metrics_type_1_data
-from .fixtures.thermostats import thermostat_zero_days
-from .fixtures.thermostats import thermostats_multiple_same_key
+from .fixtures.single_stage import (
+        thermostat_type_1,
+        thermostat_type_2,
+        thermostat_type_3,
+        thermostat_type_4,
+        thermostat_type_5,
+        )
+
+from .fixtures.single_stage import (
+        core_heating_day_set_type_1_entire,
+        core_heating_day_set_type_2,
+        core_heating_day_set_type_3,
+        core_heating_day_set_type_4,
+        core_cooling_day_set_type_1_entire,
+        core_cooling_day_set_type_2,
+        core_cooling_day_set_type_3,
+        core_cooling_day_set_type_5,
+        thermostat_zero_days,
+        thermostats_multiple_same_key,
+        metrics_type_1_data,
+        )
+
+from .fixtures.two_stage import (
+        thermostat_none_two_stage_heat_pump_two_stage,
+        thermostat_furnace_or_boiler_two_stage_central_two_stage,
+        thermostat_furnace_or_boiler_two_stage_none_single_stage,
+        thermostat_heat_pump_electric_backup_two_stage_heat_pump_two_stage,
+        )
+
 
 from numpy.testing import assert_allclose
 from numpy import isnan
