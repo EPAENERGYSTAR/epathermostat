@@ -84,6 +84,12 @@ def test_interpolate_backward(thermostat_type_1):
     np.testing.assert_allclose(s4_intp, [1, 1])
 
 
+def test_interpolate_one_missing_bad_method(thermostat_type_1):
+    s5 = pd.Series([8, 3, np.nan, 1, 7])
+    s5_intp = thermostat_type_1._interpolate(s5, method="none")
+    np.testing.assert_allclose(s5_intp, [8,3,np.nan,1,7])
+
+
 def test_interpolate_one_missing(thermostat_type_1):
     s5 = pd.Series([8, 3, np.nan, 1, 7])
     s5_intp = thermostat_type_1._interpolate(s5)
