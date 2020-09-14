@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
 import inspect
-from warnings import warn
+import warnings
 import logging
 
 import pandas as pd
@@ -22,16 +22,21 @@ from thermostat.equipment_type import (
         validate_cool_stage,
         )
 
+warnings.simplefilter('module', Warning)
+
 try:
-    if "0.21." in pd.__version__:
-        warn(
+    pd_version = pd.__version__.split('.')
+    pd_major = int(pd_version.pop(0))
+    pd_minor = int(pd_version.pop(0))
+    if pd_major == 0 and pd_minor == 21:
+        warnings.warn(
             "WARNING: Pandas version 0.21.x has known issues and is not supported. "
             "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
     # Pandas 1.x causes issues. Need to warn about this at the moment.
-    if "1.0." in pd.__version__:
-        warn(
-            "WARNING: Pandas version 1.0.x has changed significantly, and causes "
-            "issues with this software. We are working on supporting Pandas 1.0.x in "
+    if pd_major >= 1:
+        warnings.warn(
+            "WARNING: Pandas version 1.x has changed significantly, and causes "
+            "issues with this software. We are working on supporting Pandas 1.x in "
             "a future release.")
 
 except TypeError:
@@ -663,7 +668,7 @@ class Thermostat(object):
         if runtime_rhu.data_is_nonsense.any():
             for item in runtime_rhu.itertuples():
                 if item.data_is_nonsense:
-                    warn(
+                    warnings.warn(
                         'WARNING: '
                         'aux heat runtime %s > compressor runtime %s '
                         'for %sF <= temperature < %sF '
@@ -976,7 +981,7 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            logger.warn(
+            logger.warnings.warn(
                 'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
@@ -1027,7 +1032,7 @@ class Thermostat(object):
             raise NotImplementedError
 
         if source == 'cooling_setpoint':
-            warn("Cooling Setpoint method is no longer implemented.")
+            warnings.warn("Cooling Setpoint method is no longer implemented.")
             raise NotImplementedError
         elif source == 'temperature_in':
             return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
@@ -1063,7 +1068,7 @@ class Thermostat(object):
             raise NotImplementedError
 
         if source == 'heating_setpoint':
-            warn("Heating setpoint method is no longer implemented")
+            warnings.warn("Heating setpoint method is no longer implemented")
             raise NotImplementedError
         elif source == 'temperature_in':
             return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
@@ -1301,16 +1306,16 @@ class Thermostat(object):
         n_hours = core_cooling_day_set.hourly.sum()
 
         if np.isnan(total_runtime_core_cooling):
-            warn(
+            warnings.warn(
                 "WARNING: Total Runtime Core Cooling Days is nan. "
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
         if n_days == 0:
-            warn("WARNING: Number of valid cooling days is zero.")
+            warnings.warn("WARNING: Number of valid cooling days is zero.")
 
         if n_hours == 0:
-            warn("WARNING: Number of valid cooling hours is zero.")
+            warnings.warn("WARNING: Number of valid cooling hours is zero.")
 
         # Raise a division error if dividing by zero and replace with np.nan instead
         old_err_state = np.seterr(divide='raise')
@@ -1463,13 +1468,13 @@ class Thermostat(object):
         n_days = core_heating_day_set.daily.sum()
 
         if np.isnan(total_runtime_core_heating):
-            warn(
+            warnings.warn(
                 "WARNING: Total Runtime Core Heating is nan. "
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
         if n_days == 0:
-            warn(
+            warnings.warn(
                 "WARNING: Number of valid heating days is zero.")
 
         # Raise a division error if dividing by zero and replace with np.nan instead

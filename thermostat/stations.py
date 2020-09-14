@@ -12,7 +12,9 @@ from eeweather.exceptions import (
         UnrecognizedZCTAError,
         UnrecognizedUSAFIDError)
 
+
 logging.getLogger(__name__)
+warnings.simplefilter('module', Warning)
 
 # This is a JSON file with the zipcode to usaf_station mapping that were previously in eemeter.
 zipcode_usaf_json = resource_stream('thermostat.resources', 'zipcode_usaf_station.json').read().decode()
