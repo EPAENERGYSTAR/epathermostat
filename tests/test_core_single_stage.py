@@ -1,4 +1,5 @@
 import pytest
+import warnings
 import numpy as np
 from numpy.testing import assert_allclose
 from numpy import isnan
@@ -6,6 +7,7 @@ import pandas as pd
 
 from datetime import datetime
 
+from thermostat.core import __pandas_warnings, percent_savings
 from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 
@@ -30,12 +32,30 @@ from .fixtures.single_stage import (
 
 
 def test_rhu_formatting(thermostat_type_1):
-
     assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
     assert('rhu1_greater55F' == thermostat_type_1._format_rhu('rhu1', 55, np.inf, None))
     assert('rhu1_30F_to_45F' == thermostat_type_1._format_rhu('rhu1', 30, 45, None))
     assert('rhu2_05F_to_10F_aux_duty_cycle' == thermostat_type_1._format_rhu('rhu2', 5, 10, 'aux_duty_cycle'))
 
+def test_pandas_warnings(thermostat_type_1):
+    with pytest.warns(Warning):
+        __pandas_warnings('0.21.0')
+
+    with pytest.warns(Warning):
+        __pandas_warnings('1.2.0')
+
+    with pytest.warns(None) as pytest_warnings:
+        __pandas_warnings('0.25.3')
+    assert not pytest_warnings
+
+    assert __pandas_warnings(None) is None
+
+
+def test_perecent_saings(thermostat_type_1):
+    avoided = pd.Series([4, 5,6])
+    baseline = pd.Series([0, 0, 0])
+    result = percent_savings(avoided, baseline, 'thermostat_test')
+    assert result == np.inf
 
 
 def test_zero_days_warning(thermostat_zero_days):

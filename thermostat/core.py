@@ -24,24 +24,6 @@ from thermostat.equipment_type import (
 
 warnings.simplefilter('module', Warning)
 
-try:
-    pd_version = pd.__version__.split('.')
-    pd_major = int(pd_version.pop(0))
-    pd_minor = int(pd_version.pop(0))
-    if pd_major == 0 and pd_minor == 21:
-        warnings.warn(
-            "WARNING: Pandas version 0.21.x has known issues and is not supported. "
-            "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
-    # Pandas 1.x causes issues. Need to warn about this at the moment.
-    if pd_major >= 1:
-        warnings.warn(
-            "WARNING: Pandas version 1.x has changed significantly, and causes "
-            "issues with this software. We are working on supporting Pandas 1.x in "
-            "a future release.")
-
-except TypeError:
-    pass  # Documentation mocks out pd, so ignore if not present.
-
 # Ignore divide-by-zero errors
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -66,20 +48,40 @@ RESISTANCE_HEAT_USE_WIDE_BIN_TUPLE = [(30, 45)]
 pd.set_option('mode.chained_assignment', None)
 
 
+def __pandas_warnings(pandas_version):
+    ''' Helper to warn about versions of Pandas that aren't supported yet or have issues '''
+    try:
+        pd_version = pandas_version.split('.')
+        pd_major = int(pd_version.pop(0))
+        pd_minor = int(pd_version.pop(0))
+        if pd_major == 0 and pd_minor == 21:
+            warnings.warn(
+                "WARNING: Pandas version 0.21.x has known issues and is not supported. "
+                "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
+        # Pandas 1.x causes issues. Need to warn about this at the moment.
+        if pd_major >= 1:
+            warnings.warn(
+                "WARNING: Pandas version 1.x has changed significantly, and causes "
+                "issues with this software. We are working on supporting Pandas 1.x in "
+                "a future release.")
+
+    except Exception:
+        # If we can't figure out the version string then don't worry about it for now
+        return None
+
+
+try:
+    __pandas_warnings(pd.__version__)
+except TypeError:
+    pass  # Documentation mocks out pd, so ignore if not present.
+
+
 def avoided(baseline, observed):
     return baseline - observed
 
 
 def percent_savings(avoided, baseline, thermostat_id):
-    try:
-        savings = (avoided.mean() / baseline.mean()) * 100.0
-    except ZeroDivisionError:
-        logger.debug(
-            'percent_savings divided by zero: %s / %s '
-            'for thermostat_id %s ' % (
-                avoided.mean(), baseline.mean(),
-                thermostat_id))
-        savings = np.nan
+    savings = np.divide(avoided.mean(), baseline.mean()) * 100.0
     return savings
 
 
