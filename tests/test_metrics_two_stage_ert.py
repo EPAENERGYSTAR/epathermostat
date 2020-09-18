@@ -10,35 +10,35 @@ from thermostat.exporters import metrics_to_csv
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
 
 from .fixtures.two_stage_ert import (
-        thermostat_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage,
+        thermostat_ert_hpeb_2_hp_2,
         # thermostat_type_2,
-        thermostat_ert_furnace_or_boiler_two_stage_central_two_stage,
-        thermostat_ert_furnace_or_boiler_two_stage_none_single_stage,
-        thermostat_ert_none_two_stage_heat_pump_two_stage,
-        metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data,
+        thermostat_ert_fu_2_ce_2,
+        thermostat_ert_fu_2_na_1,
+        thermostat_ert_na_2_hp_2,
+        metrics_ert_hpeb_2_hp_2_data,
         )
 from thermostat.columns import EXPORT_COLUMNS
 import six
 
 @pytest.fixture(scope="session")
-def metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage(thermostat_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage):
-    metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage = thermostat_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage.calculate_epa_field_savings_metrics()
+def metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage(thermostat_ert_hpeb_2_hp_2):
+    metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage = thermostat_ert_hpeb_2_hp_2.calculate_epa_field_savings_metrics()
     return metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage
 
 @pytest.fixture(scope="session")
-def metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple(thermostat_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage):
-    metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage = multiple_thermostat_calculate_epa_field_savings_metrics([thermostat_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage])
+def metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple(thermostat_ert_hpeb_2_hp_2):
+    metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage = multiple_thermostat_calculate_epa_field_savings_metrics([thermostat_ert_hpeb_2_hp_2])
     return metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage
 
 RTOL = 1e-3
 ATOL = 1e-3
 
-def test_calculate_epa_field_savings_metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage, metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data):
-    assert len(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage) == len(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data)
+def test_calculate_epa_field_savings_metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage, metrics_ert_hpeb_2_hp_2_data):
+    assert len(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage) == len(metrics_ert_hpeb_2_hp_2_data)
 
     for key in metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage[0].keys():
         test_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage[0][key]
-        target_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data[0][key]
+        target_value = metrics_ert_hpeb_2_hp_2_data[0][key]
         if isinstance(test_value, six.string_types):
             assert test_value == target_value
         else:
@@ -46,19 +46,19 @@ def test_calculate_epa_field_savings_metrics_ert_heat_pump_electric_backup_two_s
 
     for key in metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage[1].keys():
         test_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage[1][key]
-        target_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data[1][key]
+        target_value = metrics_ert_hpeb_2_hp_2_data[1][key]
         if isinstance(test_value, six.string_types):
             assert test_value == target_value
         else:
             assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
 
-def test_multiple_thermostat_calculate_epa_field_savings_metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple, metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data):
+def test_multiple_thermostat_calculate_epa_field_savings_metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple, metrics_ert_hpeb_2_hp_2_data):
     # Test multiprocessing thermostat code
-    assert len(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple) == len(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data)
+    assert len(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple) == len(metrics_ert_hpeb_2_hp_2_data)
 
     for key in metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple[0].keys():
         test_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple[0][key]
-        target_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data[0][key]
+        target_value = metrics_ert_hpeb_2_hp_2_data[0][key]
         if isinstance(test_value, six.string_types):
             assert test_value == target_value
         else:
@@ -66,22 +66,22 @@ def test_multiple_thermostat_calculate_epa_field_savings_metrics_ert_heat_pump_e
 
     for key in metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple[1].keys():
         test_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_multiple[1][key]
-        target_value = metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage_data[1][key]
+        target_value = metrics_ert_hpeb_2_hp_2_data[1][key]
         if isinstance(test_value, six.string_types):
             assert test_value == target_value
         else:
             assert_allclose(test_value, target_value, rtol=RTOL, atol=ATOL)
 
-def test_calculate_epa_field_savings_metrics_type_3(thermostat_ert_furnace_or_boiler_two_stage_central_two_stage):
-    metrics_type_3 = thermostat_ert_furnace_or_boiler_two_stage_central_two_stage.calculate_epa_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_3(thermostat_ert_fu_2_ce_2):
+    metrics_type_3 = thermostat_ert_fu_2_ce_2.calculate_epa_field_savings_metrics()
     assert len(metrics_type_3) == 2
 
-def test_calculate_epa_field_savings_metrics_type_4(thermostat_ert_furnace_or_boiler_two_stage_none_single_stage):
-    metrics_type_4 = thermostat_ert_furnace_or_boiler_two_stage_none_single_stage.calculate_epa_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_4(thermostat_ert_fu_2_na_1):
+    metrics_type_4 = thermostat_ert_fu_2_na_1.calculate_epa_field_savings_metrics()
     assert len(metrics_type_4) == 1
 
-def test_calculate_epa_field_savings_metrics_type_5(thermostat_ert_none_two_stage_heat_pump_two_stage):
-    metrics_type_5 = thermostat_ert_none_two_stage_heat_pump_two_stage.calculate_epa_field_savings_metrics()
+def test_calculate_epa_field_savings_metrics_type_5(thermostat_ert_na_2_hp_2):
+    metrics_type_5 = thermostat_ert_na_2_hp_2.calculate_epa_field_savings_metrics()
     assert len(metrics_type_5) == 1
 
 def test_metrics_to_csv(metrics_ert_heat_pump_electric_backup_two_stage_heat_pump_two_stage):
