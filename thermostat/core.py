@@ -57,13 +57,13 @@ def __pandas_warnings(pandas_version):
         if pd_major == 0 and pd_minor == 21:
             warnings.warn(
                 "WARNING: Pandas version 0.21.x has known issues and is not supported. "
-                "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
+                "Please upgrade to the Pandas version 0.25.3.")
         # Pandas 1.x causes issues. Need to warn about this at the moment.
         if pd_major >= 1:
             warnings.warn(
                 "WARNING: Pandas version 1.x has changed significantly, and causes "
                 "issues with this software. We are working on supporting Pandas 1.x in "
-                "a future release.")
+                "a future release. Please downgrade to Pandas 0.25.3")
 
     except Exception:
         # If we can't figure out the version string then don't worry about it for now
