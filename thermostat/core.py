@@ -983,7 +983,7 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            logger.warnings.warn(
+            logger.debug(
                 'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
@@ -1030,16 +1030,14 @@ class Thermostat(object):
 
         self._protect_cooling()
 
-        if method != 'tenth_percentile':
-            raise NotImplementedError
+        if method == 'tenth_percentile' and source == 'temperature_in':
+            return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
 
         if source == 'cooling_setpoint':
             warnings.warn("Cooling Setpoint method is no longer implemented.")
-            raise NotImplementedError
-        elif source == 'temperature_in':
-            return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
-        else:
-            raise NotImplementedError
+
+        # For everything else, return "Not Implemented"
+        raise NotImplementedError
 
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
                                                method='ninetieth_percentile', source='temperature_in'):
@@ -1066,16 +1064,14 @@ class Thermostat(object):
 
         self._protect_heating()
 
-        if method != 'ninetieth_percentile':
-            raise NotImplementedError
+        if method == 'ninetieth_percentile' and source == 'temperature_in':
+            return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
 
         if source == 'heating_setpoint':
             warnings.warn("Heating setpoint method is no longer implemented")
-            raise NotImplementedError
-        elif source == 'temperature_in':
-            return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
-        else:
-            raise NotImplementedError
+
+        # For everything else, return "Not Implemented"
+        raise NotImplementedError
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
