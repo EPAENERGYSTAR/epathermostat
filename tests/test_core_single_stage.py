@@ -7,7 +7,11 @@ import pandas as pd
 
 from datetime import datetime
 
-from thermostat.core import __pandas_warnings, percent_savings
+from thermostat.core import (
+        __pandas_warnings,
+        percent_savings,
+        RESISTANCE_HEAT_USE_BIN_PAIRS,
+        )
 from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 
@@ -29,6 +33,18 @@ from .fixtures.single_stage import (
         thermostats_multiple_same_key,
         metrics_type_1_data,
         )
+
+BASELINE_REGIONAL_COMFORT_CHECK_NONE = [
+        'baseline_regional_demand',
+        'baseline_regional_runtime',
+        'avoided_runtime_baseline_regional',
+        'percent_savings_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_baseline_regional',
+        'avoided_total_core_day_runtime_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_baseline_regional',
+        'baseline_total_core_day_runtime_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_baseline_regional',
+        ]
 
 
 def test_rhu_formatting(thermostat_type_1):
@@ -170,6 +186,33 @@ def test_thermostat_type_1_no_data(thermostat_type_1):
     thermostat_type_1.auxiliary_heat_runtime = aux_heat_runtime
     thermostat_type_1.emergency_heat_runtime = emg_heat_runtime
 
+
+def test_thermostat_type_1_baseline_regional_comfort_temperature_none(thermostat_type_1,
+        core_heating_day_set_type_1_entire, core_cooling_day_set_type_1_entire):
+    climate_zone='Mixed-Humid'
+    core_heating_day_set_method='entire_dataset'
+    core_cooling_day_set_method='entire_dataset'
+    baseline_regional_cooling_comfort_temperature=None
+    baseline_regional_heating_comfort_temperature=None
+    result = thermostat_type_1._calculate_cooling_epa_field_savings_metrics(
+            climate_zone,
+            core_cooling_day_set_type_1_entire,
+            core_cooling_day_set_method,
+            baseline_regional_cooling_comfort_temperature)
+
+    for baseline_key in BASELINE_REGIONAL_COMFORT_CHECK_NONE:
+        assert result.get(baseline_key, None) is None
+
+    result = thermostat_type_1._calculate_heating_epa_field_savings_metrics(
+            climate_zone,
+            core_heating_day_set_type_1_entire,
+            core_heating_day_set_method,
+            baseline_regional_heating_comfort_temperature)
+
+    for baseline_key in BASELINE_REGIONAL_COMFORT_CHECK_NONE:
+        assert result.get(baseline_key, None) is None
+
+
 def test_thermostat_type_2_get_core_heating_days(thermostat_type_2):
     core_heating_day_sets = thermostat_type_2.get_core_heating_days(
             method="year_mid_to_mid")
@@ -231,6 +274,29 @@ def test_thermostat_type_1_get_core_cooling_days_with_params(thermostat_type_1):
             method="year_end_to_end")
     assert len(core_heating_day_sets) == 4
 
+
+def test_get_core_cooling_day_baseline_setpoint_not_implemented(thermostat_type_1, core_cooling_day_set_type_1_entire):
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_cooling_day_baseline_setpoint(core_cooling_day_set_type_1_entire, method="bad")
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_cooling_day_baseline_setpoint(core_cooling_day_set_type_1_entire, source="bad")
+
+
+def test_get_core_heating_day_baseline_setpoint_not_implemented(thermostat_type_1, core_heating_day_set_type_1_entire):
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_heating_day_baseline_setpoint(core_heating_day_set_type_1_entire, method="bad")
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_heating_day_baseline_setpoint(core_heating_day_set_type_1_entire, source="bad")
+
+
+def test_rhu_bins_none(thermostat_type_1):
+    rhu = thermostat_type_1._rhu_outputs(
+            rhu_type='rhu1',
+            rhu_bins=None,
+            rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_PAIRS,
+            duty_cycle=None)
+    unique_rhu = set(rhu.values()).pop()
+    assert unique_rhu is None
 
 def test_thermostat_core_heating_day_set_attributes(core_heating_day_set_type_1_entire):
 
