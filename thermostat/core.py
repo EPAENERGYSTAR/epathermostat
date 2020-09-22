@@ -40,9 +40,10 @@ RESISTANCE_HEAT_USE_BIN = list(t for t in range(
     RESISTANCE_HEAT_USE_BINS_MIN_TEMP,
     RESISTANCE_HEAT_USE_BINS_MAX_TEMP + RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH,
     RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH))
+RESISTANCE_HEAT_USE_BIN_PAIRS = [(RESISTANCE_HEAT_USE_BIN[x], RESISTANCE_HEAT_USE_BIN[x+1]) for x in range(0, len(RESISTANCE_HEAT_USE_BIN) - 1)]
 
 RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
-RESISTANCE_HEAT_USE_WIDE_BIN_TUPLE = [(30, 45)]
+RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS = [(30, 45)]
 
 # FIXME: Turning off these warnings for now
 pd.set_option('mode.chained_assignment', None)
@@ -1606,7 +1607,7 @@ class Thermostat(object):
             rhu_bins : Pandas series
                 Data for the RHU calculation from get_resistance_heat_utilization_bins
             rhu_usage_bins :  list of tuples
-                List of the lower and upper bounds for the given RHU bin to fill with None if rhu_bin is None
+                List of the lower and upper bounds for the given RHU bin to fill with None if rhu_bins is None
             duty_cycle : str
                 The duty cycle (e.g.: None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle')
 
@@ -1675,13 +1676,13 @@ class Thermostat(object):
             additional_outputs.update(self._rhu_outputs(
                 rhu_type=rhu_type,
                 rhu_bins=rhu,
-                rhu_usage_bins=RESISTANCE_HEAT_USE_BIN,
+                rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_PAIRS,
                 duty_cycle=duty_cycle))
 
             additional_outputs.update(self._rhu_outputs(
                 rhu_type=rhu_type,
                 rhu_bins=rhu_wide,
-                rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN,
+                rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS,
                 duty_cycle=duty_cycle))
 
         return additional_outputs
