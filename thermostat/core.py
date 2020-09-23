@@ -278,6 +278,13 @@ class Thermostat(object):
                       " called for equipment_type {}".format(function_name, self.cool_type)
             raise ValueError(message)
 
+    def _protect_resistance_heat(self):
+        function_name = inspect.stack()[1][3]
+        if not(self.has_resistance_heat):
+            message = "The function '{}', which is resistance heat specific, cannot be" \
+                      " called for equipment_type {}".format(function_name, self.heat_type)
+            raise ValueError(message)
+
     def _protect_aux_emerg(self):
         function_name = inspect.stack()[1][3]
         if not(self.has_auxiliary and self.has_emergency):
@@ -594,9 +601,7 @@ class Thermostat(object):
         """
 
         self._protect_aux_emerg()
-
-        if not self.has_resistance_heat:
-            return None
+        self._protect_resistance_heat()
 
         in_core_day_set_daily = self._get_range_boolean(
             core_heating_day_set.daily.index,
@@ -642,10 +647,8 @@ class Thermostat(object):
             ascending by temperature bin. Returns None if the thermostat does
             not control the appropriate equipment or if the runtime_temp is None.
         """
+        self._protect_resistance_heat()
         self._protect_aux_emerg()
-
-        if not self.has_resistance_heat:
-            return None
 
         if runtime_temp is None:
             return None
@@ -735,17 +738,7 @@ class Thermostat(object):
         delta = (core_day_set.end_date - core_day_set.start_date)
         if isinstance(delta, timedelta):
             return delta.days
-        else:
-            try:
-                result = int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
-            except ZeroDivisionError:
-                logger.debug(
-                    'Date Range divided by zero: %s / %s '
-                    'for thermostat_id %s' % (
-                        delta.astype('timedelta64[D]'), np.timedelta64(1, 'D'),
-                        self.thermostat_id))
-                result = np.nan
-            return result
+        return int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
 
     def get_cooling_demand(self, core_cooling_day_set):
         """
