@@ -1188,14 +1188,6 @@ class Thermostat(object):
         """
         return np.maximum(alpha * (baseline_heating_demand), 0)
 
-    def get_daily_avoided_cooling_runtime(
-            self, baseline_runtime, core_cooling_day_set):
-        return baseline_runtime - self.cool_runtime_daily[core_cooling_day_set]
-
-    def get_daily_avoided_heating_runtime(
-            self, baseline_runtime, core_heating_day_set):
-        return baseline_runtime - self.heat_runtime_daily[core_heating_day_set]
-
     def calculate_epa_field_savings_metrics(
             self,
             core_cooling_day_set_method="entire_dataset",
@@ -1309,13 +1301,7 @@ class Thermostat(object):
         if n_hours == 0:
             warnings.warn("WARNING: Number of valid cooling hours is zero.")
 
-        # Raise a division error if dividing by zero and replace with np.nan instead
-        old_err_state = np.seterr(divide='raise')
-        try:
-            average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
-        except FloatingPointError:
-            average_daily_cooling_runtime = np.nan
-        np.seterr(**old_err_state)
+        average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
 
         baseline10_demand = self.get_baseline_cooling_demand(
             core_cooling_day_set,
@@ -1458,6 +1444,7 @@ class Thermostat(object):
 
         total_runtime_core_heating = daily_runtime.sum()
         n_days = core_heating_day_set.daily.sum()
+        n_hours = core_heating_day_set.hourly.sum()
 
         if np.isnan(total_runtime_core_heating):
             warnings.warn(
@@ -1469,13 +1456,10 @@ class Thermostat(object):
             warnings.warn(
                 "WARNING: Number of valid heating days is zero.")
 
-        # Raise a division error if dividing by zero and replace with np.nan instead
-        old_err_state = np.seterr(divide='raise')
-        try:
-            average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
-        except FloatingPointError:
-            average_daily_heating_runtime = np.nan
-        np.seterr(**old_err_state)
+        if n_hours == 0:
+            warnings.warn("WARNING: Number of valid cooling hours is zero.")
+
+        average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
 
         baseline90_demand = self.get_baseline_heating_demand(
             core_heating_day_set,

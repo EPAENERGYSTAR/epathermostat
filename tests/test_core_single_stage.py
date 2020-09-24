@@ -77,6 +77,7 @@ def test_perecent_saings(thermostat_type_1):
 def test_zero_days_warning(thermostat_zero_days):
     output = thermostat_zero_days.calculate_epa_field_savings_metrics()
     assert isnan(output[0]['daily_mean_core_cooling_runtime'])
+    assert isnan(output[1]['daily_mean_core_heating_runtime'])
 
 
 def test_multiple_same_key(thermostats_multiple_same_key):
