@@ -73,12 +73,16 @@ def has_heating(heat_type):
     -------
     boolean
     """
+    if heat_type is None:
+        return False
     if heat_type == 'none':
+        return False
+    if heat_type == 'other':
+        return False
+    if heat_type == 'heat_pump_dual_fuel':
         return False
     if heat_type in HEAT_TYPE:
         return True
-    if heat_type is None:
-        return False
     return False
 
 
@@ -95,12 +99,14 @@ def has_cooling(cool_type):
     -------
     boolean
     """
+    if cool_type is None:
+        return False
     if cool_type == 'none':
+        return False
+    if cool_type == 'other':
         return False
     if cool_type in COOL_TYPE:
         return True
-    if cool_type is None:
-        return False
     return False
 
 
