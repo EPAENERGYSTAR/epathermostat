@@ -1,46 +1,83 @@
-from thermostat.importers import from_csv
-from thermostat.util.testing import get_data_path
-
+import pytest
+import warnings
 import numpy as np
+from numpy.testing import assert_allclose
+from numpy import isnan
 import pandas as pd
 
 from datetime import datetime
 
-import pytest
+from thermostat.core import (
+        __pandas_warnings,
+        percent_savings,
+        RESISTANCE_HEAT_USE_BIN_PAIRS,
+        )
+from thermostat.importers import from_csv
+from thermostat.util.testing import get_data_path
 
-from .fixtures.thermostats import thermostat_type_1
-from .fixtures.thermostats import thermostat_type_2
-from .fixtures.thermostats import thermostat_type_3
-from .fixtures.thermostats import thermostat_type_4
-from .fixtures.thermostats import thermostat_type_5
-from .fixtures.thermostats import core_heating_day_set_type_1_entire
-from .fixtures.thermostats import core_heating_day_set_type_2
-from .fixtures.thermostats import core_heating_day_set_type_3
-from .fixtures.thermostats import core_heating_day_set_type_4
-from .fixtures.thermostats import core_cooling_day_set_type_1_entire
-from .fixtures.thermostats import core_cooling_day_set_type_2
-from .fixtures.thermostats import core_cooling_day_set_type_3
-from .fixtures.thermostats import core_cooling_day_set_type_5
-from .fixtures.thermostats import metrics_type_1_data
-from .fixtures.thermostats import thermostat_zero_days
-from .fixtures.thermostats import thermostats_multiple_same_key
+from .fixtures.single_stage import (
+        thermostat_type_1,
+        thermostat_type_2,
+        thermostat_type_3,
+        thermostat_type_4,
+        thermostat_type_5,
+        core_heating_day_set_type_1_entire,
+        core_heating_day_set_type_2,
+        core_heating_day_set_type_3,
+        core_heating_day_set_type_4,
+        core_cooling_day_set_type_1_entire,
+        core_cooling_day_set_type_2,
+        core_cooling_day_set_type_3,
+        core_cooling_day_set_type_5,
+        thermostat_zero_days,
+        thermostats_multiple_same_key,
+        metrics_type_1_data,
+        )
 
-from numpy.testing import assert_allclose
-from numpy import isnan
+BASELINE_REGIONAL_COMFORT_CHECK_NONE = [
+        'baseline_regional_demand',
+        'baseline_regional_runtime',
+        'avoided_runtime_baseline_regional',
+        'percent_savings_baseline_regional',
+        'avoided_daily_mean_core_day_runtime_baseline_regional',
+        'avoided_total_core_day_runtime_baseline_regional',
+        'baseline_daily_mean_core_day_runtime_baseline_regional',
+        'baseline_total_core_day_runtime_baseline_regional',
+        '_daily_mean_core_day_demand_baseline_baseline_regional',
+        ]
 
 
 def test_rhu_formatting(thermostat_type_1):
-
     assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
     assert('rhu1_greater55F' == thermostat_type_1._format_rhu('rhu1', 55, np.inf, None))
     assert('rhu1_30F_to_45F' == thermostat_type_1._format_rhu('rhu1', 30, 45, None))
     assert('rhu2_05F_to_10F_aux_duty_cycle' == thermostat_type_1._format_rhu('rhu2', 5, 10, 'aux_duty_cycle'))
 
+def test_pandas_warnings(thermostat_type_1):
+    with pytest.warns(Warning):
+        __pandas_warnings('0.21.0')
+
+    with pytest.warns(Warning):
+        __pandas_warnings('1.2.0')
+
+    with pytest.warns(None) as pytest_warnings:
+        __pandas_warnings('0.25.3')
+    assert not pytest_warnings
+
+    assert __pandas_warnings(None) is None
+
+
+def test_perecent_saings(thermostat_type_1):
+    avoided = pd.Series([4, 5,6])
+    baseline = pd.Series([0, 0, 0])
+    result = percent_savings(avoided, baseline, 'thermostat_test')
+    assert result == np.inf
 
 
 def test_zero_days_warning(thermostat_zero_days):
     output = thermostat_zero_days.calculate_epa_field_savings_metrics()
     assert isnan(output[0]['daily_mean_core_cooling_runtime'])
+    assert isnan(output[1]['daily_mean_core_heating_runtime'])
 
 
 def test_multiple_same_key(thermostats_multiple_same_key):
@@ -82,6 +119,12 @@ def test_interpolate_backward(thermostat_type_1):
     s4 = pd.Series([np.nan, 1])
     s4_intp = thermostat_type_1._interpolate(s4)
     np.testing.assert_allclose(s4_intp, [1, 1])
+
+
+def test_interpolate_one_missing_bad_method(thermostat_type_1):
+    s5 = pd.Series([8, 3, np.nan, 1, 7])
+    s5_intp = thermostat_type_1._interpolate(s5, method="none")
+    np.testing.assert_allclose(s5_intp, [8,3,np.nan,1,7])
 
 
 def test_interpolate_one_missing(thermostat_type_1):
@@ -143,6 +186,33 @@ def test_thermostat_type_1_no_data(thermostat_type_1):
         thermostat_type_1.validate()
     thermostat_type_1.auxiliary_heat_runtime = aux_heat_runtime
     thermostat_type_1.emergency_heat_runtime = emg_heat_runtime
+
+
+def test_thermostat_type_1_baseline_regional_comfort_temperature_none(thermostat_type_1,
+        core_heating_day_set_type_1_entire, core_cooling_day_set_type_1_entire):
+    climate_zone='Mixed-Humid'
+    core_heating_day_set_method='entire_dataset'
+    core_cooling_day_set_method='entire_dataset'
+    baseline_regional_cooling_comfort_temperature=None
+    baseline_regional_heating_comfort_temperature=None
+    result = thermostat_type_1._calculate_cooling_epa_field_savings_metrics(
+            climate_zone,
+            core_cooling_day_set_type_1_entire,
+            core_cooling_day_set_method,
+            baseline_regional_cooling_comfort_temperature)
+
+    for baseline_key in BASELINE_REGIONAL_COMFORT_CHECK_NONE:
+        assert result.get(baseline_key, None) is None
+
+    result = thermostat_type_1._calculate_heating_epa_field_savings_metrics(
+            climate_zone,
+            core_heating_day_set_type_1_entire,
+            core_heating_day_set_method,
+            baseline_regional_heating_comfort_temperature)
+
+    for baseline_key in BASELINE_REGIONAL_COMFORT_CHECK_NONE:
+        assert result.get(baseline_key, None) is None
+
 
 def test_thermostat_type_2_get_core_heating_days(thermostat_type_2):
     core_heating_day_sets = thermostat_type_2.get_core_heating_days(
@@ -206,6 +276,33 @@ def test_thermostat_type_1_get_core_cooling_days_with_params(thermostat_type_1):
     assert len(core_heating_day_sets) == 4
 
 
+def test_get_core_cooling_day_baseline_setpoint_not_implemented(thermostat_type_1, core_cooling_day_set_type_1_entire):
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_cooling_day_baseline_setpoint(core_cooling_day_set_type_1_entire, method="bad")
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_cooling_day_baseline_setpoint(core_cooling_day_set_type_1_entire, source="bad")
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_cooling_day_baseline_setpoint(core_cooling_day_set_type_1_entire, source="cooling_setpoint")
+
+
+def test_get_core_heating_day_baseline_setpoint_not_implemented(thermostat_type_1, core_heating_day_set_type_1_entire):
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_heating_day_baseline_setpoint(core_heating_day_set_type_1_entire, method="bad")
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_heating_day_baseline_setpoint(core_heating_day_set_type_1_entire, source="bad")
+    with pytest.raises(NotImplementedError):
+        thermostat_type_1.get_core_heating_day_baseline_setpoint(core_cooling_day_set_type_1_entire, source="heating_setpoint")
+
+
+def test_rhu_bins_none(thermostat_type_1):
+    rhu = thermostat_type_1._rhu_outputs(
+            rhu_type='rhu1',
+            rhu_bins=None,
+            rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_PAIRS,
+            duty_cycle=None)
+    unique_rhu = set(rhu.values()).pop()
+    assert unique_rhu is None
+
 def test_thermostat_core_heating_day_set_attributes(core_heating_day_set_type_1_entire):
 
     assert isinstance(core_heating_day_set_type_1_entire.name, str)
@@ -238,6 +335,30 @@ def test_thermostat_core_cooling_day_set_attributes(core_cooling_day_set_type_1_
         isinstance(core_cooling_day_set_type_1_entire.end_date, datetime)
         or isinstance(core_cooling_day_set_type_1_entire.end_date, np.datetime64)
     )
+
+
+def test_thermostat_equipment_protect_cooling(thermostat_type_4, thermostat_type_5):
+    assert thermostat_type_5._protect_cooling() is None
+    with pytest.raises(ValueError):
+        assert thermostat_type_4._protect_cooling()
+
+
+def test_thermostat_equipment_protect_heating(thermostat_type_4, thermostat_type_5):
+    assert thermostat_type_4._protect_heating() is None
+    with pytest.raises(ValueError):
+        assert thermostat_type_5._protect_heating()
+
+
+def test_thermostat_equipment_protect_resistance_heat(thermostat_type_1, thermostat_type_2):
+    assert thermostat_type_1._protect_resistance_heat() is None
+    with pytest.raises(ValueError):
+        assert thermostat_type_2._protect_resistance_heat()
+
+
+def test_thermostat_equipment_protect_aux_emerg(thermostat_type_1, thermostat_type_2):
+    assert thermostat_type_1._protect_aux_emerg() is None
+    with pytest.raises(ValueError):
+        assert thermostat_type_2._protect_aux_emerg()
 
 
 def test_thermostat_type_1_total_heating_runtime(thermostat_type_1,
@@ -289,6 +410,12 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu1(thermostat_
         bin_value = item.rhu
         assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
 
+    rhu = thermostat_type_1.get_resistance_heat_utilization_bins(
+            None,
+            temperature_bins,
+            core_heating_day_set_type_1_entire)
+
+    assert rhu is None
 
 def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_type_1,
         core_heating_day_set_type_1_entire, metrics_type_1_data):
@@ -312,6 +439,14 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_
         bin_name = thermostat_type_1._format_rhu('rhu2', item.Index.left, item.Index.right, duty_cycle=None)
         bin_value = item.rhu
         assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
+
+    rhu = thermostat_type_1.get_resistance_heat_utilization_bins(
+            None,
+            temperature_bins,
+            core_heating_day_set_type_1_entire,
+            VAR_MIN_RHU_RUNTIME)
+
+    assert rhu is None
 
 
 def test_thermostat_types_2_get_resistance_heat_utilization_runtime_rhu(

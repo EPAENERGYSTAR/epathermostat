@@ -1,0 +1,2 @@
+thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
+c61badb0e0c0a7e06932de804af43111,heat_pump_electric_backup,two_stage,heat_pump,two_stage,27313,-0500,thermostat_c61badb0e0c0a7e06932de804af43111.csv

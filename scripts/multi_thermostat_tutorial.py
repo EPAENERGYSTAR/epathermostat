@@ -33,8 +33,10 @@ def main():
     # console
     logging.captureWarnings(True)
 
-    data_dir = os.path.join("..", "tests", "data")
-    metadata_filename = os.path.join(data_dir, "metadata.csv")
+    # data_dir = os.path.join("..", "tests", "data", "single_stage")
+    # data_dir = os.path.join("..", "tests", "data", "two_stage")
+    data_dir = os.path.join("..", "tests", "data", "two_stage_ert")
+    metadata_filename = os.path.join(data_dir, "epa_two_stage_metadata.csv")
 
     # Use this to save the weather cache to local disk files
     # thermostats = from_csv(metadata_filename, verbose=True, save_cache=True,

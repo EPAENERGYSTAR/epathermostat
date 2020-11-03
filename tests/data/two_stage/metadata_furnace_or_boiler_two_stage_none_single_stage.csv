@@ -1,0 +1,2 @@
+thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
+ccdd91ee0e997e21cc8f2b91d4ab1c4a,furnace_or_boiler,two_stage,none,single_stage,17401,-0500,thermostat_ccdd91ee0e997e21cc8f2b91d4ab1c4a.csv

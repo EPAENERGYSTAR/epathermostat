@@ -1,11 +1,3 @@
-from thermostat.stats import combine_output_dataframes
-from thermostat.stats import compute_summary_statistics
-from thermostat.stats import summary_statistics_to_csv
-from .fixtures.thermostats import thermostat_emg_aux_constant_on_outlier
-from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
-from thermostat.exporters import certification_to_csv
-from thermostat.columns import EXPORT_COLUMNS
-
 from scipy.stats import norm, randint
 import pandas as pd
 import numpy as np
@@ -16,6 +8,16 @@ import tempfile
 from itertools import islice, cycle
 
 import pytest
+
+from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
+from thermostat.exporters import certification_to_csv
+from thermostat.columns import EXPORT_COLUMNS
+from thermostat.stats import (
+        combine_output_dataframes,
+        compute_summary_statistics,
+        summary_statistics_to_csv,
+        )
+from .fixtures.single_stage import thermostat_emg_aux_constant_on_outlier
 
 
 def get_fake_output_df(n_columns):

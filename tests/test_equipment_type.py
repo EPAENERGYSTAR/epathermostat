@@ -41,11 +41,14 @@ def test_has_heating():
         'furnace_or_boiler',  # Non heat pump heating (gas or oil furnace, electric resistance)
         'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
         'heat_pump_no_electric_backup',  # Heat pump without electric resistance heat
-        'heat_pump_dual_fuel',  # Dual fuel heat pump (e.g. gas or oil fired)
-        'other',  # Multi-zone, ?
     ]:
         assert(has_heating(i) is True)
-    assert(has_heating('none') is False)
+    for i in [
+        'heat_pump_dual_fuel',  # Dual fuel heat pump (e.g. gas or oil fired)
+        'other',  # Multi-zone, ?
+        'none',  # None
+    ]:
+        assert(has_heating(i) is False)
     assert(has_heating(None) is False)
     assert(validate_heat_type('furnace_or_boiler') is True)
     assert(validate_heat_type('bogus_heat_pump') is False)
@@ -55,10 +58,10 @@ def test_has_cooling():
     for i in [
         'heat_pump',  # Heat pump w/ cooling
         'central',  # Central AC
-        'other',  # Mini-split, evaporative cooler, ?
     ]:
         assert(has_cooling(i) is True)
     assert(has_cooling('none') is False)
+    assert(has_cooling('other') is False)
     assert(has_cooling(None) is False)
     assert(validate_cool_type('heat_pump') is True)
     assert(validate_cool_type('bogus_pump') is False)
