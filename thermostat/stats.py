@@ -3,7 +3,7 @@ import numpy as np
 
 from collections import OrderedDict
 from itertools import chain
-from warnings import warn
+import warnings
 from functools import reduce
 from pkg_resources import resource_stream
 import logging
@@ -21,6 +21,7 @@ TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
 UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
 
 logger = logging.getLogger('epathermostat')
+warnings.simplefilter('module', Warning)
 
 
 def combine_output_dataframes(dfs):
@@ -88,7 +89,7 @@ def get_filtered_stats(
                 iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
                 if bool(iqr_filter.any()) is False:
                     iqr_filter = (column == column)
-                    warn("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
+                    warnings.warn("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
                 iqr_filtered_column = column.loc[iqr_filter]
 
                 # calculate quantiles and statistics for RHU2 IQR (IQFLT) and
@@ -109,7 +110,7 @@ def get_filtered_stats(
 
         return [stats]
     else:
-        warn(
+        warnings.warn(
             "Not enough data to compute summary_statistics ({}_{})"
             .format(label, heating_or_cooling)
         )
@@ -238,7 +239,7 @@ def compute_summary_statistics(
             target_baseline_method)
 
     if len(metrics_df) == 0:
-        warn("No data to compute for summary statistics.")
+        warnings.warn("No data to compute for summary statistics.")
         return None
 
     very_cold_cold_df = metrics_df[[
@@ -556,7 +557,7 @@ def summary_statistics_to_csv(stats, filepath, product_id):
     """
 
     if stats is None:
-        warn("No summary statistics to export.")
+        warnings.warn("No summary statistics to export.")
         return None
 
 

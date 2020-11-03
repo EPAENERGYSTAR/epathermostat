@@ -2,6 +2,9 @@ from multiprocessing import Pool
 import warnings
 
 
+warnings.simplefilter('module', Warning)
+
+
 def _calc_epa_func(thermostat):
     """ Takes an individual thermostat and runs the
     calculate_epa_field_savings_metrics method. This method is necessary for

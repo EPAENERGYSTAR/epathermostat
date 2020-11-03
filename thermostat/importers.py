@@ -23,7 +23,6 @@ import json
 import warnings
 import dateutil.parser
 import os
-import errno
 import pytz
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -38,6 +37,7 @@ AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
 
 
 logger = logging.getLogger(__name__)
+warnings.simplefilter('module', Warning)
 
 INTERVAL_COLUMNS = {
         'datetime',
@@ -51,6 +51,7 @@ INTERVAL_COLUMNS = {
         'auxiliary_heat_runtime',
         'temp_in',
         }
+
 
 class ZCTAError(Exception):
     pass

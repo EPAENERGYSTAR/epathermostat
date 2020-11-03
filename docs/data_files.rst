@@ -78,7 +78,7 @@ Name                         Data Format                      Units   Descriptio
 
 .. [#] Possible values for :code:`heat_type` are:
 
-    - :code:`non_heat_pump`: Non heat pump heating (gas or oil furnace, electric resistance)
+    - :code:`furnace`: Non heat pump heating (gas or oil furnace, electric resistance)
     - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
     - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)

@@ -1,6 +1,3 @@
-from thermostat.exporters import metrics_to_csv
-from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
-
 import pandas as pd
 import numpy as np
 from numpy.testing import assert_allclose
@@ -9,12 +6,17 @@ import tempfile
 
 import pytest
 
-from .fixtures.thermostats import thermostat_type_1
-from .fixtures.thermostats import thermostat_type_2
-from .fixtures.thermostats import thermostat_type_3
-from .fixtures.thermostats import thermostat_type_4
-from .fixtures.thermostats import thermostat_type_5
-from .fixtures.thermostats import metrics_type_1_data
+from thermostat.exporters import metrics_to_csv
+from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
+
+from .fixtures.single_stage import (
+        thermostat_type_1,
+        thermostat_type_2,
+        thermostat_type_3,
+        thermostat_type_4,
+        thermostat_type_5,
+        metrics_type_1_data,
+        )
 from thermostat.columns import EXPORT_COLUMNS
 import six
 

@@ -1,6 +1,10 @@
 import pandas as pd
-from warnings import warn
+import warnings
 from thermostat.columns import EXPORT_COLUMNS, CERTIFICATION_HEADERS
+
+
+warnings.simplefilter('module', Warning)
+
 
 COLUMN_LOOKUP = {
         "percent_savings_baseline_percentile_lower_bound_95_perc_conf_national_weighted_mean": {
@@ -81,7 +85,7 @@ def certification_to_csv(stats, filepath, product_id):
         DataFrame containing data output to CSV.
     """
     if stats is None:
-        warn("No certification data to export.")
+        warnings.warn("No certification data to export.")
         return None
 
     labels = [i.get('label') for i in stats]

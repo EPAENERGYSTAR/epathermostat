@@ -25,5 +25,6 @@ setup(name='thermostat',
         'eeweather==0.3.23',
         'pandas==0.25.3',
         'sqlalchemy==1.3.1',
+        'zipcodes==1.1.2',
         ],
 )

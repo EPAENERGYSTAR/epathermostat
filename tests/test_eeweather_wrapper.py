@@ -1,10 +1,7 @@
-from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
-
 import pytest
 import pandas as pd
-
-
-from .fixtures.thermostats import thermostat_type_1
+from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
+from .fixtures.single_stage import thermostat_type_1
 
 
 def test_get_indexed_temperatures_eeweather_empty_index():

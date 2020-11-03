@@ -1,0 +1,2 @@
+thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
+e839fe3c-b4af-43a8-bcd4-209241f1612c,furnace_or_boiler,single_stage,central,single_speed,30331,-7,thermostat_e839fe3c-b4af-43a8-bcd4-209241f1612c.csv

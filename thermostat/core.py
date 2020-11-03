@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
 import inspect
-from warnings import warn
+import warnings
 import logging
 
 import pandas as pd
@@ -22,20 +22,7 @@ from thermostat.equipment_type import (
         validate_cool_stage,
         )
 
-try:
-    if "0.21." in pd.__version__:
-        warn(
-            "WARNING: Pandas version 0.21.x has known issues and is not supported. "
-            "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
-    # Pandas 1.x causes issues. Need to warn about this at the moment.
-    if "1.0." in pd.__version__:
-        warn(
-            "WARNING: Pandas version 1.0.x has changed significantly, and causes "
-            "issues with this software. We are working on supporting Pandas 1.0.x in "
-            "a future release.")
-
-except TypeError:
-    pass  # Documentation mocks out pd, so ignore if not present.
+warnings.simplefilter('module', Warning)
 
 # Ignore divide-by-zero errors
 np.seterr(divide='ignore', invalid='ignore')
@@ -53,12 +40,41 @@ RESISTANCE_HEAT_USE_BIN = list(t for t in range(
     RESISTANCE_HEAT_USE_BINS_MIN_TEMP,
     RESISTANCE_HEAT_USE_BINS_MAX_TEMP + RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH,
     RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH))
+RESISTANCE_HEAT_USE_BIN_PAIRS = [(RESISTANCE_HEAT_USE_BIN[x], RESISTANCE_HEAT_USE_BIN[x+1]) for x in range(0, len(RESISTANCE_HEAT_USE_BIN) - 1)]
 
 RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
-RESISTANCE_HEAT_USE_WIDE_BIN_TUPLE = [(30, 45)]
+RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS = [(30, 45)]
 
 # FIXME: Turning off these warnings for now
 pd.set_option('mode.chained_assignment', None)
+
+
+def __pandas_warnings(pandas_version):
+    ''' Helper to warn about versions of Pandas that aren't supported yet or have issues '''
+    try:
+        pd_version = pandas_version.split('.')
+        pd_major = int(pd_version.pop(0))
+        pd_minor = int(pd_version.pop(0))
+        if pd_major == 0 and pd_minor == 21:
+            warnings.warn(
+                "WARNING: Pandas version 0.21.x has known issues and is not supported. "
+                "Please upgrade to the Pandas version 0.25.3.")
+        # Pandas 1.x causes issues. Need to warn about this at the moment.
+        if pd_major >= 1:
+            warnings.warn(
+                "WARNING: Pandas version 1.x has changed significantly, and causes "
+                "issues with this software. We are working on supporting Pandas 1.x in "
+                "a future release. Please downgrade to Pandas 0.25.3")
+
+    except Exception:
+        # If we can't figure out the version string then don't worry about it for now
+        return None
+
+
+try:
+    __pandas_warnings(pd.__version__)
+except TypeError:
+    pass  # Documentation mocks out pd, so ignore if not present.
 
 
 def avoided(baseline, observed):
@@ -66,15 +82,7 @@ def avoided(baseline, observed):
 
 
 def percent_savings(avoided, baseline, thermostat_id):
-    try:
-        savings = (avoided.mean() / baseline.mean()) * 100.0
-    except ZeroDivisionError:
-        logger.debug(
-            'percent_savings divided by zero: %s / %s '
-            'for thermostat_id %s ' % (
-                avoided.mean(), baseline.mean(),
-                thermostat_id))
-        savings = np.nan
+    savings = np.divide(avoided.mean(), baseline.mean()) * 100.0
     return savings
 
 
@@ -268,6 +276,13 @@ class Thermostat(object):
         if not(self.has_cooling):
             message = "The function '{}', which is cooling specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.cool_type)
+            raise ValueError(message)
+
+    def _protect_resistance_heat(self):
+        function_name = inspect.stack()[1][3]
+        if not(self.has_resistance_heat):
+            message = "The function '{}', which is resistance heat specific, cannot be" \
+                      " called for equipment_type {}".format(function_name, self.heat_type)
             raise ValueError(message)
 
     def _protect_aux_emerg(self):
@@ -586,9 +601,7 @@ class Thermostat(object):
         """
 
         self._protect_aux_emerg()
-
-        if not self.has_resistance_heat:
-            return None
+        self._protect_resistance_heat()
 
         in_core_day_set_daily = self._get_range_boolean(
             core_heating_day_set.daily.index,
@@ -634,10 +647,8 @@ class Thermostat(object):
             ascending by temperature bin. Returns None if the thermostat does
             not control the appropriate equipment or if the runtime_temp is None.
         """
+        self._protect_resistance_heat()
         self._protect_aux_emerg()
-
-        if not self.has_resistance_heat:
-            return None
 
         if runtime_temp is None:
             return None
@@ -663,7 +674,7 @@ class Thermostat(object):
         if runtime_rhu.data_is_nonsense.any():
             for item in runtime_rhu.itertuples():
                 if item.data_is_nonsense:
-                    warn(
+                    warnings.warn(
                         'WARNING: '
                         'aux heat runtime %s > compressor runtime %s '
                         'for %sF <= temperature < %sF '
@@ -727,17 +738,7 @@ class Thermostat(object):
         delta = (core_day_set.end_date - core_day_set.start_date)
         if isinstance(delta, timedelta):
             return delta.days
-        else:
-            try:
-                result = int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
-            except ZeroDivisionError:
-                logger.debug(
-                    'Date Range divided by zero: %s / %s '
-                    'for thermostat_id %s' % (
-                        delta.astype('timedelta64[D]'), np.timedelta64(1, 'D'),
-                        self.thermostat_id))
-                result = np.nan
-            return result
+        return int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
 
     def get_cooling_demand(self, core_cooling_day_set):
         """
@@ -976,7 +977,7 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            logger.warn(
+            logger.debug(
                 'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
@@ -1023,16 +1024,14 @@ class Thermostat(object):
 
         self._protect_cooling()
 
-        if method != 'tenth_percentile':
-            raise NotImplementedError
+        if method == 'tenth_percentile' and source == 'temperature_in':
+            return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
 
         if source == 'cooling_setpoint':
-            warn("Cooling Setpoint method is no longer implemented.")
-            raise NotImplementedError
-        elif source == 'temperature_in':
-            return self.temperature_in[core_cooling_day_set.hourly].dropna().quantile(.1)
-        else:
-            raise NotImplementedError
+            warnings.warn("Cooling Setpoint method is no longer implemented.")
+
+        # For everything else, return "Not Implemented"
+        raise NotImplementedError
 
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
                                                method='ninetieth_percentile', source='temperature_in'):
@@ -1059,16 +1058,14 @@ class Thermostat(object):
 
         self._protect_heating()
 
-        if method != 'ninetieth_percentile':
-            raise NotImplementedError
+        if method == 'ninetieth_percentile' and source == 'temperature_in':
+            return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
 
         if source == 'heating_setpoint':
-            warn("Heating setpoint method is no longer implemented")
-            raise NotImplementedError
-        elif source == 'temperature_in':
-            return self.temperature_in[core_heating_day_set.hourly].dropna().quantile(.9)
-        else:
-            raise NotImplementedError
+            warnings.warn("Heating setpoint method is no longer implemented")
+
+        # For everything else, return "Not Implemented"
+        raise NotImplementedError
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
@@ -1191,14 +1188,6 @@ class Thermostat(object):
         """
         return np.maximum(alpha * (baseline_heating_demand), 0)
 
-    def get_daily_avoided_cooling_runtime(
-            self, baseline_runtime, core_cooling_day_set):
-        return baseline_runtime - self.cool_runtime_daily[core_cooling_day_set]
-
-    def get_daily_avoided_heating_runtime(
-            self, baseline_runtime, core_heating_day_set):
-        return baseline_runtime - self.heat_runtime_daily[core_heating_day_set]
-
     def calculate_epa_field_savings_metrics(
             self,
             core_cooling_day_set_method="entire_dataset",
@@ -1301,24 +1290,18 @@ class Thermostat(object):
         n_hours = core_cooling_day_set.hourly.sum()
 
         if np.isnan(total_runtime_core_cooling):
-            warn(
+            warnings.warn(
                 "WARNING: Total Runtime Core Cooling Days is nan. "
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
         if n_days == 0:
-            warn("WARNING: Number of valid cooling days is zero.")
+            warnings.warn("WARNING: Number of valid cooling days is zero.")
 
         if n_hours == 0:
-            warn("WARNING: Number of valid cooling hours is zero.")
+            warnings.warn("WARNING: Number of valid cooling hours is zero.")
 
-        # Raise a division error if dividing by zero and replace with np.nan instead
-        old_err_state = np.seterr(divide='raise')
-        try:
-            average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
-        except FloatingPointError:
-            average_daily_cooling_runtime = np.nan
-        np.seterr(**old_err_state)
+        average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
 
         baseline10_demand = self.get_baseline_cooling_demand(
             core_cooling_day_set,
@@ -1461,24 +1444,22 @@ class Thermostat(object):
 
         total_runtime_core_heating = daily_runtime.sum()
         n_days = core_heating_day_set.daily.sum()
+        n_hours = core_heating_day_set.hourly.sum()
 
         if np.isnan(total_runtime_core_heating):
-            warn(
+            warnings.warn(
                 "WARNING: Total Runtime Core Heating is nan. "
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
         if n_days == 0:
-            warn(
+            warnings.warn(
                 "WARNING: Number of valid heating days is zero.")
 
-        # Raise a division error if dividing by zero and replace with np.nan instead
-        old_err_state = np.seterr(divide='raise')
-        try:
-            average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
-        except FloatingPointError:
-            average_daily_heating_runtime = np.nan
-        np.seterr(**old_err_state)
+        if n_hours == 0:
+            warnings.warn("WARNING: Number of valid cooling hours is zero.")
+
+        average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
 
         baseline90_demand = self.get_baseline_heating_demand(
             core_heating_day_set,
@@ -1603,7 +1584,7 @@ class Thermostat(object):
             rhu_bins : Pandas series
                 Data for the RHU calculation from get_resistance_heat_utilization_bins
             rhu_usage_bins :  list of tuples
-                List of the lower and upper bounds for the given RHU bin to fill with None if rhu_bin is None
+                List of the lower and upper bounds for the given RHU bin to fill with None if rhu_bins is None
             duty_cycle : str
                 The duty cycle (e.g.: None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle')
 
@@ -1672,13 +1653,13 @@ class Thermostat(object):
             additional_outputs.update(self._rhu_outputs(
                 rhu_type=rhu_type,
                 rhu_bins=rhu,
-                rhu_usage_bins=RESISTANCE_HEAT_USE_BIN,
+                rhu_usage_bins=RESISTANCE_HEAT_USE_BIN_PAIRS,
                 duty_cycle=duty_cycle))
 
             additional_outputs.update(self._rhu_outputs(
                 rhu_type=rhu_type,
                 rhu_bins=rhu_wide,
-                rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN,
+                rhu_usage_bins=RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS,
                 duty_cycle=duty_cycle))
 
         return additional_outputs

@@ -1,0 +1,2 @@
+thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
+thermostat_zero_days,furnace_or_boiler,single_stage,central,single_speed,14586,+0,thermostat_zero_days.csv
