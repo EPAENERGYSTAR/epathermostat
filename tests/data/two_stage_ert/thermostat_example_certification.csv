@@ -1,6 +1,6 @@
 product_id,sw_version,metric,filter,region,statistic,season,value
-test_product,2.0.0,percent_savings_baseline_percentile,tau_cvrmse_savings_p01,national_weighted_mean,lower_bound_95,heating,7.08
+test_product,2.0.0,percent_savings_baseline_percentile,tau_cvrmse_savings_p01,national_weighted_mean,lower_bound_95,heating,6.95
 test_product,2.0.0,percent_savings_baseline_percentile,tau_cvrmse_savings_p01,national_weighted_mean,lower_bound_95,cooling,17.83
-test_product,2.0.0,percent_savings_baseline_percentile,tau_cvrmse_savings_p01,national_weighted_mean,q20,heating,7.68
+test_product,2.0.0,percent_savings_baseline_percentile,tau_cvrmse_savings_p01,national_weighted_mean,q20,heating,7.39
 test_product,2.0.0,percent_savings_baseline_percentile,tau_cvrmse_savings_p01,national_weighted_mean,q20,cooling,18.94
-test_product,2.0.0,rhu_30F_to_45F,tau_cvrmse_savings_p01,all,upper_bound_95,heating,0.00
+test_product,2.0.0,rhu_30F_to_45F,tau_cvrmse_savings_p01,all,upper_bound_95,heating,0.04
