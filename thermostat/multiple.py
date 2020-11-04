@@ -58,6 +58,6 @@ def multiple_thermostat_calculate_epa_field_savings_metrics(thermostats):
         for metric in metrics_dict.get(thermostat.thermostat_id, []):
             metrics.append(metric)
         # Prevent duplicate thermostat IDs from being double-counted
-        metrics_dict.pop(thermostat_id, None)
+        metrics_dict.pop(thermostat.thermostat_id, None)
 
     return metrics

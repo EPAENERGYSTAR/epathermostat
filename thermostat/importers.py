@@ -324,8 +324,14 @@ def get_single_thermostat(thermostat_id, zipcode,
 
     # raise an error if dates are not aligned
     if not all(date_time == hourly_index):
+        missing_hours = set(hourly_index).difference(set(date_time))
+        duplicates = list(date_time[date_time.duplicated()])
         message = ("Dates provided for thermostat_id={} may contain some "
                    "which are out of order, missing, or duplicated.".format(thermostat_id))
+        if len(duplicates) > 0:
+            message = message + " (Possible duplicated hours: {})".format(duplicates)
+        elif len(missing_hours) > 0:
+            message = message + " (Possible missing hours: {})".format(missing_hours)
         raise RuntimeError(message)
 
     # Export the data from the cache
