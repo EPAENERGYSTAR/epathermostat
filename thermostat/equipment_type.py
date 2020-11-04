@@ -16,6 +16,7 @@ HEAT_STAGE = [
     'two_stage',  # Dual capacity heater or dual stage compressor
     'modulating',  # Modulating or variable capacity unit
     'variable_speed',   # Modulating or variable capacity unit
+    'none',  # No central heating system
     ]
 
 COOL_TYPE = [
@@ -32,6 +33,7 @@ COOL_STAGE = [
     'two_stage',  # Dual stage compressor (synonym)
     'modulating',  # Modulating or variable capacity compressor
     'variable_speed',   # Modulating or variable capacity unit
+    'none',  # No central cooling system
     ]
 
 #: This mapping is for old scripts that need to refer to the old mapping, but want to use the new functionality.
@@ -258,28 +260,28 @@ def is_line_voltage(heat_type):
 def validate_heat_type(heat_type):
     if heat_type is None or heat_type == '' or heat_type in HEAT_TYPE:
         return True
-    logging.warn("Heating type {heat_type} is not a recognized heating type.".format(heat_type=heat_type))
+    logging.warning("Heating type {heat_type} is not a recognized heating type.".format(heat_type=heat_type))
     return False
 
 
 def validate_cool_type(cool_type):
     if cool_type is None or cool_type == '' or cool_type in COOL_TYPE:
         return True
-    logging.warn("Cooling type {cool_type} is not a recognized cooling type.".format(cool_type=cool_type))
+    logging.warning("Cooling type {cool_type} is not a recognized cooling type.".format(cool_type=cool_type))
     return False
 
 
 def validate_heat_stage(heat_stage):
     if heat_stage is None or heat_stage == '' or heat_stage in HEAT_STAGE:
         return True
-    logging.warn("Heating stage {heat_stage} is not a recognized heating stage.".format(heat_stage=heat_stage))
+    logging.warning("Heating stage {heat_stage} is not a recognized heating stage.".format(heat_stage=heat_stage))
     return False
 
 
 def validate_cool_stage(cool_stage):
     if cool_stage is None or cool_stage == '' or cool_stage in COOL_STAGE:
         return True
-    logging.warn("Cooling stage {cool_stage} is not a recognized cooling stage.".format(cool_stage=cool_stage))
+    logging.warning("Cooling stage {cool_stage} is not a recognized cooling stage.".format(cool_stage=cool_stage))
     return False
 
 
