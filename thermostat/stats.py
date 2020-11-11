@@ -59,7 +59,7 @@ def get_filtered_stats(
     stats["n_thermostat_core_day_sets_kept"] = n_rows_kept
     stats["n_thermostat_core_day_sets_discarded"] = n_rows_discarded
 
-    if n_rows_total > 0:
+    if n_rows_kept > 0:
 
         for column_name in target_columns:
             column = filtered_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
@@ -114,7 +114,7 @@ def get_filtered_stats(
             "Not enough data to compute summary_statistics ({}_{})"
             .format(label, heating_or_cooling)
         )
-        return []
+        return [stats]
 
 
 def compute_summary_statistics(
