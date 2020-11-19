@@ -7,10 +7,10 @@ Data Files
 Input data
 ----------
 
-Input data should be specified using the following formats. One CSV should
-specify thermostat summary metadata (e.g. unique identifiers, location, etc.).
-Another CSV (or CSVs) should contain runtime information, linked to the
-metadata csv by the :code:`thermostat_id` column.
+Input data should be specified using the following formats. The metadata CSV file 
+specifies unique values for each thermostat such as equipment type and location.
+Each thermostat interval data CSV file contains hourly runtime information and is linked
+to the metadata CSV file by the :code:`interval_data_filename` column.
 
 Example files :download:`here <./examples/examples.zip>`.
 
@@ -47,6 +47,7 @@ Columns
 ============================ ================================ ======= ===========
 Name                         Data Format                      Units   Description
 ---------------------------- -------------------------------- ------- -----------
+:code:`thermostat_id`        string                           N/A     Uniquely identifying marker for the thermostat.
 :code:`datetime`             YYYY-MM-DD hh:mm:ss (ISO-8601)   N/A     Date and time of this set of readings.
 :code:`cool_runtime_stg1`    decimal or integer               minutes Hourly runtime of cooling equipment (all units).
 :code:`cool_runtime_stg2`    decimal or integer               minutes Hourly runtime of cooling equipment second stage (two-stage units only).
@@ -78,7 +79,8 @@ Name                         Data Format                      Units   Descriptio
 
 .. [#] Possible values for :code:`heat_type` are:
 
-    - :code:`furnace`: Non heat pump heating (gas or oil furnace, electric resistance)
+    - :code:`furnace_or_boiler`: Forced air furnace (any fuel)
+    - :code:'electric_resistance': Line voltage controlled heaters (electric baseboard)
     - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
     - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
@@ -88,8 +90,11 @@ Name                         Data Format                      Units   Descriptio
 .. [#] Possible values for :code:`heat_stage` are:
 
     - :code:`single_stage`: Single capacity heater or single stage compressor
+    - :code:`single_speed`: Synonym for single capacity heater or single stage compressor
     - :code:`two_stage`: Dual capacity heater or dual stage compressor
+    - :code:`two_speed`: Synonym for dual capacity heater or dual stage compressor
     - :code:`modulating`: Modulating or variable capacity unit
+    - :code:`variable_speed`: Modulating or variable capacity unit
 
 .. [#] Possible values for :code:`cool_type` are:
 

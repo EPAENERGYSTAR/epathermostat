@@ -252,7 +252,7 @@ application memory and is only recommended for debugging purposes.
         # saved_thermostats.append(thermostat)
 
 
-If you are looking to use multiple thermostats for the calculation you may
+If you are looking to use multiple CPUs (processors) for the calculation you may
 replace the above code with the following method call:
 
 .. code-block:: python
@@ -313,11 +313,9 @@ Compute statistics across all thermostats.
 
 Save these results to file.
 
-Each row of the saved CSV will represent one type of output, with one row per
-statistic per output. Each column in the CSV will represent one subset of
-thermostats, as determined by grouping by EIC climate zone and applying
-various filtering methods. National weighted averages will be available near
-the top of the file.
+Each row of the stats CSV file will represent one output statistic. Each column in the
+CSV file will represent one subset of thermostats, grouped by EIC climate zone and
+filtering method.
 
 At this point, you will also need to provide an alphanumeric product identifier
 for the connected thermostat; e.g. a combination of the connected thermostat
@@ -337,16 +335,15 @@ data set.
     #                                               stats_advanced_filepath,
     #                                               product_id)
 
-National savings are computed by weighted average of percent savings results
-grouped by climate zone. Heavier weights are applied to results in climate
-zones which, regionally, tend to have longer runtimes. Weightings used are
-available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
 
 Certification File
 ------------------
 
-Once you have computed the summary statistics you may then create the
-certification file, which is also submitted to the EPA.
+Once you have computed the summary statistics you may then create the certification file,
+which is also submitted to the EPA. National savings metrics are computed by weighted average of
+percent savings results grouped by climate zone. Heavier weights are applied to results
+in climate zones which have longer runtimes due to more extreme climate. Weightings used
+are available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`
 
 .. code-block:: python
 

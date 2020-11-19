@@ -12,7 +12,9 @@ HEAT_TYPE = [
 
 HEAT_STAGE = [
     'single_stage',  # Single capacity heater or single stage compressor
+    'single_speed',  # Single capacity heater or single stage compressor (synonym)
     'two_stage',  # Dual capacity heater or dual stage compressor
+    'two_speed',  # Dual capacity heater or dual stage compressor (synonym)
     'modulating',  # Modulating or variable capacity unit
     'variable_speed',   # Modulating or variable capacity unit
     ]
@@ -26,8 +28,8 @@ COOL_TYPE = [
 
 COOL_STAGE = [
     'single_speed',  # Single stage compressor
-    'two_speed',  # Dual stage compressor
     'single_stage',  # Single stage compressor (synonym)
+    'two_speed',  # Dual stage compressor
     'two_stage',  # Dual stage compressor (synonym)
     'modulating',  # Modulating or variable capacity compressor
     'variable_speed',   # Modulating or variable capacity unit
@@ -159,7 +161,7 @@ def has_two_stage_heating(heat_stage):
     -------
     boolean
     """
-    if heat_stage == 'two_stage':
+    if heat_stage == 'two_stage' or heat_stage == 'two_speed':
         return True
     return False
 

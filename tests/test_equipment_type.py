@@ -69,7 +69,9 @@ def test_has_cooling():
 
 def test_has_two_stage_cooling():
     assert(has_two_stage_cooling('two_speed') is True)
+    assert(has_two_stage_cooling('two_stage') is True)
     assert(has_two_stage_cooling('single_speed') is False)
+    assert(has_two_stage_cooling('single_stage') is False)
     assert(has_two_stage_cooling('modulating') is False)
     assert(has_two_stage_cooling(None) is False)
     assert(validate_cool_stage('two_speed') is True)
@@ -79,9 +81,12 @@ def test_has_two_stage_cooling():
 def test_has_two_stage_heating():
     assert(has_two_stage_heating('two_stage') is True)
     assert(has_two_stage_heating('single_stage') is False)
+    assert(has_two_stage_heating('two_speed') is True)
+    assert(has_two_stage_heating('single_speed') is False)
     assert(has_two_stage_heating('modulating') is False)
     assert(has_two_stage_heating(None) is False)
     assert(validate_heat_stage('two_stage') is True)
+    assert(validate_heat_stage('two_speed') is True)
     assert(validate_heat_stage('2_stage') is False)
 
 
