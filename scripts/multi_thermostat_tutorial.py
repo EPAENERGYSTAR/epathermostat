@@ -17,6 +17,8 @@ from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_
 
 
 def main():
+    # Whether to compute Advanced Statistics (in most cases this is NOT needed)
+    ADVANCED_STATS = False
 
     logging.basicConfig()
     # Example logging configuration for file and console output
@@ -55,9 +57,10 @@ def main():
     metrics_out = metrics_to_csv(metrics, output_filename)
 
     stats = compute_summary_statistics(metrics_out)
-    stats_advanced = compute_summary_statistics(
-            metrics_out,
-            advanced_filtering=True)
+    if ADVANCED_STATS:
+        stats_advanced = compute_summary_statistics(
+                metrics_out,
+                advanced_filtering=True)
 
     product_id = "test_product"
 
@@ -74,13 +77,14 @@ def main():
             stats_filepath,
             product_id)
 
-    stats_advanced_filepath = os.path.join(
-            data_dir,
-            "thermostat_example_stats_advanced.csv")
-    summary_statistics_to_csv(
-            stats_advanced,
-            stats_advanced_filepath,
-            product_id)
+    if ADVANCED_STATS:
+        stats_advanced_filepath = os.path.join(
+                data_dir,
+                "thermostat_example_stats_advanced.csv")
+        summary_statistics_to_csv(
+                stats_advanced,
+                stats_advanced_filepath,
+                product_id)
 
 
 if __name__ == "__main__":
