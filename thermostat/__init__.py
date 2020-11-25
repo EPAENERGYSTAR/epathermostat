@@ -1,8 +1,8 @@
-VERSION = (2, 0, 0)
+VERSION = "2.0.0a1"
 
 
 def get_version():
-    return '{}.{}.{}'.format(VERSION[0], VERSION[1], VERSION[2])
+    return VERSION
 
 
 # This try/except clause is a hack to make the get_version method work for the
