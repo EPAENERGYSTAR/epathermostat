@@ -29,10 +29,6 @@ make it easier to debug.
     $ source activate thermostat
     (thermostat)$ pip install thermostat
 
-    # If using pipenv (see https://github.com/pypa/pipenv)
-    # (cd to directory with data files)
-    $ pipenv --python 3.8 install thermostat
-
 If you already have an environment, use the following:
 
 .. code-block:: bash
@@ -52,7 +48,7 @@ To deactivate the environment when you've finished, use the following:
 
 .. code-block:: bash
 
-    # if using virtualenvwrapper / venv / pipenv
+    # if using virtualenvwrapper / venv
     (thermostat)$ deactivate
     $
 
@@ -78,6 +74,11 @@ If you are not on the correct version, you should upgrade:
 
 The command above will update dependencies as well. If you wish to skip
 updating dependencies, use the :code:`--no-deps` flag:
+
+.. note::
+
+   This is not recommended between major and minor revisions. e.g.: if you are
+   upgrading from version 1.7.2 to 2.0.0 we recommend updating dependencies.
 
 .. code-block:: bash
 
