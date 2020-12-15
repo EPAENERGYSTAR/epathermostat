@@ -82,7 +82,6 @@ Name                         Data Format                      Units   Descriptio
 .. [#] Possible values for :code:`heat_type` are:
 
     - :code:`furnace_or_boiler`: Forced air furnace (any fuel)
-    - :code:'electric_resistance': Line voltage controlled heaters (electric baseboard)
     - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
     - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
