@@ -76,6 +76,8 @@ Name                         Data Format                      Units   Descriptio
   automatically from NCDC using the `eeweather`_ package.
 - Dates and times should be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
   should have :code:`2020-01-02 00:00:00` on the next line.)
+- If a heating or cooling type or stage is not present or not applicable a
+  value of :code:`none` or blank is sufficient.
 
 .. [#] Possible values for :code:`heat_type` are:
 
@@ -86,6 +88,7 @@ Name                         Data Format                      Units   Descriptio
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
     - :code:`other`: Multi-zone, etc.
     - :code:`none`: No central heating system
+    - :code:`(blank)`: No central heating system
 
 .. [#] Possible values for :code:`heat_stage` are:
 
@@ -95,6 +98,8 @@ Name                         Data Format                      Units   Descriptio
     - :code:`two_speed`: Synonym for dual capacity heater or dual stage compressor
     - :code:`modulating`: Modulating or variable capacity unit
     - :code:`variable_speed`: Modulating or variable capacity unit
+    - :code:`none`: No central heating system
+    - :code:`(blank)`: No central heating system
 
 .. [#] Possible values for :code:`cool_type` are:
 
@@ -102,6 +107,7 @@ Name                         Data Format                      Units   Descriptio
     - :code:`central`: Central AC
     - :code:`other`: Mini-split, evaporative cooler, etc.
     - :code:`none`: No central cooling system
+    - :code:`(blank)`: No central cooling system
 
 .. [#] Possible values for :code:`cool_stage` are:
 
@@ -110,6 +116,8 @@ Name                         Data Format                      Units   Descriptio
     - :code:`single_speed`: Single stage compressor (synonym for single_stage)
     - :code:`two_speed`: Dual stage compressor (synonym for two_stage)
     - :code:`modulating`: Modulating or variable capacity compressor
+    - :code:`none`: No central cooling system
+    - :code:`(blank)`: No central cooling system
 
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
