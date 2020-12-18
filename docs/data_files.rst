@@ -60,6 +60,10 @@ Name                         Data Format                      Units   Descriptio
 :code:`temp_in`              decimal, to nearest 0.5 °F       °F      Hourly average conditioned space temperature over the period of the reading.
 ============================ ================================ ======= ===========
 
+- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
+- Dates and times must be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
+  should have :code:`2020-01-02 00:00:00` on the next line and :code:`2020-01-02 01:00:00` after that.)
+- All dates for the period must be represented and consecutive. (i.e. each date for a period must have a line in the data file.)
 - Each row should correspond to a single hourly reading from a thermostat. [#]_
 - `NULL` should be specified by leaving the field blank.
 - Zero values should be specified as 0, rather than as blank.
@@ -68,16 +72,15 @@ Name                         Data Format                      Units   Descriptio
   for a particular hour, please still provide indoor conditioned space
   temperature for that hour, if available.
 - Runtimes should be less than or equal to 60 minutes (1 hour).
-- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
 - All runtime data MUST have the same UTC offset, as provided in the
   corresponding metadata file.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather`_ package.
-- Dates and times should be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
-  should have :code:`2020-01-02 00:00:00` on the next line.)
 - If a heating or cooling type or stage is not present or not applicable a
   value of :code:`none` or blank is sufficient.
+- All headers must be present in the file, even if there is no data for that
+  column (use :code:`none` or blank for missing data.)
 
 .. [#] Possible values for :code:`heat_type` are:
 
