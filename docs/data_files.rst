@@ -12,6 +12,8 @@ specifies unique values for each thermostat such as equipment type and location.
 Each thermostat interval data CSV file contains hourly runtime information and is linked
 to the metadata CSV file by the :code:`interval_data_filename` column.
 
+Data files must contain all fields, even if there is no data for that field. Please refer to the 
+
 Example files :download:`here <./examples/examples.zip>`.
 
 Thermostat Summary Metadata CSV format
@@ -29,14 +31,14 @@ Name                           Data Format      Units Description
 :code:`cool_type`              string           N/A   The type of controlled HVAC cooling equipment. [#]_
 :code:`cool_stage`             string           N/A   The stages of controlled HVAC cooling equipment. [#]_
 :code:`zipcode`                string, 5 digits N/A   The `ZCTA`_ code in which the thermostat is installed. [#]_
-:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
+:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700" or "-5". Data in UTC is offset "0")
 :code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
 ============================== ================ ===== ===========
 
  - Each row should correspond to a single thermostat.
  - Nulls should be specified by leaving the field blank.
- - All interval data for a particular thermostat should use
-   the *same, single* UTC offset provided in the metadata file.
+ - All interval data for a particular thermostat should use the *same, single*
+   UTC offset provided in the metadata file.
 
 Thermostat Interval Data CSV format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +62,10 @@ Name                         Data Format                      Units   Descriptio
 :code:`temp_in`              decimal, to nearest 0.5 °F       °F      Hourly average conditioned space temperature over the period of the reading.
 ============================ ================================ ======= ===========
 
+- If a heating or cooling type or stage is not present or not applicable a
+  value of :code:`none` or blank is sufficient.
+- All headers must be present in the file, even if there is no data for that
+  column (use :code:`none` or blank for missing data.)
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
 - Dates and times must be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
   should have :code:`2020-01-02 00:00:00` on the next line and :code:`2020-01-02 01:00:00` after that.)
@@ -77,10 +83,6 @@ Name                         Data Format                      Units   Descriptio
   corresponding metadata file.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather`_ package.
-- If a heating or cooling type or stage is not present or not applicable a
-  value of :code:`none` or blank is sufficient.
-- All headers must be present in the file, even if there is no data for that
-  column (use :code:`none` or blank for missing data.)
 
 .. [#] Possible values for :code:`heat_type` are:
 
