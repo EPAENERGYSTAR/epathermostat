@@ -12,6 +12,8 @@ specifies unique values for each thermostat such as equipment type and location.
 Each thermostat interval data CSV file contains hourly runtime information and is linked
 to the metadata CSV file by the :code:`interval_data_filename` column.
 
+Data files must contain all fields, even if there is no data for that field. Please refer to the 
+
 Example files :download:`here <./examples/examples.zip>`.
 
 Thermostat Summary Metadata CSV format
@@ -29,14 +31,14 @@ Name                           Data Format      Units Description
 :code:`cool_type`              string           N/A   The type of controlled HVAC cooling equipment. [#]_
 :code:`cool_stage`             string           N/A   The stages of controlled HVAC cooling equipment. [#]_
 :code:`zipcode`                string, 5 digits N/A   The `ZCTA`_ code in which the thermostat is installed. [#]_
-:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700")
+:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700" or "-5". Data in UTC is offset "0")
 :code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
 ============================== ================ ===== ===========
 
  - Each row should correspond to a single thermostat.
  - Nulls should be specified by leaving the field blank.
- - All interval data for a particular thermostat should use
-   the *same, single* UTC offset provided in the metadata file.
+ - All interval data for a particular thermostat should use the *same, single*
+   UTC offset provided in the metadata file.
 
 Thermostat Interval Data CSV format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +62,14 @@ Name                         Data Format                      Units   Descriptio
 :code:`temp_in`              decimal, to nearest 0.5 °F       °F      Hourly average conditioned space temperature over the period of the reading.
 ============================ ================================ ======= ===========
 
+- If a heating or cooling type or stage is not present or not applicable a
+  value of :code:`none` or blank is sufficient.
+- All headers must be present in the file, even if there is no data for that
+  column (use :code:`none` or blank for missing data.)
+- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
+- Dates and times must be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
+  should have :code:`2020-01-02 00:00:00` on the next line and :code:`2020-01-02 01:00:00` after that.)
+- All dates for the period must be represented and consecutive. (i.e. each date for a period must have a line in the data file.)
 - Each row should correspond to a single hourly reading from a thermostat. [#]_
 - `NULL` should be specified by leaving the field blank.
 - Zero values should be specified as 0, rather than as blank.
@@ -68,25 +78,22 @@ Name                         Data Format                      Units   Descriptio
   for a particular hour, please still provide indoor conditioned space
   temperature for that hour, if available.
 - Runtimes should be less than or equal to 60 minutes (1 hour).
-- Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
 - All temperatures should be specified in °F (to the nearest 0.5°F).
 - All runtime data MUST have the same UTC offset, as provided in the
   corresponding metadata file.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather`_ package.
-- Dates and times should be consecutive. (e.g.: :code:`2020-01-01 23:00:00`
-  should have :code:`2020-01-02 00:00:00` on the next line.)
 
 .. [#] Possible values for :code:`heat_type` are:
 
     - :code:`furnace_or_boiler`: Forced air furnace (any fuel)
-    - :code:'electric_resistance': Line voltage controlled heaters (electric baseboard)
     - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
     - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
     - :code:`electric_resistance`: Electric resistance heat (Line-voltage thermostat)
     - :code:`other`: Multi-zone, etc.
     - :code:`none`: No central heating system
+    - :code:`(blank)`: No central heating system
 
 .. [#] Possible values for :code:`heat_stage` are:
 
@@ -96,6 +103,8 @@ Name                         Data Format                      Units   Descriptio
     - :code:`two_speed`: Synonym for dual capacity heater or dual stage compressor
     - :code:`modulating`: Modulating or variable capacity unit
     - :code:`variable_speed`: Modulating or variable capacity unit
+    - :code:`none`: No central heating system
+    - :code:`(blank)`: No central heating system
 
 .. [#] Possible values for :code:`cool_type` are:
 
@@ -103,6 +112,7 @@ Name                         Data Format                      Units   Descriptio
     - :code:`central`: Central AC
     - :code:`other`: Mini-split, evaporative cooler, etc.
     - :code:`none`: No central cooling system
+    - :code:`(blank)`: No central cooling system
 
 .. [#] Possible values for :code:`cool_stage` are:
 
@@ -111,6 +121,8 @@ Name                         Data Format                      Units   Descriptio
     - :code:`single_speed`: Single stage compressor (synonym for single_stage)
     - :code:`two_speed`: Dual stage compressor (synonym for two_stage)
     - :code:`modulating`: Modulating or variable capacity compressor
+    - :code:`none`: No central cooling system
+    - :code:`(blank)`: No central cooling system
 
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
