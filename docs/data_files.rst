@@ -31,7 +31,7 @@ Name                           Data Format      Units Description
 :code:`cool_type`              string           N/A   The type of controlled HVAC cooling equipment. [#]_
 :code:`cool_stage`             string           N/A   The stages of controlled HVAC cooling equipment. [#]_
 :code:`zipcode`                string, 5 digits N/A   The `ZCTA`_ code in which the thermostat is installed. [#]_
-:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700" or "-5". Data in UTC is offset "0")
+:code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700" or "-5". Data in UTC is offset "+0")
 :code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
 ============================== ================ ===== ===========
 
@@ -63,7 +63,7 @@ Name                         Data Format                      Units   Descriptio
 ============================ ================================ ======= ===========
 
 - If a heating or cooling type or stage is not present or not applicable a
-  value of :code:`none` or blank is sufficient.
+  value of :code:`none` or blank is sufficient to signify no data present.
 - All headers must be present in the file, even if there is no data for that
   column (use :code:`none` or blank for missing data.)
 - Dates should be specified in the ISO 8601 date format (e.g. :code:`2015-05-19 01:00:00`, :code:`2020-01-01 23:00:00`).
@@ -83,6 +83,11 @@ Name                         Data Format                      Units   Descriptio
   corresponding metadata file.
 - Outdoor temperature data need not be provided - it will be fetched
   automatically from NCDC using the `eeweather`_ package.
+- If any hour of a particular day's runtime is missing data then all of the
+  data for that particular day will also be marked as missing (`NULL`) since
+  the day's data is incomplete.
+- If more than 5% of runtime data is missing for a thermostat that thermostat
+  will be discarded.
 
 .. [#] Possible values for :code:`heat_type` are:
 

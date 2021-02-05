@@ -23,6 +23,7 @@ setup(name='thermostat',
     install_requires=[
         'eemeter==2.5.2',
         'eeweather==0.3.23',
+        'numpy < 1.20',
         'pandas==0.25.3',
         'sqlalchemy==1.3.1',
         'zipcodes==1.1.2',

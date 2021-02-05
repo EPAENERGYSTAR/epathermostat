@@ -127,14 +127,22 @@ def normalize_utc_offset(utc_offset):
     datetime timdelta offset
     """
     try:
-        if int(utc_offset) == 0:
-            utc_offset = "+0"
+
+        if isinstance(utc_offset, int):
+            symbol = ""
+            if utc_offset >= 0:
+                symbol = "+"
+            utc_offset = symbol + str(utc_offset)
+
+        if utc_offset == '0':
+            utc_offset = '+0'
+
         delta = dateutil.parser.parse(
             "2000-01-01T00:00:00" + str(utc_offset)).tzinfo.utcoffset(None)
         return delta
 
     except (ValueError, TypeError, AttributeError) as e:
-        raise TypeError("Invalid UTC offset: {} ({})".format(
+        raise TypeError("Invalid UTC offset: can't convert {} to a valid offset. Please prefix with + or -. ({})".format(
            utc_offset,
            e))
 
@@ -298,7 +306,6 @@ def get_single_thermostat(thermostat_id, zipcode,
     thermostat : thermostat.Thermostat
         The loaded thermostat object.
     """
-
     # load outdoor temperatures
     station = get_closest_station_by_zipcode(zipcode)
 
@@ -329,9 +336,9 @@ def get_single_thermostat(thermostat_id, zipcode,
         message = ("Dates provided for thermostat_id={} may contain some "
                    "which are out of order, missing, or duplicated.".format(thermostat_id))
         if len(duplicates) > 0:
-            message = message + " (Possible duplicated hours: {})".format(duplicates)
+            message += " (Possible duplicated hours: {})".format(duplicates)
         elif len(missing_hours) > 0:
-            message = message + " (Possible missing hours: {})".format(missing_hours)
+            message += " (Possible missing hours: {})".format(missing_hours)
         raise RuntimeError(message)
 
     # Export the data from the cache
@@ -355,6 +362,23 @@ def get_single_thermostat(thermostat_id, zipcode,
     auxiliary_heat_runtime, emergency_heat_runtime = _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)
     cool_runtime = _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_index)
     heat_runtime = _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)
+
+    # Give the thermostats the benefit of the doubt (especially if the runtime is None)
+    enough_cool_runtime = True
+    enough_heat_runtime = True
+
+    if cool_runtime is not None:
+        enough_cool_runtime = _enough_daily_runtume(cool_runtime)
+    if heat_runtime is not None:
+        enough_heat_runtime = _enough_daily_runtume(heat_runtime)
+
+    if not(enough_cool_runtime and enough_heat_runtime):
+        message = "Not enough runtime for thermostat %s\n" % thermostat_id
+        if not enough_heat_runtime:
+            message += "Heat runtime has over 5% missing data.\n"
+        if not enough_cool_runtime:
+            message += "Cool runtime has over 5% missing data.\n"
+        raise ValueError(message)
 
     # create thermostat instance
     thermostat = Thermostat(
@@ -455,3 +479,12 @@ def _create_series(df, index):
     series = df
     series.index = index
     return series
+
+
+def _enough_daily_runtume(series):
+    if series is None:
+        return False
+
+    num_days = len(series)
+    num_dropped_days = len(series.dropna())
+    return (num_dropped_days / num_days) > 0.95
