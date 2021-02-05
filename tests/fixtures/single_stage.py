@@ -86,6 +86,16 @@ def thermostat_zero_days(request):
     thermostats = from_csv(get_data_path(request.param))
     return next(thermostats)
 
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_hours.csv"])
+def thermostat_missing_hours(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_days.csv"])
+def thermostat_missing_days(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return list(thermostats)
+
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_single_emg_aux_constant_on_outlier.csv"])
 def thermostat_emg_aux_constant_on_outlier(request):
     thermostats = from_csv(get_data_path(request.param))

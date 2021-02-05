@@ -14,10 +14,13 @@ from .fixtures.single_stage import (
         thermostat_type_1_utc,
         thermostat_type_1_utc_bad,
         thermostat_type_1_too_many_minutes,
+        thermostat_type_1_utc_bad,
         thermostat_type_1_zip_bad,
         thermostat_type_1_data_out_of_order,
         thermostat_type_1_data_missing_header,
         thermostat_type_1_cache,
+        thermostat_missing_hours,
+        thermostat_missing_days,
         )
 
 def test_import_csv(thermostat_type_1):
@@ -48,10 +51,15 @@ def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
     assert(normalize_utc_offset(0) == datetime.timedelta(0))
     assert(normalize_utc_offset("+6") == datetime.timedelta(0, 21600))
     assert(normalize_utc_offset("-6") == datetime.timedelta(-1, 64800))
+    assert(normalize_utc_offset("-0600") == datetime.timedelta(-1, 64800))
     assert(normalize_utc_offset(-6) == datetime.timedelta(-1, 64800))
 
     with pytest.raises(TypeError) as excinfo:
-        normalize_utc_offset(6)
+        normalize_utc_offset('+O')
+    assert "Invalid UTC" in str(excinfo)
+
+    with pytest.raises(TypeError) as excinfo:
+        normalize_utc_offset('6')
     assert "Invalid UTC" in str(excinfo)
 
     # Load a thermostat with utc offset == 0
@@ -62,6 +70,17 @@ def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
 def test_too_many_minutes(thermostat_type_1_too_many_minutes):
     # None of the thermostats in this list should import
     assert len(thermostat_type_1_too_many_minutes) == 0
+
+def test_missing_hours(thermostat_missing_hours):
+    missing_hours = thermostat_missing_hours.heat_runtime_hourly[thermostat_missing_hours.heat_runtime_hourly.isna()]
+    missing_hours_days = set(missing_hours.index.date)
+    missing_daily = thermostat_missing_hours.heat_runtime_daily[thermostat_missing_hours.heat_runtime_daily.isna()]
+    missing_daily_days = set(missing_daily.index.date)
+    assert missing_daily_days.difference(missing_hours_days) == set()
+
+def test_missing_days(thermostat_missing_days):
+    # Checking what happens
+    assert len(thermostat_missing_days) == 0
 
 def test_bad_zipcode(thermostat_type_1_zip_bad):
     assert len(thermostat_type_1_zip_bad) == 0
