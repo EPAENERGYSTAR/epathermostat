@@ -431,7 +431,7 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
             return
 
         if has_multi_stage_heating(heat_stage):
-            warnings.warn("Multi-stage cooling isn't supported (yet)")
+            warnings.warn("Multi-stage heating isn't supported (yet)")
             return
 
         if has_two_stage_heating(heat_stage):
