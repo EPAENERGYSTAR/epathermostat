@@ -148,7 +148,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None, log_error=True, log_error_filename='missing_thermostats.csv'):
+             cache_path=None, log_error=True, log_error_filename='thermostat_import_errors.csv'):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -213,13 +213,12 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
     error_list = []
 
     for result in result_list:
-        error_dict = {}
         if result['thermostat'] is None:
-            error_dict['thermostat_id'] = result['thermostat_id']
-            error_dict['error'] = []
             for error in result['errors']:
                 logging.warning(result['thermostat_id'] + ': ' + error)
-                error_dict['error'].append(error)
+                error_dict = {}
+                error_dict['thermostat_id'] = result['thermostat_id']
+                error_dict['error'] = error
             error_list.append(error_dict)
         else:
             results.append(result['thermostat'])
@@ -227,7 +226,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
     if log_error and error_list:
         fieldnames = ['thermostat_id', 'error']
         with open(log_error_filename, 'w') as error_file:
-            writer = csv.DictWriter(error_file, fieldnames=fieldnames)
+            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
             writer.writeheader()
             for thermostat_error in error_list:
                 writer.writerow(thermostat_error)
