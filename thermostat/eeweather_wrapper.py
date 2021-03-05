@@ -53,7 +53,7 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     """
 
     if index.shape == (0, 0) or index.shape == (0,):
-        return pd.Series([], index=index, dtype=float)
+        return pd.Series([], index=(), dtype=float)
     years = sorted(index.groupby(index.year).keys())
     start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
     end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
