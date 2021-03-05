@@ -94,7 +94,7 @@ def get_filtered_stats(
             iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
             if bool(iqr_filter.any()) is False:
                 iqr_filter = (column == column)
-                warnings.warn("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
+                logging.debug("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
             iqr_filtered_column = column.loc[iqr_filter]
 
             # calculate quantiles and statistics for RHU2 IQR (IQFLT) and

@@ -649,7 +649,7 @@ class Thermostat(object):
 
         # Create the bins and group by them
         runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes'].sum()
+        runtime_rhu = runtime_temp.groupby('bins')[['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
@@ -857,7 +857,11 @@ class Thermostat(object):
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
-        return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
+        demand = pd.Series(cdd, index=daily_index)
+        if demand.empty is True:
+            demand = np.nan
+
+        return demand, tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
     def get_heating_demand(self, core_heating_day_set):
         """
@@ -981,8 +985,12 @@ class Thermostat(object):
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
+        demand = pd.Series(hdd, index=daily_index)
+        if demand.empty is True:
+            demand = np.nan
+
         return (
-            pd.Series(hdd, index=daily_index),
+            demand,
             tau_estimate,
             alpha_estimate,
             mse,
@@ -1279,6 +1287,9 @@ class Thermostat(object):
             mae,
         ) = self.get_cooling_demand(core_cooling_day_set)
 
+        if demand.empty is True:
+            demand = np.nan
+
         total_runtime_core_cooling = daily_runtime.sum()
         n_days = core_cooling_day_set.daily.sum()
         n_hours = core_cooling_day_set.hourly.sum()
@@ -1435,6 +1446,9 @@ class Thermostat(object):
             mape,
             mae,
         ) = self.get_heating_demand(core_heating_day_set)
+
+        if demand.empty is True:
+            demand = np.nan
 
         total_runtime_core_heating = daily_runtime.sum()
         n_days = core_heating_day_set.daily.sum()
