@@ -59,12 +59,6 @@ def __pandas_warnings(pandas_version):
             warnings.warn(
                 "WARNING: Pandas version 0.21.x has known issues and is not supported. "
                 "Please upgrade to the Pandas version 0.25.3.")
-        # Pandas 1.x causes issues. Need to warn about this at the moment.
-        if pd_major >= 1:
-            warnings.warn(
-                "WARNING: Pandas version 1.x has changed significantly, and causes "
-                "issues with this software. We are working on supporting Pandas 1.x in "
-                "a future release. Please downgrade to Pandas 0.25.3")
 
     except Exception:
         # If we can't figure out the version string then don't worry about it for now
@@ -655,7 +649,7 @@ class Thermostat(object):
 
         # Create the bins and group by them
         runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes'].sum()
+        runtime_rhu = runtime_temp.groupby('bins')[['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
@@ -863,7 +857,11 @@ class Thermostat(object):
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
-        return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
+        demand = pd.Series(cdd, index=daily_index)
+        if demand.empty is True:
+            demand = np.nan
+
+        return demand, tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
     def get_heating_demand(self, core_heating_day_set):
         """
@@ -987,8 +985,12 @@ class Thermostat(object):
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
 
+        demand = pd.Series(hdd, index=daily_index)
+        if demand.empty is True:
+            demand = np.nan
+
         return (
-            pd.Series(hdd, index=daily_index),
+            demand,
             tau_estimate,
             alpha_estimate,
             mse,
@@ -1285,6 +1287,9 @@ class Thermostat(object):
             mae,
         ) = self.get_cooling_demand(core_cooling_day_set)
 
+        if demand.empty is True:
+            demand = np.nan
+
         total_runtime_core_cooling = daily_runtime.sum()
         n_days = core_cooling_day_set.daily.sum()
         n_hours = core_cooling_day_set.hourly.sum()
@@ -1441,6 +1446,9 @@ class Thermostat(object):
             mape,
             mae,
         ) = self.get_heating_demand(core_heating_day_set)
+
+        if demand.empty is True:
+            demand = np.nan
 
         total_runtime_core_heating = daily_runtime.sum()
         n_days = core_heating_day_set.daily.sum()

@@ -70,14 +70,18 @@ def get_filtered_stats(
         column = filtered_df[column_name].replace([np.inf, -np.inf], np.nan).dropna()
 
         # calculate quantiles and statistics
-        mean = np.nanmean(pd.to_numeric(column))
-
-        if column.count() != 0:
-            sem = np.nanstd(column) / (column.count() ** .5)
-        else:
+        col_num = pd.to_numeric(column)
+        if col_num.empty:
+            mean = np.nan
             sem = np.nan
-        lower_bound = mean - (1.96 * sem)
-        upper_bound = mean + (1.96 * sem)
+            lower_bound = np.nan
+            upper_bound = np.nan
+        else:
+            mean = np.nanmean(col_num)
+            sem = np.nanstd(column) / (column.count() ** .5)
+            lower_bound = mean - (1.96 * sem)
+            upper_bound = mean + (1.96 * sem)
+
         stats["{}_n".format(column_name)] = column.count()
         stats["{}_upper_bound_95_perc_conf".format(column_name)] = upper_bound
         stats["{}_mean".format(column_name)] = mean
@@ -94,15 +98,22 @@ def get_filtered_stats(
             iqr_filter = (column < column.quantile(UNFILTERED_PERCENTILE))
             if bool(iqr_filter.any()) is False:
                 iqr_filter = (column == column)
-                warnings.warn("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
+                logging.debug("RHU filtering 5% and min Runtime filtering removed entire dataset from statistics summary for bin. Disabling filter.")
             iqr_filtered_column = column.loc[iqr_filter]
 
             # calculate quantiles and statistics for RHU2 IQR (IQFLT) and
             # non-IQR filtering (NOIQ)
-            iqr_mean = np.nanmean(pd.to_numeric(iqr_filtered_column))
-            iqr_sem = np.nanstd(iqr_filtered_column) / (iqr_filtered_column.count() ** .5)
-            iqr_lower_bound = iqr_mean - (1.96 * iqr_sem)
-            iqr_upper_bound = iqr_mean + (1.96 * iqr_sem)
+            iqr_num = pd.to_numeric(iqr_filtered_column)
+            if iqr_num.empty:
+                iqr_mean = np.nan
+                iqr_sem = np.nan
+                iqr_lower_bound = np.nan
+                iqr_upper_bound = np.nan
+            else:
+                iqr_mean = np.nanmean(iqr_num)
+                iqr_sem = np.nanstd(iqr_filtered_column) / (iqr_filtered_column.count() ** .5)
+                iqr_lower_bound = iqr_mean - (1.96 * iqr_sem)
+                iqr_upper_bound = iqr_mean + (1.96 * iqr_sem)
 
             stats["{}_n".format(iqr_column_name)] = iqr_filtered_column.count()
             stats["{}_upper_bound_95_perc_conf".format(iqr_column_name)] = iqr_upper_bound
