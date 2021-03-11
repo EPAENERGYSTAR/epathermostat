@@ -116,7 +116,7 @@ def get_closest_station_by_zipcode(zipcode):
 
         if station is None:
             zipcode_mapping = zipcodes.matching(zipcode)
-            warn("No station found for ZCTA / ZIP %s (%s, %s)." % (
+            warnings.warn("No station found for ZCTA / ZIP %s (%s, %s)." % (
                 zipcode,
                 zipcode_mapping[0].get('city'),
                 zipcode_mapping[0].get('state')

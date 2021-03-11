@@ -1,3 +1,4 @@
+import csv
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
         has_heating,
@@ -147,7 +148,8 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, cache_path=None):
+def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
+             cache_path=None, log_error=True, log_error_filename='thermostat_import_errors.csv'):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -162,7 +164,11 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     shuffle: boolean
         Shuffles the thermostats to give them random ordering if desired (helps with caching).
     cache_path: str
-        Directory path to save the cached data
+        Directory path to save the cached data.
+    log_error: boolean
+        Create a log file of thermostats that weren't imported and the reason they weren't imported.
+    log_error_filename: boolean
+        Name of the file to use for logging the thermostats that weren't imported.
 
     Returns
     -------
@@ -187,6 +193,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     )
     metadata.fillna('', inplace=True)
 
+
     # Shuffle the results to help alleviate cache issues
     if shuffle:
         logging.info("Metadata randomized to prevent collisions in cache.")
@@ -203,20 +210,27 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     p.close()
     p.join()
 
-    # Bad thermostats return None so remove those.
-    results = [x for x in result_list if x is not None]
+    results = []
+    error_list = []
 
-    # Check for thermostats that were not loaded and log them
-    metadata_thermostat_ids = set(metadata.thermostat_id)
-    loaded_thermostat_ids = set([x.thermostat_id for x in results])
-    missing_thermostats = metadata_thermostat_ids.difference(loaded_thermostat_ids)
-    missing_thermostats_num = len(missing_thermostats)
-    if missing_thermostats_num > 0:
-        logging.warning("Unable to load {} thermostat records because of "
-                        "errors. Please check the logs for the following thermostats:".format(
-                            missing_thermostats_num))
-        for thermostat in missing_thermostats:
-            logging.warning(thermostat)
+    for result in result_list:
+        if result['thermostat'] is None:
+            for error in result['errors']:
+                logging.warning(result['thermostat_id'] + ': ' + error)
+                error_dict = {}
+                error_dict['thermostat_id'] = result['thermostat_id']
+                error_dict['error'] = error
+            error_list.append(error_dict)
+        else:
+            results.append(result['thermostat'])
+
+    if log_error and error_list:
+        fieldnames = ['thermostat_id', 'error']
+        with open(log_error_filename, 'w') as error_file:
+            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
+            writer.writeheader()
+            for thermostat_error in error_list:
+                writer.writerow(thermostat_error)
 
     # Convert this to an iterator to maintain compatibility
     return iter(results)
@@ -232,48 +246,54 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
 
     interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
+    status_metadata = {
+        'thermostat_id': row.thermostat_id,
+        'errors': [],
+        'thermostat': None,
+    }
+    errors = []
+    thermostat = None
+
     try:
         thermostat = get_single_thermostat(
-                thermostat_id=row.thermostat_id,
-                zipcode=row.zipcode,
-                heat_type=row.heat_type,
-                heat_stage=row.heat_stage,
-                cool_type=row.cool_type,
-                cool_stage=row.cool_stage,
-                utc_offset=row.utc_offset,
-                interval_data_filename=interval_data_filename,
-                save_cache=save_cache,
-                cache_path=cache_path,
+            thermostat_id=row.thermostat_id,
+            zipcode=row.zipcode,
+            heat_type=row.heat_type,
+            heat_stage=row.heat_stage,
+            cool_type=row.cool_type,
+            cool_stage=row.cool_stage,
+            utc_offset=row.utc_offset,
+            interval_data_filename=interval_data_filename,
+            save_cache=save_cache,
+            cache_path=cache_path,
         )
     except ZCTAError as e:
         # Could not locate a station for the thermostat. Warn and skip.
-        warnings.warn(
-            "Skipping import of thermostat (id={}) for which "
+        errors.append(
+            "Skipping import of thermostat because "
             "a sufficient source of outdoor weather data could not"
-            "be located using the given ZIP code ({}). This is likely "
+            f"be located using the given ZIP code ({row.zipcode}). This is likely "
             "due to the discrepancy between US Postal Service ZIP "
             "codes (which do not always map well to locations) and "
             "Census Bureau ZCTAs (which usually do). Please supply "
             "a zipcode which corresponds to a US Census Bureau ZCTA."
-            "\nError Message: {}"
-            .format(row.thermostat_id, row.zipcode, e))
-        return
+            f"\nError Message: {e}"
+            )
 
     except ISDDataNotAvailableError as e:
-        warnings.warn(
-            "Skipping import of thermostat(id={} because the NCDC "
-            "does not have data: {}"
-            .format(row.thermostat_id, e))
-        return
+        errors.append(
+            "Skipping import of thermostat because the NCDC "
+            f"does not have data: {e}"
+            )
 
     except Exception as e:
-        warnings.warn(
-            "Skipping import of thermostat(id={}) because of "
-            "the following error: {}"
-            .format(row.thermostat_id, e))
-        return
+        errors.append(
+            f"Skipping import of thermostat because of "
+            f"the following error: {e}")
 
-    return thermostat
+    status_metadata['errors'] = errors
+    status_metadata['thermostat'] = thermostat
+    return status_metadata
 
 
 def get_single_thermostat(thermostat_id, zipcode,
@@ -367,17 +387,18 @@ def get_single_thermostat(thermostat_id, zipcode,
     enough_cool_runtime = True
     enough_heat_runtime = True
 
+    # Currently checks hourly runtime, not daily
     if cool_runtime is not None:
-        enough_cool_runtime = _enough_daily_runtume(cool_runtime)
+        enough_cool_runtime = _enough_runtume(cool_runtime)
     if heat_runtime is not None:
-        enough_heat_runtime = _enough_daily_runtume(heat_runtime)
+        enough_heat_runtime = _enough_runtume(heat_runtime)
 
     if not(enough_cool_runtime and enough_heat_runtime):
-        message = "Not enough runtime for thermostat %s\n" % thermostat_id
+        message = "Not enough runtime for thermostat "
         if not enough_heat_runtime:
-            message += "Heat runtime has over 5% missing data.\n"
+            message += "(Heat runtime has over 5% missing data) "
         if not enough_cool_runtime:
-            message += "Cool runtime has over 5% missing data.\n"
+            message += "(Cool runtime has over 5% missing data) "
         raise ValueError(message)
 
     # create thermostat instance
@@ -481,10 +502,10 @@ def _create_series(df, index):
     return series
 
 
-def _enough_daily_runtume(series):
+def _enough_runtume(series):
     if series is None:
         return False
 
-    num_days = len(series)
-    num_dropped_days = len(series.dropna())
-    return (num_dropped_days / num_days) > 0.95
+    num_elements = len(series)
+    num_dropped_elements = len(series.dropna())
+    return (num_dropped_elements / num_elements) > 0.95
