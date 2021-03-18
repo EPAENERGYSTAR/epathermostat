@@ -57,7 +57,7 @@ def __pandas_warnings(pandas_version):
         pd_minor = int(pd_version.pop(0))
         if pd_major == 0 and pd_minor == 21:
             warnings.warn(
-                "WARNING: Pandas version 0.21.x has known issues and is not supported. "
+                "Pandas version 0.21.x has known issues and is not supported. "
                 "Please upgrade to the Pandas version 0.25.3.")
 
     except Exception:
@@ -669,11 +669,12 @@ class Thermostat(object):
             for item in runtime_rhu.itertuples():
                 if item.data_is_nonsense:
                     warnings.warn(
-                        'WARNING: '
+                        '%s: '
                         'aux heat runtime %s > compressor runtime %s '
                         'for %sF <= temperature < %sF '
                         'for thermostat_id %s '
                         'from %s to %s inclusive' % (
+                            self.thermostat_id,
                             item.aux_runtime,
                             item.heat_runtime,
                             item.Index.left,
@@ -1296,15 +1297,16 @@ class Thermostat(object):
 
         if np.isnan(total_runtime_core_cooling):
             warnings.warn(
-                "WARNING: Total Runtime Core Cooling Days is nan. "
+                f"{self.thermostat_id}: "
+                "Total Runtime Core Cooling Days is nan. "
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
         if n_days == 0:
-            warnings.warn("WARNING: Number of valid cooling days is zero.")
+            warnings.warn(f"{self.thermostat_id}: Number of valid cooling days is zero.")
 
         if n_hours == 0:
-            warnings.warn("WARNING: Number of valid cooling hours is zero.")
+            warnings.warn(f"{self.thermostat_id}: Number of valid cooling hours is zero.")
 
         average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
 
@@ -1456,16 +1458,16 @@ class Thermostat(object):
 
         if np.isnan(total_runtime_core_heating):
             warnings.warn(
-                "WARNING: Total Runtime Core Heating is nan. "
+                f"{self.thermostat_id}: "
+                "Total Runtime Core Heating is nan. "
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
         if n_days == 0:
-            warnings.warn(
-                "WARNING: Number of valid heating days is zero.")
+            warnings.warn(f"{self.thermostat_id}: Number of valid heating days is zero.")
 
         if n_hours == 0:
-            warnings.warn("WARNING: Number of valid cooling hours is zero.")
+            warnings.warn(f"{self.thermostat_id}: Number of valid cooling hours is zero.")
 
         average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
 
