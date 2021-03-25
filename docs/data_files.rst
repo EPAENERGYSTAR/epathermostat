@@ -161,7 +161,6 @@ Columns
    ":code:`cool_type`","string","N/A","Cooling type for the thermostat"
    ":code:`cool_stage`","string","N/A","Cooling stage for the thermostat"
    ":code:`heating_or_cooling`","string","N/A","Label for the core day set (e.g. 'heating_2012-2013')."
-   ":code:`zipcode`","string, 5 digits ","N/A","ZIP code provided in the metadata file."
    ":code:`station`","string, USAF ID","N/A","USAF identifier for station used to fetch hourly temperature data."
    ":code:`climate_zone`","string","N/A","EIC climate zone (consolidated)."
    ":code:`start_date`","date","ISO-8601","Earliest date in input file."

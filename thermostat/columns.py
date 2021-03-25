@@ -182,7 +182,6 @@ EXPORT_COLUMNS = [
     "cool_type",
     "cool_stage",
     'heating_or_cooling',
-    'zipcode',
     'station',
     'climate_zone',
 
