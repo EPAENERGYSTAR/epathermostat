@@ -341,3 +341,19 @@ available :download:`for download <../thermostat/resources/NationalAverageClimat
 .. _ZCTA: http://www.census.gov/programs-surveys/geography/guidance/geo-areas/zctas.html
 .. _eeweather ZCTA to latitide / longitude conversion: http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion
 .. _eeweather: http://eeweather.openee.io/en/latest/index.html 
+
+.. _thermostat-import-errors:
+
+Thermostat Import Errors
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following file is output for any thermostat import or creation errors:
+
+Columns
+```````
+
+.. csv-table::
+   :header: "Name", "Description"
+
+    ":code:`thermostat_id`", "Thermostat ID"
+    ":code:`error`", "Error message for the thermostat"

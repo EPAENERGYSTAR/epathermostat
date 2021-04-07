@@ -173,7 +173,7 @@ def core_cooling_day_set_type_5(thermostat_type_5):
 def metrics_type_1_data():
 
     # this data comes from a script in scripts/test_data_generation.ipynb
-    data = [{'sw_version': '2.0.0a2',
+    data = [{'sw_version': '2.0.0a3',
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'heat_type': 'heat_pump_electric_backup',
         'heat_stage': 'single_stage',
@@ -217,7 +217,7 @@ def metrics_type_1_data():
         'core_cooling_days_mean_outdoor_temperature': 79.8426321875,
         'core_mean_indoor_temperature': 73.95971753003002,
         'core_mean_outdoor_temperature': 79.8426321875},
-        {'sw_version': '2.0.0a2',
+        {'sw_version': '2.0.0a3',
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'heat_type': 'heat_pump_electric_backup',
         'heat_stage': 'single_stage',

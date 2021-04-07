@@ -51,7 +51,7 @@ def core_cooling_day_set_ert_hpeb_2_hp_2_entire(thermostat_ert_hpeb_2_hp_2):
 
 @pytest.fixture(scope="session")
 def metrics_ert_hpeb_2_hp_2_data():
-    data = [{'sw_version': '2.0.0a2',
+    data = [{'sw_version': '2.0.0a3',
 	'ct_identifier': 'c61badb0e0c0a7e06932de804af43111',
 	'heat_type': 'heat_pump_electric_backup',
 	'heat_stage': 'two_stage',
@@ -95,7 +95,7 @@ def metrics_ert_hpeb_2_hp_2_data():
 	'core_cooling_days_mean_outdoor_temperature': 74.44325500000001,
 	'core_mean_indoor_temperature': 71.87575995807128,
 	'core_mean_outdoor_temperature': 74.44325500000001},
-	{'sw_version': '2.0.0a2',
+	{'sw_version': '2.0.0a3',
 	'ct_identifier': 'c61badb0e0c0a7e06932de804af43111',
 	'heat_type': 'heat_pump_electric_backup',
 	'heat_stage': 'two_stage',
