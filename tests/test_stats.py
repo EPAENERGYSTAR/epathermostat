@@ -233,7 +233,7 @@ def combined_dataframe():
 
 def test_combine_output_dataframes(dataframes):
     combined = combine_output_dataframes(dataframes)
-    assert combined.shape == (20, 79)
+    assert combined.shape == (20, 78)
 
 
 def test_compute_summary_statistics(combined_dataframe):

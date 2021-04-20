@@ -1378,7 +1378,6 @@ class Thermostat(object):
             "cool_type": self.cool_type,
             "cool_stage": self.cool_stage,
             "heating_or_cooling": core_cooling_day_set.name,
-            "zipcode": self.zipcode,
             "station": self.station,
             "climate_zone": climate_zone,
 
@@ -1540,7 +1539,6 @@ class Thermostat(object):
             "cool_type": self.cool_type,
             "cool_stage": self.cool_stage,
             "heating_or_cooling": core_heating_day_set.name,
-            "zipcode": self.zipcode,
             "station": self.station,
             "climate_zone": climate_zone,
 
