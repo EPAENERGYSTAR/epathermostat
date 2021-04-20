@@ -286,18 +286,21 @@ The single-thermostat metrics should be output to CSV and converted to dataframe
 The output CSV will be saved in your data directory and should closely match
 the output CSV provided in the example data.
 
+This file is not currently required for submission to EPA, but is useful for
+troubleshooting.
+
 See :ref:`thermostat-output` for more detailed file format information.
 
 
-Computing summary statistics
-----------------------------
+Computing summary statistics for submission
+-------------------------------------------
 
 Once you have obtained output for each individual thermostat in your dataset,
-use the stats module to compute summary statistics, which are formatted for
+use the stats module to compute summary statistics. This file is formatted
 submission to the EPA. The example below works with the output file from the
 tutorial above and can be modified to use your data.
 
-Compute statistics across all thermostats.
+Compute statistics across all thermostats:
 
 .. code-block:: python
 
@@ -312,8 +315,6 @@ Compute statistics across all thermostats.
         # stats_advanced = compute_summary_statistics(metrics_df,
         #                                             advanced_filtering=True)
 
-Save these results to file.
-
 Each row of the stats CSV file will represent one output statistic. Each column in the
 CSV file will represent one subset of thermostats, grouped by EIC climate zone and
 filtering method.
@@ -322,6 +323,8 @@ At this point, you will also need to provide an alphanumeric product identifier
 for the connected thermostat; e.g. a combination of the connected thermostat
 service plus one or more connected thermostat device models that comprises the
 data set.
+
+Save these results to file:
 
 .. code-block:: python
 
@@ -337,8 +340,8 @@ data set.
     #                                               product_id)
 
 
-Certification File
-------------------
+Certification File for submission
+---------------------------------
 
 Once you have computed the summary statistics you may then create the certification file,
 which is also submitted to the EPA. National savings metrics are computed by weighted average of

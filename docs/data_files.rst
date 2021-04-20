@@ -146,6 +146,8 @@ Output data
 Individual thermostat-season
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+This file is referred to as the metrics file. The metrics file contains the metrics output from the metrics calculation method. It is an intermediary file that is currently not submitted for certification.  
+
 The following columns are an intermediate output generated for each thermostat-season.
 
 Columns
@@ -162,7 +164,6 @@ Columns
    ":code:`cool_type`","string","N/A","Cooling type for the thermostat"
    ":code:`cool_stage`","string","N/A","Cooling stage for the thermostat"
    ":code:`heating_or_cooling`","string","N/A","Label for the core day set (e.g. 'heating_2012-2013')."
-   ":code:`zipcode`","string, 5 digits ","N/A","ZIP code provided in the metadata file."
    ":code:`station`","string, USAF ID","N/A","USAF identifier for station used to fetch hourly temperature data."
    ":code:`climate_zone`","string","N/A","EIC climate zone (consolidated)."
    ":code:`start_date`","date","ISO-8601","Earliest date in input file."
@@ -256,8 +257,13 @@ Columns
 Summary Statistics
 ~~~~~~~~~~~~~~~~~~
 
+The results of the statistics module are output into two separate file types:
+statistics and advanced statistics. Currently only the statistics file is
+required to be submitted for certification. See the tutorial for an example of
+the distinction between these files.
+
 For each real- or integer-valued column ("###") from the individual thermostat-season
-output, the following summary statistics are generated.
+output (metrics file), the following summary statistics are generated.
 
 (For readability, these columns are actually rows.)
 
@@ -316,7 +322,7 @@ Columns
 Certification File
 ~~~~~~~~~~~~~~~~~~
 
-The following file is output for certification:
+This file contains all of the relevant statistics for certification. It is submitted for certification.
 
 Columns
 ```````
@@ -347,7 +353,9 @@ available :download:`for download <../thermostat/resources/NationalAverageClimat
 Thermostat Import Errors
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following file is output for any thermostat import or creation errors:
+This file is used for troubleshooting any thermostat import or creation errors. It is not submitted for certification.
+
+It contains the following entries:
 
 Columns
 ```````
