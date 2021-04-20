@@ -95,6 +95,7 @@ Name                         Data Format                      Units   Descriptio
     - :code:`heat_pump_electric_backup`: Heat pump with electric resistance heat (strip heat)
     - :code:`heat_pump_no_electric_backup`: Heat pump without electric resistance heat
     - :code:`heat_pump_dual_fuel`: Dual fuel heat pump (e.g. gas or oil fired)
+    - :code:`electric_resistance`: Electric resistance heat (Line-voltage thermostat)
     - :code:`other`: Multi-zone, etc.
     - :code:`none`: No central heating system
     - :code:`(blank)`: No central heating system
@@ -144,6 +145,8 @@ Output data
 
 Individual thermostat-season
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This file is referred to as the metrics file. The metrics file contains the metrics output from the metrics calculation method. It is an intermediary file that is currently not submitted for certification.  
 
 The following columns are an intermediate output generated for each thermostat-season.
 
@@ -254,8 +257,13 @@ Columns
 Summary Statistics
 ~~~~~~~~~~~~~~~~~~
 
+The results of the statistics module are output into two separate file types:
+statistics and advanced statistics. Currently only the statistics file is
+required to be submitted for certification. See the tutorial for an example of
+the distinction between these files.
+
 For each real- or integer-valued column ("###") from the individual thermostat-season
-output, the following summary statistics are generated.
+output (metrics file), the following summary statistics are generated.
 
 (For readability, these columns are actually rows.)
 
@@ -314,7 +322,7 @@ Columns
 Certification File
 ~~~~~~~~~~~~~~~~~~
 
-The following file is output for certification:
+This file contains all of the relevant statistics for certification. It is submitted for certification.
 
 Columns
 ```````
@@ -345,7 +353,9 @@ available :download:`for download <../thermostat/resources/NationalAverageClimat
 Thermostat Import Errors
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following file is output for any thermostat import or creation errors:
+This file is used for troubleshooting any thermostat import or creation errors. It is not submitted for certification.
+
+It contains the following entries:
 
 Columns
 ```````
