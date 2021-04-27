@@ -23,8 +23,9 @@ make it easier to debug.
     (venv)$ pip install thermostat
 
     # if using conda (see note below - conda is distributed with Anaconda)
-    $ conda create --yes --name thermostat pandas
-    $ source activate thermostat
+    # Certain Windows installations may have issues with Thermostat 1.7.2. See "Windows Notes" below.
+    $ conda create --yes --name thermostat pip
+    $ conda activate thermostat
     (thermostat)$ pip install thermostat
 
     # If using pipenv (see https://github.com/pypa/pipenv)
@@ -84,7 +85,7 @@ Previous versions of the package are available on `github <https://github.com/EP
     as `numpy` or `scipy`, we recommend installing and using the free
     `Anaconda <https://www.continuum.io/downloads>`_ Python distribution by
     Continuum Analytics. It contains many of the numeric and scientific
-    packages used by this package and has installers for Python 2.7 and 3.5 for
+    packages used by this package and has installers for Python 3.6 and later for
     Windows, Mac OS X and Linux.
 
 Once you have verified a correct installation, import the necessary methods
@@ -325,6 +326,24 @@ Python under Windows requires that all multiprocessing code needs to be run unde
 Not having this wrapper will cause a Runtime Error "Attempt to start a new process before the current process has finished its bootstrapping phase.".
 
 Other platforms should not be affected by this.
+
+Notes for Windows Conda Users
+-----------------------------
+
+Thermostat 1.7.2 may have issues installing on Windows machines using pip because of issues with the Shapely wheel and numpy. If you are receiving strange behavior such as "WindowsError: [Error 126] The specified module could not be found" then please try this method to install the Thermostat module:
+    
+.. code-block:: bash
+
+    $ conda env remove --name thermostat
+    $ conda create --yes --name thermostat python==3.6.9
+    $ conda install -c conda-forge shapely pandas==0.24.2 numpy==1.19.5
+    $ pip install thermostat==1.7.2
+
+.. note::
+
+   This is only recommended in cases where the Python environment has issues
+   running the thermostat module. If you are not having issues then we
+   recommend sticking with pip for installing the software.
 
 More information
 ----------------
