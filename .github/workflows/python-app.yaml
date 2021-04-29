@@ -20,7 +20,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install wheel flake8 pytest pytest-cov coverage
-        python setup.py install
+        pip install -e .
     - name: Prime Cache
       run: |
         mkdir $HOME/.eeweather
