@@ -236,23 +236,25 @@ def test_combine_output_dataframes(dataframes):
     assert combined.shape == (20, 78)
 
 
+def test_compute_summary_statistics_advanced(combined_dataframe):
+    summary_statistics = compute_summary_statistics(combined_dataframe,
+            advanced_filtering=True)
+    assert [len(s) for s in summary_statistics] == [
+            49, 49, 49, 49, 49, 49, 49, 49,
+            2049, 901, 2049, 901, 2049, 901, 2049, 901,
+            ]
+
+
+def test_summary_statistics_to_csv(combined_dataframe):
+    summary_statistics = compute_summary_statistics(combined_dataframe)
+
+
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
             49, 49, 49, 49,
             2049, 901, 2049, 901,
             ]
-
-    def test_compute_summary_statistics_advanced(combined_dataframe):
-        summary_statistics = compute_summary_statistics(combined_dataframe,
-                advanced_filtering=True)
-        assert [len(s) for s in summary_statistics] == [
-                49, 49, 49, 49, 49, 49, 49, 49,
-                2049, 901, 2049, 901, 2049, 901, 2049, 901,
-                ]
-
-        def test_summary_statistics_to_csv(combined_dataframe):
-            summary_statistics = compute_summary_statistics(combined_dataframe)
 
     _, fname = tempfile.mkstemp()
     product_id = "FAKE"
@@ -270,6 +272,16 @@ def test_certification(combined_dataframe):
     stats_df = compute_summary_statistics(combined_dataframe)
     certification_df = certification_to_csv(stats_df, fname_cert, product_id)
     assert certification_df.shape == (5, 8)
+
+
+def test_bogus_method():
+    with pytest.raises(ValueError):
+        compute_summary_statistics(None, target_baseline_method='bogus_method')
+
+
+def test_empty_metrics():
+    df = pd.DataFrame([])
+    assert(compute_summary_statistics(df) is None)
 
 
 def test_iqr_filtering(thermostat_emg_aux_constant_on_outlier):
