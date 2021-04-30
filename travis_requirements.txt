@@ -1,7 +1,0 @@
-eemeter
-eewather
-numpy
-pandas
-python-dateutil
-pytz
-six
