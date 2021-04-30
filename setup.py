@@ -24,6 +24,7 @@ setup(name='thermostat',
         'eemeter==2.5.2',
         'eeweather==0.3.20',
         'pandas==0.24.2',
+        'numpy<1.20',
         'sqlalchemy==1.3.1',
         ],
 )
