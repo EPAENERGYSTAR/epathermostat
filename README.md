@@ -1,8 +1,7 @@
 Connected Thermostat draft field savings metrics module
 =======================================================
 
-[![Build Status](https://github.com/EPAENERGYSTAR/epathermostat/actions/workflows/python-app.yaml/badge.svg
-?branch=feature/epathermostat_2.0)](https://github.com/EPAENERGYSTAR/epathermostat/actions/workflows/python-app.yaml)
+[![Build Status](https://github.com/EPAENERGYSTAR/epathermostat/actions/workflows/python-app.yaml/badge.svg?branch=feature/epathermostat_2.0)](https://github.com/EPAENERGYSTAR/epathermostat/actions/workflows/python-app.yaml)
 
 Calculate temperature/run-time savings for connected thermostats using this
 package.
