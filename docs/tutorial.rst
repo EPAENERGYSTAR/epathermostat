@@ -23,7 +23,7 @@ make it easier to debug.
     (venv)$ pip install thermostat
 
     # if using conda (see note below - conda is distributed with Anaconda)
-    # Certain Windows installations may have issues with Thermostat 1.7.2. See "Windows Notes" below.
+    # Certain Windows installations may have issues with Thermostat 1.7.x. See "Windows Notes" below.
     $ conda create --yes --name thermostat pip
     $ conda activate thermostat
     (thermostat)$ pip install thermostat
@@ -62,7 +62,7 @@ Check to make sure you are on the most recent version of the package.
 
     >>> import thermostat; thermostat.get_version()
 
-    '1.7.2'
+    '1.7.3'
 
 If you are not on the correct version, you should upgrade:
 
@@ -330,14 +330,14 @@ Other platforms should not be affected by this.
 Notes for Windows Conda Users
 -----------------------------
 
-Thermostat 1.7.2 may have issues installing on Windows machines using pip because of issues with the Shapely wheel and numpy. If you are receiving strange behavior such as "WindowsError: [Error 126] The specified module could not be found" then please try this method to install the Thermostat module:
+Thermostat 1.7.3 may have issues installing on Windows machines using pip because of issues with the Shapely wheel and numpy. If you are receiving strange behavior such as "WindowsError: [Error 126] The specified module could not be found" then please try this method to install the Thermostat module:
     
 .. code-block:: bash
 
     $ conda env remove --name thermostat
     $ conda create --yes --name thermostat python==3.6.9
     $ conda install -c conda-forge shapely pandas==0.24.2 numpy==1.19.5
-    $ pip install thermostat==1.7.2
+    $ pip install thermostat==1.7.3
 
 .. note::
 
