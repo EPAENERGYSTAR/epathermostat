@@ -30,6 +30,7 @@ jobs:
       run: |
         # Activate the base environment
         C:\Miniconda\condabin\conda.bat activate base
-        C:\Miniconda\condabin\conda.bat install pytest
+        C:\Miniconda\condabin\conda.bat install pytest pytest-cov coverage mock pip
+        pip install -e .
         pytest
 
