@@ -249,6 +249,10 @@ def test_summary_statistics_to_csv(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
 
 
+def test_none_summary_statistics_to_csv():
+    assert(summary_statistics_to_csv(None, None, None) is None)
+
+
 def test_compute_summary_statistics(combined_dataframe):
     summary_statistics = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
@@ -263,6 +267,10 @@ def test_compute_summary_statistics(combined_dataframe):
 
     stats_df_reread = pd.read_csv(fname)
     assert stats_df_reread.shape == (2133, 5)
+
+
+def test_none_stats_certification_to_csv():
+    assert(certification_to_csv(None, None, None) is None)
 
 
 def test_certification(combined_dataframe):
