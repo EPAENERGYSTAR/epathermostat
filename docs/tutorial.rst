@@ -25,8 +25,13 @@ make it easier to debug.
     (venv)$ pip install thermostat
 
     # if using conda (see note below - conda is distributed with Anaconda)
-    $ conda create --yes --name thermostat pandas
-    $ source activate thermostat
+    # This method uses conda for the virtual environment rather than as a package manager
+    # Note: Using this method will cause problems if you install other packages
+    # with conda. Please use pip instead of conda to install packagesinside of
+    # this virtual environment.
+    $ conda create --yes --name thermostat pip
+    $ conda activate thermostat
+    # We use pip instead of Conda to install the packages.
     (thermostat)$ pip install thermostat
 
 If you already have an environment, use the following:
@@ -38,11 +43,11 @@ If you already have an environment, use the following:
     (thermostat)$
 
     # if using conda
-    $ source activate thermostat
+    $ conda activate thermostat
     (thermostat)$
 
     # if using venv, or virtualenv directly
-    $ source path/to/venv/bin/activate
+    $ source /path/to/venv/bin/activate
 
 To deactivate the environment when you've finished, use the following:
 
@@ -53,7 +58,7 @@ To deactivate the environment when you've finished, use the following:
     $
 
     # if using conda
-    (thermostat)$ source deactivate
+    (thermostat)$ conda deactivate
     $
 
 Check to make sure you are on the most recent version of the package.

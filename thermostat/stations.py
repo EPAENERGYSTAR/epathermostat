@@ -70,15 +70,16 @@ def _get_closest_station_by_zcta_ranked(zcta):
 
     station = None
 
-    for min_quality, max_distance_meters in METHOD:
-        station_ranking = rank_stations(lat, lon, minimum_quality=min_quality, max_distance_meters=max_distance_meters)
-        # Remove airport stations like A00008
-        if len(station_ranking) > 0:
-            station_ranking = station_ranking[station_ranking.index.str.contains('^[0-9]')]
+    if lat and lon:
+        for min_quality, max_distance_meters in METHOD:
+            station_ranking = rank_stations(lat, lon, minimum_quality=min_quality, max_distance_meters=max_distance_meters)
+            # Remove airport stations like A00008
+            if len(station_ranking) > 0:
+                station_ranking = station_ranking[station_ranking.index.str.contains('^[0-9]')]
 
-            station, _ = select_station(station_ranking)
-            if station:
-                break
+                station, _ = select_station(station_ranking)
+                if station:
+                    break
 
     return station, lat, lon
 
@@ -115,11 +116,8 @@ def get_closest_station_by_zipcode(zipcode):
         station, lat, lon = _get_closest_station_by_zcta_ranked(zipcode)
 
         if station is None:
-            zipcode_mapping = zipcodes.matching(zipcode)
-            warnings.warn("No station found for ZCTA / ZIP %s (%s, %s)." % (
+            warnings.warn("No station found for ZCTA / ZIP %s" % (
                 zipcode,
-                zipcode_mapping[0].get('city'),
-                zipcode_mapping[0].get('state')
                 ))
             return None
 
@@ -129,17 +127,14 @@ def get_closest_station_by_zipcode(zipcode):
             return None
 
     except UnrecognizedUSAFIDError:
-        zipcode_mapping = zipcodes.matching(zipcode)
-        logging.warning("Closest station %s is not a recognized station for ZCTA / ZIP %s (%s, %s)." % (
+        logging.warning("Closest station %s is not a recognized station for ZCTA / ZIP %s." % (
             str(station),
             zipcode,
-            zipcode_mapping[0].get('city'),
-            zipcode_mapping[0].get('state')
             ))
         return None
 
-    except TypeError as e:
-        logging.warning("Unable to perform look-up for ZCTA / ZIP %s. Skipping." % zipcode)
+    except (UnrecognizedZCTAError, ValueError, TypeError) as e:
+        logging.warn("%s is not recognized as a valid ZCTA. Skipping." % zipcode)
         logging.warning(e)
         return None
 

@@ -37,6 +37,9 @@ def main():
 
     # This section finds the metadata files and data files for the thermostats.
     # These point to examples of the various styles of files 
+    # In most cases you will combine Single Stage, Two Stage, and Two Stage ERT
+    # data in the same file.
+
     # Single Stage
     data_dir = os.path.join("..", "tests", "data", "single_stage")
     metadata_filename = os.path.join(data_dir, "metadata.csv")
@@ -57,7 +60,8 @@ def main():
     # "False" to use the logging level instead
     thermostats = from_csv(metadata_filename, verbose=True)
 
-    output_dir = "."
+    # output_dir = "."
+    output_dir = data_dir
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
     output_filename = os.path.join(
