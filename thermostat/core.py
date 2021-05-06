@@ -174,7 +174,7 @@ class Thermostat(object):
         self.cool_runtime_hourly = cool_runtime
         self.heat_runtime_hourly = heat_runtime
         if hasattr(cool_runtime, 'empty') and cool_runtime.empty is False:
-            self.cool_runtime_daily = cool_runtime.resample('D').agg(pd.Series.sum, skipna=True)
+            self.cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
             # Do we have two hours or less of missing data?
             # if not, set the whole day to np.nan
             enough_cool_runtime_in = \
@@ -184,7 +184,7 @@ class Thermostat(object):
         else:
             self.cool_runtime_daily = None
         if hasattr(heat_runtime, 'empty') and heat_runtime.empty is False:
-            self.heat_runtime_daily = heat_runtime.resample('D').agg(pd.Series.sum, skipna=True)
+            self.heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
             # Do we have two hours or less of missing data?
             # if not, set the whole day to np.nan
             enough_heat_runtime_in = \
