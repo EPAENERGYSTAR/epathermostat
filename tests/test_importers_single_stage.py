@@ -76,6 +76,8 @@ def test_missing_hours(thermostat_missing_hours):
     missing_hours_days = set(missing_hours.index.date)
     missing_daily = thermostat_missing_hours.heat_runtime_daily[thermostat_missing_hours.heat_runtime_daily.isna()]
     missing_daily_days = set(missing_daily.index.date)
+    assert(len(thermostat_missing_hours.heat_runtime_hourly.loc[['2011-05-08 18:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-05-08']].dropna()) == 1)
     assert missing_daily_days.difference(missing_hours_days) == set()
 
 def test_missing_days(thermostat_missing_days):
