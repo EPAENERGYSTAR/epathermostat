@@ -2,6 +2,7 @@ import os
 import logging
 import logging.config
 import json
+import sqlite3
 
 from random import shuffle
 from thermostat.importers import from_csv
@@ -12,6 +13,8 @@ from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_
 
 def main():
 
+    metrics_db = sqlite3.connect('metrics.db')
+    n_remove = 5
     logging.basicConfig()
     with open("logging.json", "r") as logging_config:
         logging.config.dictConfig(json.load(logging_config))
@@ -26,23 +29,9 @@ def main():
     # Verbose will override logging to display the imported thermostats. Set to "False" to use the logging level instead
     thermostats = list(from_csv(metadata_filename, verbose=True))
 
-    # Figure out the random index for all of the thermostats based on the first one
-    thermostat = thermostats[0]
-
-    if thermostat.heat_runtime_daily is not None:
-        thermostat_date_index = list(thermostat.heat_runtime_daily.index)
-    if thermostat.cool_runtime_daily is not None:
-        thermostat_date_index = list(thermostat.cool_runtime_daily.index)
-    
-    thermostat_index = list(range(0, len(thermostat_date_index)))
-    for i in range(0, 500):
-        shuffle(thermostat_index)
-
     output_dir = "."
     for thermostat in thermostats:
-        thermostat_heat_index = []
         thermostat_heat = False
-        thermostat_cool_index = []
         thermostat_cool = False
 
         if thermostat.heat_runtime_daily is not None:
@@ -51,27 +40,35 @@ def main():
         if thermostat.cool_runtime_daily is not None:
             thermostat_date_index = list(thermostat.cool_runtime_daily.index)
             thermostat_cool = True
-        
-        # for i in range(0, len(thermostat_heat_index)):
-        for offset, i in enumerate(thermostat_index):
-            if thermostat_cool:
-                thermostat.cool_runtime_daily[i] = None
-            if thermostat_heat:
-                thermostat.heat_runtime_daily[i] = None
+
+        thermostat_index = list(range(0, len(thermostat_date_index)))
+        for i in range(0, 500):
+            shuffle(thermostat_index)
+
+        thermostat_index_list = list(enumerate(thermostat_index))
+
+        for offset in range(0, len(thermostat_index_list), n_remove):
+            days_removed = []
+            for _, i in thermostat_index_list[offset:offset+n_remove]:
+                if thermostat_cool:
+                    thermostat.cool_runtime_daily[i] = None
+                if thermostat_heat:
+                    thermostat.heat_runtime_daily[i] = None
+                days_removed.append(thermostat_date_index[thermostat_index_list[i][1]])
 
             metrics = thermostat.calculate_epa_field_savings_metrics()
+            metrics_out = metrics_to_csv(metrics, 'metrics_temp.csv')
+            metrics_out['days_removed'] = offset + n_remove
 
-            for metric in metrics:
-                logging_statement = f"{thermostat.thermostat_id} "
-                logging_statement += f"mean demand: {metric['mean_demand']}, "
-                logging_statement += f"tau: {metric['tau']}, "
-                if 'n_core_heating_days' in metric:
-                    logging_statement += f"n_core_heating_days: {metric['n_core_heating_days']}, "
-                if 'n_core_cooling_days' in metric:
-                    logging_statement += f"n_core_cooling_days: {metric['n_core_cooling_days']}, "
-                logging_statement += f"days removed: {offset+1}, "
-                logging_statement += f"day removed: {thermostat_date_index[i]}"
-                logger.info(logging_statement)
+            logging_statement = f"{thermostat.thermostat_id} "
+            logging_statement += f"days removed: {offset+n_remove}, "
+            logging_statement += f"(removed: {days_removed})"
+            logger.info(logging_statement)
+
+            metrics_out.to_sql(
+                name='metric',
+                con=metrics_db,
+                if_exists='append')
 
 
 if __name__ == "__main__":
