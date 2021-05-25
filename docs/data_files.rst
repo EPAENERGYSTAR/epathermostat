@@ -312,9 +312,9 @@ Columns
 
    ":code:`sw_version`","Software version"
    ":code:`product_id`","Alphanumeric product identifier"
-   ":code:`n_thermostat_core_day_sets_total`","Number of relevant rows from thermostat module output before filtering"
-   ":code:`n_thermostat_core_day_sets_kept`","Number of relevant rows from thermostat module not filtered out"
-   ":code:`n_thermostat_core_day_sets_discarded`","Number of relevant rows from thermostat module filtered out"
+   ":code:`n_thermostat_core_day_sets_total`","Number of relevant thermostat rows from thermostat module output prior to filtering"
+   ":code:`n_thermostat_core_day_sets_kept`","Number of relevant thermostat rows from thermostat module not filtered out"
+   ":code:`n_thermostat_core_day_sets_discarded`","Number of relevant thermostat rows from thermostat module filtered out"
 
 
 .. _thermostat-output-certification:
