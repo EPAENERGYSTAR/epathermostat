@@ -382,9 +382,9 @@ def get_single_thermostat(thermostat_id, zipcode,
 
     # Currently checks hourly runtime, not daily
     if cool_runtime is not None:
-        enough_cool_runtime = _enough_runtume(cool_runtime)
+        enough_cool_runtime = _enough_runtime(cool_runtime)
     if heat_runtime is not None:
-        enough_heat_runtime = _enough_runtume(heat_runtime)
+        enough_heat_runtime = _enough_runtime(heat_runtime)
 
     if not(enough_cool_runtime and enough_heat_runtime):
         message = "Not enough runtime for thermostat "
@@ -495,7 +495,7 @@ def _create_series(df, index):
     return series
 
 
-def _enough_runtume(series):
+def _enough_runtime(series):
     if series is None:
         return False
 
