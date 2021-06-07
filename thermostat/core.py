@@ -168,6 +168,16 @@ class Thermostat(object):
         self.zipcode = zipcode
         self.station = station
 
+        # Determines if enough non-null temperature is present
+        # (no more than two missing hours of temperature in / out)
+        self.enough_temp_in = \
+            temperature_in.groupby(temperature_in.index.date) \
+            .apply(lambda x: x.isnull().sum() <= 2)
+
+        self.enough_temp_out = \
+            temperature_out.groupby(temperature_out.index.date) \
+            .apply(lambda x: x.isnull().sum() <= 2)
+
         self.temperature_in = self._interpolate(temperature_in, method="linear")
         self.temperature_out = self._interpolate(temperature_out, method="linear")
 
@@ -350,17 +360,7 @@ class Thermostat(object):
 
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
-        # Determines if enough non-null temperature is present
-        # (no more than two missing hours of temperature in / out)
-        enough_temp_in = \
-            self.temperature_in.groupby(self.temperature_in.index.date) \
-            .apply(lambda x: x.isnull().sum() <= 2)
-
-        enough_temp_out = \
-            self.temperature_out.groupby(self.temperature_out.index.date) \
-            .apply(lambda x: x.isnull().sum() <= 2)
-
-        meets_thresholds &= enough_temp_in & enough_temp_out
+        meets_thresholds &= self.enough_temp_in & self.enough_temp_out
 
         data_start_date = np.datetime64(self.heat_runtime_daily.index[0])
         data_end_date = np.datetime64(self.heat_runtime_daily.index[-1])
@@ -460,16 +460,7 @@ class Thermostat(object):
         meets_cooling_thresholds = self.cool_runtime_daily >= min_minutes_cooling
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
-        # enough temperature_in
-        enough_temp_in = \
-            self.temperature_in.groupby(self.temperature_in.index.date) \
-            .apply(lambda x: x.isnull().sum() <= 2)
-
-        enough_temp_out = \
-            self.temperature_out.groupby(self.temperature_out.index.date) \
-            .apply(lambda x: x.isnull().sum() <= 2)
-
-        meets_thresholds &= enough_temp_in & enough_temp_out
+        meets_thresholds &= self.enough_temp_in & self.enough_temp_out
 
         if method == "year_end_to_end":
             start_year = data_start_date.item().year

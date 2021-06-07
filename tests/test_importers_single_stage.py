@@ -19,6 +19,7 @@ from .fixtures.single_stage import (
         thermostat_type_1_data_out_of_order,
         thermostat_type_1_data_missing_header,
         thermostat_type_1_cache,
+        thermostat_missing_temperature,
         thermostat_missing_hours,
         thermostat_missing_days,
         )
@@ -71,7 +72,7 @@ def test_too_many_minutes(thermostat_type_1_too_many_minutes):
     # None of the thermostats in this list should import
     assert len(thermostat_type_1_too_many_minutes) == 0
 
-def test_missing_hours(thermostat_missing_hours):
+def test_missing_runtime_hours(thermostat_missing_hours):
     missing_hours = thermostat_missing_hours.heat_runtime_hourly[thermostat_missing_hours.heat_runtime_hourly.isna()]
     missing_hours_days = set(missing_hours.index.date)
     missing_daily = thermostat_missing_hours.heat_runtime_daily[thermostat_missing_hours.heat_runtime_daily.isna()]
@@ -83,6 +84,15 @@ def test_missing_hours(thermostat_missing_hours):
     assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-05-09']].dropna()) == 1)
     assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-01-01']].dropna()) == 0)
     assert missing_daily_days.difference(missing_hours_days) == set()
+
+def test_missing_temperature_hours(thermostat_missing_temperature):
+    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2011, 6, 2)] == True  # Should be false
+    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2011, 6, 26)] == False
+    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2012, 8, 12)] == True  # Should be false
+    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2014, 5, 28)] == False
+
+    assert thermostat_missing_temperature.enough_temp_out[datetime.date(2011, 6, 26)] == True
+    assert thermostat_missing_temperature.enough_temp_out[datetime.date(2012, 6, 26)] == True
 
 def test_missing_days(thermostat_missing_days):
     # Checking what happens
