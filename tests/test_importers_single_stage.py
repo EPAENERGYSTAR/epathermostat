@@ -20,6 +20,7 @@ from .fixtures.single_stage import (
         thermostat_type_1_data_missing_header,
         thermostat_type_1_cache,
         thermostat_missing_temperature,
+        thermostat_missing_over_18_days_temperature,
         thermostat_missing_hours,
         thermostat_missing_days,
         )
@@ -84,6 +85,10 @@ def test_missing_runtime_hours(thermostat_missing_hours):
     assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-05-09']].dropna()) == 1)
     assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-01-01']].dropna()) == 0)
     assert missing_daily_days.difference(missing_hours_days) == set()
+
+def test_missing_temperature_over_18_days(thermostat_missing_over_18_days_temperature):
+    # Show that thermostats with temperature_in data of over 18 days missing are still created
+    assert len(thermostat_missing_over_18_days_temperature.enough_temp_in[thermostat_missing_over_18_days_temperature.enough_temp_in]) < 347
 
 def test_missing_temperature_hours(thermostat_missing_temperature):
     assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-02 18:00:00']].dropna()) == 0)
