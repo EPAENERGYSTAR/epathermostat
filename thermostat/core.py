@@ -171,15 +171,18 @@ class Thermostat(object):
         # Determines if enough non-null temperature is present
         # (no more than two missing hours of temperature in / out)
         self.enough_temp_in = \
-            temperature_in.groupby(temperature_in.index.date) \
+            temperature_in.resample('D') \
             .apply(lambda x: x.isnull().sum() <= 2)
 
         self.enough_temp_out = \
-            temperature_out.groupby(temperature_out.index.date) \
+            temperature_out.resample('D') \
             .apply(lambda x: x.isnull().sum() <= 2)
 
         self.temperature_in = self._interpolate(temperature_in, method="linear")
         self.temperature_out = self._interpolate(temperature_out, method="linear")
+
+        self.temperature_in = self.temperature_in.where(self.enough_temp_in.resample('H').ffill(), np.nan)
+        self.temperature_out = self.temperature_out.where(self.enough_temp_out.resample('H').ffill(), np.nan)
 
         self.cool_runtime_hourly = cool_runtime
         self.heat_runtime_hourly = heat_runtime

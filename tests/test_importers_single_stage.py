@@ -86,13 +86,25 @@ def test_missing_runtime_hours(thermostat_missing_hours):
     assert missing_daily_days.difference(missing_hours_days) == set()
 
 def test_missing_temperature_hours(thermostat_missing_temperature):
-    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2011, 6, 2)] == True  # Should be false
-    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2011, 6, 26)] == False
-    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2012, 8, 12)] == True  # Should be false
-    assert thermostat_missing_temperature.enough_temp_in[datetime.date(2014, 5, 28)] == False
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-02 18:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2012-06-02 18:00:00']].dropna()) == 1)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-28 18:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2012-06-29 18:00:00']].dropna()) == 1)
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-02'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-25'] == True  # Only missing one hour of temp in
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-26'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-27'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-28'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-29'] == True  # Only missing two hours of temp in
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-30'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2012-08-12'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2014-05-28'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2014-12-31'] == True
 
-    assert thermostat_missing_temperature.enough_temp_out[datetime.date(2011, 6, 26)] == True
-    assert thermostat_missing_temperature.enough_temp_out[datetime.date(2012, 6, 26)] == True
+    assert(len(thermostat_missing_temperature.temperature_out.loc[['2011-06-26 18:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_out.loc[['2012-06-26 18:00:00']].dropna()) == 1)
+    assert thermostat_missing_temperature.enough_temp_out['2011-06-26'] == False
+    assert thermostat_missing_temperature.enough_temp_out['2012-06-26'] == True
 
 def test_missing_days(thermostat_missing_days):
     # Checking what happens
