@@ -1,7 +1,7 @@
 *.py[cod]
 __pycache__/
 *.egg-info
-
+*.log
 _build
 build/
 dist/
@@ -9,3 +9,4 @@ dist/
 .cache/
 .tox/
 .coverage
+.coverage.*
