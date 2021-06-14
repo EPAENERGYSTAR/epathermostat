@@ -48,7 +48,6 @@ def core_heating_day_set_hpeb_2_hp_2_entire(thermostat_hpeb_2_hp_2):
 def core_cooling_day_set_hpeb_2_hp_2_entire(thermostat_hpeb_2_hp_2):
     return thermostat_hpeb_2_hp_2.get_core_cooling_days(method="entire_dataset")[0]
 
-
 @pytest.fixture(scope="session")
 def metrics_hpeb_2_hp_2_data():
     data = \

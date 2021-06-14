@@ -49,6 +49,7 @@ def core_cooling_day_set_ert_hpeb_2_hp_2_entire(thermostat_ert_hpeb_2_hp_2):
     return thermostat_ert_hpeb_2_hp_2.get_core_cooling_days(method="entire_dataset")[0]
 
 
+
 @pytest.fixture(scope="session")
 def metrics_ert_hpeb_2_hp_2_data():
     data = \
@@ -168,3 +169,4 @@ def metrics_ert_hpeb_2_hp_2_data():
     'total_emergency_heating_core_day_runtime': 110.0}]
 
     return data
+
