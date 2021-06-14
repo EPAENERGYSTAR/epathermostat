@@ -18,6 +18,7 @@ from .fixtures.single_stage import (
         thermostat_type_1_zip_bad,
         thermostat_type_1_data_out_of_order,
         thermostat_type_1_data_missing_header,
+        thermostat_type_1_metadata_missing_header,
         thermostat_type_1_cache,
         thermostat_missing_temperature,
         thermostat_missing_over_18_days_temperature,
@@ -122,6 +123,9 @@ def test_bad_zipcode(thermostat_type_1_zip_bad):
 
 def test_data_out_of_order(thermostat_type_1_data_out_of_order):
     assert len(thermostat_type_1_data_out_of_order) == 0
+
+def test_data_missing_headers(thermostat_type_1_data_missing_header):
+    assert len(thermostat_type_1_data_missing_header) == 0
 
 def test_data_missing_headers(thermostat_type_1_data_missing_header):
     assert len(thermostat_type_1_data_missing_header) == 0

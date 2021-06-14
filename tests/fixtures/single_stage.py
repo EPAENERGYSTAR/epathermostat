@@ -50,6 +50,14 @@ def thermostat_type_1_data_missing_header(request):
     thermostats = from_csv(get_data_path(request.param))
     return list(thermostats)
 
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_metadata_missing_header.csv"])
+def thermostat_type_1_metadata_missing_header(request):
+    with pytest.raises(ValueError) as excinfo: 
+        thermostats = from_csv(get_data_path(request.param))
+        return list(thermostats)
+    assert "thermostat_id" in str(excinfo)
+    return []
+
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
     thermostats = from_csv(get_data_path(request.param))
