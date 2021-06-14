@@ -168,19 +168,20 @@ class Thermostat(object):
         self.zipcode = zipcode
         self.station = station
 
-        # Determines if enough non-null temperature is present
-        # (no more than two missing hours of temperature in / out)
+        # Interpolate the data first to fill in holes of two or less hours
+        self.temperature_in = self._interpolate(temperature_in)
+        self.temperature_out = self._interpolate(temperature_out)
+
+        # Determines if any non-null temperature is still present for the day
         self.enough_temp_in = \
-            temperature_in.resample('D') \
-            .apply(lambda x: x.isnull().sum() <= 2)
+            self.temperature_in.resample('D') \
+            .apply(lambda x: x.isnull().sum() == 0)
 
         self.enough_temp_out = \
-            temperature_out.resample('D') \
-            .apply(lambda x: x.isnull().sum() <= 2)
+            self.temperature_out.resample('D') \
+            .apply(lambda x: x.isnull().sum() == 0)
 
-        self.temperature_in = self._interpolate(temperature_in, method="linear")
-        self.temperature_out = self._interpolate(temperature_out, method="linear")
-
+        # Remove all hours that are part of a day that fail the above rubrics
         self.temperature_in = self.temperature_in.where(self.enough_temp_in.resample('H').ffill(), np.nan)
         self.temperature_out = self.temperature_out.where(self.enough_temp_out.resample('H').ffill(), np.nan)
 
