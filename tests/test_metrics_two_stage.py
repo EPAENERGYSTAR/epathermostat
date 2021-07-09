@@ -15,6 +15,9 @@ from .fixtures.two_stage import (
         thermostat_fu_2_ce_2,
         thermostat_furnace_or_boiler_two_stage_none_single_stage,
         thermostat_na_2_hp_2,
+        )
+
+from .fixtures.metrics_data import (
         metrics_hpeb_2_hp_2_data,
         )
 from thermostat.columns import EXPORT_COLUMNS

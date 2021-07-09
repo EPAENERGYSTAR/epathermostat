@@ -99,6 +99,8 @@ def test_missing_temperature_hours(thermostat_missing_temperature):
     assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-28 18:00:00']].dropna()) == 1)
     assert(len(thermostat_missing_temperature.temperature_in.loc[['2012-06-29 18:00:00']].dropna()) == 1)
     assert(len(thermostat_missing_temperature.temperature_in.loc[['2014-12-15 20:00:00']].dropna()) == 1)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2014-12-31 20:00:00']].dropna()) == 1)
+
     assert thermostat_missing_temperature.enough_temp_in['2011-06-02'] == False
     assert thermostat_missing_temperature.enough_temp_in['2011-06-25'] == True
     assert thermostat_missing_temperature.enough_temp_in['2011-06-26'] == False

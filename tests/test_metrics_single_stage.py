@@ -15,6 +15,9 @@ from .fixtures.single_stage import (
         thermostat_type_3,
         thermostat_type_4,
         thermostat_type_5,
+        )
+
+from .fixtures.metrics_data import (
         metrics_type_1_data,
         )
 from thermostat.columns import EXPORT_COLUMNS

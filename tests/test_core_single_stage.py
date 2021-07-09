@@ -31,6 +31,9 @@ from .fixtures.single_stage import (
         core_cooling_day_set_type_5,
         thermostat_zero_days,
         thermostats_multiple_same_key,
+        )
+
+from .fixtures.metrics_data import(
         metrics_type_1_data,
         )
 

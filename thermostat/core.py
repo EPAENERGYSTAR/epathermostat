@@ -181,6 +181,14 @@ class Thermostat(object):
             self.temperature_out.resample('D') \
             .apply(lambda x: x.isnull().sum() == 0)
 
+        self.enough_temp_in = \
+            self.enough_temp_in.reindex(self.enough_temp_in.index.union(self.enough_temp_in.index.shift(1)[-1:]))
+        self.enough_temp_in[-1] = False  # Need to give this a value
+
+        self.enough_temp_out = \
+            self.enough_temp_out.reindex(self.enough_temp_out.index.union(self.enough_temp_out.index.shift(1)[-1:]))
+        self.enough_temp_out[-1] = False  # Need to give this a value
+
         # Remove all hours that are part of a day that fail the above rubrics
         self.temperature_in = self.temperature_in.where(self.enough_temp_in.resample('H').ffill(), np.nan)
         self.temperature_out = self.temperature_out.where(self.enough_temp_out.resample('H').ffill(), np.nan)

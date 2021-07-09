@@ -14,9 +14,12 @@ from .fixtures.two_stage import (
         thermostat_fu_2_ce_2,
         thermostat_furnace_or_boiler_two_stage_none_single_stage,
         thermostat_hpeb_2_hp_2,
-        metrics_hpeb_2_hp_2_data,
         core_heating_day_set_hpeb_2_hp_2_entire,
         core_cooling_day_set_hpeb_2_hp_2_entire,
+        )
+
+from .fixtures.metrics_data import (
+        metrics_hpeb_2_hp_2_data,
         )
 
 
