@@ -20,6 +20,8 @@ from .fixtures.single_stage import (
         thermostat_type_1_data_missing_header,
         thermostat_type_1_metadata_missing_header,
         thermostat_type_1_cache,
+        thermostat_missing_temperature,
+        thermostat_missing_over_18_days_temperature,
         thermostat_missing_hours,
         thermostat_missing_days,
         )
@@ -72,7 +74,7 @@ def test_too_many_minutes(thermostat_type_1_too_many_minutes):
     # None of the thermostats in this list should import
     assert len(thermostat_type_1_too_many_minutes) == 0
 
-def test_missing_hours(thermostat_missing_hours):
+def test_missing_runtime_hours(thermostat_missing_hours):
     missing_hours = thermostat_missing_hours.heat_runtime_hourly[thermostat_missing_hours.heat_runtime_hourly.isna()]
     missing_hours_days = set(missing_hours.index.date)
     missing_daily = thermostat_missing_hours.heat_runtime_daily[thermostat_missing_hours.heat_runtime_daily.isna()]
@@ -84,6 +86,37 @@ def test_missing_hours(thermostat_missing_hours):
     assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-05-09']].dropna()) == 1)
     assert(len(thermostat_missing_hours.heat_runtime_daily.loc[['2011-01-01']].dropna()) == 0)
     assert missing_daily_days.difference(missing_hours_days) == set()
+
+def test_missing_temperature_over_18_days(thermostat_missing_over_18_days_temperature):
+    # Show that thermostats with temperature_in data of over 18 days missing are still created
+    assert len(thermostat_missing_over_18_days_temperature.enough_temp_in[thermostat_missing_over_18_days_temperature.enough_temp_in]) < 347
+
+def test_missing_temperature_hours(thermostat_missing_temperature):
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-02 6:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-02 7:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-02 8:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2012-06-02 18:00:00']].dropna()) == 1)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2011-06-28 18:00:00']].dropna()) == 1)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2012-06-29 18:00:00']].dropna()) == 1)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2014-12-15 20:00:00']].dropna()) == 1)
+    assert(len(thermostat_missing_temperature.temperature_in.loc[['2014-12-31 20:00:00']].dropna()) == 1)
+
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-02'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-25'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-26'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-27'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-28'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-29'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2011-06-30'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2012-08-12'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2014-05-28'] == False
+    assert thermostat_missing_temperature.enough_temp_in['2014-12-15'] == True
+    assert thermostat_missing_temperature.enough_temp_in['2014-12-31'] == True
+
+    assert(len(thermostat_missing_temperature.temperature_out.loc[['2011-06-26 18:00:00']].dropna()) == 0)
+    assert(len(thermostat_missing_temperature.temperature_out.loc[['2012-06-26 18:00:00']].dropna()) == 1)
+    assert thermostat_missing_temperature.enough_temp_out['2011-06-26'] == False
+    assert thermostat_missing_temperature.enough_temp_out['2012-06-26'] == True
 
 def test_missing_days(thermostat_missing_days):
     # Checking what happens

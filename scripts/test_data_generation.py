@@ -7,6 +7,10 @@ from thermostat.util.testing import get_data_path
 import thermostat
 import os
 
+# Usage: python test_data_generation.py > ../tests/fixtures/metrics_data.py
+
+print("import pytest")
+print("from numpy import nan")
 
 thermostat_path = os.path.join(os.path.join("/", *thermostat.__file__.split('/')[:5]), "tests", "data", "single_stage", "metadata_type_1_single.csv")
 thermostat_type_1 = list(from_csv(thermostat_path))[0]
