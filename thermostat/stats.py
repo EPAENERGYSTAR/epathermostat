@@ -32,8 +32,6 @@ warnings.simplefilter('module', Warning)
 
 target_baseline_method = 'baseline_percentile'
 
-multiprocessing.set_start_method('spawn')
-
 def globalize(func):
     def result(*args, **kwargs):
         return func(*args, **kwargs)
