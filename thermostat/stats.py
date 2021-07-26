@@ -12,7 +12,8 @@ import logging
 
 from functools import partial
 from itertools import repeat
-from multiprocessing import Pool, freeze_support
+import multiprocessing
+from multiprocessing import Pool
 
 from thermostat import get_version
 from thermostat.columns import (
@@ -30,6 +31,8 @@ logger = logging.getLogger('epathermostat')
 warnings.simplefilter('module', Warning)
 
 target_baseline_method = 'baseline_percentile'
+
+multiprocessing.set_start_method('fork')
 
 def globalize(func):
     def result(*args, **kwargs):
@@ -371,7 +374,7 @@ def compute_summary_statistics(
             (marine_df, filter_3_cooling, "marine_tau_cvrmse_savings_p01_filter", target_baseline_method),
             ]
 
-    ## FIXME: Rework this so it's less repeated code and can handle data with no elements
+    # Windows needs this
     stats_dict = {}
     with Pool() as pool:
         heating_stats_list = pool.starmap(heating_stats, no_filter_list)
