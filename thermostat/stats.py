@@ -377,8 +377,6 @@ def compute_summary_statistics(
     with Pool() as pool:
         heating_stats_list = pool.starmap(heating_stats, no_filter_list)
         cooling_stats_list = pool.starmap(cooling_stats, no_filter_list)
-
-    with Pool() as pool:
         heating_stats_filter3_list = pool.starmap(heating_stats, filter_3_heating_list)
         cooling_stats_filter3_list = pool.starmap(cooling_stats, filter_3_cooling_list)
 
@@ -390,8 +388,6 @@ def compute_summary_statistics(
         with Pool() as pool:
             heating_stats_filter1_list = pool.starmap(heating_stats, filter_1_heating_list)
             cooling_stats_filter1_list = pool.starmap(cooling_stats, filter_1_cooling_list)
-
-        with Pool() as pool:
             heating_stats_filter2_list = pool.starmap(heating_stats, filter_2_heating_list)
             cooling_stats_filter2_list = pool.starmap(cooling_stats, filter_2_cooling_list)
 
