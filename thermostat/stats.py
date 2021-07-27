@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import sys
+import os
 import uuid
 
 from collections import OrderedDict
@@ -13,7 +14,11 @@ import logging
 from functools import partial
 from itertools import repeat
 import multiprocessing
-from multiprocessing import Pool
+
+if os.name == 'nt':
+    from multiprocessing.pool import ThreadPool as Pool
+else:
+    from multiprocessing import Pool
 
 from thermostat import get_version
 from thermostat.columns import (
