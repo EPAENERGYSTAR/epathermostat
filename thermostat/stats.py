@@ -374,22 +374,26 @@ def compute_summary_statistics(
 
     # Windows needs this
     stats_dict = {}
-    with Pool() as pool:
-        heating_stats_list = pool.starmap(heating_stats, no_filter_list)
-        cooling_stats_list = pool.starmap(cooling_stats, no_filter_list)
-        heating_stats_filter3_list = pool.starmap(heating_stats, filter_3_heating_list)
-        cooling_stats_filter3_list = pool.starmap(cooling_stats, filter_3_cooling_list)
+    pool = Pool()
+    heating_stats_list = pool.starmap(heating_stats, no_filter_list)
+    cooling_stats_list = pool.starmap(cooling_stats, no_filter_list)
+    heating_stats_filter3_list = pool.starmap(heating_stats, filter_3_heating_list)
+    cooling_stats_filter3_list = pool.starmap(cooling_stats, filter_3_cooling_list)
+    pool.close()
+    pool.join()
 
     # Interleave the lists (all_heating, all_cooling, very-cold_heating...)
     no_filter_list = list(chain(*zip(heating_stats_list, cooling_stats_list)))
     filter_3_list = list(chain(*zip(heating_stats_filter3_list, cooling_stats_filter3_list)))
 
     if advanced_filtering:
-        with Pool() as pool:
-            heating_stats_filter1_list = pool.starmap(heating_stats, filter_1_heating_list)
-            cooling_stats_filter1_list = pool.starmap(cooling_stats, filter_1_cooling_list)
-            heating_stats_filter2_list = pool.starmap(heating_stats, filter_2_heating_list)
-            cooling_stats_filter2_list = pool.starmap(cooling_stats, filter_2_cooling_list)
+        pool = Pool()
+        heating_stats_filter1_list = pool.starmap(heating_stats, filter_1_heating_list)
+        cooling_stats_filter1_list = pool.starmap(cooling_stats, filter_1_cooling_list)
+        heating_stats_filter2_list = pool.starmap(heating_stats, filter_2_heating_list)
+        cooling_stats_filter2_list = pool.starmap(cooling_stats, filter_2_cooling_list)
+        pool.close()
+        pool.join()
 
         # Interleave the lists (all_heating, all_cooling, very-cold_heating...)
         filter_1_list = list(chain(*zip(heating_stats_filter1_list, cooling_stats_filter1_list)))
