@@ -18,7 +18,7 @@ from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_
 
 def main():
     # Whether to compute Advanced Statistics (in most cases this is NOT needed)
-    ADVANCED_STATS = False
+    ADVANCED_STATS = True
 
     logging.basicConfig()
     # Example logging configuration for file and console output
