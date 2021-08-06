@@ -218,6 +218,24 @@ class Thermostat(object):
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
+        if self.has_heating:
+            self.core_heating_days_entire_dataset = self.get_core_heating_days(method="entire_dataset")
+            self.core_heating_days_year_mid_to_mid = self.get_core_heating_days(method="year_mid_to_mid")
+            self.core_heating_days_entire_dataset_total = self.core_heating_days_entire_dataset[0].daily.sum()
+        else:
+            self.core_heating_days_entire_dataset = None
+            self.core_heating_days_year_end_to_end = None
+            self.core_heating_days_entire_dataset_total = 0
+
+        if self.has_cooling:
+            self.core_cooling_days_entire_dataset = self.get_core_cooling_days(method="entire_dataset")
+            self.core_cooling_days_year_end_to_end = self.get_core_cooling_days(method="year_end_to_end")
+            self.core_cooling_days_entire_dataset_total = self.core_cooling_days_entire_dataset[0].daily.sum()
+        else:
+            self.core_cooling_days_entire_dataset = None
+            self.core_cooling_days_year_mid_to_mid = None
+            self.core_cooling_days_entire_dataset_total = 0
+
         self.validate()
 
     def validate(self):
