@@ -405,18 +405,18 @@ class Thermostat(object):
 
             return core_heating_day_sets
 
-        elif method == "entire_dataset":
-            inclusion_daily = pd.Series(meets_thresholds, index=self.heat_runtime_daily.index)
-            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-            core_heating_day_set = CoreDaySet(
-                "heating_ALL",
-                inclusion_daily,
-                inclusion_hourly,
-                data_start_date,
-                data_end_date)
-            # returned as list for consistency
-            core_heating_day_sets = [core_heating_day_set]
-            return core_heating_day_sets
+        # method == "entire_dataset":
+        inclusion_daily = pd.Series(meets_thresholds, index=self.heat_runtime_daily.index)
+        inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+        core_heating_day_set = CoreDaySet(
+            "heating_ALL",
+            inclusion_daily,
+            inclusion_hourly,
+            data_start_date,
+            data_end_date)
+        # returned as list for consistency
+        core_heating_day_sets = [core_heating_day_set]
+        return core_heating_day_sets
 
     def get_core_cooling_days(self, method="entire_dataset",
                               min_minutes_cooling=30, max_minutes_heating=0):
@@ -503,17 +503,18 @@ class Thermostat(object):
                     core_cooling_day_sets.append(core_day_set)
 
             return core_cooling_day_sets
-        elif method == "entire_dataset":
-            inclusion_daily = pd.Series(meets_thresholds, index=self.cool_runtime_daily.index)
-            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-            core_day_set = CoreDaySet(
-                "cooling_ALL",
-                inclusion_daily,
-                inclusion_hourly,
-                data_start_date,
-                data_end_date)
-            core_cooling_day_sets = [core_day_set]
-            return core_cooling_day_sets
+
+        # method == "entire_dataset":
+        inclusion_daily = pd.Series(meets_thresholds, index=self.cool_runtime_daily.index)
+        inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+        core_day_set = CoreDaySet(
+            "cooling_ALL",
+            inclusion_daily,
+            inclusion_hourly,
+            data_start_date,
+            data_end_date)
+        core_cooling_day_sets = [core_day_set]
+        return core_cooling_day_sets
 
     def _get_range_boolean(self, dt_index, start_date, end_date):
         after_start = dt_index >= start_date
