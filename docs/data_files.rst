@@ -39,6 +39,11 @@ Name                           Data Format      Units Description
  - Nulls should be specified by leaving the field blank.
  - All interval data for a particular thermostat should use the *same, single*
    UTC offset provided in the metadata file.
+ - The `zipcode` field should use the "ZIP Code Tabulation Area" code. This
+   will allow for more accurate retrieval of weather station data. For more
+   information on the mapping between ZIP / `ZCTA`_ codes and weather stations,
+   please refer to `eeweather ZCTA to latitide / longitude conversion`_ and
+   :ref:`thermostat.stations`.
 
 Thermostat Interval Data CSV format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
