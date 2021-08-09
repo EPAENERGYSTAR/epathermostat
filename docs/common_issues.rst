@@ -11,7 +11,7 @@ Where to find errors
 - Thermostats that are rejected will be logged in the `thermostat_import_errors.csv` and in the log file (default: `epathermostat.log`).
 - Both of these files should be in the same directory as the code that is calling the thermostat module.
 
-.. _metadata-data
+.. _metadata-data 
 
 Metadata File
 -------------
@@ -39,7 +39,7 @@ Example of missing data
 
 In this example we have a thermostat that doesn't have one hour of data on 2021-01-01 at 01:00 UTC. The data file should look like the following
 
-.. code-block::
+.. code-block:: console
 
     datetime,cool_runtime_stg1,cool_runtime_stg2,cool_runtime_equiv,heat_runtime_stg1,heat_runtime_stg2,heat_runtime_equiv,emergency_heat_runtime,auxiliary_heat_runtime,temp_in
     2021-01-01 00:00:00,0.0,,,38.0,,,0.0,23.0,64.5
@@ -54,7 +54,7 @@ Missing Weather Station Data
 
 Sometimes a ZCTA will map to a weather station that doesn't have any data. That error will look like the following in the log file:
 
-.. code-block::
+.. code-block:: console
 
    2021-08-09 11:26:44,208 - eeweather.connections - WARNING - Failed RETR /pub/data/noaa/2011/720516-99999-2011.gz:
    550 /pub/data/noaa/2011/720516-99999-2011.gz: No such file or directory
