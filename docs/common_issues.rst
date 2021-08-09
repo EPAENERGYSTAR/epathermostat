@@ -3,7 +3,7 @@ Some Common Issues with Data Files
 
 .. _common-issues-data-files:
 
-These are a list of common issues with the datafiles for the thermostat software. 
+These are a list of common issues with the datafiles for the thermostat software.
 
 Where to find errors
 --------------------
@@ -11,7 +11,7 @@ Where to find errors
 - Thermostats that are rejected will be logged in the `thermostat_import_errors.csv` and in the log file (default: `epathermostat.log`).
 - Both of these files should be in the same directory as the code that is calling the thermostat module.
 
-.. _metadata-data 
+.. _metadata-data
 
 Metadata File
 -------------
