@@ -236,6 +236,7 @@ class Thermostat(object):
             self.core_cooling_days_year_mid_to_mid = None
             self.core_cooling_days_entire_dataset_total = 0
 
+        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_entire_dataset_total} heating days, {self.core_cooling_days_entire_dataset_total} cooling days")
         self.validate()
 
     def validate(self):
