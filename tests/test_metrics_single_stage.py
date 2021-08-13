@@ -79,11 +79,6 @@ def test_calculate_epa_field_savings_metrics_type_2(thermostat_type_2):
     metrics_type_2_entire = thermostat_type_2.calculate_epa_field_savings_metrics()
     assert len(metrics_type_2_entire) == 2
 
-    metrics_type_2_yearly = thermostat_type_2.calculate_epa_field_savings_metrics(
-            core_cooling_day_set_method="year_end_to_end",
-            core_heating_day_set_method="year_mid_to_mid")
-    assert len(metrics_type_2_yearly) == 9
-
 def test_calculate_epa_field_savings_metrics_type_3(thermostat_type_3):
     metrics_type_3 = thermostat_type_3.calculate_epa_field_savings_metrics()
     assert len(metrics_type_3) == 2

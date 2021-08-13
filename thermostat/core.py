@@ -219,24 +219,20 @@ class Thermostat(object):
         self.emergency_heat_runtime = emergency_heat_runtime
 
         if self.has_heating:
-            self.core_heating_days_entire_dataset = self.get_core_heating_days(method="entire_dataset")
-            self.core_heating_days_year_mid_to_mid = self.get_core_heating_days(method="year_mid_to_mid")
-            self.core_heating_days_entire_dataset_total = self.core_heating_days_entire_dataset[0].daily.sum()
+            self.core_heating_days = self.get_core_heating_days()
+            self.core_heating_days_total = self.core_heating_days[0].daily.sum()
         else:
-            self.core_heating_days_entire_dataset = None
-            self.core_heating_days_year_end_to_end = None
-            self.core_heating_days_entire_dataset_total = 0
+            self.core_heating_days = None
+            self.core_heating_days_total = 0
 
         if self.has_cooling:
-            self.core_cooling_days_entire_dataset = self.get_core_cooling_days(method="entire_dataset")
-            self.core_cooling_days_year_end_to_end = self.get_core_cooling_days(method="year_end_to_end")
-            self.core_cooling_days_entire_dataset_total = self.core_cooling_days_entire_dataset[0].daily.sum()
+            self.core_cooling_days = self.get_core_cooling_days()
+            self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
         else:
-            self.core_cooling_days_entire_dataset = None
-            self.core_cooling_days_year_mid_to_mid = None
-            self.core_cooling_days_entire_dataset_total = 0
+            self.core_cooling_days = None
+            self.core_cooling_days_total = 0
 
-        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_entire_dataset_total} heating days, {self.core_cooling_days_entire_dataset_total} cooling days")
+        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} heating days, {self.core_cooling_days_total} cooling days")
         self.validate()
 
     def validate(self):
@@ -345,15 +341,11 @@ class Thermostat(object):
 
         Parameters
         ----------
-        method : {"entire_dataset", "year_mid_to_mid"}, default: "entire_dataset"
+        method : {"entire_dataset"}, default: "entire_dataset"
             Method by which to find core heating day sets.
 
             - "entire_dataset": all heating days in dataset (days with >= 30 min
               of heating runtime and no cooling runtime. (default)
-            - "year_mid_to_mid": groups all heating days (days with >= 30 min
-              of total heating and no cooling) from July 1 to June 30
-              (inclusive) into individual core heating day sets. May overlap
-              with core cooling day sets.
         min_minutes_heating : int, default 30
             Number of minutes of heating runtime per day required for inclusion
             in core heating day set.
@@ -371,12 +363,10 @@ class Thermostat(object):
 
             A value of True at a particular index indicates inclusion of
             of the data at that index in the core day set. If method is
-            "entire_dataset", name of core day sets are "heating_ALL"; if method
-            is "year_mid_to_mid", names of core day sets are of the form
-            "heating_YYYY-YYYY"
+            "entire_dataset", name of core day sets are "heating_ALL".
         """
 
-        if method not in ["year_mid_to_mid", "entire_dataset"]:
+        if method not in ["entire_dataset"]:
             raise NotImplementedError
 
         self._protect_heating()
@@ -395,34 +385,6 @@ class Thermostat(object):
 
         data_start_date = np.datetime64(self.heat_runtime_daily.index[0])
         data_end_date = np.datetime64(self.heat_runtime_daily.index[-1])
-
-        if method == "year_mid_to_mid":
-            # find all potential core heating day ranges
-            start_year = data_start_date.item().year - 1
-            end_year = data_end_date.item().year + 1
-            potential_core_day_sets = zip(range(start_year, end_year),
-                                          range(start_year + 1, end_year + 1))
-
-            # for each potential core day set, look for core heating days.
-            core_heating_day_sets = []
-            for start_year_, end_year_ in potential_core_day_sets:
-                core_day_set_start_date = np.datetime64(datetime(start_year_, 7, 1))
-                core_day_set_end_date = np.datetime64(datetime(end_year_, 7, 1))
-                start_date = max(core_day_set_start_date, data_start_date).item()
-                end_date = min(core_day_set_end_date, data_end_date).item()
-                in_range = self._get_range_boolean(self.heat_runtime_daily.index,
-                                                   start_date, end_date)
-                inclusion_daily = pd.Series(in_range & meets_thresholds,
-                                            index=self.heat_runtime_daily.index)
-
-                if any(inclusion_daily):
-                    name = "heating_{}-{}".format(start_year_, end_year_)
-                    inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-                    core_day_set = CoreDaySet(name, inclusion_daily, inclusion_hourly,
-                                              start_date, end_date)
-                    core_heating_day_sets.append(core_day_set)
-
-            return core_heating_day_sets
 
         # method == "entire_dataset":
         inclusion_daily = pd.Series(meets_thresholds, index=self.heat_runtime_daily.index)
@@ -444,14 +406,11 @@ class Thermostat(object):
 
         Parameters
         ----------
-        method : {"entire_dataset", "year_end_to_end"}, default: "entire_dataset"
+        method : {"entire_dataset"}, default: "entire_dataset"
             Method by which to find core cooling days.
 
             - "entire_dataset": all cooling days in dataset (days with >= 30 min
               of cooling runtime and no heating runtime.
-            - "year_end_to_end": groups all cooling days (days with >= 30 min
-              of total cooling and no heating) from January 1 to December 31
-              into individual core cooling sets.
         min_minutes_cooling : int, default 30
             Number of minutes of core cooling runtime per day required for
             inclusion in core cooling day set.
@@ -469,11 +428,9 @@ class Thermostat(object):
 
             A value of True at a particular index indicates inclusion of
             of the data at that index in the core day set. If method is
-            "entire_dataset", name of core day set is "cooling_ALL"; if method
-            is "year_end_to_end", names of core day sets are of the form
-            "cooling_YYYY"
+            "entire_dataset", name of core day set is "cooling_ALL".
         """
-        if method not in ["year_end_to_end", "entire_dataset"]:
+        if method not in ["entire_dataset"]:
             raise NotImplementedError
 
         self._protect_cooling()
@@ -492,36 +449,6 @@ class Thermostat(object):
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
         meets_thresholds &= self.enough_temp_in & self.enough_temp_out
-
-        if method == "year_end_to_end":
-            start_year = data_start_date.item().year
-            end_year = data_end_date.item().year
-            potential_core_day_sets = range(start_year, end_year + 1)
-
-            # for each potential core day set, look for cooling days.
-            core_cooling_day_sets = []
-            for year in potential_core_day_sets:
-                core_day_set_start_date = np.datetime64(datetime(year, 1, 1))
-                core_day_set_end_date = np.datetime64(datetime(year + 1, 1, 1))
-                start_date = max(core_day_set_start_date, data_start_date).item()
-                end_date = min(core_day_set_end_date, data_end_date).item()
-                in_range = self._get_range_boolean(self.cool_runtime_daily.index,
-                                                   start_date, end_date)
-                inclusion_daily = pd.Series(in_range & meets_thresholds,
-                                            index=self.cool_runtime_daily.index)
-
-                if any(inclusion_daily):
-                    name = "cooling_{}".format(year)
-                    inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-                    core_day_set = CoreDaySet(
-                            name,
-                            inclusion_daily,
-                            inclusion_hourly,
-                            start_date,
-                            end_date)
-                    core_cooling_day_sets.append(core_day_set)
-
-            return core_cooling_day_sets
 
         # method == "entire_dataset":
         inclusion_daily = pd.Series(meets_thresholds, index=self.cool_runtime_daily.index)
@@ -1236,22 +1163,16 @@ class Thermostat(object):
 
         Parameters
         ----------
-        core_cooling_day_set_method : {"entire_dataset", "year_end_to_end"}, default: "entire_dataset"
+        core_cooling_day_set_method : {"entire_dataset"}, default: "entire_dataset"
             Method by which to find core cooling day sets.
 
             - "entire_dataset": all core cooling days in dataset (days with >= 1
               hour of cooling runtime and no heating runtime.
-            - "year_end_to_end": groups all core cooling days (days with >= 1 hour of total
-              cooling and no heating) from January 1 to December 31 into
-              independent core cooling day sets.
-        core_heating_day_set_method : {"entire_dataset", "year_mid_to_mid"}, default: "entire_dataset"
+        core_heating_day_set_method : {"entire_dataset"}, default: "entire_dataset"
             Method by which to find core heating day sets.
 
             - "entire_dataset": all core heating days in dataset (days with >= 1
               hour of heating runtime and no cooling runtime.
-            - "year_mid_to_mid": groups all core heating days (days with >= 1 hour
-              of total heating and no cooling) from July 1 to June 30 into
-              independent core heating day sets.
 
         climate_zone_mapping : filename, default: None
 
