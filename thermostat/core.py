@@ -154,6 +154,14 @@ class Thermostat(object):
 
         self.thermostat_id = thermostat_id
 
+        # Set defaults for variables that might not get set during a run
+        self.core_cooling_days = None
+        self.core_cooling_days_total = 0
+        self.core_heating_days = None
+        self.core_heating_days_total = 0
+        self.cool_runtime_daily = None
+        self.heat_runtime_daily = None
+
         self.heat_type = heat_type
         self.heat_stage = heat_stage
         self.cool_type = cool_type
@@ -195,6 +203,7 @@ class Thermostat(object):
 
         self.cool_runtime_hourly = cool_runtime
         self.heat_runtime_hourly = heat_runtime
+
         if hasattr(cool_runtime, 'empty') and cool_runtime.empty is False:
             self.cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
             # Do we have two hours or less of missing data?
@@ -203,8 +212,7 @@ class Thermostat(object):
                 self.cool_runtime_hourly.groupby(self.cool_runtime_hourly.index.date) \
                 .apply(lambda x: x.isnull().sum() <= 2)
             self.cool_runtime_daily = self.cool_runtime_daily.where(enough_cool_runtime_in, np.nan)
-        else:
-            self.cool_runtime_daily = None
+
         if hasattr(heat_runtime, 'empty') and heat_runtime.empty is False:
             self.heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
             # Do we have two hours or less of missing data?
@@ -213,24 +221,17 @@ class Thermostat(object):
                 self.heat_runtime_hourly.groupby(self.heat_runtime_hourly.index.date) \
                 .apply(lambda x: x.isnull().sum() <= 2)
             self.heat_runtime_daily = self.heat_runtime_daily.where(enough_heat_runtime_in, np.nan)
-        else:
-            self.heat_runtime_daily = None
+
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
             self.core_heating_days_total = self.core_heating_days[0].daily.sum()
-        else:
-            self.core_heating_days = None
-            self.core_heating_days_total = 0
 
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
-        else:
-            self.core_cooling_days = None
-            self.core_cooling_days_total = 0
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} heating days, {self.core_cooling_days_total} cooling days")
         self.validate()
@@ -272,9 +273,9 @@ class Thermostat(object):
             high = 0  # Don't need this value so we zero it out
 
         result = format_string.format(
-                rhu_type=rhu_type,
-                low=int(low),
-                high=int(high))
+            rhu_type=rhu_type,
+            low=int(low),
+            high=int(high))
         if duty_cycle is not None:
             result = '_'.join((result, duty_cycle))
         return result
@@ -283,14 +284,18 @@ class Thermostat(object):
         if self.has_heating:
             if self.heat_runtime_daily is None:
                 message = "For thermostat {}, heating runtime data was not provided," \
-                          " despite equipment type of {}, which requires heating data.".format(self.thermostat_id, self.heat_type)
+                          " despite equipment type of {}, which requires heating data.".format(
+                                self.thermostat_id,
+                                self.heat_type)
                 raise ValueError(message)
 
     def _validate_cooling(self):
         if self.has_cooling:
             if self.cool_runtime_daily is None:
                 message = "For thermostat {}, cooling runtime data was not provided," \
-                          " despite equipment type of {}, which requires cooling data.".format(self.thermostat_id, self.cool_type)
+                          " despite equipment type of {}, which requires cooling data.".format(
+                                self.thermostat_id,
+                                self.cool_type)
                 raise ValueError(message)
 
     def _validate_aux_emerg(self):
@@ -299,7 +304,9 @@ class Thermostat(object):
                 message = "For thermostat {}, aux and emergency runtime data were not provided," \
                           " despite heat_type of {}, which requires these columns of data."\
                           " If none is available, please change heat_type to 'heat_pump_no_electric_backup'," \
-                          " or provide columns of 0s".format(self.thermostat_id, self.heat_type)
+                          " or provide columns of 0s".format(
+                                self.thermostat_id,
+                                self.heat_type)
                 raise ValueError(message)
 
     def _interpolate(self, series, method="linear"):
