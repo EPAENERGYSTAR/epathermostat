@@ -120,36 +120,28 @@ def thermostat_emg_aux_constant_on_outlier(request):
     return thermostats
 
 @pytest.fixture(scope="session")
-def core_heating_day_set_type_1_mid_to_mid(thermostat_type_1):
-    return thermostat_type_1.get_core_heating_days(method="year_mid_to_mid")[0]
-
-@pytest.fixture(scope="session")
 def core_heating_day_set_type_1_entire(thermostat_type_1):
-    return thermostat_type_1.get_core_heating_days(method="entire_dataset")[0]
+    return thermostat_type_1.get_core_heating_days()[0]
 
 @pytest.fixture(scope="session")
 def core_heating_day_set_type_2(thermostat_type_2):
-    return thermostat_type_2.get_core_heating_days(method="year_mid_to_mid")[0]
+    return thermostat_type_2.get_core_heating_days()[0]
 
 @pytest.fixture(scope="session")
 def core_heating_day_set_type_3(thermostat_type_3):
-    return thermostat_type_3.get_core_heating_days(method="year_mid_to_mid")[0]
+    return thermostat_type_3.get_core_heating_days()[0]
 
 @pytest.fixture(scope="session")
 def core_heating_day_set_type_4(thermostat_type_4):
-    return thermostat_type_4.get_core_heating_days(method="year_mid_to_mid")[0]
-
-@pytest.fixture(scope="session")
-def core_cooling_day_set_type_1_end_to_end(thermostat_type_1):
-    return thermostat_type_1.get_core_cooling_days(method="year_end_to_end")[0]
+    return thermostat_type_4.get_core_heating_days()[0]
 
 @pytest.fixture(scope="session")
 def core_cooling_day_set_type_1_entire(thermostat_type_1):
-    return thermostat_type_1.get_core_cooling_days(method="entire_dataset")[0]
+    return thermostat_type_1.get_core_cooling_days()[0]
 
 @pytest.fixture(scope="session")
 def core_cooling_day_set_type_1_empty(thermostat_type_1):
-    core_cooling_day_set = thermostat_type_1.get_core_cooling_days(method="entire_dataset")[0]
+    core_cooling_day_set = thermostat_type_1.get_core_cooling_days()[0]
     core_day_set = CoreDaySet(
         "empty",
         pd.Series(np.tile(False, core_cooling_day_set.daily.shape),
@@ -163,7 +155,7 @@ def core_cooling_day_set_type_1_empty(thermostat_type_1):
 
 @pytest.fixture(scope="session")
 def core_heating_day_set_type_1_empty(thermostat_type_1):
-    core_heating_day_set = thermostat_type_1.get_core_heating_days(method="entire_dataset")[0]
+    core_heating_day_set = thermostat_type_1.get_core_heating_days()[0]
     core_day_set = CoreDaySet(
         "empty",
         pd.Series(np.tile(False, core_heating_day_set.daily.shape),
@@ -177,12 +169,12 @@ def core_heating_day_set_type_1_empty(thermostat_type_1):
 
 @pytest.fixture(scope="session")
 def core_cooling_day_set_type_2(thermostat_type_2):
-    return thermostat_type_2.get_core_cooling_days(method="year_end_to_end")[0]
+    return thermostat_type_2.get_core_cooling_days()[0]
 
 @pytest.fixture(scope="session")
 def core_cooling_day_set_type_3(thermostat_type_3):
-    return thermostat_type_3.get_core_cooling_days(method="year_end_to_end")[0]
+    return thermostat_type_3.get_core_cooling_days()[0]
 
 @pytest.fixture(scope="session")
 def core_cooling_day_set_type_5(thermostat_type_5):
-    return thermostat_type_5.get_core_cooling_days(method="year_end_to_end")[0]
+    return thermostat_type_5.get_core_cooling_days()[0]

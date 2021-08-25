@@ -24,51 +24,43 @@ from .fixtures.metrics_data import (
 
 
 def test_thermostat_ert_hpeb_2_hp_2_get_core_heating_days(thermostat_ert_hpeb_2_hp_2):
-    core_heating_day_sets = thermostat_ert_hpeb_2_hp_2.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 2
+    core_heating_day_sets = thermostat_ert_hpeb_2_hp_2.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_ert_hpeb_2_hp_2_get_core_cooling_days(thermostat_ert_hpeb_2_hp_2):
-    core_cooling_day_sets = thermostat_ert_hpeb_2_hp_2.get_core_cooling_days(
-            method="year_end_to_end")
+    core_cooling_day_sets = thermostat_ert_hpeb_2_hp_2.get_core_cooling_days()
     assert len(core_cooling_day_sets) == 1
 
 
 def test_thermostat_ert_fu_2_ce_2_get_core_heating_days(thermostat_ert_fu_2_ce_2):
-    core_heating_day_sets = thermostat_ert_fu_2_ce_2.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 2
+    core_heating_day_sets = thermostat_ert_fu_2_ce_2.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_ert_fu_2_ce_2_get_core_cooling_days(thermostat_ert_fu_2_ce_2):
-    core_cooling_day_sets = thermostat_ert_fu_2_ce_2.get_core_cooling_days(
-            method="year_end_to_end")
+    core_cooling_day_sets = thermostat_ert_fu_2_ce_2.get_core_cooling_days()
     assert len(core_cooling_day_sets) == 1
 
 
 def test_thermostat_ert_na_2_hp_2(thermostat_ert_na_2_hp_2):
     with pytest.raises(ValueError):
-        core_heating_day_sets = thermostat_ert_na_2_hp_2.get_core_heating_days(
-                method="year_mid_to_mid")
+        core_heating_day_sets = thermostat_ert_na_2_hp_2.get_core_heating_days()
 
 
 def test_thermostat_ert_na_2_hp_2(thermostat_ert_na_2_hp_2):
-    core_cooling_day_sets = thermostat_ert_na_2_hp_2.get_core_cooling_days(
-            method="year_end_to_end")
+    core_cooling_day_sets = thermostat_ert_na_2_hp_2.get_core_cooling_days()
     assert len(core_cooling_day_sets) == 1
 
 
 def test_thermostat_ert_fu_2_na_1(thermostat_ert_fu_2_na_1):
     with pytest.raises(ValueError):
-        core_cooling_day_sets = thermostat_ert_fu_2_na_1.get_core_cooling_days(
-                method="year_end_to_end")
+        core_cooling_day_sets = thermostat_ert_fu_2_na_1.get_core_cooling_days()
 
 
 def test_thermostat_ert_fu_2_na_1(thermostat_ert_fu_2_na_1):
-    core_heating_day_sets = thermostat_ert_fu_2_na_1.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 2
+    core_heating_day_sets = thermostat_ert_fu_2_na_1.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_core_heating_day_set_attributes(core_heating_day_set_ert_hpeb_2_hp_2_entire):
