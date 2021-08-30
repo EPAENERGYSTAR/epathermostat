@@ -24,6 +24,13 @@ Interface
    data_files
    api
 
+Common Issues with Data Files
+-----------------------------
+.. toctree::
+   :maxdepth: 2
+
+   common_issues
+
 Tips
 ----
 .. toctree::
