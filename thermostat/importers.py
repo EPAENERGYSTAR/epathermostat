@@ -40,17 +40,29 @@ logger = logging.getLogger(__name__)
 warnings.simplefilter('module', Warning)
 
 INTERVAL_COLUMNS = {
-        'datetime',
-        'cool_runtime_stg1',
-        'cool_runtime_stg2',
-        'cool_runtime_equiv',
-        'heat_runtime_stg1',
-        'heat_runtime_stg2',
-        'heat_runtime_equiv',
-        'emergency_heat_runtime',
-        'auxiliary_heat_runtime',
-        'temp_in',
-        }
+    'datetime',
+    'cool_runtime_stg1',
+    'cool_runtime_stg2',
+    'cool_runtime_equiv',
+    'heat_runtime_stg1',
+    'heat_runtime_stg2',
+    'heat_runtime_equiv',
+    'emergency_heat_runtime',
+    'auxiliary_heat_runtime',
+    'temp_in',
+    }
+
+
+METADATA_COLUMNS = {
+    'thermostat_id',
+    'heat_type',
+    'heat_stage',
+    'cool_type',
+    'cool_stage',
+    'zipcode',
+    'utc_offset',
+    'interval_data_filename'
+    }
 
 
 class ZCTAError(Exception):
@@ -191,6 +203,11 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         }
     )
     metadata.fillna('', inplace=True)
+    metadata.columns = map(str.lower, metadata.columns)
+    if not METADATA_COLUMNS.issubset(metadata.columns):
+        missing_columns = list(METADATA_COLUMNS.difference(metadata.columns))
+        message = "Columns missing from metadata data file: {}".format(missing_columns)
+        raise ValueError(message)
 
 
     # Shuffle the results to help alleviate cache issues

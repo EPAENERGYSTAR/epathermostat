@@ -15,6 +15,9 @@ from .fixtures.two_stage_ert import (
         thermostat_ert_fu_2_ce_2,
         thermostat_ert_fu_2_na_1,
         thermostat_ert_na_2_hp_2,
+        )
+
+from .fixtures.metrics_data import (
         metrics_ert_hpeb_2_hp_2_data,
         )
 from thermostat.columns import EXPORT_COLUMNS

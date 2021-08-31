@@ -31,6 +31,9 @@ from .fixtures.single_stage import (
         core_cooling_day_set_type_5,
         thermostat_zero_days,
         thermostats_multiple_same_key,
+        )
+
+from .fixtures.metrics_data import(
         metrics_type_1_data,
         )
 
@@ -143,9 +146,8 @@ def test_interpolate_three_missing(thermostat_type_1):
 
 
 def test_thermostat_type_1_get_core_heating_days(thermostat_type_1):
-    core_heating_day_sets = thermostat_type_1.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 5
+    core_heating_day_sets = thermostat_type_1.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 def test_thermostat_type_1_get_core_heating_days_bad_methods(thermostat_type_1):
     with pytest.raises(NotImplementedError) as record:
@@ -153,9 +155,8 @@ def test_thermostat_type_1_get_core_heating_days_bad_methods(thermostat_type_1):
                 method="bad_method")
 
 def test_thermostat_type_1_get_core_cooling_days(thermostat_type_1):
-    core_cooling_day_sets = thermostat_type_1.get_core_cooling_days(
-            method="year_end_to_end")
-    assert len(core_cooling_day_sets) == 4
+    core_cooling_day_sets = thermostat_type_1.get_core_cooling_days()
+    assert len(core_cooling_day_sets) == 1
 
 def test_thermostat_type_1_get_core_cooling_days_bad_methods(thermostat_type_1):
     with pytest.raises(NotImplementedError) as record:
@@ -212,65 +213,55 @@ def test_thermostat_type_1_baseline_regional_comfort_temperature_none(thermostat
 
 
 def test_thermostat_type_2_get_core_heating_days(thermostat_type_2):
-    core_heating_day_sets = thermostat_type_2.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 5
+    core_heating_day_sets = thermostat_type_2.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_type_2_get_core_cooling_days(thermostat_type_2):
-    core_cooling_day_sets = thermostat_type_2.get_core_cooling_days(
-            method="year_end_to_end")
-    assert len(core_cooling_day_sets) == 4
+    core_cooling_day_sets = thermostat_type_2.get_core_cooling_days()
+    assert len(core_cooling_day_sets) == 1
 
 
 def test_thermostat_type_3_get_core_heating_days(thermostat_type_3):
-    core_heating_day_sets = thermostat_type_3.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 5
+    core_heating_day_sets = thermostat_type_3.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_type_3_get_core_cooling_days(thermostat_type_3):
-    core_cooling_day_sets = thermostat_type_3.get_core_cooling_days(
-            method="year_end_to_end")
-    assert len(core_cooling_day_sets) == 4
+    core_cooling_day_sets = thermostat_type_3.get_core_cooling_days()
+    assert len(core_cooling_day_sets) == 1
 
 
 def test_thermostat_type_4_get_core_heating_days(thermostat_type_4):
-    core_heating_day_sets = thermostat_type_4.get_core_heating_days(
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 5
+    core_heating_day_sets = thermostat_type_4.get_core_heating_days()
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_type_4_get_core_cooling_days(thermostat_type_4):
     with pytest.raises(ValueError):
-        core_cooling_day_sets = thermostat_type_4.get_core_cooling_days(
-                method="year_end_to_end")
+        core_cooling_day_sets = thermostat_type_4.get_core_cooling_days()
 
 
 def test_thermostat_type_5_get_core_heating_days(thermostat_type_5):
     with pytest.raises(ValueError):
-        core_heating_day_sets = thermostat_type_5.get_core_heating_days(
-                method="year_mid_to_mid")
+        core_heating_day_sets = thermostat_type_5.get_core_heating_days()
 
 
 def test_thermostat_type_5_get_core_cooling_days(thermostat_type_5):
-    core_cooling_day_sets = thermostat_type_5.get_core_cooling_days(
-            method="year_end_to_end")
-    assert len(core_cooling_day_sets) == 4
+    core_cooling_day_sets = thermostat_type_5.get_core_cooling_days()
+    assert len(core_cooling_day_sets) == 1
 
 
 def test_thermostat_type_1_get_core_heating_days_with_params(thermostat_type_1):
     core_heating_day_sets = thermostat_type_1.get_core_heating_days(
-            min_minutes_heating=0, max_minutes_cooling=0,
-            method="year_mid_to_mid")
-    assert len(core_heating_day_sets) == 5
+            min_minutes_heating=0, max_minutes_cooling=0)
+    assert len(core_heating_day_sets) == 1
 
 
 def test_thermostat_type_1_get_core_cooling_days_with_params(thermostat_type_1):
     core_heating_day_sets = thermostat_type_1.get_core_cooling_days(
-            min_minutes_cooling=0, max_minutes_heating=0,
-            method="year_end_to_end")
-    assert len(core_heating_day_sets) == 4
+            min_minutes_cooling=0, max_minutes_heating=0)
+    assert len(core_heating_day_sets) == 1
 
 
 def test_get_core_cooling_day_baseline_setpoint_not_implemented(thermostat_type_1, core_cooling_day_set_type_1_entire):

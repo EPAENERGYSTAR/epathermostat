@@ -10,6 +10,9 @@ from .fixtures.single_stage import (
         core_cooling_day_set_type_1_entire as core_cooling_day_set_type_1,
         core_heating_day_set_type_1_empty,
         core_cooling_day_set_type_1_empty,
+        )
+
+from .fixtures.metrics_data import (
         metrics_type_1_data,
         )
 
