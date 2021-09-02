@@ -94,7 +94,7 @@ We'll then install the epathermostat 2.0 software.
     (venv) craig@kryten:~/projects/epathermostat$
 
 
-If you have the latest version of epathermosat 2.0 installed on your system you may use that instead, however the ``feature/epa2.0_gremlin`` branch will have the latest code releases applied to it, so we recommend creating a new environment for your testing.
+If you have the latest version of epathermosat 2.0 installed on your system you may use that instead, however the ``feature/epa2.0_gremlin`` branch will have the latest code releases applied to it, so we recommend creating a new environment and using that for your testing.
 
 Next, run the ``gremlin.py`` code:
 
