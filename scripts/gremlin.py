@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import logging
 import logging.config
@@ -11,9 +12,17 @@ from thermostat.stats import compute_summary_statistics
 from thermostat.stats import summary_statistics_to_csv
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
 
+# Set this variable to the location of the data files (Default: ../tests/data/single_stage)
+# NOTE: You'll want to set this to the location of the dataset that you wish to remove missing days.
+DATA_DIR = os.path.join("..", "tests", "data", "single_stage")
+
+# Set this variable for the location to create the metrics database file (default: current directory, metrics.db)
+METRICS_DATABASE_FILE = os.path.join('.', 'metrics.db')
+
+
 def main():
 
-    metrics_db = sqlite3.connect('metrics.db')
+    metrics_db = sqlite3.connect(METRICS_DATABASE_FILE)
     n_remove = 5
     logging.basicConfig()
     with open("logging.json", "r") as logging_config:
@@ -23,13 +32,12 @@ def main():
     logger.debug("Starting...")
     logging.captureWarnings(True)  # Set to True to log additional warning messages, False to only display on console
 
-    data_dir = os.path.join("..", "tests", "data", "single_stage")
-    metadata_filename = os.path.join(data_dir, "metadata.csv")
+    metadata_filename = os.path.join(DATA_DIR, "metadata.csv")
 
-    # Verbose will override logging to display the imported thermostats. Set to "False" to use the logging level instead
+    # Verbose will override logging to display the imported thermostats.
+    # Set to "False" to use the logging level instead
     thermostats = list(from_csv(metadata_filename, verbose=True))
 
-    output_dir = "."
     for thermostat in thermostats:
         thermostat_heat = False
         thermostat_cool = False
