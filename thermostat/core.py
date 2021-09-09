@@ -810,6 +810,38 @@ class Thermostat(object):
 
         tau_estimate = y[0]
 
+        if tau_estimate < 0 or tau_estimate >= 30.0:
+            logger.warning("Egregious Tau encountered (cooling)")
+            delta_min = core_day_set_deltaT.min()
+            delta_max = core_day_set_deltaT.max()
+            logger.warning(f"ID: {self.thermostat_id}, ZCTA: {self.zipcode}")
+            logger.warning(f"delta min: {delta_min}")
+            logger.warning(f"delta max: {delta_max}")
+            num_hours = len(core_day_set_deltaT)
+            num_hours_negative_delta = len([x for x in core_day_set_deltaT if x < 0])
+            lowest_hour_mask = core_day_set_deltaT.values == delta_min
+            lowest_hour_indoor_temp = core_day_set_temp_in[lowest_hour_mask]
+            lowest_hour_outdoor_temp = core_day_set_temp_out[lowest_hour_mask]
+            highest_hour_mask = core_day_set_deltaT.values == delta_max
+            highest_hour_indoor_temp = core_day_set_temp_in[highest_hour_mask]
+            highest_hour_outdoor_temp = core_day_set_temp_out[highest_hour_mask]
+            logger.warning(f"Tau estimate: {tau_estimate}")
+            logger.warning(f"Highest Delta Indoor: {highest_hour_indoor_temp}")
+            logger.warning(f"Highest Delta Outdoor: {highest_hour_outdoor_temp}")
+            logger.warning(f"Lowest Delta Indoor: {lowest_hour_indoor_temp}")
+            logger.warning(f"Lowest Delta Outdoor: {lowest_hour_outdoor_temp}")
+            logger.warning(f"Number of core hours: {num_hours}")
+            logger.warning(f"Number of core hours with negative delta: {num_hours_negative_delta}")
+
+            # plt.figure()
+            # plt.plot(daily_runtime, label="daily runtime")
+            # plt.savefig(f"{self.thermostat_id}_runtime.png")
+
+            # plt.figure()
+            # plt.plot(core_day_set_temp_in, label="temp in")
+            # plt.plot(core_day_set_temp_out, label="temp out")
+            # plt.savefig(f"{self.thermostat_id}_temp.png")
+
         cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
@@ -937,6 +969,29 @@ class Thermostat(object):
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         tau_estimate = y[0]
+
+        if tau_estimate < 0 or tau_estimate >= 30.0:
+            logger.warning("Egregious Tau encountered (heating)")
+            delta_min = core_day_set_deltaT.min()
+            delta_max = core_day_set_deltaT.max()
+            logger.warning(f"ID: {self.thermostat_id}, ZCTA: {self.zipcode}")
+            logger.warning(f"delta min: {delta_min}")
+            logger.warning(f"delta max: {delta_max}")
+            num_hours = len(core_day_set_deltaT)
+            num_hours_negative_delta = len([x for x in core_day_set_deltaT if x < 0])
+            lowest_hour_mask = core_day_set_deltaT.values == delta_min
+            lowest_hour_indoor_temp = core_day_set_temp_in[lowest_hour_mask]
+            lowest_hour_outdoor_temp = core_day_set_temp_out[lowest_hour_mask]
+            highest_hour_mask = core_day_set_deltaT.values == delta_max
+            highest_hour_indoor_temp = core_day_set_temp_in[highest_hour_mask]
+            highest_hour_outdoor_temp = core_day_set_temp_out[highest_hour_mask]
+            logger.warning(f"Tau estimate: {tau_estimate}")
+            logger.warning(f"Highest Delta Indoor: {highest_hour_indoor_temp}")
+            logger.warning(f"Highest Delta Outdoor: {highest_hour_outdoor_temp}")
+            logger.warning(f"Lowest Delta Indoor: {lowest_hour_indoor_temp}")
+            logger.warning(f"Lowest Delta Outdoor: {lowest_hour_outdoor_temp}")
+            logger.warning(f"Number of core hours: {num_hours}")
+            logger.warning(f"Number of core hours with negative delta: {num_hours_negative_delta}")
 
         hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
