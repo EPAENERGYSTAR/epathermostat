@@ -233,7 +233,7 @@ class Thermostat(object):
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
 
-        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} heating days, {self.core_cooling_days_total} cooling days")
+        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         self.validate()
 
     def validate(self):
@@ -393,7 +393,6 @@ class Thermostat(object):
         data_start_date = np.datetime64(self.heat_runtime_daily.index[0])
         data_end_date = np.datetime64(self.heat_runtime_daily.index[-1])
 
-        # method == "entire_dataset":
         inclusion_daily = pd.Series(meets_thresholds, index=self.heat_runtime_daily.index)
         inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
         core_heating_day_set = CoreDaySet(
@@ -457,7 +456,6 @@ class Thermostat(object):
 
         meets_thresholds &= self.enough_temp_in & self.enough_temp_out
 
-        # method == "entire_dataset":
         inclusion_daily = pd.Series(meets_thresholds, index=self.cool_runtime_daily.index)
         inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
         core_day_set = CoreDaySet(
@@ -1258,23 +1256,21 @@ class Thermostat(object):
         metrics = []
 
         if self.has_cooling:
-            for core_cooling_day_set in self.get_core_cooling_days(
-                    method=core_cooling_day_set_method):
-
+            for core_cooling_day_set in self.core_cooling_days:
                 outputs = self._calculate_cooling_epa_field_savings_metrics(
-                        climate_zone,
-                        core_cooling_day_set,
-                        core_cooling_day_set_method,
-                        baseline_regional_cooling_comfort_temperature)
+                    climate_zone,
+                    core_cooling_day_set,
+                    core_cooling_day_set_method,
+                    baseline_regional_cooling_comfort_temperature)
                 metrics.append(outputs)
 
         if self.has_heating:
-            for core_heating_day_set in self.get_core_heating_days(method=core_heating_day_set_method):
+            for core_heating_day_set in self.core_heating_days:
                 outputs = self._calculate_heating_epa_field_savings_metrics(
-                        climate_zone,
-                        core_heating_day_set,
-                        core_heating_day_set_method,
-                        baseline_regional_heating_comfort_temperature)
+                    climate_zone,
+                    core_heating_day_set,
+                    core_heating_day_set_method,
+                    baseline_regional_heating_comfort_temperature)
 
                 if self.has_auxiliary and self.has_emergency:
                     additional_outputs = self._calculate_aux_emerg_epa_field_savings_metrics(core_heating_day_set)
@@ -1290,6 +1286,7 @@ class Thermostat(object):
             core_cooling_day_set_method,
             baseline_regional_cooling_comfort_temperature,
             ):
+
         baseline10_comfort_temperature = \
             self.get_core_cooling_day_baseline_setpoint(core_cooling_day_set)
 
