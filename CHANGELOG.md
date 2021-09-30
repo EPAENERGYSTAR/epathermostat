@@ -14,6 +14,7 @@
 * Added multiprocessor support for stats module
 * Improved error logging
 * Simplified ZCTA lookup algorithm
+* Removed eemeter
 
 ## Production releases
 
