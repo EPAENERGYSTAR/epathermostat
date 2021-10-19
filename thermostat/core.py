@@ -6,7 +6,7 @@ import logging
 
 import pandas as pd
 import numpy as np
-from scipy.optimize import leastsq
+from math import sqrt
 
 from thermostat import get_version
 from thermostat.climate_zone import retrieve_climate_zone
@@ -78,6 +78,40 @@ def avoided(baseline, observed):
 def percent_savings(avoided, baseline, thermostat_id):
     savings = np.divide(avoided.mean(), baseline.mean()) * 100.0
     return savings
+
+
+def lin_fit(x_arr, y_arr):
+    """
+    Linear fit for origin-intercept can be estimated as 
+    sum of products divided by sum of x-values squared
+    """
+    slope = np.dot(x_arr, y_arr) / np.dot(x_arr, x_arr)
+    return slope
+
+
+def search_tau(deg_days_array, run_time_array, max_tau=20):
+    """
+    Search for the best fit for tau (x-intercept) from 0 to max_tau, 
+    finding the best alpha (slope) at each possible integer tau
+    and returning the alpha and tau that produce the least squared errors 
+    """
+    min_sq_err = None
+    best_tau = None
+    rt_sq_error_by_tau = []
+    for tau in range(max_tau + 1):
+        shifted_deg_days_array = deg_days_array-np.array(tau)
+        alpha = lin_fit(shifted_deg_days_array, run_time_array)
+        errors = run_time_array - np.array(alpha)*shifted_deg_days_array
+        sq_errors = np.dot(errors, errors)
+        rt_sq_error_by_tau.append(sqrt(sq_errors))
+        if min_sq_err is None or sq_errors < min_sq_err:
+            min_sq_err = sq_errors
+            best_tau = tau
+            best_alpha = alpha
+        logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
+                f' best tau={best_tau}')
+    logger.debug(f'Best tau = {best_tau}')
+    return best_alpha, best_tau, rt_sq_error_by_tau
 
 
 class Thermostat(object):
@@ -795,19 +829,15 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
 
-        def estimate_errors(tau_estimate):
-            _, _, errors = calc_estimates(tau_estimate)
-            return errors
-
-        tau_starting_guess = 0
         try:
-            y, _ = leastsq(estimate_errors, tau_starting_guess)
+            # FIXME: Need CDD to be defined here
+            # Should calc_cdd be called here with tau = 0?
+            tau_estimate, alpha_estimate, rt_sq_error_by_tau = search_tau(cdd, daily_runtime)
         except TypeError:  # len 0
             assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        tau_estimate = y[0]
-
+        # FIXME: CDD is defined here
         cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
@@ -922,20 +952,15 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return hdd, alpha_estimate, errors
 
-        def estimate_errors(tau_estimate):
-            _, _, errors = calc_estimates(tau_estimate)
-            return errors
-
-        tau_starting_guess = 0
-
         try:
-            y, _ = leastsq(estimate_errors, tau_starting_guess)
+            # FIXME: Need HDD to be defined here
+            # Should calc_hdd be called here with tau = 0?
+            tau_estimate, alpha_estimate, rt_sq_error_by_tau = search_tau(hdd, daily_runtime)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        tau_estimate = y[0]
-
+        # FIXME: HDD is defined here
         hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
