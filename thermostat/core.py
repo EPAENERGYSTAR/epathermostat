@@ -89,29 +89,6 @@ def lin_fit(x_arr, y_arr):
     return slope
 
 
-def search_tau(deg_days_array, run_time_array, max_tau=20):
-    """
-    Search for the best fit for tau (x-intercept) from 0 to max_tau, 
-    finding the best alpha (slope) at each possible integer tau
-    and returning the alpha and tau that produce the least squared errors 
-    """
-    min_sq_err = None
-    best_tau = None
-    rt_sq_error_by_tau = []
-    for tau in range(max_tau + 1):
-        shifted_deg_days_array = deg_days_array-np.array(tau)
-        alpha = lin_fit(shifted_deg_days_array, run_time_array)
-        errors = run_time_array - np.array(alpha)*shifted_deg_days_array
-        sq_errors = np.dot(errors, errors)
-        rt_sq_error_by_tau.append(sqrt(sq_errors))
-        if min_sq_err is None or sq_errors < min_sq_err:
-            min_sq_err = sq_errors
-            best_tau = tau
-            best_alpha = alpha
-        logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
-                f' best tau={best_tau}')
-    logger.debug(f'Best tau = {best_tau}')
-    return best_alpha, best_tau, rt_sq_error_by_tau
 
 
 class Thermostat(object):
@@ -829,16 +806,34 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
 
+        def search_cdd_tau(run_time_array, max_tau=20):
+            """
+            Search for the best fit for tau (x-intercept) from 0 to max_tau, 
+            finding the best alpha (slope) at each possible integer tau
+            and returning the alpha and tau that produce the least squared errors 
+            """
+            min_sq_err = None
+            best_tau = None
+            for tau in range(max_tau + 1):
+                shifted_deg_days_array = calc_cdd(tau) - np.array(tau)
+                alpha = lin_fit(shifted_deg_days_array, run_time_array)
+                errors = run_time_array - np.array(alpha) * shifted_deg_days_array
+                sq_errors = np.dot(errors, errors)
+                if min_sq_err is None or sq_errors < min_sq_err:
+                    min_sq_err = sq_errors
+                    best_tau = tau
+                    best_alpha = alpha
+                logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
+                        f' best tau={best_tau}')
+            logger.debug(f'Best tau = {best_tau}')
+            return best_alpha, best_tau
+
         try:
-            # FIXME: Need CDD to be defined here
-            # Should calc_cdd be called here with tau = 0?
-            cdd = calc_cdd(0)
-            tau_estimate, alpha_estimate, rt_sq_error_by_tau = search_tau(cdd, daily_runtime)
+            tau_estimate, alpha_estimate = search_cdd_tau(daily_runtime)
         except TypeError:  # len 0
             assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        # FIXME: CDD is defined here
         cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
@@ -953,16 +948,34 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return hdd, alpha_estimate, errors
 
+        def search_hdd_tau(run_time_array, max_tau=20):
+            """
+            Search for the best fit for tau (x-intercept) from 0 to max_tau, 
+            finding the best alpha (slope) at each possible integer tau
+            and returning the alpha and tau that produce the least squared errors 
+            """
+            min_sq_err = None
+            best_tau = None
+            for tau in range(max_tau + 1):
+                shifted_deg_days_array = calc_hdd(tau) - np.array(tau)
+                alpha = lin_fit(shifted_deg_days_array, run_time_array)
+                errors = run_time_array - np.array(alpha) * shifted_deg_days_array
+                sq_errors = np.dot(errors, errors)
+                if min_sq_err is None or sq_errors < min_sq_err:
+                    min_sq_err = sq_errors
+                    best_tau = tau
+                    best_alpha = alpha
+                logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
+                        f' best tau={best_tau}')
+            logger.debug(f'Best tau = {best_tau}')
+            return best_alpha, best_tau
+
         try:
-            # FIXME: Need HDD to be defined here
-            # Should calc_hdd be called here with tau = 0?
-            hdd = calc_hdd(0)
-            tau_estimate, alpha_estimate, rt_sq_error_by_tau = search_tau(hdd, daily_runtime)
+            tau_estimate, alpha_estimate = search_hdd_tau(daily_runtime)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        # FIXME: HDD is defined here
         hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
