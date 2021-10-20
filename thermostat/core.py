@@ -1296,7 +1296,10 @@ class Thermostat(object):
             mae,
         ) = self.get_cooling_demand(core_cooling_day_set)
 
-        if demand.empty is True:
+        try:
+            if demand.empty is True:
+                demand = np.nan
+        except AttributeError:
             demand = np.nan
 
         total_runtime_core_cooling = daily_runtime.sum()
@@ -1456,7 +1459,10 @@ class Thermostat(object):
             mae,
         ) = self.get_heating_demand(core_heating_day_set)
 
-        if demand.empty is True:
+        try:
+            if demand.empty is True:
+                demand = np.nan
+        except AttributeError:
             demand = np.nan
 
         total_runtime_core_heating = daily_runtime.sum()
