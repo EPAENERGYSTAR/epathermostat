@@ -814,6 +814,8 @@ class Thermostat(object):
             """
             min_sq_err = None
             best_tau = None
+            best_errors = None
+            best_alpha = None
             for tau in range(max_tau + 1):
                 shifted_deg_days_array = calc_cdd(tau) - np.array(tau)
                 alpha = lin_fit(shifted_deg_days_array, run_time_array)
@@ -821,20 +823,22 @@ class Thermostat(object):
                 sq_errors = np.dot(errors, errors)
                 if min_sq_err is None or sq_errors < min_sq_err:
                     min_sq_err = sq_errors
+                    best_errors = errors
                     best_tau = tau
                     best_alpha = alpha
                 logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
                         f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
-            return best_alpha, best_tau
+            return best_tau, best_alpha, best_errors
 
         try:
-            tau_estimate, alpha_estimate = search_cdd_tau(daily_runtime)
+            tau_estimate, alpha_estimate, errors = search_cdd_tau(daily_runtime)
         except TypeError:  # len 0
             assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        # cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        cdd = calc_cdd(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
@@ -956,6 +960,8 @@ class Thermostat(object):
             """
             min_sq_err = None
             best_tau = None
+            best_errors = None
+            best_alpha = None
             for tau in range(max_tau + 1):
                 shifted_deg_days_array = calc_hdd(tau) - np.array(tau)
                 alpha = lin_fit(shifted_deg_days_array, run_time_array)
@@ -963,20 +969,22 @@ class Thermostat(object):
                 sq_errors = np.dot(errors, errors)
                 if min_sq_err is None or sq_errors < min_sq_err:
                     min_sq_err = sq_errors
+                    best_errors = errors
                     best_tau = tau
                     best_alpha = alpha
                 logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
                         f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
-            return best_alpha, best_tau
+            return best_tau, best_alpha, best_errors
 
         try:
-            tau_estimate, alpha_estimate = search_hdd_tau(daily_runtime)
-        except TypeError: # len 0
-            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
+            tau_estimate, alpha_estimate, errors = search_hdd_tau(daily_runtime)
+        except TypeError:  # len 0
+            assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
             return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        # hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        hdd = calc_hdd(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
