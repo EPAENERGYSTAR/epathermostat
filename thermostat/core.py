@@ -832,6 +832,7 @@ class Thermostat(object):
         try:
             # FIXME: Need CDD to be defined here
             # Should calc_cdd be called here with tau = 0?
+            cdd = calc_cdd(0)
             tau_estimate, alpha_estimate, rt_sq_error_by_tau = search_tau(cdd, daily_runtime)
         except TypeError:  # len 0
             assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
@@ -955,6 +956,7 @@ class Thermostat(object):
         try:
             # FIXME: Need HDD to be defined here
             # Should calc_hdd be called here with tau = 0?
+            hdd = calc_hdd(0)
             tau_estimate, alpha_estimate, rt_sq_error_by_tau = search_tau(hdd, daily_runtime)
         except TypeError: # len 0
             assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
