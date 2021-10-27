@@ -39,6 +39,7 @@ def test_multiple_same_key(thermostats_multiple_same_key):
     for thermostat in thermostats_multiple_same_key:
         outputs = thermostat.calculate_epa_field_savings_metrics()
         metrics.extend(outputs)
+    #flaky part
     assert len(metrics) == 4
 
     for key in metrics[0]:
