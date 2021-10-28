@@ -28,6 +28,8 @@ from .fixtures.thermostats import thermostats_multiple_same_key
 from numpy.testing import assert_allclose
 from numpy import isnan
 
+metrics = []
+
 
 def test_zero_days_warning(thermostat_zero_days):
     output = thermostat_zero_days.calculate_epa_field_savings_metrics()
@@ -35,7 +37,6 @@ def test_zero_days_warning(thermostat_zero_days):
 
 
 def test_multiple_same_key(thermostats_multiple_same_key):
-    metrics = []
     for thermostat in thermostats_multiple_same_key:
         outputs = thermostat.calculate_epa_field_savings_metrics()
         metrics.extend(outputs)

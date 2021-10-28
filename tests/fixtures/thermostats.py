@@ -56,7 +56,7 @@ def thermostat_type_1_utc(request):
 def thermostat_type_1_utc_bad(request):
     thermostats = from_csv(get_data_path(request.param))
 
-@pytest.fixture(scope="function", params=["../data/metadata_multiple_same_key.csv"])
+@pytest.fixture(scope="session", params=["../data/metadata_multiple_same_key.csv"])
 def thermostats_multiple_same_key(request):
     thermostats = from_csv(get_data_path(request.param))
     return thermostats
