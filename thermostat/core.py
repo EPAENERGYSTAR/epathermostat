@@ -258,14 +258,20 @@ class Thermostat(object):
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
             self.core_heating_days_total = self.core_heating_days[0].daily.sum()
-            if self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]:
-                raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
-
+            try:
+                if self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]:
+                    raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
+            except KeyError:
+                raise Exception(f'Missing climate zone for {self.climate_zone} ZCTA {self.zipcode}')
+                
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
-            if self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
-                raise InsufficientCoreDaysException(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
+            try:
+                if self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
+                    raise InsufficientCoreDaysError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
+            except KeyError:
+                raise Exception(f'Missing climate zone for {self.climate_zone} ZCTA {self.zipcode}')
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         self.validate()
