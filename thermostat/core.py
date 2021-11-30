@@ -374,7 +374,7 @@ class Thermostat(object):
         """
 
         if method not in ["entire_dataset"]:
-            raise NotImplementedError
+            raise NotImplementedError('Methods other than entire_dataset are not implemented')
 
         self._protect_heating()
 
@@ -437,7 +437,7 @@ class Thermostat(object):
             "entire_dataset", name of core day set is "cooling_ALL".
         """
         if method not in ["entire_dataset"]:
-            raise NotImplementedError
+            raise NotImplementedError('Methods other than entire_dataset are not implemented')
 
         self._protect_cooling()
 
@@ -1001,7 +1001,7 @@ class Thermostat(object):
             warnings.warn("Cooling Setpoint method is no longer implemented.")
 
         # For everything else, return "Not Implemented"
-        raise NotImplementedError
+        raise NotImplementedError(f'{method} and {source} are not implemented for get_core_cooling_day_baseline_setpoint')
 
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
                                                method='ninetieth_percentile', source='temperature_in'):
@@ -1035,7 +1035,7 @@ class Thermostat(object):
             warnings.warn("Heating setpoint method is no longer implemented")
 
         # For everything else, return "Not Implemented"
-        raise NotImplementedError
+        raise NotImplementedError(f'{method} and {source} are not implemented for get_core_heating_day_baseline_setpoint')
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
