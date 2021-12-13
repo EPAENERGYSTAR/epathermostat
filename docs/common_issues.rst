@@ -19,7 +19,7 @@ Metadata File
 - Missing / non-matching `interval_data_filename`: The interval data file name needs to match the name of the data file being loaded.
 - Including a path in the metadata file for the `interval_data_filename`: The path isn't required. The location of the metadata file will provide the path for the interval data files.
 - All columns in the metadata file must have data, even if that data is `none` or "". The software will try to elaborate if there is an entry that is missing a field, but your best results will be if you provide data for each field in the file.
-- The `zipcode` field should use the "ZIP Code Tabulation Area" code. This will allow for more accurate retrieval of weather station data. For more information on the mapping between ZIP / `ZCTA`_ codes and weather stations, please refer to `eeweather ZCTA to latitide / longitude conversion`_ and :ref:`thermostat.stations`.
+- The `zipcode` field should use the ZIP Code of the thermostat. This will be turned into a latitude / longitude that will be used for station lookups. The package that does this lookup is the `zipcodes`_ package. This package may be used to determine if a ZIP Code is valid or doesn't map to a location.
 - Data in UTC format ("+0") will give the best results. If you must include a UTC offset please ensure that your interval data is also using that UTC offset throughout the dataset.
 - `heat_type`, `heat_stage`, `cool_type`, and `cool_stage` need to have appropriate values or placeholders for the data. A best practice is to fill any fields that don't have an appropriate type / stage with "none".
 
@@ -52,7 +52,7 @@ Note that all rows of data are still accounted for, even if there is no data. Al
 Missing Weather Station Data
 ----------------------------
 
-Sometimes a ZCTA will map to a weather station that doesn't have any data. That error will look like the following in the log file:
+Sometimes a ZIP Code will map to a weather station that doesn't have any data. That error will look like the following in the log file:
 
 .. code-block:: console
 
@@ -61,7 +61,6 @@ Sometimes a ZCTA will map to a weather station that doesn't have any data. That 
 
 If the thermostat software cannot find data for a particular location to compare against it will throw out the thermostat.
 
-Sometimes this error is temporary, but if it is consistently not finding data for a particular location please let us know the ZCTA and the error message you are receiving.
+Sometimes this error is temporary, but if it is consistently not finding data for a particular location please let us know the ZIP Code and the error message you are receiving.
 
-.. _ZCTA: http://www.census.gov/programs-surveys/geography/guidance/geo-areas/zctas.html
-.. _eeweather ZCTA to latitide / longitude conversion: http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion
+.. _zipcodes: https://pypi.org/project/zipcodes/

@@ -232,17 +232,6 @@ IP address. The thermostats will be loaded into memory via the following steps:
 
     For more information, visit the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_.
 
-.. note::
-
-    US Census Bureau ZIP Code Tabulation Areas (ZCTA) are used to map USPS ZIP
-    codes to outdoor temperature data. If the automatic mapping is unsuccessful
-    for one or more of the ZIP codes in your dataset, the reason is likely to
-    be the discrepancy between "true" USPS ZIP codes and the US Census Bureau
-    ZCTAs. "True" ZIP codes are not used because they do not always map well to
-    location (for example, ZIP codes for P.O. boxes). You may need to first map
-    ZIP codes to ZCTAs, or these thermostats will be skipped. There are roughly
-    32,000 ZCTAs and roughly 42000 ZIP codes - many fewer ZCTAs than ZIP codes.
-
 To calculate savings metrics, iterate through thermostats and save the results.
 Uncomment the commented lines if you would like to store the thermostats in
 memory for inspection. Note that this could use a significant amount of  your

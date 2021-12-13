@@ -45,6 +45,7 @@ RESISTANCE_HEAT_USE_BIN_PAIRS = [(RESISTANCE_HEAT_USE_BIN[x], RESISTANCE_HEAT_US
 RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
 RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS = [(30, 45)]
 
+ENFORCE_MINIMUM_CORE_DAYS = False
 MINIMUM_COOLING_CORE_DAYS = {
     'Hot-Humid': 50,
     'Marine': 50,
@@ -251,27 +252,29 @@ class Thermostat(object):
         retval = retrieve_climate_zone(climate_zone_mapping=None, zipcode=self.zipcode)
         self.climate_zone = retval.climate_zone
         if self.climate_zone == 'N/A':
-            raise InvalidClimateZoneError(f'Climate Zone is not available for ZCTA {self.zipcode}')
+            raise InvalidClimateZoneError(f'Climate Zone is not available for ZIP Code {self.zipcode}')
         self.baseline_regional_cooling_comfort_temperature = retval.baseline_regional_cooling_comfort_temperature
         self.baseline_regional_heating_comfort_temperature = retval.baseline_regional_heating_comfort_temperature
 
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
             self.core_heating_days_total = self.core_heating_days[0].daily.sum()
-            # try:
-                # if self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]:
-                    # raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
-            # except KeyError:
-                # raise Exception(f'Missing climate zone for {self.climate_zone} ZCTA {self.zipcode}')
+            try:
+                if ENFORCE_MINIMUM_CORE_DAYS and \
+                        (self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]):
+                    raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
+            except KeyError:
+                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
                 
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
-            # try:
-                # if self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
-                    # raise InsufficientCoreDaysError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
-            # except KeyError:
-                # raise Exception(f'Missing climate zone for {self.climate_zone} ZCTA {self.zipcode}')
+            try:
+                if ENFORCE_MINIMUM_CORE_DAYS and \
+                        self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
+                    raise InsufficientCoreDaysError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
+            except KeyError:
+                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         self.validate()
