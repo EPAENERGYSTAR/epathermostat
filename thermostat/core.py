@@ -249,7 +249,7 @@ class Thermostat(object):
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
-        retval = retrieve_climate_zone(climate_zone_mapping=None, zipcode=self.zipcode)
+        retval = retrieve_climate_zone(zipcode=self.zipcode)
         self.climate_zone = retval.climate_zone
         if self.climate_zone == 'N/A':
             raise InvalidClimateZoneError(f'Climate Zone is not available for ZIP Code {self.zipcode}')

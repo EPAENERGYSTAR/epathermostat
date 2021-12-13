@@ -50,19 +50,13 @@ def _load_mapping(filename_or_buffer):
     return dict(df.to_records('index'))
 
 
-def retrieve_climate_zone(climate_zone_mapping, zipcode):
+def retrieve_climate_zone(zipcode):
     """ Loads the Climate Zone to Zipcode database
     and returns the climate zone and baseline regional comfort temperatures.
 
     Parameters
     ----------
-
-    climate_zone_mapping : filename, default: None
-
-        A mapping from climate zone to zipcode. If None is provided, uses
-        default zipcode to climate zone mapping provided in tutorial.
-
-        :download:`default mapping <./resources/Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv>`
+    zipcode : The ZIP Code to lookup using eeweather's climate zones
 
     Returns
     -------
