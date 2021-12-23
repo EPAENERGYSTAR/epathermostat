@@ -270,10 +270,12 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     errors = []
     thermostat = None
 
+    zipcode = row.zipcode.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
+
     try:
         thermostat = get_single_thermostat(
             thermostat_id=row.thermostat_id,
-            zipcode=row.zipcode,
+            zipcode=zipcode,
             heat_type=row.heat_type,
             heat_stage=row.heat_stage,
             cool_type=row.cool_type,
