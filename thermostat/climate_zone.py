@@ -39,19 +39,8 @@ CLIMATE_ZONE_MAPPING = {
     }
 
 
-def _load_mapping(filename_or_buffer):
-    df = pd.read_csv(
-        filename_or_buffer,
-        usecols=["zipcode", "group"],
-        dtype={"zipcode": str, "group": str},
-    ).set_index('zipcode').drop('zipcode', errors='ignore')
-    df = df.where((pd.notnull(df)), None)
-
-    return dict(df.to_records('index'))
-
-
 def retrieve_climate_zone(zipcode):
-    """ Loads the Climate Zone to Zipcode database
+    """ Performs a lookup of the Climate Zone from eeweather
     and returns the climate zone and baseline regional comfort temperatures.
 
     Parameters
