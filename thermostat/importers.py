@@ -13,7 +13,7 @@ from thermostat.equipment_type import (
         )
 
 import pandas as pd
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
@@ -270,10 +270,12 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     errors = []
     thermostat = None
 
+    zipcode = row.zipcode.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
+
     try:
         thermostat = get_single_thermostat(
             thermostat_id=row.thermostat_id,
-            zipcode=row.zipcode,
+            zipcode=zipcode,
             heat_type=row.heat_type,
             heat_stage=row.heat_stage,
             cool_type=row.cool_type,
@@ -339,7 +341,7 @@ def get_single_thermostat(thermostat_id, zipcode,
         The loaded thermostat object.
     """
     # load outdoor temperatures
-    station = get_closest_station_by_zipcode(zipcode)
+    station = ZIPCODE_LOOKUP[zipcode]['station']
 
     if station is None:
         message = "Could not locate a valid source of outdoor temperature " \

@@ -9,7 +9,8 @@ import numpy as np
 from scipy.optimize import leastsq
 
 from thermostat import get_version
-from thermostat.climate_zone import retrieve_climate_zone
+from thermostat.climate_zone import BASELINE_TEMPERATURE
+from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 from thermostat.equipment_type import (
         has_heating,
         has_cooling,
@@ -249,12 +250,11 @@ class Thermostat(object):
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
-        retval = retrieve_climate_zone(zipcode=self.zipcode)
-        self.climate_zone = retval.climate_zone
-        if self.climate_zone == 'N/A':
+        self.climate_zone = ZIPCODE_LOOKUP.get(self.zipcode, {}).get('climate_zone')
+        if self.climate_zone is None:
             raise InvalidClimateZoneError(f'Climate Zone is not available for ZIP Code {self.zipcode}')
-        self.baseline_regional_cooling_comfort_temperature = retval.baseline_regional_cooling_comfort_temperature
-        self.baseline_regional_heating_comfort_temperature = retval.baseline_regional_heating_comfort_temperature
+        self.baseline_regional_cooling_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('cooling', None)
+        self.baseline_regional_heating_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('heating', None)
 
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
