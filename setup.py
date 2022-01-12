@@ -27,6 +27,6 @@ setup(name='thermostat',
         'pandas',
         'scipy',
         'sqlalchemy',
-        'zipcodes==1.1.2',
+        'zipcodes==1.2.0',
         ],
 )

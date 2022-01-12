@@ -1,32 +1,51 @@
 import pandas as pd
+import zipcodes
 from pkg_resources import resource_stream
 from collections import namedtuple
+from eeweather.geo import get_lat_long_climate_zones
+import numpy as np
+import logging
+
+logger = logging.getLogger('epathermostat')
+
+BASELINE_TEMPERATURE = {
+    'Very-Cold/Cold': {
+        'heating': 68.0,
+        'cooling': 73.0,
+        },
+    'Mixed-Humid': {
+        'heating': 69.0,
+        'cooling': 73.0,
+        },
+    'Mixed-Dry/Hot-Dry': {
+        'heating': 69.0,
+        'cooling': 75.0,
+        },
+    'Hot-Humid': {
+        'heating': 70.0,
+        'cooling': 75.0,
+        },
+    'Marine': {
+        'heating': 67.0,
+        'cooling': np.nan,
+        }
+    }
+
+CLIMATE_ZONE_MAPPING = {
+    'Cold': 'Very-Cold/Cold',
+    'Very Cold': 'Very-Cold/Cold',
+    'Hot-Dry': 'Mixed-Dry/Hot-Dry',
+    'Mixed-Dry': 'Mixed-Dry/Hot-Dry',
+    }
 
 
-def _load_mapping(filename_or_buffer):
-    df = pd.read_csv(
-        filename_or_buffer,
-        usecols=["zipcode", "group"],
-        dtype={"zipcode": str, "group": str},
-    ).set_index('zipcode').drop('zipcode', errors='ignore')
-    df = df.where((pd.notnull(df)), None)
-
-    return dict(df.to_records('index'))
-
-
-def retrieve_climate_zone(climate_zone_mapping, zipcode):
-    """ Loads the Climate Zone to Zipcode database
+def retrieve_climate_zone(zipcode):
+    """ Performs a lookup of the Climate Zone from eeweather
     and returns the climate zone and baseline regional comfort temperatures.
 
     Parameters
     ----------
-
-    climate_zone_mapping : filename, default: None
-
-        A mapping from climate zone to zipcode. If None is provided, uses
-        default zipcode to climate zone mapping provided in tutorial.
-
-        :download:`default mapping <./resources/Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv>`
+    zipcode : The ZIP Code to lookup using eeweather's climate zones
 
     Returns
     -------
@@ -34,35 +53,20 @@ def retrieve_climate_zone(climate_zone_mapping, zipcode):
     climate_zone_nt : named tuple
        Named Tuple consisting of the Climate Zone, baseline_regional_cooling_comfort_temperature, and baseline_regional_heating_comfort_temperature
     """
-
     ClimateZone = namedtuple('ClimateZone', ['climate_zone', 'baseline_regional_cooling_comfort_temperature', 'baseline_regional_heating_comfort_temperature'])
-    if climate_zone_mapping is None:
-        with resource_stream(
-                'thermostat.resources',
-                'Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv') as f:
-            mapping = _load_mapping(f)
-    else:
-        try:
-            mapping = _load_mapping(climate_zone_mapping)
-        except Exception as e:
-            raise ValueError("Could not load climate zone mapping: %s" % e)
+    try:
+        zipcode = zipcode.zfill(5)
+        zipcode_details = zipcodes.matching(zipcode).pop()
+        latitude = float(zipcode_details['lat'])
+        longitude = float(zipcode_details['long'])
+        ee_climate_zones = get_lat_long_climate_zones(latitude, longitude)
+        ba_climate_zone = ee_climate_zones['ba_climate_zone']
+        climate_zone = CLIMATE_ZONE_MAPPING.get(ba_climate_zone, ba_climate_zone)
+        baseline_regional_cooling_comfort_temperature = BASELINE_TEMPERATURE.get(climate_zone, {}).get('cooling', None)
+        baseline_regional_heating_comfort_temperature = BASELINE_TEMPERATURE.get(climate_zone, {}).get('heating', None)
 
-    with resource_stream('thermostat.resources', 'regional_baselines.csv') as f:
-        df = pd.read_csv(
-            f, usecols=[
-                'EIA Climate Zone',
-                'Baseline heating temp (F)',
-                'Baseline cooling temp (F)'
-            ])
-        df = df.where((pd.notnull(df)), None)
-        df = df.set_index('EIA Climate Zone')
-        cooling_regional_baseline_temps = {k: v for k, v in df['Baseline cooling temp (F)'].iteritems()}
-        heating_regional_baseline_temps = {k: v for k, v in df['Baseline heating temp (F)'].iteritems()}
-
-    climate_zone = mapping.get(zipcode)
-    baseline_regional_cooling_comfort_temperature = cooling_regional_baseline_temps.get(climate_zone, None)
-    baseline_regional_heating_comfort_temperature = heating_regional_baseline_temps.get(climate_zone, None)
-
-    climate_zone_nt = ClimateZone(climate_zone, baseline_regional_cooling_comfort_temperature, baseline_regional_heating_comfort_temperature)
-
+        climate_zone_nt = ClimateZone(climate_zone, baseline_regional_cooling_comfort_temperature, baseline_regional_heating_comfort_temperature)
+    except IndexError:
+        logger.warning(f'ZIP Code {zipcode} is not found. Is it valid?')
+        climate_zone_nt = ClimateZone(np.nan, np.nan, np.nan)
     return climate_zone_nt

@@ -9,7 +9,8 @@ import numpy as np
 from scipy.optimize import leastsq
 
 from thermostat import get_version
-from thermostat.climate_zone import retrieve_climate_zone
+from thermostat.climate_zone import BASELINE_TEMPERATURE
+from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 from thermostat.equipment_type import (
         has_heating,
         has_cooling,
@@ -45,6 +46,20 @@ RESISTANCE_HEAT_USE_BIN_PAIRS = [(RESISTANCE_HEAT_USE_BIN[x], RESISTANCE_HEAT_US
 RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
 RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS = [(30, 45)]
 
+ENFORCE_MINIMUM_CORE_DAYS = False
+MINIMUM_COOLING_CORE_DAYS = {
+    'Hot-Humid': 50,
+    'Marine': 50,
+    'Mixed-Dry/Hot-Dry': 25,
+    'Mixed-Humid': 50,
+    'Very-Cold/Cold': 40}
+MINIMUM_HEATING_CORE_DAYS = {
+    'Hot-Humid': 20,
+    'Marine': 50,
+    'Mixed-Dry/Hot-Dry': 25,
+    'Mixed-Humid': 50,
+    'Very-Cold/Cold': 50}
+
 # FIXME: Turning off these warnings for now
 pd.set_option('mode.chained_assignment', None)
 
@@ -78,6 +93,16 @@ def avoided(baseline, observed):
 def percent_savings(avoided, baseline, thermostat_id):
     savings = np.divide(avoided.mean(), baseline.mean()) * 100.0
     return savings
+
+
+class InsufficientCoreDaysError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class InvalidClimateZoneError(Exception):
+    def __init__(self, message):
+        self.message = message
 
 
 class Thermostat(object):
@@ -225,13 +250,31 @@ class Thermostat(object):
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
+        self.climate_zone = ZIPCODE_LOOKUP.get(self.zipcode, {}).get('climate_zone')
+        if self.climate_zone is None:
+            raise InvalidClimateZoneError(f'Climate Zone is not available for ZIP Code {self.zipcode}')
+        self.baseline_regional_cooling_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('cooling', None)
+        self.baseline_regional_heating_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('heating', None)
+
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
             self.core_heating_days_total = self.core_heating_days[0].daily.sum()
-
+            try:
+                if ENFORCE_MINIMUM_CORE_DAYS and \
+                        (self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]):
+                    raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
+            except KeyError:
+                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
+                
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
+            try:
+                if ENFORCE_MINIMUM_CORE_DAYS and \
+                        self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
+                    raise InsufficientCoreDaysError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
+            except KeyError:
+                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         self.validate()
@@ -374,7 +417,7 @@ class Thermostat(object):
         """
 
         if method not in ["entire_dataset"]:
-            raise NotImplementedError
+            raise NotImplementedError('Methods other than entire_dataset are not implemented')
 
         self._protect_heating()
 
@@ -437,7 +480,7 @@ class Thermostat(object):
             "entire_dataset", name of core day set is "cooling_ALL".
         """
         if method not in ["entire_dataset"]:
-            raise NotImplementedError
+            raise NotImplementedError('Methods other than entire_dataset are not implemented')
 
         self._protect_cooling()
 
@@ -1001,7 +1044,7 @@ class Thermostat(object):
             warnings.warn("Cooling Setpoint method is no longer implemented.")
 
         # For everything else, return "Not Implemented"
-        raise NotImplementedError
+        raise NotImplementedError(f'{method} and {source} are not implemented for get_core_cooling_day_baseline_setpoint')
 
     def get_core_heating_day_baseline_setpoint(self, core_heating_day_set,
                                                method='ninetieth_percentile', source='temperature_in'):
@@ -1035,7 +1078,7 @@ class Thermostat(object):
             warnings.warn("Heating setpoint method is no longer implemented")
 
         # For everything else, return "Not Implemented"
-        raise NotImplementedError
+        raise NotImplementedError(f'{method} and {source} are not implemented for get_core_heating_day_baseline_setpoint')
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
         """ Calculate baseline cooling demand for a particular core cooling
@@ -1161,8 +1204,7 @@ class Thermostat(object):
     def calculate_epa_field_savings_metrics(
             self,
             core_cooling_day_set_method="entire_dataset",
-            core_heating_day_set_method="entire_dataset",
-            climate_zone_mapping=None):
+            core_heating_day_set_method="entire_dataset"):
         """ Calculates metrics for connected thermostat savings as defined by
         the specification defined by the EPA Energy Star program and stakeholders.
 
@@ -1179,13 +1221,6 @@ class Thermostat(object):
             - "entire_dataset": all core heating days in dataset (days with >= 1
               hour of heating runtime and no cooling runtime.
 
-        climate_zone_mapping : filename, default: None
-
-            A mapping from climate zone to zipcode. If None is provided, uses
-            default zipcode to climate zone mapping provided in tutorial.
-
-            :download:`default mapping <./resources/Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv>`
-
         Returns
         -------
         metrics : list
@@ -1193,29 +1228,24 @@ class Thermostat(object):
             or cooling days.
         """
 
-        retval = retrieve_climate_zone(climate_zone_mapping, self.zipcode)
-        climate_zone = retval.climate_zone
-        baseline_regional_cooling_comfort_temperature = retval.baseline_regional_cooling_comfort_temperature
-        baseline_regional_heating_comfort_temperature = retval.baseline_regional_heating_comfort_temperature
-
         metrics = []
 
         if self.has_cooling:
             for core_cooling_day_set in self.core_cooling_days:
                 outputs = self._calculate_cooling_epa_field_savings_metrics(
-                    climate_zone,
+                    self.climate_zone,
                     core_cooling_day_set,
                     core_cooling_day_set_method,
-                    baseline_regional_cooling_comfort_temperature)
+                    self.baseline_regional_cooling_comfort_temperature)
                 metrics.append(outputs)
 
         if self.has_heating:
             for core_heating_day_set in self.core_heating_days:
                 outputs = self._calculate_heating_epa_field_savings_metrics(
-                    climate_zone,
+                    self.climate_zone,
                     core_heating_day_set,
                     core_heating_day_set_method,
-                    baseline_regional_heating_comfort_temperature)
+                    self.baseline_regional_heating_comfort_temperature)
 
                 if self.has_auxiliary and self.has_emergency:
                     additional_outputs = self._calculate_aux_emerg_epa_field_savings_metrics(core_heating_day_set)
