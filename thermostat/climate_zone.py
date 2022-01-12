@@ -10,23 +10,23 @@ logger = logging.getLogger('epathermostat')
 
 BASELINE_TEMPERATURE = {
     'Very-Cold/Cold': {
-        'heating': 68,
-        'cooling': 73,
+        'heating': 68.0,
+        'cooling': 73.0,
         },
     'Mixed-Humid': {
-        'heating': 69,
-        'cooling': 73,
+        'heating': 69.0,
+        'cooling': 73.0,
         },
     'Mixed-Dry/Hot-Dry': {
-        'heating': 69,
-        'cooling': 75,
+        'heating': 69.0,
+        'cooling': 75.0,
         },
     'Hot-Humid': {
-        'heating': 70,
-        'cooling': 75,
+        'heating': 70.0,
+        'cooling': 75.0,
         },
     'Marine': {
-        'heating': 67,
+        'heating': 67.0,
         'cooling': np.nan,
         }
     }

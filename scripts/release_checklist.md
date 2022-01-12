@@ -52,9 +52,17 @@ This will build a Python file that contains a data structure for zip code lookup
 
 Edit the `thermostat/__init__.py` file and update the VERSION string to the current version.
 
+## Update generated test data and verify
+
+Run `python test_data_generation.py > ../tests/fixtures/metrics_data.py` to generate the new `metrics_data.py` file. Verify that the old values and new values make sense (Usually the only changes are the version number. If there are larger changes then check to see if there were breaking changes and if they make sense.)
+
 ## Ensure tests are running
 
 `pytest`
+
+If you wish to check all versions:
+
+`tox -pall -r`
 
 ## Build the source distribution
 

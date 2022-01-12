@@ -15,6 +15,8 @@
 * Improved error logging
 * Simplified ZCTA lookup algorithm
 * Removed eemeter
+* Updated logic for ZIP Code to weather station lookup
+* Updated Climate Zone lookup strategy
 
 ## Production releases
 
