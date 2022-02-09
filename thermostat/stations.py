@@ -1,6 +1,7 @@
 import logging
 import json
 import zipcodes
+from postalcodes_ca import postal_codes, parse_postal_code
 import warnings
 from pkg_resources import resource_stream
 from eeweather import (
@@ -40,13 +41,26 @@ def _zip_to_lat_long(zipcode):
     return lat, lon
 
 
-def _get_closest_station_by_zipcode_ranked(zipcode):
+def _postal_code_to_lat_long(postal_code):
+    """ Returns the lat / long for a postal code or None if none is found """
+    try:
+        postal_code = parse_postal_code(postal_code)  # Do some rudimentary cleaning
+        location = postal_codes[postal_code]
+        lat = float(location.latitude)
+        lon = float(location.longitude)
+    except ValueError:
+        logging.warning(f'Postal Code {postal_code} is invalid')
+        return None, None
+    return lat, lon
+
+
+def _get_closest_station_by_location_code_ranked(location_code):
     """ Selects the nth ranked station from a list of ranked stations
 
     Parameters
     ----------
-    zipcode : string
-        ZIP Code
+    location_code : string
+        ZIP Code / Postal Code
 
     Returns
     -------
@@ -58,10 +72,17 @@ def _get_closest_station_by_zipcode_ranked(zipcode):
         longitude for the search
     """
 
-    zipcode = zipcode.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
-    lat, lon = _zip_to_lat_long(zipcode)
-
+    lat = None
+    lon = None
     station = None
+
+    if len(location_code) > 5:
+        # Looks like a Canadian Postal Code
+        lat, lon = _postal_code_to_lat_long(location_code)
+    else:
+        # Assume that we have a ZIP Code
+        location_code = location_code.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
+        lat, lon = _zip_to_lat_long(location_code)
 
     if lat and lon:
         for min_quality, max_distance_meters in METHOD:
@@ -77,12 +98,12 @@ def _get_closest_station_by_zipcode_ranked(zipcode):
     return station, lat, lon
 
 
-def get_closest_station_by_zipcode(zipcode):
-    """ Look up the station by ZIP Code from eeweather
-    Searches for the closest station using ZIP Codes
+def get_closest_station_by_location_code(location_code):
+    """ Look up the station by ZIP Code / Postal Code from eeweather
+    Searches for the closest station using ZIP Code / Postal Code
     The algorithm is as follows:
 
-    1. Get the location of the ZIP Code
+    1. Get the location of the ZIP Code / Postal Code
 
     2. Select the station that is the closest with the highest quality using the following method:
         * high quality stations within 40,000 meters
@@ -96,29 +117,31 @@ def get_closest_station_by_zipcode(zipcode):
 
     Parameters
     ----------
-    zipcode : string
-        ZIP code to look up
+    location_code : string
+        ZIP Code / Postal Code to look up
 
     Returns
     -------
     station : string or None
-        Station that maps to the specified ZIP code
+        Station that maps to the specified location code
     """
 
     try:
-        station, lat, lon = _get_closest_station_by_zipcode_ranked(zipcode)
+        station, lat, lon = _get_closest_station_by_location_code_ranked(location_code)
+
+        logging.debug(f'Station: {station}, Latitude: {lat}, Longitude: {lon}')
 
         if station is None:
-            warnings.warn(f"No station found for ZIP {zipcode}")
+            warnings.warn(f"No station found for location code {location_code}")
             return None
 
         isd_metadata = get_isd_file_metadata(str(station))
         if len(isd_metadata) == 0:
-            logging.warning(f"ZIP code {zipcode} mapped to station {station}, but no ISD metadata was found.")
+            logging.warning(f"Location code {location_code} mapped to station {station}, but no ISD metadata was found.")
             return None
 
     except UnrecognizedUSAFIDError:
-        logging.warning(f"Closest station {station} is not a recognized station for ZIP {zipcode}.")
+        logging.warning(f"Closest station {station} is not a recognized station for Location Code {location_code}.")
         return None
 
     return str(station)

@@ -2,7 +2,7 @@ import zipcodes
 import eeweather
 import collections
 from pprint import pprint
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.stations import get_closest_station_by_location_code
 from thermostat.climate_zone import retrieve_climate_zone
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -17,7 +17,7 @@ logger.setLevel(logging.ERROR)
 def get_station_climate_zone(zipcode_obj):
     try:
         zipcode = zipcode_obj['zip_code']
-        station = get_closest_station_by_zipcode(zipcode)
+        station = get_closest_station_by_location_code(zipcode)
         climate_zone_nt = retrieve_climate_zone(zipcode)
     except Exception:
         return None, None, None
