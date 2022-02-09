@@ -1,4 +1,5 @@
 import zipcodes
+from postalcodes_ca import postal_codes
 import eeweather
 import collections
 from pprint import pprint
@@ -14,42 +15,45 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 
-def get_station_climate_zone(zipcode_obj):
+def get_station_climate_zone(location_code):
     try:
-        zipcode = zipcode_obj['zip_code']
-        station = get_closest_station_by_location_code(zipcode)
-        climate_zone_nt = retrieve_climate_zone(zipcode)
+        station = get_closest_station_by_location_code(location_code)
+        climate_zone_nt = retrieve_climate_zone(location_code)
     except Exception:
         return None, None, None
-    return zipcode, station, climate_zone_nt.climate_zone
+    return location_code, station, climate_zone_nt.climate_zone
 
 
 def main():
     """This code looks up all available zip codes and generates a data file with station and climate zone lookups"""
-    zipcode_lookup = {}
+    location_code_lookup = {}
 
     p = Pool()
     multiprocess_func_partial = partial(
         get_station_climate_zone,
         )
 
-    result_list = p.imap(multiprocess_func_partial, zipcodes.list_all())
+    postal_codes_list = list(postal_codes.keys())
+    zip_codes_list = [zipcode['zip_code'] for zipcode in zipcodes.list_all()]
+    location_codes_list = postal_codes_list + zip_codes_list
+    result_list = p.imap(multiprocess_func_partial, location_codes_list)
     p.close()
     p.join()
 
     for result in result_list:
-        zipcode, station, climate_zone = result
-        zipcode_lookup[zipcode] = {}
-        zipcode_lookup[zipcode]['station'] = station
-        zipcode_lookup[zipcode]['climate_zone'] = climate_zone
+        location_code, station, climate_zone = result
+        location_code_lookup[location_code] = {}
+        location_code_lookup[location_code]['station'] = station
+        location_code_lookup[location_code]['climate_zone'] = climate_zone
 
-    sorted_zipcode_lookup = collections.OrderedDict(sorted(zipcode_lookup.items()))
+    sorted_location_code_lookup = collections.OrderedDict(sorted(location_code_lookup.items()))
     print('from collections import OrderedDict')
     print(f"# zipcodes version {zipcodes.__version__}")
+    print(f"# postalcodes_ca version 0.8")
     print(f"# eeweather version {eeweather.__version__}")
     print()
-    print("ZIPCODE_LOOKUP = \\")
-    pprint(sorted_zipcode_lookup)
+    print("LOCATION_CODE_LOOKUP = \\")
+    pprint(sorted_location_code_lookup)
 
 
 if __name__ == '__main__':
