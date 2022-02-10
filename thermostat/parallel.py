@@ -4,7 +4,7 @@ from itertools import cycle
 from zipfile import ZipFile
 import tempfile
 import os
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.stations import get_closest_station_by_location_code
 
 
 def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=None):
@@ -44,7 +44,7 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             raise ValueError(message)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
-    stations = [get_closest_station_by_zipcode(zipcode) for zipcode in metadata_df.zipcode]
+    stations = [get_closest_station_by_location_code(location_code) for location_code in metadata_df.zipcode]
 
     n_rows = metadata_df.shape[0]
 
