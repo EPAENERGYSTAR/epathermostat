@@ -34,9 +34,7 @@ def main():
         )
 
     postal_codes_list = list(postal_codes.keys())
-    postal_codes_list = postal_codes_list[:100]
     zip_codes_list = [zipcode['zip_code'] for zipcode in zipcodes.list_all()]
-    zip_codes_list = zip_codes_list[:100]
     location_codes_list = postal_codes_list + zip_codes_list
     result_list = p.imap(multiprocess_func_partial, location_codes_list)
     p.close()

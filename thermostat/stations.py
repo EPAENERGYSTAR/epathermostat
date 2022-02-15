@@ -44,6 +44,7 @@ def _get_closest_station_by_location_code_ranked(location_code):
     """
 
     lat, lon = location_lookup(location_code)
+    station = None
 
     if lat and lon:
         for min_quality, max_distance_meters in METHOD:
