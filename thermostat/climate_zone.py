@@ -1,10 +1,10 @@
 import pandas as pd
-import zipcodes
 from pkg_resources import resource_stream
 from collections import namedtuple
 from eeweather.geo import get_lat_long_climate_zones
 import numpy as np
 import logging
+from .location_code import location_lookup
 
 logger = logging.getLogger('epathermostat')
 
@@ -39,13 +39,13 @@ CLIMATE_ZONE_MAPPING = {
     }
 
 
-def retrieve_climate_zone(zipcode):
+def retrieve_climate_zone(location_code):
     """ Performs a lookup of the Climate Zone from eeweather
     and returns the climate zone and baseline regional comfort temperatures.
 
     Parameters
     ----------
-    zipcode : The ZIP Code to lookup using eeweather's climate zones
+    location_code : The ZIP / Postal Code to lookup using eeweather's climate zones
 
     Returns
     -------
@@ -55,10 +55,9 @@ def retrieve_climate_zone(zipcode):
     """
     ClimateZone = namedtuple('ClimateZone', ['climate_zone', 'baseline_regional_cooling_comfort_temperature', 'baseline_regional_heating_comfort_temperature'])
     try:
-        zipcode = zipcode.zfill(5)
-        zipcode_details = zipcodes.matching(zipcode).pop()
-        latitude = float(zipcode_details['lat'])
-        longitude = float(zipcode_details['long'])
+        lat, lon = location_lookup(location_code)
+        latitude = float(lat)
+        longitude = float(lon)
         ee_climate_zones = get_lat_long_climate_zones(latitude, longitude)
         ba_climate_zone = ee_climate_zones['ba_climate_zone']
         climate_zone = CLIMATE_ZONE_MAPPING.get(ba_climate_zone, ba_climate_zone)
@@ -67,6 +66,6 @@ def retrieve_climate_zone(zipcode):
 
         climate_zone_nt = ClimateZone(climate_zone, baseline_regional_cooling_comfort_temperature, baseline_regional_heating_comfort_temperature)
     except IndexError:
-        logger.warning(f'ZIP Code {zipcode} is not found. Is it valid?')
+        logger.warning(f'Location Code {location_code} is not found. Is it valid?')
         climate_zone_nt = ClimateZone(np.nan, np.nan, np.nan)
     return climate_zone_nt

@@ -1,7 +1,5 @@
 import logging
 import json
-import zipcodes
-from postalcodes_ca import postal_codes, parse_postal_code
 import warnings
 from pkg_resources import resource_stream
 from eeweather import (
@@ -10,6 +8,7 @@ from eeweather import (
         select_station)
 from eeweather.exceptions import (
         UnrecognizedUSAFIDError)
+from .location_code import location_lookup
 
 
 logging.getLogger(__name__)
@@ -24,34 +23,6 @@ METHOD = [
         ['medium', MAX_METERS],
         ]
 
-
-def _zip_to_lat_long(zipcode):
-    """ Returns the lat / long for a zip code, or None if none is found. """
-    try:
-        zip_location_list = zipcodes.matching(zipcode)
-        first_location = zip_location_list.pop()
-        lat = float(first_location.get('lat'))
-        lon = float(first_location.get('long'))
-    except ValueError:
-        logging.warning(f'ZIP Code {zipcode} is invalid')
-        return None, None
-    except IndexError:
-        logging.warning(f'No locations found for ZIP Code {zipcode}')
-        return None, None
-    return lat, lon
-
-
-def _postal_code_to_lat_long(postal_code):
-    """ Returns the lat / long for a postal code or None if none is found """
-    try:
-        postal_code = parse_postal_code(postal_code)  # Do some rudimentary cleaning
-        location = postal_codes[postal_code]
-        lat = float(location.latitude)
-        lon = float(location.longitude)
-    except ValueError:
-        logging.warning(f'Postal Code {postal_code} is invalid')
-        return None, None
-    return lat, lon
 
 
 def _get_closest_station_by_location_code_ranked(location_code):
@@ -72,17 +43,7 @@ def _get_closest_station_by_location_code_ranked(location_code):
         longitude for the search
     """
 
-    lat = None
-    lon = None
-    station = None
-
-    if len(location_code) > 5:
-        # Looks like a Canadian Postal Code
-        lat, lon = _postal_code_to_lat_long(location_code)
-    else:
-        # Assume that we have a ZIP Code
-        location_code = location_code.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
-        lat, lon = _zip_to_lat_long(location_code)
+    lat, lon = location_lookup(location_code)
 
     if lat and lon:
         for min_quality, max_distance_meters in METHOD:
