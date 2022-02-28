@@ -14,15 +14,14 @@ setup(name='thermostat',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
     keywords='thermostat savings EPA',
     packages=find_packages(),
     package_data={'': ['*.csv', '*.json']},
     install_requires=[
-        'eemeter',
-        'eeweather',
+        'eemeter==3.1.0',
+        'eeweather==0.3.24',
         'sqlalchemy',
         ],
 )
