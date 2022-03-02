@@ -1,16 +1,16 @@
 import csv
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
-        has_heating,
-        has_cooling,
-        has_auxiliary,
-        has_emergency,
-        has_two_stage_cooling,
-        has_two_stage_heating,
-        has_multi_stage_cooling,
-        has_multi_stage_heating,
-        first_stage_capacity_ratio,
-        )
+    has_heating,
+    has_cooling,
+    has_auxiliary,
+    has_emergency,
+    has_two_stage_cooling,
+    has_two_stage_heating,
+    has_multi_stage_cooling,
+    has_multi_stage_heating,
+    first_stage_capacity_ratio,
+    )
 
 import pandas as pd
 from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
@@ -100,9 +100,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
     sqlite_json_store = KeyValueStore()
     years = index.groupby(index.year).keys()
     for year in years:
-        filename = "ISD-{station}-{year}.json".format(
-                station=station,
-                year=year)
+        filename = f"ISD-{station}-{year}.json"
         json_cache[filename] = sqlite_json_store.retrieve_json(filename)
 
     if cache_path is None:
@@ -113,7 +111,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
         directory = os.path.normpath(
             cache_path)
 
-    thermostat_filename = "{thermostat_id}.json".format(thermostat_id=thermostat_id)
+    thermostat_filename = f"{thermostat_id}.json"
     thermostat_path = os.path.join(directory, thermostat_filename)
     try:
         os.makedirs(os.path.dirname(directory), exist_ok=True)
@@ -121,7 +119,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
             json.dump(json_cache, outfile)
 
     except Exception as e:
-        warnings.warn("Unable to write JSON file: {}".format(e))
+        warnings.warn(f"Unable to write JSON file: {e}")
 
 
 def normalize_utc_offset(utc_offset):
@@ -154,9 +152,7 @@ def normalize_utc_offset(utc_offset):
         return delta
 
     except (ValueError, TypeError, AttributeError) as e:
-        raise TypeError("Invalid UTC offset: can't convert {} to a valid offset. Please prefix with + or -. ({})".format(
-           utc_offset,
-           e))
+        raise TypeError(f"Invalid UTC offset: can't convert {utc_offset} to a valid offset. Please prefix with + or -. ({e})")
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
@@ -209,7 +205,6 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         message = "Columns missing from metadata data file: {}".format(missing_columns)
         raise ValueError(message)
 
-
     # Shuffle the results to help alleviate cache issues
     if shuffle:
         logging.info("Metadata randomized to prevent collisions in cache.")
@@ -217,11 +212,11 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
 
     p = Pool(AVAILABLE_PROCESSES)
     multiprocess_func_partial = partial(
-            _multiprocess_func,
-            metadata_filename=metadata_filename,
-            verbose=verbose,
-            save_cache=save_cache,
-            cache_path=cache_path)
+        _multiprocess_func,
+        metadata_filename=metadata_filename,
+        verbose=verbose,
+        save_cache=save_cache,
+        cache_path=cache_path)
     result_list = p.imap(multiprocess_func_partial, metadata.iterrows())
     p.close()
     p.join()
@@ -255,10 +250,10 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
 def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
-    i, row = metadata
-    logger.info("Importing thermostat {}".format(row.thermostat_id))
+    _, row = metadata
+    logger.info(f"Importing thermostat {row.thermostat_id}")
     if verbose and logger.getEffectiveLevel() > logging.INFO:
-        print("Importing thermostat {}".format(row.thermostat_id))
+        print(f"Importing thermostat {row.thermostat_id}")
 
     interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
