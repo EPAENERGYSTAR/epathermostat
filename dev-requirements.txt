@@ -5,3 +5,4 @@ Sphinx==3.5.3
 mock==2.0.0
 jupyter
 tox
+pip-tools
