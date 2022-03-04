@@ -95,7 +95,7 @@ and set a directory for finding and storing data.
 
     If you suspect a package version conflict or error, you can verify the
     versions of the packages you have installed against the package
-    versions in :download:`thermostatreqnotes.txt <../thermostatreqnotes.txt>`.
+    versions in :download:`requirements.txt <../requirements.txt>`.
 
     To list your package versions, use:
 
