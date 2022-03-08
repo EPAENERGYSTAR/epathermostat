@@ -78,7 +78,7 @@ If you wish to check all versions:
 
 `cd sdist`
 
-`twine upload sdist/epathermostat-2.0.1.tar.gz`
+`twine upload -r epathermostat sdist/epathermostat-2.0.1.tar.gz`
 
 ## Head to github to create a new release.
 
