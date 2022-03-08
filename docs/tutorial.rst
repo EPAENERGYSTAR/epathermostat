@@ -28,9 +28,7 @@ make it easier to debug.
     $ conda activate thermostat
     (thermostat)$ pip install thermostat
 
-    # If using pipenv (see https://github.com/pypa/pipenv)
-    # (cd to directory with data files)
-    $ pipenv --python 3.7 install thermostat
+..note:: We no longer recommend using `pipenv` because of difficulties keeping the environment up-to-date. Please use one of the other methods mentioned above for installing the software. 
 
 If you already have an environment, use the following:
 
@@ -44,11 +42,14 @@ If you already have an environment, use the following:
     $ source activate thermostat
     (thermostat)$
 
+    # if using venv, or virtualenv directly
+    $ source /path/to/venv/bin/activate
+
 To deactivate the environment when you've finished, use the following:
 
 .. code-block:: bash
 
-    # if using virtualenvwrapper / venv / pipenv
+    # if using virtualenvwrapper / venv
     (thermostat)$ deactivate
     $
 
@@ -62,7 +63,7 @@ Check to make sure you are on the most recent version of the package.
 
     >>> import thermostat; thermostat.get_version()
 
-    '1.7.3'
+    '1.7.4'
 
 If you are not on the correct version, you should upgrade:
 
@@ -85,8 +86,7 @@ Previous versions of the package are available on `github <https://github.com/EP
     as `numpy` or `scipy`, we recommend installing and using the free
     `Anaconda <https://www.continuum.io/downloads>`_ Python distribution by
     Continuum Analytics. It contains many of the numeric and scientific
-    packages used by this package and has installers for Python 3.6 and later for
-    Windows, Mac OS X and Linux.
+    packages used by this package and has installers for Windows, macOS and Linux.
 
 Once you have verified a correct installation, import the necessary methods
 and set a directory for finding and storing data.
@@ -330,20 +330,29 @@ Other platforms should not be affected by this.
 Notes for Windows Conda Users
 -----------------------------
 
-Thermostat 1.7.3 may have issues installing on Windows machines using pip because of issues with the Shapely wheel and numpy. If you are receiving strange behavior such as "WindowsError: [Error 126] The specified module could not be found" then please try this method to install the Thermostat module:
+Thermostat 1.7.x may have issues installing on Windows machines using pip because of issues with the Shapely wheel and numpy. If you are receiving strange behavior such as "WindowsError: [Error 126] The specified module could not be found" then please try this method to install the Thermostat module:
     
 .. code-block:: bash
 
     $ conda env remove --name thermostat
-    $ conda create --yes --name thermostat python==3.6.9
-    $ conda install -c conda-forge shapely pandas==0.24.2 numpy==1.19.5
-    $ pip install thermostat==1.7.3
+    $ conda create --yes --name thermostat python==3.10
+    $ conda install -c conda-forge shapely pandas==1.4.1 numpy==1.22.2
+    $ pip install thermostat==1.7.4
 
 .. note::
 
    This is only recommended in cases where the Python environment has issues
    running the thermostat module. If you are not having issues then we
    recommend sticking with pip for installing the software.
+
+Sample Program
+--------------
+
+Here is a complete version of the above tutorial code (this code can be found in the `scripts/multi_thermostat_tutorial.py` file):
+
+.. literalinclude:: ../scripts/multi_thermostat_tutorial.py
+      :language: python
+
 
 More information
 ----------------
