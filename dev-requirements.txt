@@ -1,7 +1,7 @@
-pytest==5.4.2
-Sphinx==1.4.1
+pytest
+sphinx
 mock==2.0.0
 coverage
-jupyter==1.0.0
-tox==3.15.1
-pytest-cov==2.9.0
+jupyter
+tox
+pytest-cov
