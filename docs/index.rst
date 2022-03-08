@@ -32,11 +32,6 @@ Common Issues with Data Files
 
    common_issues
 
-Tips
-----
-.. toctree::
-   :maxdepth: 2
-
 License
 -------
 
