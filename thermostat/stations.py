@@ -5,21 +5,14 @@ import warnings
 from pkg_resources import resource_stream
 from eeweather import (
         get_isd_file_metadata,
-        zcta_to_lat_long,
         rank_stations,
         select_station)
 from eeweather.exceptions import (
-        UnrecognizedZCTAError,
         UnrecognizedUSAFIDError)
 
 
 logging.getLogger(__name__)
 warnings.simplefilter('module', Warning)
-
-# This is a JSON file with the zipcode to usaf_station mapping that were previously in eemeter.
-with resource_stream('thermostat.resources', 'zipcode_usaf_station.json') as zipcode_usaf_stream:
-    zipcode_usaf_json = zipcode_usaf_stream.read().decode()
-    zipcode_usaf = json.loads(zipcode_usaf_json)
 
 MAX_METERS = 100000
 
@@ -33,23 +26,27 @@ METHOD = [
 
 def _zip_to_lat_long(zipcode):
     """ Returns the lat / long for a zip code, or None if none is found. """
-    zip_location_list = zipcodes.matching(zipcode)
     try:
+        zip_location_list = zipcodes.matching(zipcode)
         first_location = zip_location_list.pop()
         lat = float(first_location.get('lat'))
         lon = float(first_location.get('long'))
-    except Exception:
+    except ValueError:
+        logging.warning(f'ZIP Code {zipcode} is invalid')
+        return None, None
+    except IndexError:
+        logging.warning(f'No locations found for ZIP Code {zipcode}')
         return None, None
     return lat, lon
 
 
-def _get_closest_station_by_zcta_ranked(zcta):
+def _get_closest_station_by_zipcode_ranked(zipcode):
     """ Selects the nth ranked station from a list of ranked stations
 
     Parameters
     ----------
-    zcta : string
-        ZIP Code Tabulation Area (ZCTA)
+    zipcode : string
+        ZIP Code
 
     Returns
     -------
@@ -61,12 +58,8 @@ def _get_closest_station_by_zcta_ranked(zcta):
         longitude for the search
     """
 
-    zcta = zcta.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
-    try:
-        lat, lon = zcta_to_lat_long(zcta)
-    except UnrecognizedZCTAError:
-        warnings.warn("%s is not recognized as a ZCTA. Treating as a ZIP Code instead." % zcta)
-        lat, lon = _zip_to_lat_long(zcta)
+    zipcode = zipcode.zfill(5)  # Ensure that we have 5 characters, and if not left-pad it with zeroes.
+    lat, lon = _zip_to_lat_long(zipcode)
 
     station = None
 
@@ -85,11 +78,11 @@ def _get_closest_station_by_zcta_ranked(zcta):
 
 
 def get_closest_station_by_zipcode(zipcode):
-    """ Look up the station by ZCTA / Zip Code from eeweather
-    Searches for the closest station using ZCTA or Zip Codes
+    """ Look up the station by ZIP Code from eeweather
+    Searches for the closest station using ZIP Codes
     The algorithm is as follows:
 
-    1. Get the location of the ZCTA, and fall back to ZIP if the ZCTA isn't recognized
+    1. Get the location of the ZIP Code
 
     2. Select the station that is the closest with the highest quality using the following method:
         * high quality stations within 40,000 meters
@@ -104,38 +97,28 @@ def get_closest_station_by_zipcode(zipcode):
     Parameters
     ----------
     zipcode : string
-        ZCTA / ZIP code to look up (referred to as zipcode in the code)
+        ZIP code to look up
 
     Returns
     -------
     station : string or None
-        Station that maps to the specified ZCTA / ZIP code
+        Station that maps to the specified ZIP code
     """
 
     try:
-        station, lat, lon = _get_closest_station_by_zcta_ranked(zipcode)
+        station, lat, lon = _get_closest_station_by_zipcode_ranked(zipcode)
 
         if station is None:
-            warnings.warn("No station found for ZCTA / ZIP %s" % (
-                zipcode,
-                ))
+            warnings.warn(f"No station found for ZIP {zipcode}")
             return None
 
         isd_metadata = get_isd_file_metadata(str(station))
         if len(isd_metadata) == 0:
-            logging.warning("Zipcode %s mapped to station %s, but no ISD metadata was found." % (zipcode, station))
+            logging.warning(f"ZIP code {zipcode} mapped to station {station}, but no ISD metadata was found.")
             return None
 
     except UnrecognizedUSAFIDError:
-        logging.warning("Closest station %s is not a recognized station for ZCTA / ZIP %s." % (
-            str(station),
-            zipcode,
-            ))
-        return None
-
-    except (UnrecognizedZCTAError, ValueError, TypeError) as e:
-        logging.warn("%s is not recognized as a valid ZCTA. Skipping." % zipcode)
-        logging.warning(e)
+        logging.warning(f"Closest station {station} is not a recognized station for ZIP {zipcode}.")
         return None
 
     return str(station)

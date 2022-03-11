@@ -13,8 +13,9 @@
 * Removed year end-to-end and mid-to-mid calculations
 * Added multiprocessor support for stats module
 * Improved error logging
-* Simplified ZCTA lookup algorithm
 * Removed eemeter
+* Updated logic to use ZIP Code for weather station lookup and climate zone lookup
+* Updated Climate Zone lookup strategy
 
 ## Production releases
 

@@ -30,7 +30,7 @@ Name                           Data Format      Units Description
 :code:`heat_stage`             string           N/A   The stages of controlled HVAC heating equipment. [#]_
 :code:`cool_type`              string           N/A   The type of controlled HVAC cooling equipment. [#]_
 :code:`cool_stage`             string           N/A   The stages of controlled HVAC cooling equipment. [#]_
-:code:`zipcode`                string, 5 digits N/A   The `ZCTA`_ code in which the thermostat is installed. [#]_
+:code:`zipcode`                string, 5 digits N/A   The `ZIP Code`_ where the thermostat is installed. [#]_
 :code:`utc_offset`             string           N/A   The UTC offset of the times in the corresponding interval data CSV. (e.g. "-0700" or "-5". Data in UTC is offset "+0")
 :code:`interval_data_filename` string           N/A   The filename of the interval data file corresponding to this thermostat. Should be specified relative to the location of the metadata file.
 ============================== ================ ===== ===========
@@ -39,11 +39,7 @@ Name                           Data Format      Units Description
  - Nulls should be specified by leaving the field blank.
  - All interval data for a particular thermostat should use the *same, single*
    UTC offset provided in the metadata file.
- - The `zipcode` field should use the "ZIP Code Tabulation Area" code. This
-   will allow for more accurate retrieval of weather station data. For more
-   information on the mapping between ZIP / `ZCTA`_ codes and weather stations,
-   please refer to `eeweather ZCTA to latitide / longitude conversion`_ and
-   :ref:`thermostat.stations`.
+ - The `zipcode` field should use the ZIP Code of the thermostat. This will be turned into a latitude / longitude that will be used for station lookups. The package that does this lookup is the `zipcodes`_ package. This package may be used to determine if a ZIP Code is valid or doesn't map to a location.
 
 Thermostat Interval Data CSV format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,9 +133,7 @@ Name                         Data Format                      Units   Descriptio
 .. [#] Will be used for matching with a weather station that provides external
    dry-bulb temperature data. This temperature data will be used to determine
    the bounds of the heating and cooling season over which metrics will be
-   computed. For more information on the mapping between ZIP / `ZCTA`_ codes and
-   weather stations, please refer to `eeweather ZCTA to latitide / longitude conversion`_
-   and :ref:`thermostat.stations`.
+   computed. 
 
 .. [#] Previous versions of this software had each row as one daily result. This version changes this to use hourly rows instead.
 
@@ -349,8 +343,6 @@ grouped by climate zone. Heavier weights are applied to results in climate
 zones which tend to have longer runtimes. Weightings used are
 available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`.
 
-.. _ZCTA: http://www.census.gov/programs-surveys/geography/guidance/geo-areas/zctas.html
-.. _eeweather ZCTA to latitide / longitude conversion: http://eeweather.openee.io/en/latest/advanced.html#zcta-to-latitude-longitude-conversion
 .. _eeweather: http://eeweather.openee.io/en/latest/index.html 
 
 .. _thermostat-import-errors:
@@ -370,3 +362,6 @@ Columns
 
     ":code:`thermostat_id`", "Thermostat ID"
     ":code:`error`", "Error message for the thermostat"
+
+.. _ZIP Code: https://www.unitedstateszipcodes.org/
+.. _zipcodes: https://pypi.org/project/zipcodes/
