@@ -1,4 +1,3 @@
-import csv
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
     has_heating,
@@ -156,7 +155,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None, log_error=True, log_error_filename='thermostat_import_errors.csv'):
+             cache_path=None,):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -235,16 +234,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         else:
             results.append(result['thermostat'])
 
-    if log_error and error_list:
-        fieldnames = ['thermostat_id', 'error']
-        with open(log_error_filename, 'w') as error_file:
-            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
-            writer.writeheader()
-            for thermostat_error in error_list:
-                writer.writerow(thermostat_error)
-
     # Convert this to an iterator to maintain compatibility
-    return iter(results)
+    return iter(results), error_list
 
 
 def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):

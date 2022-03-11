@@ -2,6 +2,7 @@ import os
 import logging
 import logging.config
 import json
+import csv
 from thermostat.importers import from_csv
 from thermostat.exporters import metrics_to_csv, certification_to_csv
 from thermostat.stats import compute_summary_statistics
@@ -53,12 +54,14 @@ METRICS_FILENAME = 'thermostat_example_output.csv'
 CERTIFICATION_FILENAME = 'thermostat_example_certification.csv'
 STATISTICS_FILENAME = 'thermostat_example_stats.csv'
 ADVANCED_STATISTICS_FILENAME = 'thermostat_example_stats_advanced.csv'
+IMPORT_ERRORS_FILENAME = 'thermostat_import_errors.csv'
 
 # These are the locations of where these files will be stored.
 OUTPUT_FILEPATH = os.path.join(DATA_DIR, METRICS_FILENAME)
 STATS_FILEPATH = os.path.join(DATA_DIR, STATISTICS_FILENAME)
 CERTIFICATION_FILEPATH = os.path.join(DATA_DIR, CERTIFICATION_FILENAME)
 STATS_ADVANCED_FILEPATH = os.path.join(DATA_DIR, ADVANCED_STATISTICS_FILENAME)
+IMPORT_ERRORS_FILEPATH = os.path.join(DATA_DIR, IMPORT_ERRORS_FILENAME)
 
 # This is an example of how to best use the new multi-processing functionality.
 # It shows the proper format for wrapping the code under a main() function and
@@ -80,10 +83,19 @@ def main():
     # console
     logging.captureWarnings(True)
 
-    thermostats = from_csv(METADATA_FILENAME, verbose=VERBOSE)
+    thermostats, import_errors = from_csv(METADATA_FILENAME, verbose=VERBOSE)
     # Use this instead to save the weather cache to local disk files
-    # thermostats = from_csv(METADATA_FILENAME, verbose=VERBOSE, save_cache=True,
+    # thermostats, errors = from_csv(METADATA_FILENAME, verbose=VERBOSE, save_cache=True,
     #                        cache_path='/tmp/epa_weather_files/')
+
+    # This logs any import errors that might have occurred.
+    if import_errors:
+        fieldnames = ['thermostat_id', 'error']
+        with open(IMPORT_ERRORS_FILEPATH, 'w') as error_file:
+            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
+            writer.writeheader()
+            for thermostat_error in import_errors:
+                writer.writerow(thermostat_error)
 
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
