@@ -3,6 +3,7 @@ import logging
 import logging.config
 import json
 import csv
+from zipfile import ZipFile
 from thermostat.importers import from_csv
 from thermostat.exporters import metrics_to_csv, certification_to_csv
 from thermostat.stats import compute_summary_statistics
@@ -45,8 +46,9 @@ METADATA_FILENAME = os.path.join(DATA_DIR, "metadata.csv")
 # DATA_DIR = os.path.join("..", "tests", "data", "two_stage_ert")
 # METADATA_FILENAME = os.path.join(DATA_DIR, "epa_two_stage_metadata.csv")
 
-# Where to store the metrics file. This will use the data directory. You
-# may also use the current directory by setting  OUTPUT_DIR = "."
+# Where to store the metrics file and import error log files. This will use
+# the data directory. You may also use the current directory by setting
+# OUTPUT_DIR = "."
 OUTPUT_DIR = DATA_DIR
 
 # These are the filenames for the output files.
@@ -55,13 +57,15 @@ CERTIFICATION_FILENAME = 'thermostat_example_certification.csv'
 STATISTICS_FILENAME = 'thermostat_example_stats.csv'
 ADVANCED_STATISTICS_FILENAME = 'thermostat_example_stats_advanced.csv'
 IMPORT_ERRORS_FILENAME = 'thermostat_import_errors.csv'
+ZIP_FILENAME = 'thermostat_example.zip'
 
 # These are the locations of where these files will be stored.
-OUTPUT_FILEPATH = os.path.join(DATA_DIR, METRICS_FILENAME)
+OUTPUT_FILEPATH = os.path.join(OUTPUT_DIR, METRICS_FILENAME)
 STATS_FILEPATH = os.path.join(DATA_DIR, STATISTICS_FILENAME)
 CERTIFICATION_FILEPATH = os.path.join(DATA_DIR, CERTIFICATION_FILENAME)
 STATS_ADVANCED_FILEPATH = os.path.join(DATA_DIR, ADVANCED_STATISTICS_FILENAME)
-IMPORT_ERRORS_FILEPATH = os.path.join(DATA_DIR, IMPORT_ERRORS_FILENAME)
+IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, IMPORT_ERRORS_FILENAME)
+ZIP_FILEPATH = os.path.join(OUTPUT_DIR, ZIP_FILENAME)
 
 # This is an example of how to best use the new multi-processing functionality.
 # It shows the proper format for wrapping the code under a main() function and
@@ -119,6 +123,16 @@ def main():
             stats_advanced,
             STATS_ADVANCED_FILEPATH,
             PRODUCT_ID)
+
+    files_to_zip = [
+        CERTIFICATION_FILEPATH,
+        STATS_FILEPATH,
+        ]
+    if ADVANCED_STATS:
+        files_to_zip.append(STATS_ADVANCED_FILEPATH)
+    with ZipFile(ZIP_FILEPATH, 'w') as certification_zip:
+        for filename in files_to_zip:
+            certification_zip.write(filename, arcname=os.path.basename(filename))
 
 
 if __name__ == "__main__":

@@ -274,22 +274,17 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     except ZIPCodeError as e:
         # Could not locate a station for the thermostat. Warn and skip.
         errors.append(
-            "Skipping import of thermostat because "
-            "a sufficient source of outdoor weather data could not"
-            f"be located using the given ZIP code ({row.zipcode})."
-            f"\nError Message: {e}"
+            "A sufficient source of outdoor weather data could not"
+            f"be located for ZIP code {row.zipcode}: {e}"
             )
 
     except ISDDataNotAvailableError as e:
         errors.append(
-            "Skipping import of thermostat because the NCDC "
-            f"does not have data: {e}"
-            )
+            f"NCDC does not have any data: {e}")
 
     except Exception as e:
         errors.append(
-            f"Skipping import of thermostat because of "
-            f"the following error: {e}")
+            f"{e}")
 
     status_metadata['errors'] = errors
     status_metadata['thermostat'] = thermostat
