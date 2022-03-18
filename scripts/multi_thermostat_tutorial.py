@@ -49,13 +49,13 @@ METADATA_FILENAME = os.path.join(DATA_DIR, "metadata.csv")
 OUTPUT_DIR = DATA_DIR
 
 # These are the filenames for the output files.
-METRICS_FILENAME = 'thermostat_example_output.csv'
+METRICS_FILENAME = 'thermostat_example_metrics.csv'
 CERTIFICATION_FILENAME = 'thermostat_example_certification.csv'
 STATISTICS_FILENAME = 'thermostat_example_stats.csv'
 ADVANCED_STATISTICS_FILENAME = 'thermostat_example_stats_advanced.csv'
 
 # These are the locations of where these files will be stored.
-OUTPUT_FILEPATH = os.path.join(DATA_DIR, METRICS_FILENAME)
+METRICS_FILEPATH = os.path.join(OUTPUT_DIR, METRICS_FILENAME)
 STATS_FILEPATH = os.path.join(DATA_DIR, STATISTICS_FILENAME)
 CERTIFICATION_FILEPATH = os.path.join(DATA_DIR, CERTIFICATION_FILENAME)
 STATS_ADVANCED_FILEPATH = os.path.join(DATA_DIR, ADVANCED_STATISTICS_FILENAME)
@@ -87,7 +87,7 @@ def main():
 
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
-    metrics_out = metrics_to_csv(metrics, OUTPUT_FILEPATH)
+    metrics_out = metrics_to_csv(metrics, METRICS_FILEPATH)
 
     stats = compute_summary_statistics(metrics_out)
 
