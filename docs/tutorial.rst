@@ -373,7 +373,12 @@ Other platforms should not be affected by this.
 Sample Program
 --------------
 
-Here is a complete version of the above tutorial code that has been modified to make it easier to update filenames and paths. Anything in capital letters (e.g. `METRICS_FILENAME`) may be tweaked as needed. The :download:`multi_thermostat_tutorial.py <../scripts/multi_thermostat_tutorial.py>`. script is also available under `scripts/multi_thermostat_tutorial.py`.
+Here is a complete version of the above tutorial code that has been modified to
+make it easier to update filenames and paths. Anything in capital letters (e.g.
+``METRICS_FILENAME``) may be tweaked as needed. The
+:download:`multi_thermostat_tutorial.py
+<../scripts/multi_thermostat_tutorial.py>`. script is also available under
+``scripts/multi_thermostat_tutorial.py``.
 
 .. literalinclude:: ../scripts/multi_thermostat_tutorial.py
    :language: python
