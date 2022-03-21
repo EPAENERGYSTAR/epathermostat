@@ -2,6 +2,7 @@ import os
 import logging
 import logging.config
 import json
+from datetime import date
 from thermostat.importers import from_csv
 from thermostat.exporters import metrics_to_csv, certification_to_csv
 from thermostat.stats import compute_summary_statistics
@@ -10,6 +11,9 @@ from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_
 
 # These are variables used in the example code. Please tailor these to your
 # environment as needed.
+
+# Add today's date in 'YYYY-MM-DD' format
+RUN_DATE = date.today().strftime('%F')
 
 # Whether to compute Advanced Statistics (in most cases this is NOT needed)
 ADVANCED_STATS = True
@@ -49,10 +53,10 @@ METADATA_FILENAME = os.path.join(DATA_DIR, "metadata.csv")
 OUTPUT_DIR = DATA_DIR
 
 # These are the filenames for the output files.
-METRICS_FILENAME = 'thermostat_example_metrics.csv'
-CERTIFICATION_FILENAME = 'thermostat_example_certification.csv'
-STATISTICS_FILENAME = 'thermostat_example_stats.csv'
-ADVANCED_STATISTICS_FILENAME = 'thermostat_example_stats_advanced.csv'
+METRICS_FILENAME = f'thermostat_example_savings_metrics_{RUN_DATE}.csv'
+CERTIFICATION_FILENAME = f'thermostat_example_certification_{RUN_DATE}.csv'
+STATISTICS_FILENAME = f'thermostat_example_stats_{RUN_DATE}.csv'
+ADVANCED_STATISTICS_FILENAME = f'thermostat_example_stats_advanced_{RUN_DATE}.csv'
 
 # These are the locations of where these files will be stored.
 METRICS_FILEPATH = os.path.join(OUTPUT_DIR, METRICS_FILENAME)
