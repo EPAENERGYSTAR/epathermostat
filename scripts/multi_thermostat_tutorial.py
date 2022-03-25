@@ -57,6 +57,7 @@ CERTIFICATION_FILENAME = 'thermostat_example_certification.csv'
 STATISTICS_FILENAME = 'thermostat_example_stats.csv'
 ADVANCED_STATISTICS_FILENAME = 'thermostat_example_stats_advanced.csv'
 IMPORT_ERRORS_FILENAME = 'thermostat_import_errors.csv'
+SANITIZED_IMPORT_ERRORS_FILENAME = 'thermostat_import_errors_sanitized.csv'
 ZIP_FILENAME = 'thermostat_example.zip'
 
 # These are the locations of where these files will be stored.
@@ -65,6 +66,7 @@ STATS_FILEPATH = os.path.join(DATA_DIR, STATISTICS_FILENAME)
 CERTIFICATION_FILEPATH = os.path.join(DATA_DIR, CERTIFICATION_FILENAME)
 STATS_ADVANCED_FILEPATH = os.path.join(DATA_DIR, ADVANCED_STATISTICS_FILENAME)
 IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, IMPORT_ERRORS_FILENAME)
+SANITIZED_IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, SANITIZED_IMPORT_ERRORS_FILENAME)
 ZIP_FILEPATH = os.path.join(OUTPUT_DIR, ZIP_FILENAME)
 
 # This is an example of how to best use the new multi-processing functionality.
@@ -94,9 +96,21 @@ def main():
 
     # This logs any import errors that might have occurred.
     if import_errors:
+        # This writes a file with the thermostat ID as part of the file. This
+        # is for your own troubleshooting
         fieldnames = ['thermostat_id', 'error']
         with open(IMPORT_ERRORS_FILEPATH, 'w') as error_file:
             writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
+            writer.writeheader()
+            for thermostat_error in import_errors:
+                writer.writerow(thermostat_error)
+
+        # This writes a file without the thermostat ID as part of the file.
+        # This file is sent as part of the certification to help with
+        # diagnosing issues with missing thermostats
+        fieldnames = ['error']
+        with open(SANITIZED_IMPORT_ERRORS_FILEPATH, 'w') as error_file:
+            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel', extrasaction='ignore')
             writer.writeheader()
             for thermostat_error in import_errors:
                 writer.writerow(thermostat_error)
@@ -124,15 +138,21 @@ def main():
             STATS_ADVANCED_FILEPATH,
             PRODUCT_ID)
 
+    # Compile the files together in a neat package
     files_to_zip = [
         CERTIFICATION_FILEPATH,
         STATS_FILEPATH,
         ]
     if ADVANCED_STATS:
         files_to_zip.append(STATS_ADVANCED_FILEPATH)
+
+    if import_errors:
+        files_to_zip.append(SANITIZED_IMPORT_ERRORS_FILEPATH)
+    
     with ZipFile(ZIP_FILEPATH, 'w') as certification_zip:
         for filename in files_to_zip:
-            certification_zip.write(filename, arcname=os.path.basename(filename))
+            if os.path.exists(filename):
+                certification_zip.write(filename, arcname=os.path.basename(filename))
 
 
 if __name__ == "__main__":
