@@ -99,8 +99,9 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
     sqlite_json_store = KeyValueStore()
     years = index.groupby(index.year).keys()
     for year in years:
-        filename = f"ISD-{station}-{year}.json"
-        json_cache[filename] = sqlite_json_store.retrieve_json(filename)
+        base_name = f"isd-hourly-{station}-{year}"
+        filename = f"{base_name}.json"
+        json_cache[filename] = sqlite_json_store.retrieve_json(base_name)
 
     if cache_path is None:
         directory = os.path.join(
