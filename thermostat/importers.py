@@ -65,7 +65,15 @@ METADATA_COLUMNS = {
     }
 
 
-class ZIPCodeError(Exception):
+class ZIPCodeLookupError(Exception):
+    pass
+
+
+class StationLookupError(Exception):
+    pass
+
+
+class ClimateZoneLookupError(Exception):
     pass
 
 
@@ -280,14 +288,9 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             save_cache=save_cache,
             cache_path=cache_path,
         )
-    except ZIPCodeError as e:
+    except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
-        errors.append(
-            "Skipping import of thermostat because "
-            "a sufficient source of outdoor weather data could not"
-            f"be located using the given ZIP code ({row.zipcode})."
-            f"\nError Message: {e}"
-            )
+        errors.append("Skipping import of thermostat: {e}")
 
     except ISDDataNotAvailableError as e:
         errors.append(
@@ -336,12 +339,21 @@ def get_single_thermostat(thermostat_id, zipcode,
         The loaded thermostat object.
     """
     # load outdoor temperatures
-    station = ZIPCODE_LOOKUP[zipcode]['station']
+    zipcode_details = ZIPCODE_LOOKUP.get(zipcode)
+    if zipcode_details is None:
+        message = f"Could not locate ZIP Code {zipcode}"
+        raise ZIPCodeLookupError(message)
 
+    station = zipcode_details.get('station')
     if station is None:
-        message = "Could not locate a valid source of outdoor temperature " \
-                "data for ZIP code {}".format(zipcode)
-        raise ZIPCodeError(message)
+        message = f"Could not locate a valid station for outdoor temperature " \
+                "data for ZIP code {zipcode}"
+        raise StationLookupError(message)
+
+    climate_zone = zipcode_details.get("climate_zone")
+    if climate_zone is None:
+        message = f"Could not locate valid climate zone for ZIP Code {zipcode}"
+        raise ClimateZoneLookupError(message)
 
     df = pd.read_csv(interval_data_filename)
 
@@ -413,6 +425,7 @@ def get_single_thermostat(thermostat_id, zipcode,
         cool_stage,
         zipcode,
         station,
+        climate_zone,
         temp_in,
         temp_out,
         cool_runtime,
