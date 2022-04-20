@@ -24,6 +24,9 @@ from .fixtures.single_stage import (
         thermostat_missing_over_18_days_temperature,
         thermostat_missing_hours,
         thermostat_missing_days,
+        thermostat_type_1_zip_code_not_found,
+        thermostat_type_1_station_not_found,
+        thermostat_type_1_climate_zone_not_found,
         )
 
 def test_import_csv(thermostat_type_1):
@@ -124,6 +127,15 @@ def test_missing_days(thermostat_missing_days):
 
 def test_bad_zipcode(thermostat_type_1_zip_bad):
     assert len(thermostat_type_1_zip_bad) == 0
+
+def test_zip_code_not_found(thermostat_type_1_zip_code_not_found):
+    assert len(thermostat_type_1_zip_code_not_found) == 0
+
+def test_station_not_found(thermostat_type_1_station_not_found):
+    assert len(thermostat_type_1_station_not_found) == 0
+
+def test_climate_zone_not_found(thermostat_type_1_climate_zone_not_found):
+    assert len(thermostat_type_1_climate_zone_not_found) == 0
 
 def test_data_out_of_order(thermostat_type_1_data_out_of_order):
     assert len(thermostat_type_1_data_out_of_order) == 0
