@@ -85,7 +85,7 @@ def _prime_eeweather_cache():
     """
     sql_json = KeyValueStore()
     if sql_json.key_exists('0') is not False:
-        raise Exception("eeweather cache was not properly primed. Aborting.")
+        raise RuntimeError("eeweather cache was not properly primed. Aborting.")
 
 
 def save_json_cache(index, thermostat_id, station, cache_path=None):
@@ -298,7 +298,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             f"does not have data: {e}"
             )
 
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         errors.append(
             f"Skipping import of thermostat because of "
             f"the following error: {e}")
@@ -380,7 +380,7 @@ def get_single_thermostat(thermostat_id, zipcode,
             message += " (Possible duplicated hours: {})".format(duplicates)
         elif len(missing_hours) > 0:
             message += " (Possible missing hours: {})".format(missing_hours)
-        raise RuntimeError(message)
+        raise ValueError(message)
 
     # Export the data from the cache
     if save_cache:
