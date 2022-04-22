@@ -258,7 +258,7 @@ class Thermostat(object):
                         (self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]):
                     raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
             except KeyError:
-                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
+                raise KeyError(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
                 
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
@@ -268,17 +268,21 @@ class Thermostat(object):
                         self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
                     raise InsufficientCoreDaysError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
             except KeyError:
-                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
+                raise KeyError(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         self.validate()
 
     def validate(self):
         # Generate warnings for invalid heating / cooling types and stages
-        validate_heat_type(self.heat_type)
-        validate_cool_type(self.cool_type)
-        validate_heat_stage(self.heat_stage)
-        validate_cool_stage(self.cool_stage)
+        if validate_heat_type(self.heat_type) is False:
+            raise ValueError(f"Heat type {self.heat_type} is not valid.")
+        if validate_cool_type(self.cool_type) is False:
+            raise ValueError(f"Cool type {self.cool_type} is not valid.")
+        if validate_heat_stage(self.heat_stage) is False:
+            raise ValueError(f"Heat stage {self.heat_stage} is not valid.")
+        if validate_cool_stage(self.cool_stage) is False:
+            raise ValueError(f"Cool stage {self.cool_stage} is not valid.")
 
         # Validate the heating, cooling, and aux/emerg settings
         self._validate_heating()
