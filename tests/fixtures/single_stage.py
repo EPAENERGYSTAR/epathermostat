@@ -50,6 +50,27 @@ def thermostat_type_1_data_missing_header(request):
     thermostats = from_csv(get_data_path(request.param))
     return list(thermostats)
 
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_minutes_over_60_aux.csv"])
+def thermostat_type_1_minutes_over_60_aux(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_minutes_over_60_emergency.csv"])
+def thermostat_type_1_minutes_over_60_emergency(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_minutes_over_60_cooling.csv"])
+def thermostat_type_1_minutes_over_60_cooling(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_minutes_over_60_heating.csv"])
+def thermostat_type_1_minutes_over_60_heating(request):
+    thermostats = from_csv(get_data_path(request.param))
+    return next(thermostats)
+    return list(thermostats)
+
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_bad_equipment_types.csv"])
 def thermostat_bad_equipment_type(request):
     thermostats = from_csv(get_data_path(request.param))

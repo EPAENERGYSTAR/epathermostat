@@ -236,13 +236,15 @@ class Thermostat(object):
             # Any requires true values so we need not(invalid_cooling_runtime)
             valid_cooling_runtime = \
                 self.cool_runtime_hourly.groupby(self.cool_runtime_hourly.index.date) \
-                .apply(lambda x: not(x.invalid_cooling_runtime.any()))
+                .apply(lambda x: not(x.invalid_cooling_runtime.all()))
             self.cool_runtime_daily = self.cool_runtime_daily.where(
                     enough_cool_runtime_in,
                     np.nan)
             self.cool_runtime_daily = self.cool_runtime_daily.where(
                     valid_cooling_runtime,
                     np.nan)
+            # Turn this back into a series
+            self.cool_runtime_daily = self.cool_runtime_daily.iloc[:, 0]
 
         if hasattr(heat_runtime, 'empty') and heat_runtime.empty is False:
             self.heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
@@ -254,13 +256,15 @@ class Thermostat(object):
             # Any requires true values so we need not(invalid_heating_runtime)
             valid_heating_runtime = \
                 self.heat_runtime_hourly.groupby(self.heat_runtime_hourly.index.date) \
-                .apply(lambda x: not(x.invalid_heating_runtime.any()))
+                .apply(lambda x: not(x.invalid_heating_runtime.all()))
             self.heat_runtime_daily = self.heat_runtime_daily.where(
                     enough_heat_runtime_in,
                     np.nan)
             self.heat_runtime_daily = self.heat_runtime_daily.where(
                     valid_heating_runtime,
                     np.nan)
+            # Turn this back into a series
+            self.heat_runtime_daily = self.heat_runtime_daily.iloc[:, 0]
 
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
@@ -630,15 +634,33 @@ class Thermostat(object):
 
         # convert hourly to daily
         temp_out_daily = self.temperature_out.resample('D').mean()
-        aux_daily = self.auxiliary_heat_runtime.resample('D').sum()
-        emg_daily = self.emergency_heat_runtime.resample('D').sum()
+
+        aux_daily = self.auxiliary_heat_runtime.resample('D').agg(pd.Series.sum, skipna=True)
+        valid_aux_heat_runtime = \
+            self.auxiliary_heat_runtime.groupby(self.auxiliary_heat_runtime.index.date) \
+            .apply(lambda x: not(x.invalid_aux_heat_runtime.all()))
+        aux_daily = aux_daily.where(
+            valid_aux_heat_runtime,
+            np.nan)
+        # Turn this back into a series
+        aux_daily = aux_daily.iloc[:, 0]
+
+        emergency_daily = self.emergency_heat_runtime.resample('D').agg(pd.Series.sum, skipna=True)
+        valid_emergency_heat_runtime = \
+            self.emergency_heat_runtime.groupby(self.emergency_heat_runtime.index.date) \
+            .apply(lambda x: not(x.invalid_emergency_heat_runtime.all()))
+        emergency_daily = emergency_daily.where(
+            valid_emergency_heat_runtime,
+            np.nan)
+        # Turn this back into a series
+        emergency_daily = emergency_daily.iloc[:, 0]
 
         # Build the initial DataFrame based on daily readings
         runtime_temp_daily = pd.DataFrame()
         runtime_temp_daily['temperature'] = temp_out_daily
         runtime_temp_daily['heat_runtime'] = self.heat_runtime_daily
         runtime_temp_daily['aux_runtime'] = aux_daily
-        runtime_temp_daily['emg_runtime'] = emg_daily
+        runtime_temp_daily['emg_runtime'] = emergency_daily
         runtime_temp_daily['in_core_daily'] = in_core_day_set_daily
         runtime_temp_daily['total_minutes'] = 1440  # default number of minutes per day
 

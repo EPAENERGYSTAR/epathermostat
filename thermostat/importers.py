@@ -509,13 +509,13 @@ def _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourl
         df = df.assign(invalid_emergency_heat_runtime=df.emergency_heat_runtime.gt(60).any())
         if df['invalid_aux_heat_runtime'].any():
             warnings.warn("For thermostat {}, auxiliary runtime data was larger than 60 minutes"
-                          " for one or more hours, which is impossible. Please check the data file."
-                          .format(thermostat_id))
+                        " for one or more hours, which is impossible. Please check the data file."
+                        .format(thermostat_id))
 
         if df['invalid_emergency_heat_runtime'].any():
             warnings.warn("For thermostat {}, emergency runtime data was larger than 60 minutes"
-                          " for one or more hours, which is impossible. Please check the data file."
-                          .format(thermostat_id))
+                        " for one or more hours, which is impossible. Please check the data file."
+                        .format(thermostat_id))
         auxiliary_heat_runtime = _create_series(df.auxiliary_heat_runtime, hourly_index)
         emergency_heat_runtime = _create_series(df.emergency_heat_runtime, hourly_index)
 
@@ -523,12 +523,12 @@ def _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourl
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
 
-    if auxiliary_heat_runtime:
+    if auxiliary_heat_runtime is not None:
         auxiliary_heat_runtime = auxiliary_heat_runtime.to_frame()
-        auxiliary_heat_runtime['invalid_aux_heat_runtime'] = df['invalid_aux_runtime']
-    if emergency_heat_runtime:
-        emergency_heat_runtime = auxiliary_heat_runtime.to_frame()
-        emergency_heat_runtime['invalid_emergency_heat_runtime'] = df['invalid_emergency_runtime']
+        auxiliary_heat_runtime['invalid_aux_heat_runtime'] = df['invalid_aux_heat_runtime']
+    if emergency_heat_runtime is not None:
+        emergency_heat_runtime = emergency_heat_runtime.to_frame()
+        emergency_heat_runtime['invalid_emergency_heat_runtime'] = df['invalid_emergency_heat_runtime']
 
     return auxiliary_heat_runtime, emergency_heat_runtime
 
