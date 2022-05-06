@@ -438,17 +438,18 @@ def get_single_thermostat(thermostat_id, zipcode,
 
 def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_index):
     if has_cooling(cool_type):
-        if df.cool_runtime_stg1.gt(60).any() or \
-                df.cool_runtime_stg2.gt(60).any() or \
-                df.cool_runtime_equiv.gt(60).any():
-            warnings.warn("For thermostat {}, cooling runtime data was larger than 60 minutes"
-                          " for one or more hours, which is impossible. Please check the data file."
-                          .format(thermostat_id))
-            return
-
         if has_multi_stage_cooling(cool_stage):
             warnings.warn("Multi-stage cooling isn't supported (yet)")
             return
+
+        df = df.assign(invalid_cooling_runtime=(
+            df.cool_runtime_stg1.gt(60).any() or
+            df.cool_runtime_stg2.gt(60).any() or
+            df.cool_runtime_equiv.gt(60).any()))
+        if df['invalid_cooling_runtime'].any():
+            warnings.warn("For thermostat {}, cooling runtime data was larger than 60 minutes"
+                          " for one or more hours, which is impossible. Please check the data file."
+                          .format(thermostat_id))
 
         if has_two_stage_cooling(cool_stage):
             # Use cool equivalent runtime if it exists, otherwise calculate it
@@ -461,22 +462,27 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
             cool_runtime = _create_series(df.cool_runtime_stg1, hourly_index)
     else:
         cool_runtime = None
+
+    if cool_runtime is not None:
+        cool_runtime = cool_runtime.to_frame()
+        cool_runtime['invalid_cooling_runtime'] = df['invalid_cooling_runtime'].to_numpy()
     return cool_runtime
 
 
 def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index):
     if has_heating(heat_type):
-        if df.heat_runtime_stg1.gt(60).any() or \
-                df.heat_runtime_stg2.gt(60).any() or \
-                df.heat_runtime_equiv.gt(60).any():
-            warnings.warn("For thermostat {}, heating runtime data was larger than 60 minutes"
-                          " for one or more hours, which is impossible. Please check the data file."
-                          .format(thermostat_id))
-            return
-
         if has_multi_stage_heating(heat_stage):
             warnings.warn("Multi-stage heating isn't supported (yet)")
             return
+
+        df = df.assign(invalid_heating_runtime=(
+            df.heat_runtime_stg1.gt(60).any() or
+            df.heat_runtime_stg2.gt(60).any() or
+            df.heat_runtime_equiv.gt(60).any()))
+        if df['invalid_heating_runtime'].any():
+            warnings.warn("For thermostat {}, heating runtime data was larger than 60 minutes"
+                          " for one or more hours, which is impossible. Please check the data file."
+                          .format(thermostat_id))
 
         if has_two_stage_heating(heat_stage):
             # Use heat equivalent runtime if it exists, otherwise calculate it
@@ -489,26 +495,41 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
             heat_runtime = _create_series(df.heat_runtime_stg1, hourly_index)
     else:
         heat_runtime = None
+
+    if heat_runtime is not None:
+        heat_runtime = heat_runtime.to_frame()
+        heat_runtime['invalid_heating_runtime'] = df['invalid_heating_runtime'].to_numpy()
+
     return heat_runtime
 
 
 def _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index):
     if has_auxiliary(heat_type) and has_emergency(heat_type):
-        auxiliary_heat_runtime = _create_series(df.auxiliary_heat_runtime, hourly_index)
-        emergency_heat_runtime = _create_series(df.emergency_heat_runtime, hourly_index)
-        if auxiliary_heat_runtime.gt(60).any():
+        df = df.assign(invalid_aux_heat_runtime=df.auxiliary_heat_runtime.gt(60).any())
+        df = df.assign(invalid_emergency_heat_runtime=df.emergency_heat_runtime.gt(60).any())
+        if df['invalid_aux_heat_runtime'].any():
             warnings.warn("For thermostat {}, auxiliary runtime data was larger than 60 minutes"
                           " for one or more hours, which is impossible. Please check the data file."
                           .format(thermostat_id))
-            return
-        if emergency_heat_runtime.gt(60).any():
+
+        if df['invalid_emergency_heat_runtime'].any():
             warnings.warn("For thermostat {}, emergency runtime data was larger than 60 minutes"
                           " for one or more hours, which is impossible. Please check the data file."
                           .format(thermostat_id))
-            return
+        auxiliary_heat_runtime = _create_series(df.auxiliary_heat_runtime, hourly_index)
+        emergency_heat_runtime = _create_series(df.emergency_heat_runtime, hourly_index)
+
     else:
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
+
+    if auxiliary_heat_runtime:
+        auxiliary_heat_runtime = auxiliary_heat_runtime.to_frame()
+        auxiliary_heat_runtime['invalid_aux_heat_runtime'] = df['invalid_aux_runtime']
+    if emergency_heat_runtime:
+        emergency_heat_runtime = auxiliary_heat_runtime.to_frame()
+        emergency_heat_runtime['invalid_emergency_heat_runtime'] = df['invalid_emergency_runtime']
+
     return auxiliary_heat_runtime, emergency_heat_runtime
 
 

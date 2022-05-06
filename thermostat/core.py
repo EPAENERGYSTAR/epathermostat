@@ -233,7 +233,16 @@ class Thermostat(object):
             enough_cool_runtime_in = \
                 self.cool_runtime_hourly.groupby(self.cool_runtime_hourly.index.date) \
                 .apply(lambda x: x.isnull().sum() <= 2)
-            self.cool_runtime_daily = self.cool_runtime_daily.where(enough_cool_runtime_in, np.nan)
+            # Any requires true values so we need not(invalid_cooling_runtime)
+            valid_cooling_runtime = \
+                self.cool_runtime_hourly.groupby(self.cool_runtime_hourly.index.date) \
+                .apply(lambda x: not(x.invalid_cooling_runtime.any()))
+            self.cool_runtime_daily = self.cool_runtime_daily.where(
+                    enough_cool_runtime_in,
+                    np.nan)
+            self.cool_runtime_daily = self.cool_runtime_daily.where(
+                    valid_cooling_runtime,
+                    np.nan)
 
         if hasattr(heat_runtime, 'empty') and heat_runtime.empty is False:
             self.heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
@@ -242,7 +251,16 @@ class Thermostat(object):
             enough_heat_runtime_in = \
                 self.heat_runtime_hourly.groupby(self.heat_runtime_hourly.index.date) \
                 .apply(lambda x: x.isnull().sum() <= 2)
-            self.heat_runtime_daily = self.heat_runtime_daily.where(enough_heat_runtime_in, np.nan)
+            # Any requires true values so we need not(invalid_heating_runtime)
+            valid_heating_runtime = \
+                self.heat_runtime_hourly.groupby(self.heat_runtime_hourly.index.date) \
+                .apply(lambda x: not(x.invalid_heating_runtime.any()))
+            self.heat_runtime_daily = self.heat_runtime_daily.where(
+                    enough_heat_runtime_in,
+                    np.nan)
+            self.heat_runtime_daily = self.heat_runtime_daily.where(
+                    valid_heating_runtime,
+                    np.nan)
 
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
