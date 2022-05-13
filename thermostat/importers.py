@@ -64,7 +64,15 @@ METADATA_COLUMNS = {
     }
 
 
-class ZIPCodeError(Exception):
+class ZIPCodeLookupError(Exception):
+    pass
+
+
+class StationLookupError(Exception):
+    pass
+
+
+class ClimateZoneLookupError(Exception):
     pass
 
 
@@ -76,7 +84,7 @@ def _prime_eeweather_cache():
     """
     sql_json = KeyValueStore()
     if sql_json.key_exists('0') is not False:
-        raise Exception("eeweather cache was not properly primed. Aborting.")
+        raise RuntimeError("eeweather cache was not properly primed. Aborting.")
 
 
 def save_json_cache(index, thermostat_id, station, cache_path=None):
@@ -272,7 +280,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             save_cache=save_cache,
             cache_path=cache_path,
         )
-    except ZIPCodeError as e:
+    except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
         errors.append(
             "A sufficient source of outdoor weather data could not"
@@ -283,7 +291,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
         errors.append(
             f"NCDC does not have any data: {e}")
 
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         errors.append(
             f"{e}")
 
@@ -323,12 +331,21 @@ def get_single_thermostat(thermostat_id, zipcode,
         The loaded thermostat object.
     """
     # load outdoor temperatures
-    station = ZIPCODE_LOOKUP[zipcode]['station']
+    zipcode_details = ZIPCODE_LOOKUP.get(zipcode)
+    if zipcode_details is None:
+        message = f"Could not locate ZIP Code {zipcode}"
+        raise ZIPCodeLookupError(message)
 
+    station = zipcode_details.get('station')
     if station is None:
-        message = "Could not locate a valid source of outdoor temperature " \
-                "data for ZIP code {}".format(zipcode)
-        raise ZIPCodeError(message)
+        message = f"Could not locate a valid station for outdoor temperature " \
+                "data for ZIP code {zipcode}"
+        raise StationLookupError(message)
+
+    climate_zone = zipcode_details.get("climate_zone")
+    if climate_zone is None:
+        message = f"Could not locate valid climate zone for ZIP Code {zipcode}"
+        raise ClimateZoneLookupError(message)
 
     df = pd.read_csv(interval_data_filename)
 
@@ -355,7 +372,7 @@ def get_single_thermostat(thermostat_id, zipcode,
             message += " (Possible duplicated hours: {})".format(duplicates)
         elif len(missing_hours) > 0:
             message += " (Possible missing hours: {})".format(missing_hours)
-        raise RuntimeError(message)
+        raise ValueError(message)
 
     # Export the data from the cache
     if save_cache:
@@ -400,6 +417,7 @@ def get_single_thermostat(thermostat_id, zipcode,
         cool_stage,
         zipcode,
         station,
+        climate_zone,
         temp_in,
         temp_out,
         cool_runtime,
