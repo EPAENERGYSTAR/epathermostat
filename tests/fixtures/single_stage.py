@@ -52,7 +52,7 @@ def thermostat_type_1_data_missing_header(request):
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_bad_equipment_types.csv"])
 def thermostat_bad_equipment_type(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return list(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_metadata_missing_header.csv"])
@@ -65,17 +65,17 @@ def thermostat_type_1_metadata_missing_header(request):
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_zip.csv"])
 def thermostat_type_1_zip_code_not_found(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return list(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_station.csv"])
 def thermostat_type_1_station_not_found(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return list(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_climate_zone.csv"])
 def thermostat_type_1_climate_zone_not_found(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return list(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single.csv"])
