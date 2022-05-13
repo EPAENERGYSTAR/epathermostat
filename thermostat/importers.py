@@ -1,4 +1,3 @@
-import csv
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
     has_heating,
@@ -108,8 +107,9 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
     sqlite_json_store = KeyValueStore()
     years = index.groupby(index.year).keys()
     for year in years:
-        filename = f"ISD-{station}-{year}.json"
-        json_cache[filename] = sqlite_json_store.retrieve_json(filename)
+        base_name = f"isd-hourly-{station}-{year}"
+        filename = f"{base_name}.json"
+        json_cache[filename] = sqlite_json_store.retrieve_json(base_name)
 
     if cache_path is None:
         directory = os.path.join(
@@ -164,7 +164,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None, log_error=True, log_error_filename='thermostat_import_errors.csv'):
+             cache_path=None,):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -243,16 +243,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         else:
             results.append(result['thermostat'])
 
-    if log_error and error_list:
-        fieldnames = ['thermostat_id', 'error']
-        with open(log_error_filename, 'w') as error_file:
-            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
-            writer.writeheader()
-            for thermostat_error in error_list:
-                writer.writerow(thermostat_error)
-
     # Convert this to an iterator to maintain compatibility
-    return iter(results)
+    return iter(results), error_list
 
 
 def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
@@ -290,18 +282,18 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
         )
     except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
-        errors.append("Skipping import of thermostat: {e}")
+        errors.append(
+            "A sufficient source of outdoor weather data could not"
+            f"be located for ZIP code {row.zipcode}: {e}"
+            )
 
     except ISDDataNotAvailableError as e:
         errors.append(
-            "Skipping import of thermostat because the NCDC "
-            f"does not have data: {e}"
-            )
+            f"NCDC does not have any data: {e}")
 
     except (ValueError, TypeError) as e:
         errors.append(
-            f"Skipping import of thermostat because of "
-            f"the following error: {e}")
+            f"{e}")
 
     status_metadata['errors'] = errors
     status_metadata['thermostat'] = thermostat
