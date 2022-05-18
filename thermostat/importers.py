@@ -34,6 +34,7 @@ except AttributeError:
 MAX_FTP_CONNECTIONS = 3
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
 
+ENABLE_ENOUGH_RUNTIME_CHECK = True
 
 logger = logging.getLogger(__name__)
 warnings.simplefilter('module', Warning)
@@ -515,6 +516,10 @@ def _create_series(df, index):
 def _enough_runtime(series):
     if series is None:
         return False
+
+    if ENABLE_ENOUGH_RUNTIME_CHECK is False:
+        # Don't bother checking; we're good
+        return True
 
     num_elements = len(series)
     num_valid_elements = len(series.dropna())
