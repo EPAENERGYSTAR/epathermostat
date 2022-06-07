@@ -1,60 +1,121 @@
-import numpy as np 
-import pickle 
-#Package Notes, Natsort 5.0.1 
-from natsort import natsorted 
- 
-#DEBUG: state caching 
-prng_state_exact = np.random.get_state() 
- 
-#DEBUG: Save state via pickle 
-with open('prng_state.pickle','wb') as f: 
-    pickle.dump(prng_state_exact,f) 
- 
-# #DEBUG: Code to load old state and set PRNG to that state 
-# with open('prng_state.pickle','rb') as f: 
-#     reload_state = pickle.load(f) 
-# np.random.set_state(reload_state) 
- 
-#Load sample target data; Note if 0:n index replaced with data/thermostat id's, will sample unique id's instead of indicies 
-EIAColdVCold = np.arange(500) 
-EIAHotHumid = np.arange(500) 
-EIAMixedHumid = np.arange(500) 
-EIAHDMD = np.arange(500) 
-EIAMarine = np.arange(500) 
- 
-#Natural Sort Imported data by value 
-SampEIAColdVCold = natsorted(SampEIAColdVCold) 
-SampEIAHotHumid = natsorted(SampEIAHotHumid) 
-SampEIAMixedHumid = natsorted(SampEIAMixedHumid) 
-SampEIAHDMD = natsorted(SampEIAHDMD) 
-SampEIAMarine = natsorted(SampEIAMarine) 
- 
-#Sample target data, applying 1 seed per climate zone 
-np.random.seed(101) 
-SampEIAColdVCold = np.random.choice(EIAColdVCold,250, replace=False ) 
-np.random.seed(102) 
-SampEIAHotHumid = np.random.choice(EIAHotHumid,250, replace=False ) 
-np.random.seed(103) 
-SampEIAMixedHumid = np.random.choice(EIAMixedHumid,250, replace=False ) 
-np.random.seed(104) 
-SampEIAHDMD = np.random.choice(EIAHDMD,250, replace=False ) 
-np.random.seed(105) 
-SampEIAMarine = np.random.choice(EIAMarine,250, replace=False ) 
- 
-#Sort Sampled data by value 
-SampEIAColdVCold = np.sort(SampEIAColdVCold) 
-SampEIAHotHumid = np.sort(SampEIAHotHumid) 
-SampEIAMixedHumid = np.sort(SampEIAMixedHumid) 
-SampEIAHDMD = np.sort(SampEIAHDMD) 
-SampEIAMarine = np.sort(SampEIAMarine) 
- 
-#Create matrix for all samples, Matrix format best for indicies 
-SortedEIASample = np.vstack((SampEIAColdVCold,SampEIAHotHumid,SampEIAMixedHumid,SampEIAHDMD,SampEIAMarine)) 
- 
-#Create long format output, best for vector of thermostat id's 
-results = SampEIAColdVCold 
-outfile = np.append(results,[SampEIAHotHumid,SampEIAMixedHumid,SampEIAHDMD,SampEIAMarine]) 
- 
-#Save Sample items to file 
-np.savetxt('PRNG.csv',SortedEIASample, delimiter=",") 
-np.savetxt('PRNGvector.csv',outfile, delimiter=","
+#!/usr/bin/env python3
+import os
+import pickle
+import numpy as np
+
+
+# NOTE: This sample file relies on UUIDs generated from the random_uuid_generation.py in this directory.
+# You can use both of these files to get a sense of how thermostat selection
+# works before modifying this script for your own process.
+
+# Number of thermostats that will be selected
+NUM_THERMOSTATS = 250
+
+# Climate zones (also used as filenames for the selection process)
+CLIMATE_ZONES = [
+    'very-cold_cold',
+    'mixed-humid',
+    'mixed-dry_hot-dry',
+    'hot-humid',
+    'marine',
+]
+
+# Change this file path to a different location if you wish to save the files
+FILE_PATH = '/tmp'
+
+# NOTE: Replace these seeds with the ones provided per submission period
+SEEDS = {
+    'very-cold_cold': 101,
+    'hot-humid': 102,
+    'mixed-humid': 103,
+    'mixed-dry_hot-dry': 104,
+    'marine': 105,
+}
+
+# Output filenames
+SAMPLE_OUTPUT_FILENAME = 'sample_output.csv'
+SAMPLE_OUTPUT_VECTOR_FILENAME = 'sample_output_vector.csv'
+PICKLE_RNG_STATE_FILENAME = 'prng_state.pickle'
+
+
+def main():
+    """ Example program for reading climate-zone-separated files and randomly
+    selecting a sample from those files """
+
+    # DEBUG: state caching
+    prng_state_exact = np.random.get_state()
+
+    # DEBUG: Save state via pickle
+    with open(PICKLE_RNG_STATE_FILENAME, 'wb') as file:
+        pickle.dump(prng_state_exact, file)
+
+    # #DEBUG: Code to load old state and set PRNG to that state
+    # with open('prng_state.pickle','rb') as f:
+    #     reload_state = pickle.load(f)
+    # np.random.set_state(reload_state)
+
+    # NOTE: This uses a dictionary for loading each climate zone from a file.
+    # This can be replaced with code that grabs this data from a database or
+    # other means.
+    climate_zone_dict = {}
+    # Load sample target data; Note if 0:n index replaced with data/thermostat
+    # id's, will sample unique id's instead of indicies
+    for climate_zone in CLIMATE_ZONES:
+        climate_zone_filename = climate_zone + '.csv'
+        with open(os.path.join(FILE_PATH, climate_zone_filename)) as thermostat_file:
+            thermostats = thermostat_file.readlines()
+            # Remove carriage return
+            thermostats = [x.rstrip() for x in thermostats]
+            # NOTE: You do not have to use Python sort here. If you database or
+            # other system supports repeatable sorting you may use that instead
+            thermostats = np.sort(thermostats)
+            climate_zone_dict[climate_zone] = list(thermostats)
+
+    # Sample target data, applying 1 seed per climate zone
+    np.random.seed(SEEDS['very-cold_cold'])
+    sample_cold_very_cold = np.random.choice(
+        climate_zone_dict['very-cold_cold'], NUM_THERMOSTATS, replace=False)
+    np.random.seed(SEEDS['hot-humid'])
+    sample_hot_humid = np.random.choice(
+        climate_zone_dict['hot-humid'], NUM_THERMOSTATS, replace=False)
+    np.random.seed(SEEDS['mixed-humid'])
+    sample_mixed_humid = np.random.choice(
+        climate_zone_dict['mixed-humid'], NUM_THERMOSTATS, replace=False)
+    np.random.seed(SEEDS['mixed-dry_hot-dry'])
+    sample_mixed_dry_hot_dry = np.random.choice(
+        climate_zone_dict['mixed-dry_hot-dry'], NUM_THERMOSTATS, replace=False)
+    np.random.seed(SEEDS['marine'])
+    sample_marine = np.random.choice(
+        climate_zone_dict['marine'], NUM_THERMOSTATS, replace=False)
+
+    # Sort Sampled data by value
+    sample_cold_very_cold = np.sort(sample_cold_very_cold)
+    sample_hot_humid = np.sort(sample_hot_humid)
+    sample_mixed_humid = np.sort(sample_mixed_humid)
+    sample_mixed_dry_hot_dry = np.sort(sample_mixed_dry_hot_dry)
+    sample_marine = np.sort(sample_marine)
+
+    # Create matrix for all samples, Matrix format best for indicies
+    sorted_sample = np.vstack(
+        (
+            sample_cold_very_cold,
+            sample_hot_humid,
+            sample_mixed_humid,
+            sample_mixed_dry_hot_dry,
+            sample_marine
+        )
+    )
+
+    # Create long format output, best for vector of thermostat id's
+    results = sample_cold_very_cold
+    outfile = np.append(results, [
+                        sample_hot_humid, sample_mixed_humid, sample_mixed_dry_hot_dry, sample_marine])
+
+    # Save Sample items to file
+    np.savetxt(SAMPLE_OUTPUT_FILENAME, sorted_sample, fmt='%s', delimiter=',')
+    np.savetxt(SAMPLE_OUTPUT_VECTOR_FILENAME,
+               outfile, fmt='%s',  delimiter=',')
+
+
+if __name__ == '__main__':
+    main()
