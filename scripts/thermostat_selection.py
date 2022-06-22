@@ -59,7 +59,7 @@ def main():
     # other means.
     climate_zone_dict = {}
     # Load sample target data; Note if 0:n index replaced with data/thermostat
-    # id's, will sample unique id's instead of indicies
+    # id's, will sample unique id's instead of indices
     for climate_zone in CLIMATE_ZONES:
         climate_zone_filename = climate_zone + '.csv'
         with open(os.path.join(FILE_PATH, climate_zone_filename)) as thermostat_file:
@@ -72,20 +72,20 @@ def main():
             climate_zone_dict[climate_zone] = list(thermostats)
 
     # Sample target data, applying 1 seed per climate zone
-    np.random.seed(SEEDS['very-cold_cold'])
-    sample_cold_very_cold = np.random.choice(
+    very_cold_rng = np.random.RandomState(seed=SEEDS['very-cold_cold'])
+    sample_cold_very_cold = very_cold_rng.choice(
         climate_zone_dict['very-cold_cold'], NUM_THERMOSTATS, replace=False)
-    np.random.seed(SEEDS['hot-humid'])
-    sample_hot_humid = np.random.choice(
+    hot_humid_rng = np.random.RandomState(seed=SEEDS['hot-humid'])
+    sample_hot_humid = hot_humid_rng.choice(
         climate_zone_dict['hot-humid'], NUM_THERMOSTATS, replace=False)
-    np.random.seed(SEEDS['mixed-humid'])
-    sample_mixed_humid = np.random.choice(
+    mixed_humid_rng = np.random.RandomState(seed=SEEDS['mixed-humid'])
+    sample_mixed_humid = mixed_humid_rng.choice(
         climate_zone_dict['mixed-humid'], NUM_THERMOSTATS, replace=False)
-    np.random.seed(SEEDS['mixed-dry_hot-dry'])
-    sample_mixed_dry_hot_dry = np.random.choice(
+    mixed_dry_hot_dry_rng = np.random.RandomState(seed=SEEDS['mixed-dry_hot-dry'])
+    sample_mixed_dry_hot_dry = mixed_dry_hot_dry_rng.choice(
         climate_zone_dict['mixed-dry_hot-dry'], NUM_THERMOSTATS, replace=False)
-    np.random.seed(SEEDS['marine'])
-    sample_marine = np.random.choice(
+    marine_rng = np.random.RandomState(seed=SEEDS['marine'])
+    sample_marine = marine_rng.choice(
         climate_zone_dict['marine'], NUM_THERMOSTATS, replace=False)
 
     # Sort Sampled data by value
@@ -95,7 +95,7 @@ def main():
     sample_mixed_dry_hot_dry = np.sort(sample_mixed_dry_hot_dry)
     sample_marine = np.sort(sample_marine)
 
-    # Create matrix for all samples, Matrix format best for indicies
+    # Create matrix for all samples, Matrix format best for indices
     sorted_sample = np.vstack(
         (
             sample_cold_very_cold,
