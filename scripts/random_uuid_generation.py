@@ -3,7 +3,7 @@ import uuid
 import os
 
 # Number of thermostat IDs to generate
-NUM_THERMOSTATS = 1000
+NUM_THERMOSTATS = 200
 # Climate zones (also used as filenames)
 CLIMATE_ZONES = [
     'very-cold_cold',

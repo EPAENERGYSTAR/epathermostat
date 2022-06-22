@@ -71,22 +71,29 @@ def main():
             thermostats = np.sort(thermostats)
             climate_zone_dict[climate_zone] = list(thermostats)
 
+    # Allow for less than NUM_THERMOSTATS if we have less than that number of eligible thermostats
+    num_very_cold = min(NUM_THERMOSTATS, len(climate_zone_dict['very-cold_cold']))
+    num_hot_humid = min(NUM_THERMOSTATS, len(climate_zone_dict['hot-humid']))
+    num_mixed_humid = min(NUM_THERMOSTATS, len(climate_zone_dict['mixed-humid']))
+    num_mixed_dry_hot_dry = min(NUM_THERMOSTATS, len(climate_zone_dict['mixed-dry_hot-dry']))
+    num_marine = min(NUM_THERMOSTATS, len(climate_zone_dict['marine']))
+
     # Sample target data, applying 1 seed per climate zone
     very_cold_rng = np.random.RandomState(seed=SEEDS['very-cold_cold'])
     sample_cold_very_cold = very_cold_rng.choice(
-        climate_zone_dict['very-cold_cold'], NUM_THERMOSTATS, replace=False)
+        climate_zone_dict['very-cold_cold'], num_very_cold, replace=False)
     hot_humid_rng = np.random.RandomState(seed=SEEDS['hot-humid'])
     sample_hot_humid = hot_humid_rng.choice(
-        climate_zone_dict['hot-humid'], NUM_THERMOSTATS, replace=False)
+        climate_zone_dict['hot-humid'], num_hot_humid, replace=False)
     mixed_humid_rng = np.random.RandomState(seed=SEEDS['mixed-humid'])
     sample_mixed_humid = mixed_humid_rng.choice(
-        climate_zone_dict['mixed-humid'], NUM_THERMOSTATS, replace=False)
+        climate_zone_dict['mixed-humid'], num_mixed_humid, replace=False)
     mixed_dry_hot_dry_rng = np.random.RandomState(seed=SEEDS['mixed-dry_hot-dry'])
     sample_mixed_dry_hot_dry = mixed_dry_hot_dry_rng.choice(
-        climate_zone_dict['mixed-dry_hot-dry'], NUM_THERMOSTATS, replace=False)
+        climate_zone_dict['mixed-dry_hot-dry'], num_mixed_dry_hot_dry, replace=False)
     marine_rng = np.random.RandomState(seed=SEEDS['marine'])
     sample_marine = marine_rng.choice(
-        climate_zone_dict['marine'], NUM_THERMOSTATS, replace=False)
+        climate_zone_dict['marine'], num_marine, replace=False)
 
     # Sort Sampled data by value
     sample_cold_very_cold = np.sort(sample_cold_very_cold)
