@@ -1,4 +1,3 @@
-import csv
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
     has_heating,
@@ -36,6 +35,7 @@ except AttributeError:
 MAX_FTP_CONNECTIONS = 3
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
 
+ENABLE_ENOUGH_RUNTIME_CHECK = True
 
 logger = logging.getLogger(__name__)
 warnings.simplefilter('module', Warning)
@@ -66,7 +66,15 @@ METADATA_COLUMNS = {
     }
 
 
-class ZIPCodeError(Exception):
+class ZIPCodeLookupError(Exception):
+    pass
+
+
+class StationLookupError(Exception):
+    pass
+
+
+class ClimateZoneLookupError(Exception):
     pass
 
 
@@ -78,7 +86,7 @@ def _prime_eeweather_cache():
     """
     sql_json = KeyValueStore()
     if sql_json.key_exists('0') is not False:
-        raise Exception("eeweather cache was not properly primed. Aborting.")
+        raise RuntimeError("eeweather cache was not properly primed. Aborting.")
 
 
 def save_json_cache(index, thermostat_id, station, cache_path=None):
@@ -101,8 +109,9 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
     sqlite_json_store = KeyValueStore()
     years = index.groupby(index.year).keys()
     for year in years:
-        filename = f"ISD-{station}-{year}.json"
-        json_cache[filename] = sqlite_json_store.retrieve_json(filename)
+        base_name = f"isd-hourly-{station}-{year}"
+        filename = f"{base_name}.json"
+        json_cache[filename] = sqlite_json_store.retrieve_json(base_name)
 
     if cache_path is None:
         directory = os.path.join(
@@ -157,7 +166,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None, log_error=True, log_error_filename='thermostat_import_errors.csv'):
+             cache_path=None,):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -236,16 +245,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         else:
             results.append(result['thermostat'])
 
-    if log_error and error_list:
-        fieldnames = ['thermostat_id', 'error']
-        with open(log_error_filename, 'w') as error_file:
-            writer = csv.DictWriter(error_file, fieldnames=fieldnames, dialect='excel')
-            writer.writeheader()
-            for thermostat_error in error_list:
-                writer.writerow(thermostat_error)
-
     # Convert this to an iterator to maintain compatibility
-    return iter(results)
+    return iter(results), error_list
 
 
 def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
@@ -281,25 +282,20 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             save_cache=save_cache,
             cache_path=cache_path,
         )
-    except ZIPCodeError as e:
+    except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
         errors.append(
-            "Skipping import of thermostat because "
-            "a sufficient source of outdoor weather data could not"
-            f"be located using the given ZIP code ({row.zipcode})."
-            f"\nError Message: {e}"
+            "A sufficient source of outdoor weather data could not"
+            f"be located for ZIP code {row.zipcode}: {e}"
             )
 
     except ISDDataNotAvailableError as e:
         errors.append(
-            "Skipping import of thermostat because the NCDC "
-            f"does not have data: {e}"
-            )
+            f"NCDC does not have any data: {e}")
 
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         errors.append(
-            f"Skipping import of thermostat because of "
-            f"the following error: {e}")
+            f"{e}")
 
     status_metadata['errors'] = errors
     status_metadata['thermostat'] = thermostat
@@ -337,12 +333,21 @@ def get_single_thermostat(thermostat_id, zipcode,
         The loaded thermostat object.
     """
     # load outdoor temperatures
-    station = ZIPCODE_LOOKUP[zipcode]['station']
+    zipcode_details = ZIPCODE_LOOKUP.get(zipcode)
+    if zipcode_details is None:
+        message = f"Could not locate ZIP Code {zipcode}"
+        raise ZIPCodeLookupError(message)
 
+    station = zipcode_details.get('station')
     if station is None:
-        message = "Could not locate a valid source of outdoor temperature " \
-                "data for ZIP code {}".format(zipcode)
-        raise ZIPCodeError(message)
+        message = f"Could not locate a valid station for outdoor temperature " \
+                "data for ZIP code {zipcode}"
+        raise StationLookupError(message)
+
+    climate_zone = zipcode_details.get("climate_zone")
+    if climate_zone is None:
+        message = f"Could not locate valid climate zone for ZIP Code {zipcode}"
+        raise ClimateZoneLookupError(message)
 
     df = pd.read_csv(interval_data_filename)
 
@@ -369,7 +374,7 @@ def get_single_thermostat(thermostat_id, zipcode,
             message += " (Possible duplicated hours: {})".format(duplicates)
         elif len(missing_hours) > 0:
             message += " (Possible missing hours: {})".format(missing_hours)
-        raise RuntimeError(message)
+        raise ValueError(message)
 
     # Export the data from the cache
     if save_cache:
@@ -399,9 +404,11 @@ def get_single_thermostat(thermostat_id, zipcode,
 
     # Currently checks hourly runtime, not daily
     if cool_runtime is not None:
-        enough_cool_runtime = _enough_runtime(cool_runtime)
+        cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
+        enough_cool_runtime = _enough_runtime(cool_runtime_daily)
     if heat_runtime is not None:
-        enough_heat_runtime = _enough_runtime(heat_runtime)
+        heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
+        enough_heat_runtime = _enough_runtime(heat_runtime_daily)
 
     if not(enough_cool_runtime and enough_heat_runtime):
         message = "Not enough runtime for thermostat "
@@ -420,6 +427,7 @@ def get_single_thermostat(thermostat_id, zipcode,
         cool_stage,
         zipcode,
         station,
+        climate_zone,
         temp_in,
         temp_out,
         cool_runtime,
@@ -516,6 +524,10 @@ def _enough_runtime(series):
     if series is None:
         return False
 
+    if ENABLE_ENOUGH_RUNTIME_CHECK is False:
+        # Don't bother checking; we're good
+        return True
+
     num_elements = len(series)
-    num_dropped_elements = len(series.dropna())
-    return (num_dropped_elements / num_elements) > 0.95
+    num_valid_elements = len(series.dropna())
+    return (num_valid_elements / num_elements) > 0.95

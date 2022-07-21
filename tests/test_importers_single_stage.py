@@ -10,20 +10,24 @@ from thermostat.importers import (
 from thermostat.util.testing import get_data_path
 
 from .fixtures.single_stage import (
+        thermostat_bad_equipment_type,
+        thermostat_missing_days,
+        thermostat_missing_hours,
+        thermostat_missing_over_18_days_temperature,
+        thermostat_missing_temperature,
         thermostat_type_1,
+        thermostat_type_1_cache,
+        thermostat_type_1_climate_zone_not_found,
+        thermostat_type_1_data_missing_header,
+        thermostat_type_1_data_out_of_order,
+        thermostat_type_1_metadata_missing_header,
+        thermostat_type_1_station_not_found,
+        thermostat_type_1_too_many_minutes,
         thermostat_type_1_utc,
         thermostat_type_1_utc_bad,
-        thermostat_type_1_too_many_minutes,
         thermostat_type_1_utc_bad,
         thermostat_type_1_zip_bad,
-        thermostat_type_1_data_out_of_order,
-        thermostat_type_1_data_missing_header,
-        thermostat_type_1_metadata_missing_header,
-        thermostat_type_1_cache,
-        thermostat_missing_temperature,
-        thermostat_missing_over_18_days_temperature,
-        thermostat_missing_hours,
-        thermostat_missing_days,
+        thermostat_type_1_zip_code_not_found,
         )
 
 def test_import_csv(thermostat_type_1):
@@ -125,6 +129,15 @@ def test_missing_days(thermostat_missing_days):
 def test_bad_zipcode(thermostat_type_1_zip_bad):
     assert len(thermostat_type_1_zip_bad) == 0
 
+def test_zip_code_not_found(thermostat_type_1_zip_code_not_found):
+    assert len(thermostat_type_1_zip_code_not_found) == 0
+
+def test_station_not_found(thermostat_type_1_station_not_found):
+    assert len(thermostat_type_1_station_not_found) == 0
+
+def test_climate_zone_not_found(thermostat_type_1_climate_zone_not_found):
+    assert len(thermostat_type_1_climate_zone_not_found) == 0
+
 def test_data_out_of_order(thermostat_type_1_data_out_of_order):
     assert len(thermostat_type_1_data_out_of_order) == 0
 
@@ -133,3 +146,6 @@ def test_data_missing_headers(thermostat_type_1_data_missing_header):
 
 def test_data_missing_headers(thermostat_type_1_data_missing_header):
     assert len(thermostat_type_1_data_missing_header) == 0
+
+def test_data_bad_equipment_type(thermostat_bad_equipment_type):
+    assert len(thermostat_bad_equipment_type) == 0

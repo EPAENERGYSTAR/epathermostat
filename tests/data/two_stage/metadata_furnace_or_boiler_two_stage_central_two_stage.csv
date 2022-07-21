@@ -1,2 +1,2 @@
 thermostat_id,heat_type,heat_stage,cool_type,cool_stage,zipcode,utc_offset,interval_data_filename
-22c341d0548fc92996a4f229caa5c9b0,furnace_or_boiler,two_stage,central,two_stage,77478,-0600,thermostat_22c341d0548fc92996a4f229caa5c9b0.csv
+95e7d7df8e31ea7bdc79a83208a3a750,furnace_or_boiler,single_stage,central,two_stage,23320,-0500,thermostat_95e7d7df8e31ea7bdc79a83208a3a750.csv

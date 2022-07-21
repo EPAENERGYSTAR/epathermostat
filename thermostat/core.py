@@ -10,7 +10,6 @@ from scipy.optimize import leastsq
 
 from thermostat import get_version
 from thermostat.climate_zone import BASELINE_TEMPERATURE
-from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 from thermostat.equipment_type import (
         has_heating,
         has_cooling,
@@ -100,11 +99,6 @@ class InsufficientCoreDaysError(Exception):
         self.message = message
 
 
-class InvalidClimateZoneError(Exception):
-    def __init__(self, message):
-        self.message = message
-
-
 class Thermostat(object):
     """ Main thermostat data container. Each parameter which contains
     timeseries data should be a pandas.Series with a datetimeIndex, and that
@@ -128,6 +122,8 @@ class Thermostat(object):
     station : str
         USAF identifier for weather station used to pull outdoor temperature
         data.
+    climate_zone: str
+        Climate Zone for the thermostat
     temperature_in : pandas.Series
         Contains internal temperature data in degrees Fahrenheit (F),
         with resolution of at least 0.5F.
@@ -172,7 +168,7 @@ class Thermostat(object):
     def __init__(
             self, thermostat_id,
             heat_type, heat_stage, cool_type, cool_stage,
-            zipcode, station,
+            zipcode, station, climate_zone,
             temperature_in, temperature_out,
             cool_runtime, heat_runtime,
             auxiliary_heat_runtime, emergency_heat_runtime):
@@ -200,6 +196,7 @@ class Thermostat(object):
 
         self.zipcode = zipcode
         self.station = station
+        self.climate_zone = climate_zone
 
         # Interpolate the data first to fill in holes of two or less hours
         self.temperature_in = self._interpolate(temperature_in)
@@ -230,7 +227,7 @@ class Thermostat(object):
         self.heat_runtime_hourly = heat_runtime
 
         if hasattr(cool_runtime, 'empty') and cool_runtime.empty is False:
-            self.cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
+            self.cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
             # Do we have two hours or less of missing data?
             # if not, set the whole day to np.nan
             enough_cool_runtime_in = \
@@ -239,7 +236,7 @@ class Thermostat(object):
             self.cool_runtime_daily = self.cool_runtime_daily.where(enough_cool_runtime_in, np.nan)
 
         if hasattr(heat_runtime, 'empty') and heat_runtime.empty is False:
-            self.heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=True)
+            self.heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
             # Do we have two hours or less of missing data?
             # if not, set the whole day to np.nan
             enough_heat_runtime_in = \
@@ -250,9 +247,6 @@ class Thermostat(object):
         self.auxiliary_heat_runtime = auxiliary_heat_runtime
         self.emergency_heat_runtime = emergency_heat_runtime
 
-        self.climate_zone = ZIPCODE_LOOKUP.get(self.zipcode, {}).get('climate_zone')
-        if self.climate_zone is None:
-            raise InvalidClimateZoneError(f'Climate Zone is not available for ZIP Code {self.zipcode}')
         self.baseline_regional_cooling_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('cooling', None)
         self.baseline_regional_heating_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('heating', None)
 
@@ -264,7 +258,7 @@ class Thermostat(object):
                         (self.core_heating_days_total < MINIMUM_HEATING_CORE_DAYS[self.climate_zone]):
                     raise InsufficientCoreDaysError(f'Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}')
             except KeyError:
-                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
+                raise KeyError(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
                 
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
@@ -274,17 +268,21 @@ class Thermostat(object):
                         self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
                     raise InsufficientCoreDaysError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
             except KeyError:
-                raise Exception(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
+                raise KeyError(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         self.validate()
 
     def validate(self):
         # Generate warnings for invalid heating / cooling types and stages
-        validate_heat_type(self.heat_type)
-        validate_cool_type(self.cool_type)
-        validate_heat_stage(self.heat_stage)
-        validate_cool_stage(self.cool_stage)
+        if validate_heat_type(self.heat_type) is False:
+            raise ValueError(f"Heat type {self.heat_type} is not valid.")
+        if validate_cool_type(self.cool_type) is False:
+            raise ValueError(f"Cool type {self.cool_type} is not valid.")
+        if validate_heat_stage(self.heat_stage) is False:
+            raise ValueError(f"Heat stage {self.heat_stage} is not valid.")
+        if validate_cool_stage(self.cool_stage) is False:
+            raise ValueError(f"Cool stage {self.cool_stage} is not valid.")
 
         # Validate the heating, cooling, and aux/emerg settings
         self._validate_heating()
@@ -1292,11 +1290,12 @@ class Thermostat(object):
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
-        if n_days == 0:
-            warnings.warn(f"{self.thermostat_id}: Number of valid cooling days is zero.")
+        if self.has_cooling:
+            if n_days == 0:
+                warnings.warn(f"{self.thermostat_id}: Number of valid cooling days is zero.")
 
-        if n_hours == 0:
-            warnings.warn(f"{self.thermostat_id}: Number of valid cooling hours is zero.")
+            if n_hours == 0:
+                warnings.warn(f"{self.thermostat_id}: Number of valid cooling hours is zero.")
 
         average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
 
@@ -1452,11 +1451,12 @@ class Thermostat(object):
                 "This may mean that you have pandas 0.21.x installed "
                 "(which is not supported).")
 
-        if n_days == 0:
-            warnings.warn(f"{self.thermostat_id}: Number of valid heating days is zero.")
+        if self.has_heating:
+            if n_days == 0:
+                warnings.warn(f"{self.thermostat_id}: Number of valid heating days is zero.")
 
-        if n_hours == 0:
-            warnings.warn(f"{self.thermostat_id}: Number of valid cooling hours is zero.")
+            if n_hours == 0:
+                warnings.warn(f"{self.thermostat_id}: Number of valid cooling hours is zero.")
 
         average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
 
