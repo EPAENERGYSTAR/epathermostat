@@ -1,0 +1,7 @@
+#!/bin/bash
+CONTAINER=epathermostat
+lxc start $CONTAINER
+sleep 3
+lxc exec $CONTAINER -- sudo --login --user ubuntu bash -c "source venv/bin/activate && cd /home/ubuntu/epathermostat/ && tox -pall -r"
+rsync -avip --delete /home/craig/projects/epathermostat/htmlcov/ /home/craig/Downloads/inbox/htmlcov/
+lxc stop $CONTAINER
