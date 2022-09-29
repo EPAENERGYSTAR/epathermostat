@@ -26,6 +26,7 @@ from thermostat.columns import (
         REAL_OR_INTEGER_VALUED_COLUMNS_COOLING,
         REAL_OR_INTEGER_VALUED_COLUMNS_ALL
         )
+from thermostat.climate_zone import HEATING_CLIMATE_ZONE_WEIGHTS, COOLING_CLIMATE_ZONE_WEIGHTS
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
 IQR_FILTER_PARAMETER = 1.5
@@ -419,27 +420,6 @@ def compute_summary_statistics(
         if stat:
             stats_dict.update({stat['label']: stat})
 
-    def _load_climate_zone_weights(filename_or_buffer):
-        climate_zone_keys = {
-            "Very-Cold/Cold": "very-cold_cold",
-            "Mixed-Humid": "mixed-humid",
-            "Mixed-Dry/Hot-Dry": "mixed-dry_hot-dry",
-            "Hot-Humid": "hot-humid",
-            "Marine": "marine",
-        }
-        df = pd.read_csv(
-            filename_or_buffer,
-            usecols=["climate_zone", "heating_weight", "cooling_weight"],
-        ).set_index("climate_zone")
-
-        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].iteritems()}
-        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].iteritems()}
-
-        return heating_weights, cooling_weights
-
-    with resource_stream('thermostat.resources', 'NationalAverageClimateZoneWeightings.csv') as f:
-        heating_weights, cooling_weights = _load_climate_zone_weights(f)
-
     def _compute_national_weightings(stats_by_climate_zone, keys, weights):
         def _national_weight(key):
             results = []
@@ -570,9 +550,9 @@ def compute_summary_statistics(
     ]
     for season_type in ["heating", "cooling"]:
         if season_type == "heating":
-            weights = heating_weights
+            weights = HEATING_CLIMATE_ZONE_WEIGHTS
         else:
-            weights = cooling_weights
+            weights = COOLING_CLIMATE_ZONE_WEIGHTS
 
         for filter_ in filters:
             stats_by_climate_zone = {

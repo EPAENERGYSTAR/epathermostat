@@ -274,11 +274,11 @@ The single-thermostat metrics should be output to CSV and converted to dataframe
 
 .. code-block:: python
 
-    output_filename = os.path.join(data_dir, "thermostat_example_output.csv")
-    metrics_df = metrics_to_csv(metrics, output_filename)
+    metrics_filename = os.path.join(data_dir, "thermostat_example_metrics.csv")
+    metrics_df = metrics_to_csv(metrics, metrics_filename)
 
-The output CSV will be saved in your data directory and should closely match
-the output CSV provided in the example data.
+The metrics CSV will be saved in your data directory and should closely match
+the metrics CSV provided in the example data.
 
 This file is not currently required for submission to EPA, but is useful for
 troubleshooting.
@@ -289,7 +289,7 @@ See :ref:`thermostat-output` for more detailed file format information.
 Computing summary statistics for submission
 -------------------------------------------
 
-Once you have obtained output for each individual thermostat in your dataset,
+Once you have obtained metrics for each individual thermostat in your dataset,
 use the stats module to compute summary statistics. This file is formatted
 submission to the EPA. The example below works with the output file from the
 tutorial above and can be modified to use your data.
@@ -373,7 +373,12 @@ Other platforms should not be affected by this.
 Sample Program
 --------------
 
-Here is a complete version of the above tutorial code:
+Here is a complete version of the above tutorial code that has been modified to
+make it easier to update filenames and paths. Anything in capital letters (e.g.
+``METRICS_FILENAME``) may be tweaked as needed. The
+:download:`multi_thermostat_tutorial.py
+<../scripts/multi_thermostat_tutorial.py>`. script is also available under
+``scripts/multi_thermostat_tutorial.py``.
 
 .. literalinclude:: ../scripts/multi_thermostat_tutorial.py
    :language: python

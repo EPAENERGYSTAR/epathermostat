@@ -139,8 +139,8 @@ Name                         Data Format                      Units   Descriptio
 
 .. _thermostat-output:
 
-Output data
------------
+Metrics data
+------------
 
 Individual thermostat-season
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -22,22 +22,22 @@ import pytest
 
 @pytest.fixture(scope="session", params=["../data/two_stage/metadata_furnace_or_boiler_two_stage_central_two_stage.csv"])
 def thermostat_fu_2_ce_2(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/two_stage/metadata_furnace_or_boiler_two_stage_none_single_stage.csv"])
 def thermostat_furnace_or_boiler_two_stage_none_single_stage(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/two_stage/metadata_heat_pump_electric_backup_two_stage_heat_pump_two_stage.csv"])
 def thermostat_hpeb_2_hp_2(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/two_stage/metadata_none_two_stage_heat_pump_two_stage.csv"])
 def thermostat_na_2_hp_2(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats, _ = from_csv(get_data_path(request.param))
     return next(thermostats)
 
 @pytest.fixture(scope="session")

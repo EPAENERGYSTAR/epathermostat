@@ -39,6 +39,21 @@ CLIMATE_ZONE_MAPPING = {
     }
 
 
+HEATING_CLIMATE_ZONE_WEIGHTS = {
+    'very-cold_cold': 0.549,
+    'mixed-humid': 0.312,
+    'mixed-dry_hot-dry': 0.054,
+    'hot-humid': 0.049,
+    'marine': 0.036}
+
+COOLING_CLIMATE_ZONE_WEIGHTS = {
+    'very-cold_cold': 0.096,
+    'mixed-humid': 0.34,
+    'mixed-dry_hot-dry': 0.144,
+    'hot-humid': 0.42,
+    'marine': 0.0}
+
+
 def retrieve_climate_zone(zipcode):
     """ Performs a lookup of the Climate Zone from eeweather
     and returns the climate zone and baseline regional comfort temperatures.
