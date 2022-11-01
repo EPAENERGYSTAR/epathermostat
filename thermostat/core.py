@@ -845,17 +845,20 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
 
+
         def search_cdd_tau(run_time_array, max_tau=20):
             """
-            Search for the best fit for tau (x-intercept) from 0 to max_tau, 
+            Search for the best fit for tau (x-intercept) from 0 to max_tau,
             finding the best alpha (slope) at each possible integer tau
-            and returning the alpha and tau that produce the least squared errors 
+            and returning the alpha and tau that produce the least squared errors
             """
             min_sq_err = None
             best_tau = None
             best_errors = None
             best_alpha = None
-            for tau in range(max_tau + 1):
+            interval_factor = 10
+            for interval in range(max_tau * interval_factor + 1):
+                tau = interval / interval_factor
                 shifted_deg_days_array = calc_cdd(tau) - np.array(tau)
                 alpha = lin_fit(shifted_deg_days_array, run_time_array)
                 errors = run_time_array - np.array(alpha) * shifted_deg_days_array
@@ -866,7 +869,7 @@ class Thermostat(object):
                     best_tau = tau
                     best_alpha = alpha
                 logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
-                        f' best tau={best_tau}')
+                             f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
             return best_tau, best_alpha, best_errors
 
@@ -993,15 +996,17 @@ class Thermostat(object):
 
         def search_hdd_tau(run_time_array, max_tau=20):
             """
-            Search for the best fit for tau (x-intercept) from 0 to max_tau, 
+            Search for the best fit for tau (x-intercept) from 0 to max_tau,
             finding the best alpha (slope) at each possible integer tau
-            and returning the alpha and tau that produce the least squared errors 
+            and returning the alpha and tau that produce the least squared errors
             """
             min_sq_err = None
             best_tau = None
             best_errors = None
             best_alpha = None
-            for tau in range(max_tau + 1):
+            interval_factor = 10
+            for interval in range(max_tau * interval_factor + 1):
+                tau = interval / interval_factor
                 shifted_deg_days_array = calc_hdd(tau) - np.array(tau)
                 alpha = lin_fit(shifted_deg_days_array, run_time_array)
                 errors = run_time_array - np.array(alpha) * shifted_deg_days_array
@@ -1012,7 +1017,7 @@ class Thermostat(object):
                     best_tau = tau
                     best_alpha = alpha
                 logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
-                        f' best tau={best_tau}')
+                             f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
             return best_tau, best_alpha, best_errors
 
