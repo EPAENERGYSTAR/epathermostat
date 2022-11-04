@@ -32,6 +32,7 @@ QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 8
 IQR_FILTER_PARAMETER = 1.5
 TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
 UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
+MIN_NUM_THERMOSTATS = 30
 
 logger = logging.getLogger('epathermostat')
 warnings.simplefilter('module', Warning)
@@ -45,6 +46,39 @@ def globalize(func):
     setattr(sys.modules[result.__module__], result.__name__, result)
     return result
 
+
+def check_sufficient_thermostats_per_climate_zone(very_cold_cold_df, mixed_humid_df, mixed_dry_hot_dry_df, hot_humid_df, marine_df):
+    """ Checks to determine if each climate zone has enough thermostats and warns if there aren't.
+
+    Parameters
+    ----------
+    very_cold_cold_df: pd.DataFrame
+    mixed_humid_df: pd.DataFrame
+    mixed_dry_hot_dry_df: pd.DataFrame
+    hot_humid_df: pd.DataFrame
+    marine_df: pd.DataFrame
+
+    Returns
+    -------
+    sufficient: Boolean
+    """
+
+    sufficient = True
+
+    thermostat_count = {
+        'Very-Cold/Cold': len(very_cold_cold_df),
+        'Mixed-Humid': len(mixed_humid_df),
+        'Mixed-Dry/Hot-Dry': len(mixed_dry_hot_dry_df),
+        'Hot-Humid': len(hot_humid_df),
+        'Marine': len(marine_df),
+    }
+
+    for climate_zone in thermostat_count:
+        if thermostat_count[climate_zone] < MIN_NUM_THERMOSTATS:
+            logging.warning(f'{climate_zone} Climate Zone only has {thermostat_count[climate_zone]} thermostats out of a required {MIN_NUM_THERMOSTATS} thermostats.')
+            sufficient = False
+    return sufficient
+    
 
 def combine_output_dataframes(dfs):
     """ Combines output dataframes. Useful when combining output from batches.
@@ -275,6 +309,7 @@ def compute_summary_statistics(
 
     """
 
+
     if target_baseline_method not in ["baseline_percentile", "baseline_regional"]:
         message = (
             'Baseline method not supported - please use one of'
@@ -306,6 +341,14 @@ def compute_summary_statistics(
         (cz is not None) and "Marine" in cz
         for cz in metrics_df["climate_zone"]
     ]]
+
+    sufficient = check_sufficient_thermostats_per_climate_zone(
+        very_cold_cold_df,
+        mixed_humid_df,
+        mixed_dry_hot_dry_df,
+        hot_humid_df,
+        marine_df,
+        )
 
     filter_0 = _identity_filter
     filter_1_heating = _combine_filters([_tau_filter_heating])
@@ -576,7 +619,7 @@ def compute_summary_statistics(
             national_weighting_stats.append(national_weightings)
 
     stats = national_weighting_stats + stats
-    return stats
+    return stats, sufficient
 
 
 def summary_statistics_to_csv(stats, filepath, product_id):

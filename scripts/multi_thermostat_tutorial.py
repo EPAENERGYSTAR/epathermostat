@@ -143,7 +143,7 @@ def main():
 
     metrics_out = metrics_to_csv(metrics, METRICS_FILEPATH)
 
-    stats = compute_summary_statistics(metrics_out)
+    stats, sufficient = compute_summary_statistics(metrics_out)
 
     certification_to_csv(stats, CERTIFICATION_FILEPATH, PRODUCT_ID)
 
