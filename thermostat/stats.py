@@ -60,10 +60,9 @@ def check_sufficient_thermostats_per_climate_zone(very_cold_cold_df, mixed_humid
 
     Returns
     -------
-    sufficient: Boolean
+    insufficient: List
     """
-
-    sufficient = True
+    insufficient = []
 
     thermostat_count = {
         'Very-Cold/Cold': len(very_cold_cold_df),
@@ -75,10 +74,15 @@ def check_sufficient_thermostats_per_climate_zone(very_cold_cold_df, mixed_humid
 
     for climate_zone in thermostat_count:
         if thermostat_count[climate_zone] < MIN_NUM_THERMOSTATS:
-            logging.warning(f'{climate_zone} Climate Zone only has {thermostat_count[climate_zone]} thermostats out of a required {MIN_NUM_THERMOSTATS} thermostats.')
-            sufficient = False
-    return sufficient
-    
+            message = f'{climate_zone} Climate Zone only has {thermostat_count[climate_zone]} thermostats out of a required {MIN_NUM_THERMOSTATS} thermostats.'
+            logging.warning(message)
+            insufficient.append({
+                'climate_zone': climate_zone,
+                'count': thermostat_count[climate_zone],
+                'error': message
+                })
+    return insufficient
+
 
 def combine_output_dataframes(dfs):
     """ Combines output dataframes. Useful when combining output from batches.
@@ -342,7 +346,7 @@ def compute_summary_statistics(
         for cz in metrics_df["climate_zone"]
     ]]
 
-    sufficient = check_sufficient_thermostats_per_climate_zone(
+    insufficient = check_sufficient_thermostats_per_climate_zone(
         very_cold_cold_df,
         mixed_humid_df,
         mixed_dry_hot_dry_df,
@@ -619,7 +623,7 @@ def compute_summary_statistics(
             national_weighting_stats.append(national_weightings)
 
     stats = national_weighting_stats + stats
-    return stats, sufficient
+    return stats, insufficient
 
 
 def summary_statistics_to_csv(stats, filepath, product_id):
