@@ -83,7 +83,7 @@ updating dependencies, use the :code:`--no-deps` flag:
 .. note::
 
    This is not recommended between major and minor revisions. e.g.: if you are
-   upgrading from version 1.7.2 to 2.0.0 we recommend updating dependencies.
+   upgrading from version 1.7.x to 2.x we recommend updating dependencies.
 
 .. code-block:: bash
 
