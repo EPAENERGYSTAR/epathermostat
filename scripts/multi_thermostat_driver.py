@@ -77,6 +77,7 @@ STATISTICS_FILENAME = f'{BASE_FILENAME}_stats.csv'
 ADVANCED_STATISTICS_FILENAME = f'{BASE_FILENAME}_stats_advanced.csv'
 IMPORT_ERRORS_FILENAME = f'{BASE_FILENAME}_import_errors.csv'
 SANITIZED_IMPORT_ERRORS_FILENAME = f'{BASE_FILENAME}_errors_sanitized.csv'
+CLIMATE_ZONE_INSUFFICIENT_FILENAME = f'{BASE_FILENAME}_climate_zone_insufficient.csv'
 ZIP_FILENAME = f'{BASE_FILENAME}.zip'
 
 # These are the locations of where these files will be stored.
@@ -86,7 +87,32 @@ CERTIFICATION_FILEPATH = os.path.join(DATA_DIR, CERTIFICATION_FILENAME)
 STATS_ADVANCED_FILEPATH = os.path.join(DATA_DIR, ADVANCED_STATISTICS_FILENAME)
 IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, IMPORT_ERRORS_FILENAME)
 SANITIZED_IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, SANITIZED_IMPORT_ERRORS_FILENAME)
+CLIMATE_ZONE_INSUFFICIENT_FILEPATH = os.path.join(OUTPUT_DIR, CLIMATE_ZONE_INSUFFICIENT_FILENAME)
 ZIP_FILEPATH = os.path.join(OUTPUT_DIR, ZIP_FILENAME)
+
+
+def write_errors(filepath, fieldnames, errors, extrasaction=None):
+    with open(filepath, 'w') as error_file:
+        if extrasaction:
+            writer = csv.DictWriter(
+                error_file,
+                fieldnames=fieldnames,
+                dialect='excel',
+                extrasaction=extrasaction)
+        else:
+            writer = csv.DictWriter(
+                error_file,
+                fieldnames=fieldnames,
+                dialect='excel')
+        writer.writeheader()
+        for error in errors:
+            writer.writerow(error)
+
+
+def count_metadata(filepath):
+    with open(filepath, 'r') as metadata_file:
+        reader = csv.DictReader(metadata_file)
+        return len(list(reader))
 
 
 def main():
@@ -118,34 +144,33 @@ def main():
         # This writes a file with the thermostat ID as part of the file. This
         # is for your own troubleshooting
         fieldnames = ['thermostat_id', 'error']
-        with open(IMPORT_ERRORS_FILEPATH, 'w') as error_file:
-            writer = csv.DictWriter(
-                error_file,
-                fieldnames=fieldnames,
-                dialect='excel')
-            writer.writeheader()
-            for thermostat_error in import_errors:
-                writer.writerow(thermostat_error)
+        write_errors(IMPORT_ERRORS_FILEPATH, fieldnames, import_errors)
 
         # This writes a file without the thermostat ID as part of the file.
         # This file is sent as part of the certification to help with
         # diagnosing issues with missing thermostats
         fieldnames = ['error']
-        with open(SANITIZED_IMPORT_ERRORS_FILEPATH, 'w') as error_file:
-            writer = csv.DictWriter(
-                error_file,
-                fieldnames=fieldnames,
-                dialect='excel',
-                extrasaction='ignore')  # Need this because "thermostat_id" is still in the dictionary
-            writer.writeheader()
-            for thermostat_error in import_errors:
-                writer.writerow(thermostat_error)
+        write_errors(SANITIZED_IMPORT_ERRORS_FILEPATH, fieldnames, import_errors, extrasaction='ignore')
+
+    # Check to see how many thermostats we are importing and warn if less than 30%
+    metadata_count = count_metadata(METADATA_FILENAME)
+    thermostat_estimate_count = thermostats.__length_hint__()  # Get a rough estimate of the number of thermostats
+    percent_thermostats_imported = (thermostat_estimate_count / metadata_count) * 100
+    if percent_thermostats_imported < 30:
+        logger.warning(f'Imported {percent_thermostats_imported}% of thermostats, which is less than 30%')
+        logger.warning(f'Please check {IMPORT_ERRORS_FILEPATH} for more details')
+    else:
+        logger.debug(f'Imported {percent_thermostats_imported}% of thermostats')
 
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
     metrics_out = metrics_to_csv(metrics, METRICS_FILEPATH)
 
-    stats = compute_summary_statistics(metrics_out)
+    stats, insufficient = compute_summary_statistics(metrics_out)
+
+    if insufficient:
+        fieldnames = ['climate_zone', 'count', 'error']
+        write_errors(CLIMATE_ZONE_INSUFFICIENT_FILEPATH, fieldnames, insufficient)
 
     certification_to_csv(stats, CERTIFICATION_FILEPATH, PRODUCT_ID)
 
@@ -174,6 +199,9 @@ def main():
 
     if import_errors:
         files_to_zip.append(SANITIZED_IMPORT_ERRORS_FILEPATH)
+
+    if insufficient:
+        files_to_zip.append(CLIMATE_ZONE_INSUFFICIENT_FILEPATH)
 
     with ZipFile(ZIP_FILEPATH, 'w') as certification_zip:
         for filename in files_to_zip:

@@ -237,7 +237,7 @@ def test_combine_output_dataframes(dataframes):
 
 
 def test_compute_summary_statistics_advanced(combined_dataframe):
-    summary_statistics = compute_summary_statistics(combined_dataframe,
+    summary_statistics, _ = compute_summary_statistics(combined_dataframe,
             advanced_filtering=True)
     assert [len(s) for s in summary_statistics] == [
             49, 49, 49, 49, 49, 49, 49, 49,
@@ -246,7 +246,7 @@ def test_compute_summary_statistics_advanced(combined_dataframe):
 
 
 def test_summary_statistics_to_csv(combined_dataframe):
-    summary_statistics = compute_summary_statistics(combined_dataframe)
+    summary_statistics, _ = compute_summary_statistics(combined_dataframe)
 
 
 def test_none_summary_statistics_to_csv():
@@ -254,7 +254,7 @@ def test_none_summary_statistics_to_csv():
 
 
 def test_compute_summary_statistics(combined_dataframe):
-    summary_statistics = compute_summary_statistics(combined_dataframe)
+    summary_statistics, _ = compute_summary_statistics(combined_dataframe)
     assert [len(s) for s in summary_statistics] == [
             49, 49, 49, 49,
             2049, 901, 2049, 901,
@@ -277,7 +277,7 @@ def test_certification(combined_dataframe):
     _, fname_stats = tempfile.mkstemp()
     _, fname_cert = tempfile.mkstemp()
     product_id = "FAKE"
-    stats_df = compute_summary_statistics(combined_dataframe)
+    stats_df, _ = compute_summary_statistics(combined_dataframe)
     certification_df = certification_to_csv(stats_df, fname_cert, product_id)
     assert certification_df.shape == (5, 8)
 
@@ -298,7 +298,7 @@ def test_iqr_filtering(thermostat_emg_aux_constant_on_outlier):
     # Run the metrics / statistics with the outlier thermostat in place
     iqflt_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats_iqflt)
     iqflt_output_dataframe = pd.DataFrame(iqflt_metrics, columns=EXPORT_COLUMNS)
-    iqflt_summary_statistics = compute_summary_statistics(iqflt_output_dataframe)
+    iqflt_summary_statistics, _ = compute_summary_statistics(iqflt_output_dataframe)
 
     # Remove the outlier thermostat
     thermostats_noiq = []
@@ -312,7 +312,7 @@ def test_iqr_filtering(thermostat_emg_aux_constant_on_outlier):
     # Re-run the metrics / statistics with the outlier thermostat removed
     noiq_metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats_noiq)
     noiq_output_dataframe = pd.DataFrame(noiq_metrics, columns=EXPORT_COLUMNS)
-    noiq_summary_statistics = compute_summary_statistics(noiq_output_dataframe)
+    noiq_summary_statistics, _ = compute_summary_statistics(noiq_output_dataframe)
 
     # Verify that the IQFLT removed the outliers by comparing this with the
     # metrics with the outlier thermostat already removed.
