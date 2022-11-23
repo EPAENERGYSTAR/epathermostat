@@ -117,11 +117,8 @@ def count_metadata(filepath):
 
 def main():
     '''
-    This is an example of how to best use the new multi-processing functionality.
-    It shows the proper format for wrapping the code under a main() function and
-    shows how to use the multiple_thermostat_calculate_epa_field_savings_metrics
-    function. Windows needs to have this code wrapped in a main() function in
-    order to work.
+    This script processes the thermostat metadata and data files to generate
+    the certification files for submission to EPA.
     '''
 
     logging.basicConfig()
