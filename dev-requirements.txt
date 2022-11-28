@@ -2,6 +2,7 @@ pytest
 pytest-cov
 coverage
 Sphinx==3.5.3
+jinja2==3.0.3
 mock==2.0.0
 jupyter
 tox
