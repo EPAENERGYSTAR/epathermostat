@@ -9,6 +9,7 @@
 * Changed interval file format
     - Moved to hourly timestamp instead of daily timestamp format
 * Added certification file
+* Added a driver script (`multi_thermostat_driver.py`) for easier running and collecting of relevant files
 * Added import error logging to log thermostat and reason for rejection
 * Removed year end-to-end and mid-to-mid calculations
 * Added multiprocessor support for stats module
@@ -16,6 +17,7 @@
 * Removed eemeter
 * Updated logic to use ZIP Code for weather station lookup and climate zone lookup
 * Updated Climate Zone lookup strategy
+* Added minimum 30 thermostats per climate zone
 
 ## Production releases
 
