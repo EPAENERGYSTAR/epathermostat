@@ -100,8 +100,8 @@ Previous versions of the package are available on `github`_.
     packages used by this package and has installers for Windows, macOS, and
     Linux.
 
-Once you have verified a correct installation, import the necessary methods
-and set a directory for finding and storing data.
+Once you have verified a correct installation, you may customize the driver
+script to load and compute the data.
 
 .. note::
 
