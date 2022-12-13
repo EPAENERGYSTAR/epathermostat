@@ -311,8 +311,11 @@ def compute_summary_statistics(
           - label: label
           - number of total core day sets: n_total_core_day_sets
 
+    insufficient: List
+        A list of Climate Zones with less than thirty (30) thermostats represented in the sample.
+        Each Climate Zone needs to have at least 30 thermostats represented, otherwise there is insufficient sample.
+        The driver script will use this to both warn of insufficient sample and to create a file of climate zones that did not meet the minimum criteria.
     """
-
 
     if target_baseline_method not in ["baseline_percentile", "baseline_regional"]:
         message = (
