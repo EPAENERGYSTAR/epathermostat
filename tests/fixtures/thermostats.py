@@ -169,7 +169,7 @@ def metrics_type_1_data():
 
     # this data comes from a script in scripts/test_data_generation.ipynb
     data = [{
-        'sw_version': '1.7.4',
+        'sw_version': '1.7.5',
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'equipment_type': 1,
         'heating_or_cooling': 'cooling_ALL',
@@ -211,7 +211,7 @@ def metrics_type_1_data():
         'core_mean_indoor_temperature': 73.95971753003002,
         'core_mean_outdoor_temperature': 79.8426321875
         }, {
-        'sw_version': '1.7.4',
+        'sw_version': '1.7.5',
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'equipment_type': 1,
         'heating_or_cooling': 'heating_ALL',
