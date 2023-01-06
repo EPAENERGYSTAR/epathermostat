@@ -2,7 +2,7 @@
 CONTAINER=epathermostat
 lxc stop $CONTAINER
 lxc delete $CONTAINER
-lxc launch ubuntu:18.04 $CONTAINER -c security.privileged=true
+lxc launch ubuntu:20.04 $CONTAINER -c security.privileged=true
 sleep 3
 lxc config device add $CONTAINER homedir disk source=/home/craig/projects/epathermostat path=/home/ubuntu/epathermostat
 sleep 3
