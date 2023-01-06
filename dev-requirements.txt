@@ -5,3 +5,4 @@ coverage
 jupyter
 tox
 pytest-cov
+pip-tools
