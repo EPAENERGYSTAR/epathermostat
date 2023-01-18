@@ -100,8 +100,8 @@ Previous versions of the package are available on `github`_.
     packages used by this package and has installers for Windows, macOS, and
     Linux.
 
-Once you have verified a correct installation, import the necessary methods
-and set a directory for finding and storing data.
+Once you have verified a correct installation, you may customize the driver
+script to load and compute the data.
 
 .. note::
 
@@ -163,7 +163,7 @@ Logging
 -------
 
 If you wish to follow the progress of downloading and caching external weather
-files, which will be the most time-consuming portion of this tutorial, you may
+files, which will be the most time-consuming portion of this script, you may
 wish to configure logging. The example here will work within most
 iPython / Jupyter Notebook or script environments. If you have a more
 complicated logging setup, you may need to use something other than the default
@@ -172,205 +172,25 @@ root logger. For more information visit `Python's logging documentation
 
 .. code-block:: python
 
-    import logging
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    # Verbose will override logging to display the imported thermostats. Set to
+    # 'False' to use the logging level instead
+    VERBOSE = True
 
-    # another example is in the script directory
+    # Set to True to log additional warning messages, False to only display on
+    # console
+    CAPTURE_WARNINGS = True
 
-    logging.basicConfig()
     # Example logging configuration for file and console output
     # logging.json: Normal logging example
     # logging_noisy.json: Turns on all debugging information
     # logging_quiet.json: Only logs error messages
-    with open("logging.json", "r") as logging_config:
-        logging.config.dictConfig(json.load(logging_config))
-
-    logger = logging.getLogger('epathermostat')  # Uses the 'epathermostat' logging
-
-
-Computing individual thermostat-season metrics
-----------------------------------------------
-
-After importing the package methods, load the example thermostat data, or
-provide data of your own. See :ref:`thermostat-input` for more detailed file
-format information.
-
-Fabricated example data from 35 thermostats in various climate zones, is
-available for download :download:`here <./examples/examples.zip>`.
-
-Loading the thermostat data below will take more than a few minutes, even if
-the weather cache is enabled (see note above). This is because loading
-thermostat data involves downloading hourly weather data from a remote
-source - in this case, the NCDC.
-
-
-The following creates a lazy iterator over the thermostats. This will set up up
-to three connections to the NCDC at a time to download thermostat data. This
-is the maximum number of FTP connections the NCDC will allow from one
-IP address. The thermostats will be loaded into memory via the following steps:
-
-.. code-block:: python
-
-    metadata_filename = os.path.join(data_dir, "examples/metadata.csv")
-    thermostats = from_csv(metadata_filename, verbose=True)
-
-.. note::
-
-    The thermostat package depends on eeweather packages for weather data
-    fetching. The eeweather package automatically creates its own cache
-    directory in which it keeps cached versions of weather source data. This
-    speeds up the (generally I/O bound) NOAA weather fetching routine on
-    subsequent internal calls to fetch the same weather data (i.e. getting
-    outdoor temperature data for thermostats that map to the same weather
-    station).
-
-    For more information, visit the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_.
-
-To calculate savings metrics, iterate through thermostats and save the results.
-Uncomment the commented lines if you would like to store the thermostats in
-memory for inspection. Note that this could use a significant amount of  your
-application memory and is only recommended for debugging purposes.
-
-.. code-block:: python
-
-    metrics = []
-    # saved_thermostats = []
-    for thermostat in thermostats:
-        outputs = thermostat.calculate_epa_field_savings_metrics()
-        metrics.extend(outputs)
-        # saved_thermostats.append(thermostat)
-
-
-If you are looking to use multiple CPUs (processors) for the calculation you may
-replace the above code with the following method call:
-
-.. code-block:: python
-
-    from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
-    # ...
-    metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
-
-This will use all of the available CPUs on the machine in order to calculate
-the savings metrics. 
-
-.. note::
-
-    You will need to have imported the
-    ``multiple_thermostat_calculate_epa_field_savings_metrics`` method from
-    ``thermostat.multiple`` prior to using this method. The "Sample
-    Program" section below has a complete example, as well as the `scripts`
-    directory on `github`_.
-
-    If you're running under Windows please see the "Notes for Windows Users" below.
-
-
-The single-thermostat metrics should be output to CSV and converted to dataframe format.
-
-.. code-block:: python
-
-    metrics_filename = os.path.join(data_dir, "thermostat_example_metrics.csv")
-    metrics_df = metrics_to_csv(metrics, metrics_filename)
-
-The metrics CSV will be saved in your data directory and should closely match
-the metrics CSV provided in the example data.
-
-This file is not currently required for submission to EPA, but is useful for
-troubleshooting.
-
-See :ref:`thermostat-output` for more detailed file format information.
-
-
-Computing summary statistics for submission
--------------------------------------------
-
-Once you have obtained metrics for each individual thermostat in your dataset,
-use the stats module to compute summary statistics. This file is formatted
-submission to the EPA. The example below works with the output file from the
-tutorial above and can be modified to use your data.
-
-Compute statistics across all thermostats:
-
-.. code-block:: python
-
-    # uses the metrics_df created in the Quickstart above.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        # uses the metrics_df created in the quickstart above.
-        stats = compute_summary_statistics(metrics_df)
-
-        # If you want to have advanced filter outputs, use this instead
-        # stats_advanced = compute_summary_statistics(metrics_df,
-        #                                             advanced_filtering=True)
-
-Each row of the stats CSV file will represent one output statistic. Each column in the
-CSV file will represent one subset of thermostats, grouped by EIC climate zone and
-filtering method.
-
-At this point, you will also need to provide an alphanumeric product identifier
-for the connected thermostat; e.g. a combination of the connected thermostat
-service plus one or more connected thermostat device models that comprises the
-data set.
-
-Save these results to file:
-
-.. code-block:: python
-
-    product_id = "INSERT ALPHANUMERIC PRODUCT ID HERE"
-    stats_filepath = os.path.join(data_dir, "thermostat_example_stats.csv")
-    summary_statistics_to_csv(stats, stats_filepath, product_id)
-
-    # or with advanced filter outputs
-    # stats_advanced_filepath = os.path.join(data_dir,
-    #                                        "thermostat_example_stats_advanced.csv")
-    # stats_advanced_df = summary_statistics_to_csv(stats_advanced,
-    #                                               stats_advanced_filepath,
-    #                                               product_id)
-
-
-Certification File for submission
----------------------------------
-
-Once you have computed the summary statistics you may then create the certification file,
-which is also submitted to the EPA. National savings metrics are computed by weighted average of
-percent savings results grouped by climate zone. Heavier weights are applied to results
-in climate zones which have longer runtimes due to more extreme climate. Weightings used
-are available :download:`for download <../thermostat/resources/NationalAverageClimateZoneWeightings.csv>`
-
-.. code-block:: python
-
-    certification_filepath = os.path.join(data_dir,
-                                          "thermostat_example_certification.csv")
-    # stats is the results from compute_summary_statistics above
-    certification_to_csv(stats, certification_filepath, product_id)
-
-Notes for Windows Users
------------------------
-
-Python under Windows requires that all multiprocessing code needs to be run
-under a sub module. If you are under Windows you will need to wrap your code
-using the following:
-
-.. code-block:: python
-    
-    def main():
-        # Code goes here
-
-    if __name__ == "__main__":
-        main()
-
-Not having this wrapper will cause a Runtime Error "Attempt to start a new
-process before the current process has finished its bootstrapping phase.".
-
-Other platforms should not be affected by this.
+    LOGGING_CONFIG = 'logging.json'
 
 Sample Program
 --------------
 
-Here is a complete version of the above tutorial code that has been modified to
-make it easier to update filenames and paths. Anything in capital letters (e.g.
-``METRICS_FILENAME``) may be tweaked as needed. The
+Here is a complete version of the ``multi_thermostat_driver.py`` code.
+Anything in capital letters (e.g.  ``METRICS_FILENAME``) may be tweaked as needed. The
 :download:`multi_thermostat_driver.py
 <../scripts/multi_thermostat_driver.py>`. script is also available under
 ``scripts/multi_thermostat_driver.py``.
