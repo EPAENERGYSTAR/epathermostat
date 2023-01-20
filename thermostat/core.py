@@ -45,6 +45,8 @@ RESISTANCE_HEAT_USE_BIN_PAIRS = [(RESISTANCE_HEAT_USE_BIN[x], RESISTANCE_HEAT_US
 RESISTANCE_HEAT_USE_WIDE_BIN = [30, 45]
 RESISTANCE_HEAT_USE_WIDE_BIN_PAIRS = [(30, 45)]
 
+ENABLE_ENOUGH_RUNTIME_CHECK = True
+
 ENFORCE_MINIMUM_CORE_DAYS = False
 MINIMUM_COOLING_CORE_DAYS = {
     'Hot-Humid': 50,
@@ -249,6 +251,26 @@ class Thermostat(object):
 
         self.baseline_regional_cooling_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('cooling', None)
         self.baseline_regional_heating_comfort_temperature = BASELINE_TEMPERATURE.get(self.climate_zone, {}).get('heating', None)
+
+        # Give the thermostats the benefit of the doubt (especially if the runtime is None)
+        enough_cool_runtime = True
+        enough_heat_runtime = True
+
+        # Currently checks hourly runtime, not daily
+        if cool_runtime is not None:
+            cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
+            enough_cool_runtime = _enough_runtime(cool_runtime_daily)
+        if heat_runtime is not None:
+            heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
+            enough_heat_runtime = _enough_runtime(heat_runtime_daily)
+
+        if not(enough_cool_runtime and enough_heat_runtime):
+            message = "Not enough runtime for thermostat "
+            if not enough_heat_runtime:
+                message += "(Heat runtime has over 5% missing data) "
+            if not enough_cool_runtime:
+                message += "(Cool runtime has over 5% missing data) "
+            raise ValueError(message)
 
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
@@ -1661,3 +1683,16 @@ class Thermostat(object):
                 duty_cycle=duty_cycle))
 
         return additional_outputs
+
+
+def _enough_runtime(series):
+    if series is None:
+        return False
+
+    if ENABLE_ENOUGH_RUNTIME_CHECK is False:
+        # Don't bother checking; we're good
+        return True
+
+    num_elements = len(series)
+    num_valid_elements = len(series.dropna())
+    return (num_valid_elements / num_elements) > 0.95
