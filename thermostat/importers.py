@@ -1,3 +1,12 @@
+import json
+import warnings
+import pandas as pd
+import dateutil.parser
+import os
+import pytz
+from multiprocessing import Pool, cpu_count
+from functools import partial
+import logging
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
     has_heating,
@@ -11,21 +20,12 @@ from thermostat.equipment_type import (
     first_stage_capacity_ratio,
     )
 
-import pandas as pd
 from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
 from eeweather.exceptions import ISDDataNotAvailableError
-import json
-
-import warnings
-import dateutil.parser
-import os
-import pytz
-from multiprocessing import Pool, cpu_count
-from functools import partial
-import logging
+from thermostat.core import InsufficientDataError
 
 try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
@@ -282,7 +282,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
         errors.append(
-            "A sufficient source of outdoor weather data could not"
+            "A sufficient source of outdoor weather data could not "
             f"be located for ZIP code {row.zipcode}: {e}"
             )
 
@@ -290,7 +290,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
         errors.append(
             f"NCDC does not have any data: {e}")
 
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError, KeyError, InsufficientDataError) as e:
         errors.append(
             f"{e}")
 
