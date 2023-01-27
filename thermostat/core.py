@@ -296,9 +296,9 @@ class Thermostat(object):
         ).get("heating", None)
 
         # Give the thermostats the benefit of the doubt (especially if the runtime is None)
-        enough_cool_runtime = True
-        enough_heat_runtime = True
-        enough_core_days = True
+        self.enough_cool_runtime = True
+        self.enough_heat_runtime = True
+        self.enough_core_days = True
         message = ""
 
         # Currently checks hourly runtime, not daily
@@ -308,20 +308,20 @@ class Thermostat(object):
                 .resample("D")
                 .agg(pd.Series.sum, skipna=False)
             )
-            enough_cool_runtime = _enough_runtime(cool_runtime_daily)
+            self.enough_cool_runtime = _enough_runtime(cool_runtime_daily)
         if heat_runtime is not None:
             heat_runtime_daily = (
                 heat_runtime.interpolate(limit=2)
                 .resample("D")
                 .agg(pd.Series.sum, skipna=False)
             )
-            enough_heat_runtime = _enough_runtime(heat_runtime_daily)
+            self.enough_heat_runtime = _enough_runtime(heat_runtime_daily)
 
-        if not (enough_cool_runtime and enough_heat_runtime):
+        if not (self.enough_cool_runtime and self.enough_heat_runtime):
             message += "Not enough runtime for thermostat\n"
-            if not enough_heat_runtime:
+            if not self.enough_heat_runtime:
                 message += "(Heat runtime has over 5% missing data)\n"
-            if not enough_cool_runtime:
+            if not self.enough_cool_runtime:
                 message += "(Cool runtime has over 5% missing data)\n "
 
         if self.has_heating:
@@ -336,7 +336,7 @@ class Thermostat(object):
                 ENFORCE_MINIMUM_CORE_DAYS
                 and self.core_heating_days_total < minimum_heating_core_days
             ):
-                enough_core_days = False
+                self.enough_core_days = False
                 message += f"Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}\n"
 
         if self.has_cooling:
@@ -351,10 +351,10 @@ class Thermostat(object):
                 ENFORCE_MINIMUM_CORE_DAYS
                 and self.core_cooling_days_total < minimum_cooling_core_days
             ):
-                enough_core_days = False
+                self.enough_core_days = False
                 message += f"Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}\n"
 
-        if not ((enough_cool_runtime and enough_heat_runtime) or enough_core_days):
+        if not ((self.enough_cool_runtime and self.enough_heat_runtime) or self.enough_core_days):
             raise InsufficientDataError(message)
 
         logging.debug(
