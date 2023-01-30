@@ -13,6 +13,7 @@ from .fixtures.single_stage import (
         thermostat_bad_equipment_type,
         thermostat_missing_days,
         thermostat_missing_hours,
+        thermostat_mostly_missing_days,
         thermostat_missing_over_18_days_temperature,
         thermostat_missing_temperature,
         thermostat_type_1,
@@ -124,7 +125,11 @@ def test_missing_temperature_hours(thermostat_missing_temperature):
 
 def test_missing_days(thermostat_missing_days):
     # Checking what happens
-    assert len(thermostat_missing_days) == 0
+    assert len(thermostat_missing_days) == 1
+
+def test_mostly_missing_days(thermostat_mostly_missing_days):
+    # Checking what happens
+    assert len(thermostat_mostly_missing_days) == 0
 
 def test_bad_zipcode(thermostat_type_1_zip_bad):
     assert len(thermostat_type_1_zip_bad) == 0
@@ -140,9 +145,6 @@ def test_climate_zone_not_found(thermostat_type_1_climate_zone_not_found):
 
 def test_data_out_of_order(thermostat_type_1_data_out_of_order):
     assert len(thermostat_type_1_data_out_of_order) == 0
-
-def test_data_missing_headers(thermostat_type_1_data_missing_header):
-    assert len(thermostat_type_1_data_missing_header) == 0
 
 def test_data_missing_headers(thermostat_type_1_data_missing_header):
     assert len(thermostat_type_1_data_missing_header) == 0
