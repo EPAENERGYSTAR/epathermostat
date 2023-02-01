@@ -1,3 +1,12 @@
+import json
+import warnings
+import pandas as pd
+import dateutil.parser
+import os
+import pytz
+from multiprocessing import Pool, cpu_count
+from functools import partial
+import logging
 from thermostat.core import Thermostat
 from thermostat.equipment_type import (
     has_heating,
@@ -11,21 +20,12 @@ from thermostat.equipment_type import (
     first_stage_capacity_ratio,
     )
 
-import pandas as pd
 from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
 from eeweather.exceptions import ISDDataNotAvailableError
-import json
-
-import warnings
-import dateutil.parser
-import os
-import pytz
-from multiprocessing import Pool, cpu_count
-from functools import partial
-import logging
+from thermostat.core import InsufficientDataError
 
 try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
@@ -33,8 +33,6 @@ except AttributeError:
     NUMBER_OF_CORES = cpu_count()
 MAX_FTP_CONNECTIONS = 3
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
-
-ENABLE_ENOUGH_RUNTIME_CHECK = True
 
 logger = logging.getLogger(__name__)
 warnings.simplefilter('module', Warning)
@@ -284,7 +282,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
         errors.append(
-            "A sufficient source of outdoor weather data could not"
+            "A sufficient source of outdoor weather data could not "
             f"be located for ZIP code {row.zipcode}: {e}"
             )
 
@@ -292,7 +290,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
         errors.append(
             f"NCDC does not have any data: {e}")
 
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError, KeyError, InsufficientDataError) as e:
         errors.append(
             f"{e}")
 
@@ -390,26 +388,6 @@ def get_single_thermostat(thermostat_id, zipcode,
     auxiliary_heat_runtime, emergency_heat_runtime = _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)
     cool_runtime = _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_index)
     heat_runtime = _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)
-
-    # Give the thermostats the benefit of the doubt (especially if the runtime is None)
-    enough_cool_runtime = True
-    enough_heat_runtime = True
-
-    # Currently checks hourly runtime, not daily
-    if cool_runtime is not None:
-        cool_runtime_daily = cool_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
-        enough_cool_runtime = _enough_runtime(cool_runtime_daily)
-    if heat_runtime is not None:
-        heat_runtime_daily = heat_runtime.interpolate(limit=2).resample('D').agg(pd.Series.sum, skipna=False)
-        enough_heat_runtime = _enough_runtime(heat_runtime_daily)
-
-    if not(enough_cool_runtime and enough_heat_runtime):
-        message = "Not enough runtime for thermostat "
-        if not enough_heat_runtime:
-            message += "(Heat runtime has over 5% missing data) "
-        if not enough_cool_runtime:
-            message += "(Cool runtime has over 5% missing data) "
-        raise ValueError(message)
 
     # create thermostat instance
     thermostat = Thermostat(
@@ -511,16 +489,3 @@ def _create_series(df, index):
     series = df
     series.index = index
     return series
-
-
-def _enough_runtime(series):
-    if series is None:
-        return False
-
-    if ENABLE_ENOUGH_RUNTIME_CHECK is False:
-        # Don't bother checking; we're good
-        return True
-
-    num_elements = len(series)
-    num_valid_elements = len(series.dropna())
-    return (num_valid_elements / num_elements) > 0.95
