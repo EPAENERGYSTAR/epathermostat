@@ -12,6 +12,8 @@ from thermostat.util.testing import get_data_path
 from .fixtures.single_stage import (
         thermostat_bad_equipment_type,
         thermostat_missing_days,
+        thermostat_missing_days_heating,
+        thermostat_missing_days_cooling,
         thermostat_missing_hours,
         thermostat_mostly_missing_days,
         thermostat_missing_over_18_days_temperature,
@@ -124,11 +126,15 @@ def test_missing_temperature_hours(thermostat_missing_temperature):
     assert thermostat_missing_temperature.enough_temp_out['2012-06-26'] == True
 
 def test_missing_days(thermostat_missing_days):
-    # Checking what happens
     assert len(thermostat_missing_days) == 1
 
+def test_missing_days_heating(thermostat_missing_days_heating):
+    assert len(thermostat_missing_days_heating) == 1
+
+def test_missing_days_cooling(thermostat_missing_days_cooling):
+    assert len(thermostat_missing_days_cooling) == 1
+
 def test_mostly_missing_days(thermostat_mostly_missing_days):
-    # Checking what happens
     assert len(thermostat_mostly_missing_days) == 0
 
 def test_bad_zipcode(thermostat_type_1_zip_bad):

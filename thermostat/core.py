@@ -358,8 +358,18 @@ class Thermostat(object):
         logging.debug(
             f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days"
         )
-        enough_runtime = self.enough_cool_runtime and self.enough_heat_runtime
-        enough_core_days = self.enough_cool_core_days and self.enough_heat_core_days
+        enough_runtime = False
+        enough_core_days = False
+        if self.has_cooling and self.has_heating:
+            enough_runtime = self.enough_cool_runtime and self.enough_heat_runtime
+            enough_core_days = self.enough_cool_core_days and self.enough_heat_core_days
+        elif self.has_heating:
+            enough_runtime = self.enough_heat_runtime
+            enough_core_days = self.enough_heat_core_days
+        elif self.has_cooling:
+            enough_runtime = self.enough_cool_runtime
+            enough_core_days = self.enough_cool_core_days
+
         if not (enough_runtime or enough_core_days):
             raise InsufficientDataError(message)
 
