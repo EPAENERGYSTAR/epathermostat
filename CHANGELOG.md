@@ -18,6 +18,7 @@
 * Updated logic to use ZIP Code for weather station lookup and climate zone lookup
 * Updated Climate Zone lookup strategy
 * Added minimum 30 thermostats per climate zone
+* Added checks for 95% of data being present _or_ 50 core days (heating and cooling).
 
 ## Production releases
 
