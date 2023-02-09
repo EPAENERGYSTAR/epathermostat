@@ -165,7 +165,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None,):
+             cache_path=None, top_n=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -207,6 +207,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
             "interval_data_filename": str
         }
     )
+    if top_n is not None:
+        metadata = metadata[:top_n]
     metadata.fillna('', inplace=True)
     metadata.columns = map(str.lower, metadata.columns)
     if not METADATA_COLUMNS.issubset(metadata.columns):
