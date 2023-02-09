@@ -23,7 +23,7 @@ from thermostat.equipment_type import (
         )
 
 save_tau_search = True
-tau_search_path = '/Users/ethan/Documents/Resilient Edge/Projects/ICF - Energy Star connected thermostats/epathermostat_code/tau-search-2/tau_search_stats/'
+tau_search_path = '/home/craig/projects/epathermostat/tests/data/tau'
 import os
 test_df = pd.DataFrame([1, 2])
 test_df.to_csv(os.path.join(tau_search_path, 'test_load.csv'))
@@ -900,8 +900,7 @@ class Thermostat(object):
                 tau_stats.set_index('tau', inplace=True)
                 tau_stats.loc[:, 'is_best_tau'] = False
                 tau_stats.loc[best_tau, 'is_best_tau'] = True
-
-                logger.warning(self.thermostat_id)
+                logger.warning(f'cool {self.thermostat_id}')
                 tau_stats.to_csv(os.path.join(tau_search_path, f'{self.thermostat_id}.csv'))
             else:
                 print('not saving tau stats')
@@ -1055,8 +1054,8 @@ class Thermostat(object):
                 logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
                              f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
-            test_df.to_csv(os.path.join(tau_search_path, 'test_pre_heat.csv'))
-            logger.warning('heat', self.thermostat_id)
+            test_df.to_csv(os.path.join(tau_search_path, f'{self.thermostat_id}_test_pre_heat.csv'))
+            logger.warning(f'heat {self.thermostat_id}')
             return best_tau, best_alpha, best_errors
 
         try:
