@@ -45,5 +45,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 Contact
 -------
 
-Please feel free to reach out to either Abhishek Jathar
+Please feel free to reach out to Abhishek Jathar
 (Abhishek.Jathar@icf.com) with questions or for technical support.
