@@ -46,5 +46,4 @@ Contact
 -------
 
 Please feel free to reach out to either Abhishek Jathar
-(Abhishek.Jathar@icf.com) or Craig Maloney (craig@intellovations.com) with
-questions or for technical support.
+(Abhishek.Jathar@icf.com) with questions or for technical support.
