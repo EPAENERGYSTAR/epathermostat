@@ -3,6 +3,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+""""
+DIRECTIONS
+in thermostats/core.py, set the variable "save_tau_stats" to True
+in scripts/write_stats.py
+    set the data_dir path to the location of the raw csv data
+    set the metadata_path
+    set the output_dir to a new location (don't overwrite your old outputs!)
+    set top_n to None if you want to run the full batch, or keep it set to a small number for testing
+run scripts/write_stats.py (takes a while)
+in scripts/analyze_tau_stats.py
+    set the data_dir path to the location of the raw csv data
+    set results_old_path to the location of the old (pre tau-friendly) metrics file
+    set results_path to match the METRICS_FILEPATH in write_stats.py
+run scripts/analyze_tau_stats.py
+look in tau_stats_plots directory for the plots and comparison csv file
+"""
+
 
 debug = False
 # configure paths
