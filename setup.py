@@ -27,5 +27,6 @@ setup(name='thermostat',
         'scipy',
         'sqlalchemy',
         'zipcodes==1.2.0',
+    	'matplotlib==3.4.2',
         ],
 )
