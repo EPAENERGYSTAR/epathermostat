@@ -42,6 +42,8 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             message = "Cannot have batches_dir==None when zip_files==True. " \
                     "Please supply a directory in which to save batches."
             raise ValueError(message)
+    
+    metadata_filename = Path(metadata_filename)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
     stations = [get_closest_station_by_zipcode(zipcode) for zipcode in metadata_df.zipcode]
@@ -79,7 +81,7 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
     batch_dfs = [pd.DataFrame(rows) for rows in batches]
 
     if zip_files:
-
+        batches_dir = Path(batches_dir)
         batches_dir.mkdir(exist_ok=True)
 
         batch_zipfile_names = []

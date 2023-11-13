@@ -253,7 +253,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print(f"Importing thermostat {row.thermostat_id}")
 
-    interval_data_filename = metadata_filename.parents[0] / row.interval_data_filename
+    interval_data_filename = Path(metadata_filename).parents[0] / row.interval_data_filename
 
     status_metadata = {
         'thermostat_id': row.thermostat_id,
