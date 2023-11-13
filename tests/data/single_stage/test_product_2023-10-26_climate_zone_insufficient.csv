@@ -1,6 +1,0 @@
-climate_zone,count,error
-Very-Cold/Cold,10,Very-Cold/Cold Climate Zone only has 10 thermostats out of a required 30 thermostats.
-Mixed-Humid,4,Mixed-Humid Climate Zone only has 4 thermostats out of a required 30 thermostats.
-Mixed-Dry/Hot-Dry,22,Mixed-Dry/Hot-Dry Climate Zone only has 22 thermostats out of a required 30 thermostats.
-Hot-Humid,6,Hot-Humid Climate Zone only has 6 thermostats out of a required 30 thermostats.
-Marine,13,Marine Climate Zone only has 13 thermostats out of a required 30 thermostats.
