@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import logging
 import logging.config
 import json
@@ -51,8 +51,8 @@ CACHE_PATH = None  # Replace with location to save the weather cache files (e.g.
 # data in the same file.
 
 # Single Stage
-DATA_DIR = os.path.join('..', 'tests', 'data', 'single_stage')
-METADATA_FILENAME = os.path.join(DATA_DIR, 'metadata.csv')
+DATA_DIR = Path('../../datadir/EPA_Tau')
+METADATA_FILENAME = DATA_DIR / '2019_epa_tau.csv'
 
 # Two Stage
 # DATA_DIR = os.path.join('..', 'tests', 'data', 'two_stage')
@@ -81,15 +81,14 @@ CLIMATE_ZONE_INSUFFICIENT_FILENAME = f'{BASE_FILENAME}_climate_zone_insufficient
 ZIP_FILENAME = f'{BASE_FILENAME}.zip'
 
 # These are the locations of where these files will be stored.
-METRICS_FILEPATH = os.path.join(OUTPUT_DIR, METRICS_FILENAME)
-STATS_FILEPATH = os.path.join(DATA_DIR, STATISTICS_FILENAME)
-CERTIFICATION_FILEPATH = os.path.join(DATA_DIR, CERTIFICATION_FILENAME)
-STATS_ADVANCED_FILEPATH = os.path.join(DATA_DIR, ADVANCED_STATISTICS_FILENAME)
-IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, IMPORT_ERRORS_FILENAME)
-SANITIZED_IMPORT_ERRORS_FILEPATH = os.path.join(OUTPUT_DIR, SANITIZED_IMPORT_ERRORS_FILENAME)
-CLIMATE_ZONE_INSUFFICIENT_FILEPATH = os.path.join(OUTPUT_DIR, CLIMATE_ZONE_INSUFFICIENT_FILENAME)
-ZIP_FILEPATH = os.path.join(OUTPUT_DIR, ZIP_FILENAME)
-
+METRICS_FILEPATH = OUTPUT_DIR / METRICS_FILENAME
+STATS_FILEPATH = DATA_DIR / STATISTICS_FILENAME
+CERTIFICATION_FILEPATH = DATA_DIR / CERTIFICATION_FILENAME
+STATS_ADVANCED_FILEPATH = DATA_DIR / ADVANCED_STATISTICS_FILENAME
+IMPORT_ERRORS_FILEPATH = OUTPUT_DIR / IMPORT_ERRORS_FILENAME
+SANITIZED_IMPORT_ERRORS_FILEPATH = OUTPUT_DIR / SANITIZED_IMPORT_ERRORS_FILENAME
+CLIMATE_ZONE_INSUFFICIENT_FILEPATH = OUTPUT_DIR / CLIMATE_ZONE_INSUFFICIENT_FILENAME
+ZIP_FILEPATH = OUTPUT_DIR / ZIP_FILENAME
 
 def write_errors(filepath, fieldnames, errors, extrasaction=None):
     with open(filepath, 'w') as error_file:
@@ -202,9 +201,8 @@ def main():
 
     with ZipFile(ZIP_FILEPATH, 'w') as certification_zip:
         for filename in files_to_zip:
-            if os.path.exists(filename):
-                certification_zip.write(filename, arcname=os.path.basename(filename))
-
+            if filename.exists():
+                certification_zip.write(filename, arcname=filename.name)
 
 if __name__ == '__main__':
     main()
