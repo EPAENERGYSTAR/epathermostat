@@ -51,6 +51,7 @@ BASELINE_REGIONAL_COMFORT_CHECK_NONE = [
 
 
 def test_rhu_formatting(thermostat_type_1):
+    print(thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None), thermostat_type_1._format_rhu('rhu1', 55, np.inf, None), thermostat_type_1._format_rhu('rhu1', 30, 45, None), thermostat_type_1._format_rhu('rhu2', 5, 10, 'aux_duty_cycle'))
     assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
     assert('rhu1_greater55F' == thermostat_type_1._format_rhu('rhu1', 55, np.inf, None))
     assert('rhu1_30F_to_45F' == thermostat_type_1._format_rhu('rhu1', 30, 45, None))

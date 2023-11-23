@@ -205,6 +205,6 @@ def main():
             if os.path.exists(filename):
                 certification_zip.write(filename, arcname=os.path.basename(filename))
 
-
+# temp comment to run a comparison on github with.
 if __name__ == '__main__':
     main()
