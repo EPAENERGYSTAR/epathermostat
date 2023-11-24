@@ -51,6 +51,7 @@ BASELINE_REGIONAL_COMFORT_CHECK_NONE = [
 
 
 def test_rhu_formatting(thermostat_type_1):
+    assert sum(1 for _ in thermostat_type_1) == 4
     try:
         assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
     except StopIteration as e:
