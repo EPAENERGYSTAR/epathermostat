@@ -70,3 +70,4 @@ urllib3==1.26.6
     #   requests
 zipcodes==1.2.0
     # via -r requirements.txt
+loguru==0.7.2
