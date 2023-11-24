@@ -51,10 +51,22 @@ BASELINE_REGIONAL_COMFORT_CHECK_NONE = [
 
 
 def test_rhu_formatting(thermostat_type_1):
-    assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
-    assert('rhu1_greater55F' == thermostat_type_1._format_rhu('rhu1', 55, np.inf, None))
-    assert('rhu1_30F_to_45F' == thermostat_type_1._format_rhu('rhu1', 30, 45, None))
-    assert('rhu2_05F_to_10F_aux_duty_cycle' == thermostat_type_1._format_rhu('rhu2', 5, 10, 'aux_duty_cycle'))
+    try:
+        assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
+    except StopIteration as e:
+        raise e("ended at rhu1_less05F")
+    try:
+        assert('rhu1_greater55F' == thermostat_type_1._format_rhu('rhu1', 55, np.inf, None))
+    except StopIteration as e:
+        raise e("ended at rhu1_greater55F")
+    try:
+        assert('rhu1_30F_to_45F' == thermostat_type_1._format_rhu('rhu1', 30, 45, None))
+    except StopIteration as e:
+        raise e("ended at rhu1_30F_to_45F")
+    try:
+        assert('rhu2_05F_to_10F_aux_duty_cycle' == thermostat_type_1._format_rhu('rhu2', 5, 10, 'aux_duty_cycle'))
+    except StopIteration as e:
+        raise e("ended at rhu1_30F_to_45F")
 
 def test_pandas_warnings(thermostat_type_1):
     with pytest.warns(Warning):
