@@ -7,7 +7,7 @@ from datetime import date
 
 if __name__ == '__main__':
 
-    tau_save_path = Path('/home/theurerjohn3/Documents/energystar/epa5/datadir/attempt1')
+    tau_save_path = Path('../datadir/attempt1')
 
     # This section finds the metadata files and data files for the thermostats.
     # These point to examples of the various styles of files
