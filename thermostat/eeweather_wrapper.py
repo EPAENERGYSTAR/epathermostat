@@ -57,10 +57,9 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     years = sorted(index.groupby(index.year).keys())
     start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
     end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
-    try:
-        tempC, _ = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
-    except eeweather.exceptions.NonUTCTimezoneInfoError as e:
-        raise e(f'start: {start}, end: {end}, usaf_id: {usaf_id}')
+    raise e(f'start: {start}, end: {end}, usaf_id: {usaf_id}')
+    tempC, _ = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
+    
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF
