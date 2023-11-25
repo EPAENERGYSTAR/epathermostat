@@ -96,7 +96,6 @@ def test_missing_runtime_hours(thermostat_missing_hours):
 
 def test_missing_temperature_over_18_days(thermostat_missing_over_18_days_temperature):
     # Show that thermostats with temperature_in data of over 18 days missing are still created
-    raise Exception(thermostat_missing_over_18_days_temperature.enough_temp_in[thermostat_missing_over_18_days_temperature.enough_temp_in])
     assert len(thermostat_missing_over_18_days_temperature.enough_temp_in[thermostat_missing_over_18_days_temperature.enough_temp_in]) < 347
 
 def test_missing_temperature_hours(thermostat_missing_temperature):
