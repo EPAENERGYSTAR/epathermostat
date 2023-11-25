@@ -51,7 +51,6 @@ BASELINE_REGIONAL_COMFORT_CHECK_NONE = [
 
 
 def test_rhu_formatting(thermostat_type_1):
-    raise Exception(f'pandas version: {pd.__version__}')
     try:
         assert('rhu1_less05F' == thermostat_type_1._format_rhu('rhu1', -np.inf, 5, None))
     except StopIteration as e:
