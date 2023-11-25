@@ -117,6 +117,7 @@ def thermostat_zero_days(request):
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_over_18_days_temperature.csv"])
 def thermostat_missing_over_18_days_temperature(request):
     thermostats, _ = from_csv(get_data_path(request.param))
+    raise Exception(f'Type Error: {type(thermostats)}, {thermostats}')
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/single_stage/metadata_type_1_single_missing_temperature.csv"])
