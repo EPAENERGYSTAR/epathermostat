@@ -22,7 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel flake8
         pip install -r dev-requirements.txt
-        pip install -e .
+        pip install -r requirements.txt
     - name: Prime Cache
       run: |
         mkdir $HOME/.eeweather
