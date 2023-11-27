@@ -3,7 +3,7 @@ import csv
 import glob
 import os
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 FIELDNAMES = [
         "thermostat_id",
