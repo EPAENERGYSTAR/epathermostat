@@ -165,7 +165,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None, top_n=None, tau_search_path=None):
+             cache_path=None, top_n=None, tau_search_path=''):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -248,11 +248,13 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         else:
             results.append(result['thermostat'])
 
+    if len(results) == 0:
+        raise Exception(f'Problem with result length: value is {len(results)}. See error list {error_list}')
     # Convert this to an iterator to maintain compatibility
     return iter(results), error_list
 
 
-def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None, tau_search_path=None):
+def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None, tau_search_path=''):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
     _, row = metadata
@@ -260,7 +262,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print(f"Importing thermostat {row.thermostat_id}")
 
-    interval_data_filename = metadata_filename.parents[0] / row.interval_data_filename
+    interval_data_filename = Path(metadata_filename).parents[0] / row.interval_data_filename
 
     status_metadata = {
         'thermostat_id': row.thermostat_id,

@@ -193,7 +193,7 @@ class Thermostat(object):
             temperature_in, temperature_out,
             cool_runtime, heat_runtime,
             auxiliary_heat_runtime, emergency_heat_runtime,
-            tau_search_path=None):
+            tau_search_path=''):
 
         self.thermostat_id = thermostat_id
 
