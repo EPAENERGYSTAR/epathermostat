@@ -32,6 +32,6 @@ jobs:
         C:\Miniconda\condabin\conda.bat activate base
         C:\Miniconda\condabin\conda.bat install pytest pytest-cov coverage mock pip
         C:\Miniconda\condabin\conda.bat install -c conda-forge shapely
-        pip install -e .
+        pip install -r requirements.txt
         pytest
 
