@@ -14,8 +14,6 @@ from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_
 # These are variables used in the example code. Please tailor these to your
 # environment as needed.
 
-# This comment here is just a change to test github's CI.
-
 # Whether to compute Advanced Statistics (in most cases this is NOT needed)
 ADVANCED_STATS = False
 
