@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import uuid
-import os
+from pathlib import Path
 
 # Number of thermostat IDs to generate
 NUM_THERMOSTATS = 200
@@ -14,7 +14,7 @@ CLIMATE_ZONES = [
 ]
 
 # Change this file path to a different location if you wish to save the files
-FILE_PATH = '/tmp'
+FILE_PATH = Path('/tmp')
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
     """
     for climate_zone in CLIMATE_ZONES:
         climate_zone_filename = climate_zone + '.csv'
-        with open(os.path.join(FILE_PATH, climate_zone_filename), 'w') as thermostat_file:
+        with open((FILE_PATH /climate_zone_filename), 'w') as thermostat_file:
             for _ in range(0, NUM_THERMOSTATS):
                 thermostat_id = uuid.uuid4()
                 thermostat_file.write(str(thermostat_id) + '\n')

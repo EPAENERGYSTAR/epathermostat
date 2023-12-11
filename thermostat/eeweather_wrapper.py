@@ -1,6 +1,6 @@
-from datetime import datetime
+import datetime
 import eeweather
-
+import pytz
 import pandas as pd
 
 # This routine is a compact and distilled version of code that was originally
@@ -55,9 +55,10 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     if index.shape == (0, 0) or index.shape == (0,):
         return pd.Series([], index=(), dtype=float)
     years = sorted(index.groupby(index.year).keys())
-    start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
-    end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
+    start = pd.to_datetime(datetime.datetime(years[0], 1, 1, tzinfo=pytz.UTC))
+    end = pd.to_datetime(datetime.datetime(years[-1], 12, 31, 23, 59, tzinfo=pytz.UTC))
     tempC, _ = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
+    
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF

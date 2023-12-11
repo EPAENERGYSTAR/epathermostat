@@ -2,6 +2,7 @@ import json
 import warnings
 import pandas as pd
 import dateutil.parser
+from pathlib import Path
 import os
 import pytz
 from multiprocessing import Pool, cpu_count
@@ -112,17 +113,15 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
         json_cache[filename] = sqlite_json_store.retrieve_json(base_name)
 
     if cache_path is None:
-        directory = os.path.join(
-            os.curdir,
-            "epathermostat_weather_data")
+        directory = Path.cwd() / "epathermostat_weather_data"
     else:
-        directory = os.path.normpath(
+        directory = Path(
             cache_path)
 
     thermostat_filename = f"{thermostat_id}.json"
-    thermostat_path = os.path.join(directory, thermostat_filename)
+    thermostat_path = directory /thermostat_filename
     try:
-        os.makedirs(os.path.dirname(directory), exist_ok=True)
+        directory.mkdir(exist_ok=True)
         with open(thermostat_path, 'w') as outfile:
             json.dump(json_cache, outfile)
 
@@ -242,7 +241,6 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
             error_list.append(error_dict)
         else:
             results.append(result['thermostat'])
-
     # Convert this to an iterator to maintain compatibility
     return iter(results), error_list
 
@@ -255,7 +253,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print(f"Importing thermostat {row.thermostat_id}")
 
-    interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
+    interval_data_filename = Path(metadata_filename).parents[0] / row.interval_data_filename
 
     status_metadata = {
         'thermostat_id': row.thermostat_id,
