@@ -40,7 +40,7 @@ CLIMATE_ZONE_MAPPING = {
     }
 
 WEIGHTS = pd.read_csv(
-    Path("Resources") / "NationalAverageClimateZoneWeightings.csv"
+    Path(__file__).parents[0] / "resources" / "NationalAverageClimateZoneWeightings.csv"
     ).set_index('climate_zone')
 HEATING_CLIMATE_ZONE_WEIGHTS = WEIGHTS["heating_weight"].to_dict()
 
