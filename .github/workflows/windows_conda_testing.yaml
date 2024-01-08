@@ -34,5 +34,5 @@ jobs:
         C:\Miniconda\condabin\conda.bat install -c conda-forge shapely
         pip install --upgrade pip
         pip install -r requirements.txt
-        pytest
+        py.test
 
