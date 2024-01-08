@@ -1,6 +1,6 @@
 climate_zone,heating_weight,cooling_weight
-Very-Cold/Cold,0.549,0.096
-Mixed-Humid,0.312,0.340
-Mixed-Dry/Hot-Dry,0.054,0.144
-Hot-Humid,0.049,0.420
-Marine,0.036,0.000
+very-cold_cold,0.564,0.194
+mixed-humid,0.294,0.311
+mixed-dry_hot-dry,0.051,0.137
+hot-humid,0.054,0.345
+marine,0.037,0.013

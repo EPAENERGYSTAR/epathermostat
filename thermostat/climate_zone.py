@@ -5,6 +5,7 @@ from collections import namedtuple
 from eeweather.geo import get_lat_long_climate_zones
 import numpy as np
 import logging
+from pathlib import Path
 
 logger = logging.getLogger('epathermostat')
 
@@ -38,20 +39,12 @@ CLIMATE_ZONE_MAPPING = {
     'Mixed-Dry': 'Mixed-Dry/Hot-Dry',
     }
 
+WEIGHTS = pd.read_csv(
+    Path(__file__).parents[0] / "resources" / "NationalAverageClimateZoneWeightings.csv"
+    ).set_index('climate_zone')
+HEATING_CLIMATE_ZONE_WEIGHTS = WEIGHTS["heating_weight"].to_dict()
 
-HEATING_CLIMATE_ZONE_WEIGHTS = {
-    'very-cold_cold': 0.549,
-    'mixed-humid': 0.312,
-    'mixed-dry_hot-dry': 0.054,
-    'hot-humid': 0.049,
-    'marine': 0.036}
-
-COOLING_CLIMATE_ZONE_WEIGHTS = {
-    'very-cold_cold': 0.096,
-    'mixed-humid': 0.34,
-    'mixed-dry_hot-dry': 0.144,
-    'hot-humid': 0.42,
-    'marine': 0.0}
+COOLING_CLIMATE_ZONE_WEIGHTS = WEIGHTS["cooling_weight"].to_dict()
 
 
 def retrieve_climate_zone(zipcode):
