@@ -31,7 +31,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       with:
-        python-version: '3.8'
+        python-version: 3.8
       run: |
         # Activate the base environment
         C:\Miniconda\condabin\conda.bat activate base
