@@ -27,7 +27,7 @@ idna==3.2
     # via
     #   -r requirements.txt
     #   requests
-numpy==1.21.2
+numpy==1.22.4
     # via
     #   -r requirements.txt
     #   pandas
