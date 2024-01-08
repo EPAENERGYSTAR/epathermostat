@@ -33,6 +33,6 @@ jobs:
         C:\Miniconda\condabin\conda.bat install pytest pytest-cov coverage mock pip
         C:\Miniconda\condabin\conda.bat install -c conda-forge shapely
         pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.conda.txt
         py.test
 
