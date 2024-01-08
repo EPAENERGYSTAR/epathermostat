@@ -248,8 +248,6 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         else:
             results.append(result['thermostat'])
 
-    if len(results) == 0:
-        raise Exception(f'Problem with result length: value is {len(results)}. See error list {error_list}')
     # Convert this to an iterator to maintain compatibility
     return iter(results), error_list
 
