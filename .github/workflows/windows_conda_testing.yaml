@@ -26,6 +26,9 @@ jobs:
         C:\Miniconda\condabin\conda.bat init powershell
         python --version
     - name: Lint with flake8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
       run: |
         # Activate the base environment
         python --version
@@ -40,6 +43,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         python --version
     - name: Test with pytest
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
       run: |
         # Activate the base environment
         python --version
