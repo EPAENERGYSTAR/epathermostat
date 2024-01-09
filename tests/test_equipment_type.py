@@ -12,6 +12,7 @@ from thermostat.equipment_type import (
     validate_heat_stage,
     validate_cool_stage,
     first_stage_capacity_ratio,
+    is_line_voltage,
     )
 
 
@@ -41,6 +42,7 @@ def test_has_heating():
         'furnace_or_boiler',  # Non heat pump heating (gas or oil furnace, electric resistance)
         'heat_pump_electric_backup',   # Heat pump with electric resistance heat (strip heat)
         'heat_pump_no_electric_backup',  # Heat pump without electric resistance heat
+        'electric_resistance',  # Electric Resistance (Line-voltage thermostat)
     ]:
         assert(has_heating(i) is True)
     for i in [
@@ -110,6 +112,11 @@ def test_has_resistance_heat():
     assert(has_resistance_heat('heat_pump_electric_backup') is True)
     assert(has_resistance_heat('heat_pump_no_electric_backup') is False)
     assert(has_resistance_heat('heat_pump_dual_fuel') is False)
+
+
+def test_is_line_voltage():
+    assert(is_line_voltage('electric_resistance') is True)
+    assert(is_line_voltage('heat_pump_dual_fuel') is False)
 
 
 def test_ratio():

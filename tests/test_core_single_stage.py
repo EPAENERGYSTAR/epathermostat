@@ -99,7 +99,7 @@ def test_multiple_same_key(thermostats_multiple_same_key):
 def test_interpolate_empty(thermostat_type_1):
     s1 = pd.Series([])
     s1_intp = thermostat_type_1._interpolate(s1)
-    np.testing.assert_allclose(s1_intp, [])
+    np.testing.assert_allclose(s1_intp.astype(float), [])
 
 
 def test_interpolate_full(thermostat_type_1):

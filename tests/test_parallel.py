@@ -2,6 +2,7 @@ from thermostat.parallel import schedule_batches
 from thermostat.equipment_type import EQUIPMENT_MAPPING
 
 import os
+from pathlib import Path
 import tempfile
 import zipfile
 from uuid import uuid4

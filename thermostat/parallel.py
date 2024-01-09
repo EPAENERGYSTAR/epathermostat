@@ -46,6 +46,8 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             raise ValueError(message)
         else:
             batches_dir = Path(batches_dir)
+    
+    metadata_filename = Path(metadata_filename)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
     stations = [get_closest_station_by_zipcode(zipcode) for zipcode in metadata_df.zipcode]
@@ -83,7 +85,7 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
     batch_dfs = [pd.DataFrame(rows) for rows in batches]
 
     if zip_files:
-
+        batches_dir = Path(batches_dir)
         batches_dir.mkdir(exist_ok=True)
 
         batch_zipfile_names = []
@@ -97,11 +99,11 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             batch_df.to_csv(fname, index=False)
 
             with ZipFile(batch_zipfile_name, 'w') as batch_zip:
-                batch_zip.write(fname, arcname=(Path('data')/'metadata.csv'))
+                batch_zip.write(fname, arcname=Path('data') / 'metadata.csv')
 
                 for filename in batch_df.interval_data_filename:
                     interval_data_source = metadata_filename.parents[0] / filename
-                    batch_zip.write(interval_data_source, arcname=(Path('data') / filename))
+                    batch_zip.write(interval_data_source, arcname=Path('data') / filename)
 
         return batch_zipfile_names
 

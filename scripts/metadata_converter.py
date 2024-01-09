@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import csv
 import glob
-import os
+from pathlib import Path
 
 from datetime import datetime
 
@@ -36,7 +36,7 @@ def main():
 
     for filename in glob.iglob('metadata*.csv'):
         input_filename = filename
-        output_filename = os.path.join("new", filename)
+        output_filename = Path("new") / filename
         with open(output_filename, 'w') as outfile:
             csv_out = csv.DictWriter(outfile, FIELDNAMES)
             csv_out.writeheader()
