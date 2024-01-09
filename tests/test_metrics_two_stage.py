@@ -3,7 +3,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 import tempfile
-
 import pytest
 
 from thermostat.exporters import metrics_to_csv

@@ -12,6 +12,7 @@ from scipy.stats import randint
 import random
 
 import pytest
+from pathlib import Path
 
 @pytest.fixture
 def metadata_filename():
@@ -102,7 +103,7 @@ def test_schedule_batches_zip_files(metadata_filename):
     batch_zipfile_names = schedule_batches(metadata_filename, 5, True, temp_dir)
 
     assert len(batch_zipfile_names) == 5
-    assert isinstance(batch_zipfile_names[0], str)
+    assert isinstance(batch_zipfile_names[0], Path)
 
     with zipfile.ZipFile(batch_zipfile_names[0]) as zf:
         assert len(zf.infolist()) == 21

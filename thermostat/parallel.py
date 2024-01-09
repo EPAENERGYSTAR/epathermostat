@@ -37,6 +37,8 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
 
     """
 
+    metadata_filename = Path(metadata_filename)
+
     if zip_files:
         if batches_dir is None:
             message = "Cannot have batches_dir==None when zip_files==True. " \
