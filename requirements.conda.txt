@@ -27,7 +27,7 @@ idna==3.2
     # via
     #   -r requirements.txt
     #   requests
-numpy==1.22.4
+numpy==1.21.0
     # via
     #   -r requirements.txt
     #   pandas
@@ -48,7 +48,7 @@ requests==2.26.0
     # via
     #   -r requirements.txt
     #   eeweather
-scipy==1.7.1
+scipy==1.11.1
     # via -r requirements.txt
 shapely==1.7.1
     # via

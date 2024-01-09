@@ -3,7 +3,7 @@ from collections import defaultdict
 from itertools import cycle
 from zipfile import ZipFile
 import tempfile
-import os
+from pathlib import Path
 from thermostat.stations import get_closest_station_by_zipcode
 
 
@@ -37,11 +37,15 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
 
     """
 
+    metadata_filename = Path(metadata_filename)
+
     if zip_files:
         if batches_dir is None:
             message = "Cannot have batches_dir==None when zip_files==True. " \
                     "Please supply a directory in which to save batches."
             raise ValueError(message)
+        else:
+            batches_dir = Path(batches_dir)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
     stations = [get_closest_station_by_zipcode(zipcode) for zipcode in metadata_df.zipcode]
@@ -80,25 +84,24 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
 
     if zip_files:
 
-        if not os.path.exists(batches_dir):
-            os.makedirs(batches_dir)
+        batches_dir.mkdir(exist_ok=True)
 
         batch_zipfile_names = []
         for i, batch_df in enumerate(batch_dfs):
 
             batch_name = "batch_{:05d}.zip".format(i)
-            batch_zipfile_name = os.path.join(batches_dir, batch_name)
+            batch_zipfile_name = batches_dir / batch_name
             batch_zipfile_names.append(batch_zipfile_name)
 
             _, fname = tempfile.mkstemp()
             batch_df.to_csv(fname, index=False)
 
             with ZipFile(batch_zipfile_name, 'w') as batch_zip:
-                batch_zip.write(fname, arcname=os.path.join('data', 'metadata.csv'))
+                batch_zip.write(fname, arcname=(Path('data')/'metadata.csv'))
 
                 for filename in batch_df.interval_data_filename:
-                    interval_data_source = os.path.join(os.path.dirname(metadata_filename), filename)
-                    batch_zip.write(interval_data_source, arcname=os.path.join('data', filename))
+                    interval_data_source = metadata_filename.parents[0] / filename
+                    batch_zip.write(interval_data_source, arcname=(Path('data') / filename))
 
         return batch_zipfile_names
 

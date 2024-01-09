@@ -26,6 +26,7 @@ import pytz
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import logging
+from pathlib import Path
 
 try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
@@ -113,17 +114,16 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
         json_cache[filename] = sqlite_json_store.retrieve_json(base_name)
 
     if cache_path is None:
-        directory = os.path.join(
-            os.curdir,
-            "epathermostat_weather_data")
+        directory = Path.cwd() / "epathermostat_weather_data"
     else:
-        directory = os.path.normpath(
+        directory = Path(
             cache_path)
 
     thermostat_filename = f"{thermostat_id}.json"
-    thermostat_path = os.path.join(directory, thermostat_filename)
+    thermostat_path = directory /thermostat_filename
+    
     try:
-        os.makedirs(os.path.dirname(directory), exist_ok=True)
+        directory.mkdir(exist_ok=True)
         with open(thermostat_path, 'w') as outfile:
             json.dump(json_cache, outfile)
 
@@ -165,7 +165,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None, top_n=None):
+             cache_path=None, top_n=None, tau_search_path=''):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -227,7 +227,9 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         metadata_filename=metadata_filename,
         verbose=verbose,
         save_cache=save_cache,
-        cache_path=cache_path)
+        cache_path=cache_path,
+        tau_search_path=tau_search_path,
+        )
     result_list = p.imap(multiprocess_func_partial, metadata.iterrows())
     p.close()
     p.join()
@@ -250,7 +252,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
     return iter(results), error_list
 
 
-def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
+def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None, tau_search_path=''):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
     _, row = metadata
@@ -258,7 +260,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print(f"Importing thermostat {row.thermostat_id}")
 
-    interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
+    interval_data_filename = Path(metadata_filename).parents[0] / row.interval_data_filename
 
     status_metadata = {
         'thermostat_id': row.thermostat_id,
@@ -282,6 +284,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             interval_data_filename=interval_data_filename,
             save_cache=save_cache,
             cache_path=cache_path,
+            tau_search_path=tau_search_path,
         )
     except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
@@ -305,7 +308,8 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
 
 def get_single_thermostat(thermostat_id, zipcode,
                           heat_type, heat_stage, cool_type, cool_stage,
-                          utc_offset, interval_data_filename, save_cache=False, cache_path=None):
+                          utc_offset, interval_data_filename, save_cache=False, cache_path=None,
+                          tau_search_path=None):
     """ Load a single thermostat directly from an interval data file.
 
     Parameters
@@ -428,7 +432,8 @@ def get_single_thermostat(thermostat_id, zipcode,
         cool_runtime,
         heat_runtime,
         auxiliary_heat_runtime,
-        emergency_heat_runtime
+        emergency_heat_runtime,
+        tau_search_path=tau_search_path,
     )
     return thermostat
 
