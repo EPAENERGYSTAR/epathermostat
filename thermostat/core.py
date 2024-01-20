@@ -353,16 +353,22 @@ class Thermostat(object):
             ):
                 self.enough_heat_core_days = False
                 message += f"Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}\n"
-
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
-            try:
-                if ENFORCE_MINIMUM_CORE_DAYS and \
-                        self.core_cooling_days_total < MINIMUM_COOLING_CORE_DAYS[self.climate_zone]:
-                    raise InsufficientDataError(f'Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}')
-            except KeyError:
-                raise KeyError(f'Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}')
+            minimum_cooling_core_days = MINIMUM_COOLING_CORE_DAYS.get(self.climate_zone)
+            if minimum_cooling_core_days is None:
+                raise KeyError(
+                    f"Missing climate zone for {self.climate_zone} ZIP Code {self.zipcode}"
+                )
+            if (
+                ENFORCE_MINIMUM_CORE_DAYS
+                and self.core_cooling_days_total < minimum_cooling_core_days
+            ):
+                self.enough_cool_core_days = False
+                message += f"Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}\n"
+
+
         log.debug(f'Tau filepath: {tau_search_path}')
         if not self.tau_search_path is None:
             # save delta-t and runtime dataframes for plotting
