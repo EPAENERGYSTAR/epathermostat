@@ -257,7 +257,7 @@ class Thermostat(object):
 
         if hasattr(cool_runtime, "empty") and cool_runtime.empty is False:
             self.cool_runtime_daily = (
-                cool_runtime.interpolate(limit=2)
+                self._interpolate(cool_runtime)
                 .resample("D")
                 .agg(pd.Series.sum, skipna=False)
             )
@@ -272,7 +272,7 @@ class Thermostat(object):
 
         if hasattr(heat_runtime, "empty") and heat_runtime.empty is False:
             self.heat_runtime_daily = (
-                heat_runtime.interpolate(limit=2)
+                self._interpolate(heat_runtime)
                 .resample("D")
                 .agg(pd.Series.sum, skipna=False)
             )
@@ -305,14 +305,14 @@ class Thermostat(object):
         # Currently checks hourly runtime, not daily
         if cool_runtime is not None:
             cool_runtime_daily = (
-                cool_runtime.interpolate(limit=2)
+                self._interpolate(cool_runtime)
                 .resample("D")
                 .agg(pd.Series.sum, skipna=False)
             )
             self.enough_cool_runtime = _enough_runtime(cool_runtime_daily)
         if heat_runtime is not None:
             heat_runtime_daily = (
-                heat_runtime.interpolate(limit=2)
+                self._interpolate(heat_runtime)
                 .resample("D")
                 .agg(pd.Series.sum, skipna=False)
             )
@@ -321,9 +321,9 @@ class Thermostat(object):
         if not (self.enough_cool_runtime and self.enough_heat_runtime):
             message += "Not enough runtime for thermostat\n"
             if not self.enough_heat_runtime:
-                message += "(Heat runtime has over 5% missing data)\n"
+                message += "(Heat runtime has over 20 missing data)\n"
             if not self.enough_cool_runtime:
-                message += "(Cool runtime has over 5% missing data)\n "
+                message += "(Cool runtime has over 20 missing data)\n "
 
         if self.has_heating:
             self.core_heating_days = self.get_core_heating_days()
@@ -1921,6 +1921,5 @@ def _enough_runtime(series):
         # Don't bother checking; we're good
         return True
 
-    num_elements = len(series)
-    num_valid_elements = len(series.dropna())
-    return (num_valid_elements / num_elements) > 0.95
+    num_invalid_elements = sum(series.isna())
+    return num_invalid_elements <= 20
