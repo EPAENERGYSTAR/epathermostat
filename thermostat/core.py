@@ -6,23 +6,26 @@ import logging
 
 import pandas as pd
 import numpy as np
-from scipy.optimize import leastsq
+from math import sqrt
+from loguru import logger as log
 
 from thermostat import get_version
 from thermostat.climate_zone import BASELINE_TEMPERATURE
 from thermostat.equipment_type import (
-    has_heating,
-    has_cooling,
-    has_auxiliary,
-    has_emergency,
-    has_resistance_heat,
-    validate_heat_type,
-    validate_cool_type,
-    validate_heat_stage,
-    validate_cool_stage,
-)
+        has_heating,
+        has_cooling,
+        has_auxiliary,
+        has_emergency,
+        has_resistance_heat,
+        validate_heat_type,
+        validate_cool_type,
+        validate_heat_stage,
+        validate_cool_stage,
+        )
 
-warnings.simplefilter("module", Warning)
+from pathlib import Path
+
+warnings.simplefilter('module', Warning)
 
 # Ignore divide-by-zero errors
 np.seterr(divide="ignore", invalid="ignore")
@@ -107,6 +110,23 @@ def percent_savings(avoided, baseline, thermostat_id):
     return savings
 
 
+def lin_fit(x_arr, y_arr):
+    """
+    Linear fit for origin-intercept can be estimated as
+    sum of products divided by sum of x-values squared
+    """
+    if type(x_arr) == pd.Series:
+        x_arr = x_arr.values
+    if type(y_arr) == pd.Series:
+        y_arr = y_arr.values
+    x_y = pd.DataFrame({'x_arr': x_arr, 'y_arr': y_arr})
+    # ensure that the arrays are the same size
+    x_y.dropna(inplace=True)
+    x_arr = x_y.x_arr.values
+    y_arr = x_y.y_arr.values
+    slope = np.dot(x_arr, y_arr) / np.dot(x_arr, x_arr)
+    return slope
+
 class InsufficientDataError(Exception):
     def __init__(self, message):
         self.message = message
@@ -179,22 +199,13 @@ class Thermostat(object):
     """
 
     def __init__(
-        self,
-        thermostat_id,
-        heat_type,
-        heat_stage,
-        cool_type,
-        cool_stage,
-        zipcode,
-        station,
-        climate_zone,
-        temperature_in,
-        temperature_out,
-        cool_runtime,
-        heat_runtime,
-        auxiliary_heat_runtime,
-        emergency_heat_runtime,
-    ):
+            self, thermostat_id,
+            heat_type, heat_stage, cool_type, cool_stage,
+            zipcode, station, climate_zone,
+            temperature_in, temperature_out,
+            cool_runtime, heat_runtime,
+            auxiliary_heat_runtime, emergency_heat_runtime,
+            tau_search_path=''):
 
         self.thermostat_id = thermostat_id
 
@@ -205,6 +216,9 @@ class Thermostat(object):
         self.core_heating_days_total = 0
         self.cool_runtime_daily = None
         self.heat_runtime_daily = None
+
+        # Set default tau path
+        self.tau_search_path = Path(tau_search_path)
 
         self.heat_type = heat_type
         self.heat_stage = heat_stage
@@ -339,7 +353,6 @@ class Thermostat(object):
             ):
                 self.enough_heat_core_days = False
                 message += f"Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}\n"
-
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
@@ -355,9 +368,21 @@ class Thermostat(object):
                 self.enough_cool_core_days = False
                 message += f"Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}\n"
 
-        logging.debug(
-            f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days"
-        )
+
+        log.debug(f'Tau filepath: {tau_search_path}')
+        if not self.tau_search_path is None:
+            # save delta-t and runtime dataframes for plotting
+            log.debug("Saving Tau Files")
+            raw_delta_t = self.temperature_out - self.temperature_in
+            delta_t_daily = raw_delta_t.resample('D').mean().dropna()
+            delta_t_daily.columns = ['date', 'delta_t']
+            delta_t_daily.to_csv(self.tau_search_path / f'{self.thermostat_id}_delta_t_daily_mean.csv')
+            if self.cool_runtime_daily is not None:
+                self.cool_runtime_daily.to_csv(self.tau_search_path / f'{self.thermostat_id}_cool_runtime_daily.csv')
+            if self.heat_runtime_daily is not None:
+                self.heat_runtime_daily.to_csv(self.tau_search_path / f'{self.thermostat_id}_heat_runtime_daily.csv')
+
+        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
         enough_runtime = False
         enough_core_days = False
         if self.has_cooling and self.has_heating:
@@ -533,6 +558,9 @@ class Thermostat(object):
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
         meets_thresholds &= self.enough_temp_in & self.enough_temp_out
+
+        # # un-comment to disable thresholds for testing purposes
+        # meets_thresholds = True
 
         data_start_date = np.datetime64(self.heat_runtime_daily.index[0])
         data_end_date = np.datetime64(self.heat_runtime_daily.index[-1])
@@ -975,13 +1003,58 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
 
-        def estimate_errors(tau_estimate):
-            _, _, errors = calc_estimates(tau_estimate)
-            return errors
 
-        tau_starting_guess = 0
+
+        def search_cdd_tau(run_time_array, max_tau=20):
+            """
+            Search for the best fit for tau (x-intercept) from 0 to max_tau,
+            finding the best alpha (slope) at each possible integer tau
+            and returning the alpha and tau that produce the least squared errors
+            """
+            min_sq_err = None
+            best_tau = None
+            best_errors = None
+            best_alpha = None
+            interval_factor = 10
+            tau_stats_list_cool = []
+            # NOTE: trying search from -5 F
+            for interval in range(-5 * interval_factor, max_tau * interval_factor + 1):
+                tau = interval / interval_factor
+                # remove tau double-counting
+                shifted_deg_days_array = calc_cdd(tau)
+                alpha = lin_fit(shifted_deg_days_array, run_time_array)
+                errors = run_time_array - np.array(alpha) * shifted_deg_days_array
+                sq_errors_old = np.dot(errors, errors)
+                sq_errors = np.nanmean((errors)**2)
+                tau_stats_list_cool.append({'tau': tau, 'alpha': alpha, 'sq_errors': sq_errors, 'sq_errors_old': sq_errors_old})
+                if min_sq_err is None or sq_errors < min_sq_err:
+                    min_sq_err = sq_errors
+                    best_errors = errors
+                    best_tau = tau
+                    best_alpha = alpha
+                logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
+                             f' best tau={best_tau}')
+            logger.debug(f'Best tau = {best_tau}')
+            # for exploring the tau stats
+            if not self.tau_search_path is None:
+
+                best_shifted_deg_days_array = calc_cdd(best_tau)
+                pd.DataFrame(best_shifted_deg_days_array).to_csv(self.tau_search_path /
+                                                                              f'{self.thermostat_id}_cool_dd.csv',
+                                                                 index=True)
+                pd.DataFrame(run_time_array).to_csv(self.tau_search_path /
+                                                                 f'{self.thermostat_id}_cool_run_time.csv',
+                                                        index=True)
+                tau_stats_cool = pd.DataFrame(tau_stats_list_cool)
+                # set all other taus not best and this one set to best
+                tau_stats_cool.set_index('tau', inplace=True)
+                tau_stats_cool.loc[:, 'is_best_tau'] = False
+                tau_stats_cool.loc[best_tau, 'is_best_tau'] = True
+                tau_stats_cool.to_csv(self.tau_search_path / f'{self.thermostat_id}_cool_tau_search.csv')
+            return best_tau, best_alpha, best_errors
+
         try:
-            y, _ = leastsq(estimate_errors, tau_starting_guess)
+            tau_estimate, alpha_estimate, errors = search_cdd_tau(daily_runtime)
         except TypeError:  # len 0
             # make sure no other type errors are sneaking in
             assert daily_runtime.shape[0] == 0
@@ -996,11 +1069,10 @@ class Thermostat(object):
                 np.nan,
             )
 
-        tau_estimate = y[0]
-
-        cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
-        mse = np.nanmean((errors) ** 2)
-        rmse = mse**0.5
+        # cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        cdd = calc_cdd(tau_estimate)
+        mse = np.nanmean((errors)**2)
+        rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
         try:
             cvrmse = rmse / mean_daily_runtime
@@ -1116,33 +1188,62 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return hdd, alpha_estimate, errors
 
-        def estimate_errors(tau_estimate):
-            _, _, errors = calc_estimates(tau_estimate)
-            return errors
+        def search_hdd_tau(run_time_array, max_tau=20):
+            """
+            Search for the best fit for tau (x-intercept) from 0 to max_tau,
+            finding the best alpha (slope) at each possible integer tau
+            and returning the alpha and tau that produce the least squared errors
+            """
+            min_sq_err = None
+            best_tau = None
+            best_errors = None
+            best_alpha = None
+            interval_factor = 10
+            tau_stats_list_heat = []
+            for interval in range(-5 * interval_factor, max_tau * interval_factor + 1):
+                tau = interval / interval_factor
+                # remove tau double-counting
+                shifted_deg_days_array = calc_hdd(tau)
+                alpha = lin_fit(shifted_deg_days_array, run_time_array)
+                errors = run_time_array - np.array(alpha) * shifted_deg_days_array
+                sq_errors = np.nanmean((errors)**2)
+                tau_stats_list_heat.append({'tau': tau, 'alpha': alpha, 'sq_errors': sq_errors})
+                if min_sq_err is None or sq_errors < min_sq_err:
+                    min_sq_err = sq_errors
+                    best_errors = errors
+                    best_tau = tau
+                    best_alpha = alpha
+                logger.debug(f'Tried tau={tau:.1f} and alpha={alpha:.1f} and got sq errors {sq_errors:.1f};',
+                             f' best tau={best_tau}')
+            logger.debug(f'Best tau = {best_tau}')
+            # for exploring the tau stats
+            if not self.tau_search_path is None:
+                best_shifted_deg_days_array = calc_hdd(best_tau)
+                pd.DataFrame(best_shifted_deg_days_array).to_csv(self.tau_search_path /
+                                                                              f'{self.thermostat_id}_heat_dd.csv',
+                                                                 index=True)
+                pd.DataFrame(run_time_array).to_csv(self.tau_search_path /
+                                                                 f'{self.thermostat_id}_heat_run_time.csv',
+                                                    index=True)
+                tau_stats_heat = pd.DataFrame(tau_stats_list_heat)
+                # set all other taus not best and this one set to best
+                tau_stats_heat.set_index('tau', inplace=True)
+                tau_stats_heat.loc[:, 'is_best_tau'] = False
+                tau_stats_heat.loc[best_tau, 'is_best_tau'] = True
+                tau_stats_heat.to_csv(self.tau_search_path / f'{self.thermostat_id}_heat_tau_search.csv')
 
-        tau_starting_guess = 0
+            return best_tau, best_alpha, best_errors
 
         try:
-            y, _ = leastsq(estimate_errors, tau_starting_guess)
+            tau_estimate, alpha_estimate, errors = search_hdd_tau(daily_runtime)
         except TypeError:  # len 0
-            # make sure no other type errors are sneaking in
-            assert daily_runtime.shape[0] == 0
-            return (
-                pd.Series([], index=daily_index, dtype="Float64"),
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-            )
+            assert daily_runtime.shape[0] == 0  # make sure no other type errors are sneaking in
+            return pd.Series([], index=daily_index, dtype="Float64"), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
-        tau_estimate = y[0]
-
-        hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
-        mse = np.nanmean((errors) ** 2)
-        rmse = mse**0.5
+        # hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        hdd = calc_hdd(tau_estimate)
+        mse = np.nanmean((errors)**2)
+        rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
         try:
             cvrmse = rmse / mean_daily_runtime
@@ -1464,7 +1565,10 @@ class Thermostat(object):
             mae,
         ) = self.get_cooling_demand(core_cooling_day_set)
 
-        if demand.empty is True:
+        try:
+            if demand.empty is True:
+                demand = np.nan
+        except AttributeError:
             demand = np.nan
 
         total_runtime_core_cooling = daily_runtime.sum()
@@ -1650,7 +1754,10 @@ class Thermostat(object):
             mae,
         ) = self.get_heating_demand(core_heating_day_set)
 
-        if demand.empty is True:
+        try:
+            if demand.empty is True:
+                demand = np.nan
+        except AttributeError:
             demand = np.nan
 
         total_runtime_core_heating = daily_runtime.sum()

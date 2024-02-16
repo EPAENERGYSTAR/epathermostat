@@ -3,7 +3,7 @@ import csv
 import glob
 from pathlib import Path
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 FIELDNAMES = [
         "thermostat_id",

@@ -7,3 +7,4 @@ mock==2.0.0
 jupyter
 tox
 pip-tools
+loguru==0.7.2

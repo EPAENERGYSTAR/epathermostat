@@ -27,17 +27,12 @@ idna==3.4
     # via
     #   -r requirements.in
     #   requests
-numpy==1.24.1
+numpy==1.23.2
     # via
     #   -r requirements.in
     #   pandas
     #   scipy
-    #   shapely
 pandas==1.5.2
-    # via
-    #   -r requirements.in
-    #   eeweather
-pyproj==3.4.1
     # via
     #   -r requirements.in
     #   eeweather
@@ -70,4 +65,6 @@ urllib3==1.26.13
     #   -r requirements.in
     #   requests
 zipcodes==1.2.0
+    # via -r requirements.txt
+loguru==0.7.2
     # via -r requirements.in

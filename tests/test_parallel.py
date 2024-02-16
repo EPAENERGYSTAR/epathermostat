@@ -13,6 +13,7 @@ from scipy.stats import randint
 import random
 
 import pytest
+from pathlib import Path
 
 @pytest.fixture
 def metadata_filename():

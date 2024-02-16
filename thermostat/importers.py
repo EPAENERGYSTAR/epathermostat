@@ -27,6 +27,16 @@ from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
 from eeweather.exceptions import ISDDataNotAvailableError
+import json
+
+import warnings
+import dateutil.parser
+import os
+import pytz
+from multiprocessing import Pool, cpu_count
+from functools import partial
+import logging
+from pathlib import Path
 from thermostat.core import InsufficientDataError
 
 try:
@@ -163,7 +173,7 @@ def normalize_utc_offset(utc_offset):
 
 
 def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
-             cache_path=None,):
+             cache_path=None, top_n=None, tau_search_path=''):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -205,6 +215,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
             "interval_data_filename": str
         }
     )
+    if top_n is not None:
+        metadata = metadata[:top_n]
     metadata.fillna('', inplace=True)
     metadata.columns = map(str.lower, metadata.columns)
     if not METADATA_COLUMNS.issubset(metadata.columns):
@@ -223,7 +235,9 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         metadata_filename=metadata_filename,
         verbose=verbose,
         save_cache=save_cache,
-        cache_path=cache_path)
+        cache_path=cache_path,
+        tau_search_path=tau_search_path,
+        )
     result_list = p.imap(multiprocess_func_partial, metadata.iterrows())
     p.close()
     p.join()
@@ -245,7 +259,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
     return iter(results), error_list
 
 
-def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
+def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None, tau_search_path=''):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
     _, row = metadata
@@ -277,6 +291,7 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
             interval_data_filename=interval_data_filename,
             save_cache=save_cache,
             cache_path=cache_path,
+            tau_search_path=tau_search_path,
         )
     except (ZIPCodeLookupError, StationLookupError, ClimateZoneLookupError) as e:
         # Could not locate a station for the thermostat. Warn and skip.
@@ -300,7 +315,8 @@ def _multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fa
 
 def get_single_thermostat(thermostat_id, zipcode,
                           heat_type, heat_stage, cool_type, cool_stage,
-                          utc_offset, interval_data_filename, save_cache=False, cache_path=None):
+                          utc_offset, interval_data_filename, save_cache=False, cache_path=None,
+                          tau_search_path=None):
     """ Load a single thermostat directly from an interval data file.
 
     Parameters
@@ -409,7 +425,8 @@ def get_single_thermostat(thermostat_id, zipcode,
         cool_runtime,
         heat_runtime,
         auxiliary_heat_runtime,
-        emergency_heat_runtime
+        emergency_heat_runtime,
+        tau_search_path=tau_search_path,
     )
     return thermostat
 
