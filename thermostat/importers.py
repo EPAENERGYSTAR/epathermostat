@@ -218,9 +218,7 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
 
     if metadata['zipcode'].apply(lambda x: retrieve_climate_zone(None, x)).value_counts().max()>1000:
         logging.warning(
-            f'Possible error with climate zone counts. Keep all climate zones below 1000. {
-                metadata['zipcode'].apply(lambda x: ZIPCODE_LOOKUP.get(x)['climate_zone']).value_counts()
-                }'
+            f'Possible error with climate zone counts. Keep all climate zones below 1000.'
         )
 
     if top_n is not None:
