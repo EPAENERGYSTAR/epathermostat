@@ -27,7 +27,7 @@ from pathlib import Path
 
 warnings.simplefilter('module', Warning)
 
-# Ignore divide-by-zero errors
+# Ignore divide-by-zero errors, change to enable test
 np.seterr(divide="ignore", invalid="ignore")
 
 CoreDaySet = namedtuple(
