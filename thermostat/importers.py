@@ -98,6 +98,24 @@ def _prime_eeweather_cache():
         raise RuntimeError("eeweather cache was not properly primed. Aborting.")
 
 
+def _zipcode_to_climatezone(zipcode):
+    """
+    Converts zipcode to climate zone
+
+    Parameters
+    ----------
+    zipcode : str
+        String representation of the zipcode
+
+    Returns
+    -------
+    str zipcode
+    """
+    if ZIPCODE_LOOKUP.get(zipcode) is None:
+        return None
+    return ZIPCODE_LOOKUP.get(zipcode)['climate_zone']
+
+
 def save_json_cache(index, thermostat_id, station, cache_path=None):
     """ Saves the cached results from eeweather into a JSON file.
 
@@ -215,6 +233,12 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
             "interval_data_filename": str
         }
     )
+
+    if metadata['zipcode'].apply(_zipcode_to_climatezone).value_counts().max()>1000:
+        logging.warning(
+            f'Possible error with climate zone counts. Keep all climate zones below 1000.'
+        )
+
     if top_n is not None:
         metadata = metadata[:top_n]
     metadata.fillna('', inplace=True)

@@ -60,7 +60,7 @@ def test_pandas_warnings(thermostat_type_1):
     with pytest.warns(Warning):
         __pandas_warnings('0.21.0')
 
-    with pytest.warns(None) as pytest_warnings:
+    with warnings.catch_warnings() as pytest_warnings:
         __pandas_warnings('1.2.0')
     assert not pytest_warnings
 
