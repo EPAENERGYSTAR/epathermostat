@@ -38,7 +38,8 @@ LOGGING_CONFIG = 'logging.json'
 # Save cached weather data files? (Default: False)
 SAVE_CACHE = False
 CACHE_PATH = None  # Replace with location to save the weather cache files (e.g. '/tmp/epathermosat')
-TAU_SAVE_PATH = Path('/home/theurerjohn3/Documents/energystar/epa5/datadir/attempt1')
+TAU_SAVE_PATH = Path('outputs')
+TAU_SAVE_PATH.mkdir(parents=True, exist_ok=True)
 
 # This section finds the metadata files and data files for the thermostats.
 # These point to examples of the various styles of files
@@ -46,8 +47,8 @@ TAU_SAVE_PATH = Path('/home/theurerjohn3/Documents/energystar/epa5/datadir/attem
 # data in the same file.
 
 # Single Stage
-DATA_DIR = Path('../../datadir/EPA_Tau')
-METADATA_FILENAME = DATA_DIR / '2019_epa_tau.csv'
+DATA_DIR = Path(__file__).resolve().parents[1] / 'tests' / 'data' / 'single_stage'
+METADATA_FILENAME = DATA_DIR / 'metadata.csv'
 
 # Two Stage
 # DATA_DIR = os.path.join('..', 'tests', 'data', 'two_stage')
