@@ -1,4 +1,3 @@
-import pytest
 from thermostat.equipment_type import (
     has_heating,
     has_cooling,
