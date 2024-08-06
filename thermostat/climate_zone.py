@@ -1,6 +1,5 @@
 import pandas as pd
 import zipcodes
-from pkg_resources import resource_stream
 from collections import namedtuple
 from eeweather.geo import get_lat_long_climate_zones
 import numpy as np
@@ -59,9 +58,15 @@ def retrieve_climate_zone(zipcode):
     -------
 
     climate_zone_nt : named tuple
-       Named Tuple consisting of the Climate Zone, baseline_regional_cooling_comfort_temperature, and baseline_regional_heating_comfort_temperature
+       Named Tuple consisting of the Climate Zone, baseline_regional_cooling_comfort_temperature, 
+       and baseline_regional_heating_comfort_temperature
     """
-    ClimateZone = namedtuple('ClimateZone', ['climate_zone', 'baseline_regional_cooling_comfort_temperature', 'baseline_regional_heating_comfort_temperature'])
+    ClimateZone = namedtuple(
+        'ClimateZone', [
+            'climate_zone',
+            'baseline_regional_cooling_comfort_temperature',
+            'baseline_regional_heating_comfort_temperature'
+            ])
     try:
         zipcode = zipcode.zfill(5)
         zipcode_details = zipcodes.matching(zipcode).pop()

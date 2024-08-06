@@ -362,6 +362,8 @@ def get_single_thermostat(thermostat_id, zipcode,
         Set to True to save the cached data to a json file (based on Thermostat ID).
     cache_path: str
         Directory path to save the cached data
+    tau_search_path : str
+        Path to the tau search results, if None, save on running directory
 
     Returns
     -------

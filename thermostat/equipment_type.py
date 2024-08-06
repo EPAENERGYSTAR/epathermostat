@@ -260,6 +260,18 @@ def is_line_voltage(heat_type):
 
 
 def validate_heat_type(heat_type):
+    """ Determines if the heat type is valid
+
+    Parameters
+    ----------
+    heat_type : str
+        The name of the heating type
+
+
+    Returns
+    -------
+    boolean
+    """
     if heat_type is None or heat_type == '' or heat_type in HEAT_TYPE:
         return True
     logging.warning("Heating type {heat_type} is not a recognized heating type.".format(heat_type=heat_type))
@@ -267,6 +279,18 @@ def validate_heat_type(heat_type):
 
 
 def validate_cool_type(cool_type):
+    """ Determines if the cool type is valid
+
+    Parameters
+    ----------
+    cool_type : str
+        The name of the cooling type
+
+
+    Returns
+    -------
+    boolean
+    """
     if cool_type is None or cool_type == '' or cool_type in COOL_TYPE:
         return True
     logging.warning("Cooling type {cool_type} is not a recognized cooling type.".format(cool_type=cool_type))
@@ -274,6 +298,18 @@ def validate_cool_type(cool_type):
 
 
 def validate_heat_stage(heat_stage):
+    """ Determines if the heat stage is valid
+
+    Parameters
+    ----------
+    heat_stage : str
+        The name of the heating stage
+
+
+    Returns
+    -------
+    boolean
+    """
     if heat_stage is None or heat_stage == '' or heat_stage in HEAT_STAGE:
         return True
     logging.warning("Heating stage {heat_stage} is not a recognized heating stage.".format(heat_stage=heat_stage))
@@ -281,6 +317,18 @@ def validate_heat_stage(heat_stage):
 
 
 def validate_cool_stage(cool_stage):
+    """ Determines if the cool stage is valid
+
+    Parameters
+    ----------
+    cool_stage : str
+        The name of the cooling stage
+
+
+    Returns
+    -------
+    boolean
+    """
     if cool_stage is None or cool_stage == '' or cool_stage in COOL_STAGE:
         return True
     logging.warning("Cooling stage {cool_stage} is not a recognized cooling stage.".format(cool_stage=cool_stage))
@@ -288,6 +336,18 @@ def validate_cool_stage(cool_stage):
 
 
 def first_stage_capacity_ratio(heat_or_cool_type):
+    """ Determines the first stage capacity ratio 
+
+    Parameters
+    ----------
+    heat_or_cool_type : str
+        The name of the heat or cool type
+
+
+    Returns
+    -------
+    float
+    """
     if heat_or_cool_type == "furnace_or_boiler":
         return 0.65
     else:
