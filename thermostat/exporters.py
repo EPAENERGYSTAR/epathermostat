@@ -78,6 +78,8 @@ def certification_to_csv(stats, filepath, product_id):
         `thermostat.compute_summary_statistics()`
     filepath : str
         filepath specification for location of output CSV file.
+    product_id : str
+        product ID.
 
     Returns
     -------

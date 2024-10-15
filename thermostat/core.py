@@ -196,6 +196,8 @@ class Thermostat(object):
         over a hour of runtime (impossible).
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
+    tau_search_path : Path,
+        The path where the tau search results will be saved. 
     """
 
     def __init__(
