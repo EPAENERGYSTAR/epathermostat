@@ -385,12 +385,13 @@ class Thermostat(object):
                 self.heat_runtime_daily.to_csv(self.tau_search_path / f'{self.thermostat_id}_heat_runtime_daily.csv')
 
         logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
-        enough_runtime = False
-        enough_core_days = False
 
-        if self.has_heating and (not (self.enough_heat_runtime or self.enough_heat_core_days)):
+        self.valid_heating = not (self.enough_heat_runtime or self.enough_heat_core_days)
+        self.valid_cooling = not (self.enough_cool_runtime or self.enough_cool_core_days)
+
+        if self.has_heating and self.valid_heating:
             self.has_heating = True
-        if self.has_cooling and (not (self.enough_cool_runtime or self.enough_cool_core_days)):
+        if self.has_cooling and self.valid_cooling:
             self.has_cooling = True
 
         if not (self.has_heating or self.has_cooling):
@@ -1053,6 +1054,8 @@ class Thermostat(object):
 
         try:
             tau_estimate, alpha_estimate, errors = search_cdd_tau(daily_runtime)
+            if alpha_estimate < 0:
+                raise ValueError(f'Alpha Estimate less than 0 for {self.thermostat_id}')
         except TypeError:  # len 0
             # make sure no other type errors are sneaking in
             assert daily_runtime.shape[0] == 0

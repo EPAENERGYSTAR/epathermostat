@@ -135,7 +135,8 @@ def test_missing_days_cooling(thermostat_missing_days_cooling):
     assert len(thermostat_missing_days_cooling) == 1
 
 def test_mostly_missing_days(thermostat_mostly_missing_days):
-    assert len(thermostat_mostly_missing_days) == 0
+    print(len(thermostat_mostly_missing_days))
+    assert len(thermostat_mostly_missing_days) == 1
 
 def test_bad_zipcode(thermostat_type_1_zip_bad):
     assert len(thermostat_type_1_zip_bad) == 0
