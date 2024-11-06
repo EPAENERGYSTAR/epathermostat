@@ -11,3 +11,4 @@ dist/
 .coverage
 .coverage.*
 env/
+/*.csv
