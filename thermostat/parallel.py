@@ -46,7 +46,7 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             raise ValueError(message)
         else:
             batches_dir = Path(batches_dir)
-    
+
     metadata_filename = Path(metadata_filename)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})

@@ -8,3 +8,4 @@ jupyter
 tox
 pip-tools
 loguru==0.7.2
+flake8

@@ -8,7 +8,7 @@ import pytz
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import logging
-from thermostat.core import Thermostat
+from thermostat.core import Thermostat, InsufficientDataError
 from thermostat.equipment_type import (
     has_heating,
     has_cooling,
@@ -27,17 +27,6 @@ from thermostat.zipcode_lookup import ZIPCODE_LOOKUP
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
 from eeweather.exceptions import ISDDataNotAvailableError
-import json
-
-import warnings
-import dateutil.parser
-import os
-import pytz
-from multiprocessing import Pool, cpu_count
-from functools import partial
-import logging
-from pathlib import Path
-from thermostat.core import InsufficientDataError
 
 try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
@@ -147,7 +136,7 @@ def save_json_cache(index, thermostat_id, station, cache_path=None):
             cache_path)
 
     thermostat_filename = f"{thermostat_id}.json"
-    thermostat_path = directory /thermostat_filename
+    thermostat_path = directory / thermostat_filename
     try:
         directory.mkdir(exist_ok=True)
         with open(thermostat_path, 'w') as outfile:
@@ -234,9 +223,9 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True,
         }
     )
 
-    if metadata['zipcode'].apply(_zipcode_to_climatezone).value_counts().max()>1000:
+    if metadata['zipcode'].apply(_zipcode_to_climatezone).value_counts().max() > 1000:
         logging.warning(
-            f'Possible error with climate zone counts. Keep all climate zones below 1000.'
+            'Possible error with climate zone counts. Keep all climate zones below 1000.'
         )
 
     if top_n is not None:
@@ -378,8 +367,8 @@ def get_single_thermostat(thermostat_id, zipcode,
 
     station = zipcode_details.get('station')
     if station is None:
-        message = f"Could not locate a valid station for outdoor temperature " \
-                "data for ZIP code {zipcode}"
+        message = "Could not locate a valid station for outdoor temperature "
+        message += f"data for ZIP code {zipcode}"
         raise StationLookupError(message)
 
     climate_zone = zipcode_details.get("climate_zone")
@@ -432,7 +421,9 @@ def get_single_thermostat(thermostat_id, zipcode,
         raise RuntimeError(message)
 
     # load daily time series values
-    auxiliary_heat_runtime, emergency_heat_runtime = _calculate_aux_emerg_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)
+    auxiliary_heat_runtime, emergency_heat_runtime = _calculate_aux_emerg_runtime(
+        df, thermostat_id, heat_type, heat_stage, hourly_index
+        )
     cool_runtime = _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_index)
     heat_runtime = _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_index)
 
@@ -476,7 +467,9 @@ def _calculate_cool_runtime(df, thermostat_id, cool_type, cool_stage, hourly_ind
             if df.cool_runtime_equiv.max() > 0.0:
                 cool_runtime = _create_series(df.cool_runtime_equiv, hourly_index)
             else:
-                cool_runtime_both_stg = (first_stage_capacity_ratio(cool_type) * (df.cool_runtime_stg1 - df.cool_runtime_stg2)) + df.cool_runtime_stg2
+                cool_runtime_both_stg = (
+                    first_stage_capacity_ratio(cool_type) * (
+                        df.cool_runtime_stg1 - df.cool_runtime_stg2)) + df.cool_runtime_stg2
                 cool_runtime = _create_series(cool_runtime_both_stg, hourly_index)
         else:
             cool_runtime = _create_series(df.cool_runtime_stg1, hourly_index)
@@ -504,7 +497,9 @@ def _calculate_heat_runtime(df, thermostat_id, heat_type, heat_stage, hourly_ind
             if df.heat_runtime_equiv.max() > 0.0:
                 heat_runtime = _create_series(df.heat_runtime_equiv, hourly_index)
             else:
-                heat_runtime_both_stg = (first_stage_capacity_ratio(heat_type) * (df.heat_runtime_stg1 - df.heat_runtime_stg2)) + df.heat_runtime_stg2
+                heat_runtime_both_stg = (
+                    first_stage_capacity_ratio(heat_type) * (
+                        df.heat_runtime_stg1 - df.heat_runtime_stg2)) + df.heat_runtime_stg2
                 heat_runtime = _create_series(heat_runtime_both_stg, hourly_index)
         else:
             heat_runtime = _create_series(df.heat_runtime_stg1, hourly_index)
