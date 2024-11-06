@@ -833,7 +833,7 @@ class Thermostat(object):
             runtime_rhu["aux_runtime"] > runtime_rhu["heat_runtime"]
         )
         runtime_rhu.loc[
-            runtime_rhu.data_is_nonsense is True, "rhu"
+            runtime_rhu.data_is_nonsense == True, "rhu"
         ] = np.nan  # noqa: E712
 
         if runtime_rhu.data_is_nonsense.any():
