@@ -336,7 +336,7 @@ def validate_cool_stage(cool_stage):
 
 
 def first_stage_capacity_ratio(heat_or_cool_type):
-    """ Determines the first stage capacity ratio 
+    """ Determines the first stage capacity ratio
 
     Parameters
     ----------

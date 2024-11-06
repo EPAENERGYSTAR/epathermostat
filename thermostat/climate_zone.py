@@ -58,7 +58,7 @@ def retrieve_climate_zone(zipcode):
     -------
 
     climate_zone_nt : named tuple
-       Named Tuple consisting of the Climate Zone, baseline_regional_cooling_comfort_temperature, 
+       Named Tuple consisting of the Climate Zone, baseline_regional_cooling_comfort_temperature,
        and baseline_regional_heating_comfort_temperature
     """
     ClimateZone = namedtuple(
@@ -78,7 +78,8 @@ def retrieve_climate_zone(zipcode):
         baseline_regional_cooling_comfort_temperature = BASELINE_TEMPERATURE.get(climate_zone, {}).get('cooling', None)
         baseline_regional_heating_comfort_temperature = BASELINE_TEMPERATURE.get(climate_zone, {}).get('heating', None)
 
-        climate_zone_nt = ClimateZone(climate_zone, baseline_regional_cooling_comfort_temperature, baseline_regional_heating_comfort_temperature)
+        climate_zone_nt = ClimateZone(
+            climate_zone, baseline_regional_cooling_comfort_temperature, baseline_regional_heating_comfort_temperature)
     except IndexError:
         logger.warning(f'ZIP Code {zipcode} is not found. Is it valid?')
         climate_zone_nt = ClimateZone(np.nan, np.nan, np.nan)

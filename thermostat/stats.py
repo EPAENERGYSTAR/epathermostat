@@ -8,12 +8,7 @@ from collections import OrderedDict
 from itertools import chain
 import warnings
 from functools import reduce
-from pkg_resources import resource_stream
 import logging
-
-from functools import partial
-from itertools import repeat
-import multiprocessing
 
 if os.name == 'nt':
     from multiprocessing.pool import ThreadPool as Pool
@@ -39,6 +34,7 @@ warnings.simplefilter('module', Warning)
 
 target_baseline_method = 'baseline_percentile'
 
+
 def globalize(func):
     def result(*args, **kwargs):
         return func(*args, **kwargs)
@@ -47,7 +43,8 @@ def globalize(func):
     return result
 
 
-def check_sufficient_thermostats_per_climate_zone(very_cold_cold_df, mixed_humid_df, mixed_dry_hot_dry_df, hot_humid_df, marine_df):
+def check_sufficient_thermostats_per_climate_zone(
+        very_cold_cold_df, mixed_humid_df, mixed_dry_hot_dry_df, hot_humid_df, marine_df):
     """ Checks to determine if each climate zone has enough thermostats and warns if there aren't.
 
     Parameters
@@ -214,6 +211,7 @@ def _range_filter(row, column_name, heating_or_cooling, lower_bound=-np.inf, upp
         full_column_selector = column_name
     column_value = row[full_column_selector]
     return lower_bound < column_value < upper_bound
+
 
 def _percentile_range_filter(row, column_name, heating_or_cooling, df, quantile=0.0, target_baseline=False):
     if target_baseline:
@@ -451,7 +449,6 @@ def compute_summary_statistics(
         filter_1_list = list(chain(*zip(heating_stats_filter1_list, cooling_stats_filter1_list)))
         filter_2_list = list(chain(*zip(heating_stats_filter2_list, cooling_stats_filter2_list)))
 
-
     if advanced_filtering:
         stats = list(chain.from_iterable([
                 no_filter_list,
@@ -652,7 +649,6 @@ def summary_statistics_to_csv(stats, filepath, product_id):
     if stats is None:
         warnings.warn("No summary statistics to export.")
         return None
-
 
     drop_columns = [
         'national_weighted_mean_heating_no_filter',

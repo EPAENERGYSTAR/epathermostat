@@ -1,6 +1,7 @@
 from pathlib import Path
 import inspect
 
+
 def get_data_path(f=''):
     """Return the path of a data file, these are relative to the current test
     directory. (Thanks, pydata/pandas/pandas/util/testing.py!)

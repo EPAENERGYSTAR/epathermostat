@@ -58,7 +58,7 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     start = pd.to_datetime(datetime.datetime(years[0], 1, 1, tzinfo=pytz.UTC))
     end = pd.to_datetime(datetime.datetime(years[-1], 12, 31, 23, 59, tzinfo=pytz.UTC))
     tempC, _ = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
-    
+
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF

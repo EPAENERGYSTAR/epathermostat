@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from collections import namedtuple
 import inspect
 import warnings
@@ -6,7 +6,6 @@ import logging
 
 import pandas as pd
 import numpy as np
-from math import sqrt
 from loguru import logger as log
 
 from thermostat import get_version
@@ -115,9 +114,9 @@ def lin_fit(x_arr, y_arr):
     Linear fit for origin-intercept can be estimated as
     sum of products divided by sum of x-values squared
     """
-    if type(x_arr) == pd.Series:
+    if type(x_arr) is pd.Series:
         x_arr = x_arr.values
-    if type(y_arr) == pd.Series:
+    if type(y_arr) is pd.Series:
         y_arr = y_arr.values
     x_y = pd.DataFrame({'x_arr': x_arr, 'y_arr': y_arr})
     # ensure that the arrays are the same size
@@ -126,6 +125,7 @@ def lin_fit(x_arr, y_arr):
     y_arr = x_y.y_arr.values
     slope = np.dot(x_arr, y_arr) / np.dot(x_arr, x_arr)
     return slope
+
 
 class InsufficientDataError(Exception):
     def __init__(self, message):
@@ -197,7 +197,7 @@ class Thermostat(object):
         Should be indexed by a pandas.DatetimeIndex with hourly frequency (i.e.
         :code:`freq='H'`).
     tau_search_path : Path,
-        The path where the tau search results will be saved. 
+        The path where the tau search results will be saved.
     """
 
     def __init__(
@@ -354,7 +354,9 @@ class Thermostat(object):
                 and self.core_heating_days_total < minimum_heating_core_days
             ):
                 self.enough_heat_core_days = False
-                message += f"Not enough core heating core days for climate zone {self.climate_zone}: {self.core_heating_days_total}\n"
+                message += f"""Not enough core heating core days for climate zone {
+                    self.climate_zone
+                    }: {self.core_heating_days_total}\n"""
         if self.has_cooling:
             self.core_cooling_days = self.get_core_cooling_days()
             self.core_cooling_days_total = self.core_cooling_days[0].daily.sum()
@@ -368,11 +370,11 @@ class Thermostat(object):
                 and self.core_cooling_days_total < minimum_cooling_core_days
             ):
                 self.enough_cool_core_days = False
-                message += f"Not enough core cooling core days for climate zone {self.climate_zone}: {self.core_cooling_days_total}\n"
-
+                message += f"""Not enough core cooling core days for climate zone {
+                    self.climate_zone}: {self.core_cooling_days_total}\n"""
 
         log.debug(f'Tau filepath: {tau_search_path}')
-        if not self.tau_search_path is None:
+        if self.tau_search_path is not None:
             # save delta-t and runtime dataframes for plotting
             log.debug("Saving Tau Files")
             raw_delta_t = self.temperature_out - self.temperature_in
@@ -384,7 +386,9 @@ class Thermostat(object):
             if self.heat_runtime_daily is not None:
                 self.heat_runtime_daily.to_csv(self.tau_search_path / f'{self.thermostat_id}_heat_runtime_daily.csv')
 
-        logging.debug(f"{self.thermostat_id}: {self.core_heating_days_total} core heating days, {self.core_cooling_days_total} core cooling days")
+        logging.debug(
+            f"""{self.thermostat_id}: {self.core_heating_days_total} core heating days, {
+                self.core_cooling_days_total} core cooling days""")
 
         self.valid_heating = not (self.enough_heat_runtime or self.enough_heat_core_days)
         self.valid_cooling = not (self.enough_cool_runtime or self.enough_cool_core_days)
@@ -447,19 +451,15 @@ class Thermostat(object):
     def _validate_heating(self):
         if self.has_heating:
             if self.heat_runtime_daily is None:
-                message = "For thermostat {}, heating runtime data was not provided,"
-                " despite equipment type of {}, which requires heating data.".format(
-                    self.thermostat_id, self.heat_type
-                )
+                message = f"For thermostat {self.thermostat_id}, heating runtime data was not provided,"
+                message += f" despite equipment type of {self.heat_type}, which requires heating data."
                 raise ValueError(message)
 
     def _validate_cooling(self):
         if self.has_cooling:
             if self.cool_runtime_daily is None:
-                message = "For thermostat {}, cooling runtime data was not provided,"
-                " despite equipment type of {}, which requires cooling data.".format(
-                    self.thermostat_id, self.cool_type
-                )
+                message = f"For thermostat {self.thermostat_id}, cooling runtime data was not provided,"
+                message += f" despite equipment type of {self.cool_type}, which requires cooling data."
                 raise ValueError(message)
 
     def _validate_aux_emerg(self):
@@ -468,10 +468,11 @@ class Thermostat(object):
                 self.auxiliary_heat_runtime is None
                 or self.emergency_heat_runtime is None
             ):
-                message = "For thermostat {}, aux and emergency runtime data were not provided,"
-                " despite heat_type of {}, which requires these columns of data."
-                " If none is available, please change heat_type to 'heat_pump_no_electric_backup',"
-                " or provide columns of 0s".format(self.thermostat_id, self.heat_type)
+                message = f"""For thermostat {
+                    self.thermostat_id}, aux and emergency runtime data were not provided,
+                 despite heat_type of {self.heat_type}, which requires these columns of data.
+                 If none is available, please change heat_type to 'heat_pump_no_electric_backup',
+                 or provide columns of 0s"""
                 raise ValueError(message)
 
     def _interpolate(self, series, method="linear"):
@@ -482,29 +483,29 @@ class Thermostat(object):
     def _protect_heating(self):
         function_name = inspect.stack()[1][3]
         if not (self.has_heating):
-            message = "The function '{}', which is heating specific, cannot be"
-            " called for equipment_type {}".format(function_name, self.heat_type)
+            message = f"The function '{function_name}', which is heating specific, cannot be"
+            message += f" called for equipment_type {self.heat_type}"
             raise ValueError(message)
 
     def _protect_cooling(self):
         function_name = inspect.stack()[1][3]
         if not (self.has_cooling):
-            message = "The function '{}', which is cooling specific, cannot be"
-            " called for equipment_type {}".format(function_name, self.cool_type)
+            message = f"The function '{function_name}', which is cooling specific, cannot be"
+            message += f" called for equipment_type {self.cool_type}"
             raise ValueError(message)
 
     def _protect_resistance_heat(self):
         function_name = inspect.stack()[1][3]
         if not (self.has_resistance_heat):
-            message = "The function '{}', which is resistance heat specific, cannot be"
-            " called for equipment_type {}".format(function_name, self.heat_type)
+            message = f"The function '{function_name}', which is resistance heat specific, cannot be"
+            message += f" called for equipment_type {self.heat_type}"
             raise ValueError(message)
 
     def _protect_aux_emerg(self):
         function_name = inspect.stack()[1][3]
         if not (self.has_auxiliary and self.has_emergency):
-            message = "The function '{}', which is auxiliary/emergency heating specific, cannot be"
-            " called for equipment_type {}".format(function_name, self.heat_type)
+            message = f"The function '{function_name}', which is auxiliary/emergency heating specific, cannot be"
+            message += f" called for equipment_type {self.heat_type}"
             raise ValueError(message)
 
     def get_core_heating_days(
@@ -1002,8 +1003,6 @@ class Thermostat(object):
             errors = daily_runtime - runtime_estimate
             return cdd, alpha_estimate, errors
 
-
-
         def search_cdd_tau(run_time_array, max_tau=20):
             """
             Search for the best fit for tau (x-intercept) from 0 to max_tau,
@@ -1025,7 +1024,9 @@ class Thermostat(object):
                 errors = run_time_array - np.array(alpha) * shifted_deg_days_array
                 sq_errors_old = np.dot(errors, errors)
                 sq_errors = np.nanmean((errors)**2)
-                tau_stats_list_cool.append({'tau': tau, 'alpha': alpha, 'sq_errors': sq_errors, 'sq_errors_old': sq_errors_old})
+                tau_stats_list_cool.append(
+                    {'tau': tau, 'alpha': alpha, 'sq_errors': sq_errors, 'sq_errors_old': sq_errors_old}
+                    )
                 if min_sq_err is None or sq_errors < min_sq_err:
                     min_sq_err = sq_errors
                     best_errors = errors
@@ -1035,15 +1036,15 @@ class Thermostat(object):
                              f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
             # for exploring the tau stats
-            if not self.tau_search_path is None:
+            if self.tau_search_path is not None:
 
                 best_shifted_deg_days_array = calc_cdd(best_tau)
                 pd.DataFrame(best_shifted_deg_days_array).to_csv(self.tau_search_path /
-                                                                              f'{self.thermostat_id}_cool_dd.csv',
+                                                                 f'{self.thermostat_id}_cool_dd.csv',
                                                                  index=True)
                 pd.DataFrame(run_time_array).to_csv(self.tau_search_path /
-                                                                 f'{self.thermostat_id}_cool_run_time.csv',
-                                                        index=True)
+                                                    f'{self.thermostat_id}_cool_run_time.csv',
+                                                    index=True)
                 tau_stats_cool = pd.DataFrame(tau_stats_list_cool)
                 # set all other taus not best and this one set to best
                 tau_stats_cool.set_index('tau', inplace=True)
@@ -1218,13 +1219,13 @@ class Thermostat(object):
                              f' best tau={best_tau}')
             logger.debug(f'Best tau = {best_tau}')
             # for exploring the tau stats
-            if not self.tau_search_path is None:
+            if self.tau_search_path is not None:
                 best_shifted_deg_days_array = calc_hdd(best_tau)
                 pd.DataFrame(best_shifted_deg_days_array).to_csv(self.tau_search_path /
-                                                                              f'{self.thermostat_id}_heat_dd.csv',
+                                                                 f'{self.thermostat_id}_heat_dd.csv',
                                                                  index=True)
                 pd.DataFrame(run_time_array).to_csv(self.tau_search_path /
-                                                                 f'{self.thermostat_id}_heat_run_time.csv',
+                                                    f'{self.thermostat_id}_heat_run_time.csv',
                                                     index=True)
                 tau_stats_heat = pd.DataFrame(tau_stats_list_heat)
                 # set all other taus not best and this one set to best

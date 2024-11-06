@@ -2,7 +2,6 @@ import logging
 import json
 import zipcodes
 import warnings
-from pkg_resources import resource_stream
 from eeweather import (
         get_isd_file_metadata,
         rank_stations,
