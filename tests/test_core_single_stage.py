@@ -31,7 +31,7 @@ from .fixtures.single_stage import (
         core_cooling_day_set_type_5,
         thermostat_zero_days,
         thermostats_multiple_same_key,
-        thermostat_missing_days_cooling
+        thermostat_heat_pump_electric_and_no_electric_backup
         )
 
 from .fixtures.metrics_data import(
@@ -406,7 +406,7 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu1(thermostat_
 
     assert rhu is None
 
-"""def test_thermostat_type_1_get_exclude_no_electric_from_rhu(thermostat_missing_days_cooling,
+def test_thermostat_type_1_get_exclude_no_electric_from_rhu(thermostat_heat_pump_electric_and_no_electric_backup,
         core_heating_day_set_type_1_entire, metrics_type_1_data):
 
     start = 0
@@ -436,7 +436,7 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu1(thermostat_
             core_heating_day_set_type_1_entire)
 
     assert rhu is None
-"""
+
 def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_type_1,
         core_heating_day_set_type_1_entire, metrics_type_1_data):
 
