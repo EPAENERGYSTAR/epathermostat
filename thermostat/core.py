@@ -745,7 +745,7 @@ class Thermostat(object):
             not control the appropriate equipment.
         """
 
-        self._protect_aux_emerg()
+        # self._protect_aux_emerg()
         self._protect_resistance_heat()
 
         in_core_day_set_daily = self._get_range_boolean(

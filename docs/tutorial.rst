@@ -15,14 +15,14 @@ make it easier to debug.
     # if using virtualenvwrapper
     # (https://virtualenvwrapper.readthedocs.org/en/latest/install.html)
     $ mkvirtualenv thermostat
-    (thermostat)$ pip install thermostat
+    (thermostat)$ pip install thermostat==2.0.0
 
     # if using Python 3 with venv
     # (https://docs.python.org/3/library/venv.html)
     # (cd to directory with data files)
     $ python3 -m venv venv
     $ source venv/bin/activate
-    (venv)$ pip install thermostat
+    (venv)$ pip install thermostat==2.0.0
 
     # if using conda (see note below - conda is distributed with Anaconda)
     # This method uses conda for the virtual environment rather than as a package manager
@@ -32,7 +32,7 @@ make it easier to debug.
     $ conda create --yes --name thermostat pip
     $ conda activate thermostat
     # We use pip instead of Conda to install the packages.
-    (thermostat)$ pip install thermostat
+    (thermostat)$ pip install thermostat==2.0.0
 
 If you already have an environment, use the following:
 
@@ -197,6 +197,16 @@ Anything in capital letters (e.g.  ``METRICS_FILENAME``) may be tweaked as neede
 
 .. literalinclude:: ../scripts/multi_thermostat_driver.py
    :language: python
+
+The script above relies on functions provided in ``multi_thermostat_driver_func.py`` code.
+These functions should not need editing to run. The
+:download:`multi_thermostat_driver_func.py
+<../scripts/multi_thermostat_driver_func.py>`. script is also available under
+``scripts/multi_thermostat_driver_func.py``.
+
+.. literalinclude:: ../scripts/multi_thermostat_driver_func.py
+   :language: python
+
 
 More information
 ----------------

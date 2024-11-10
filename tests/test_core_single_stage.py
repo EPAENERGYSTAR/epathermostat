@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from numpy import isnan
 import pandas as pd
-
+from loguru import logger as log
 from datetime import datetime
 
 from thermostat.core import (
@@ -31,6 +31,7 @@ from .fixtures.single_stage import (
         core_cooling_day_set_type_5,
         thermostat_zero_days,
         thermostats_multiple_same_key,
+        thermostat_missing_days_cooling
         )
 
 from .fixtures.metrics_data import(
@@ -405,6 +406,37 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu1(thermostat_
 
     assert rhu is None
 
+"""def test_thermostat_type_1_get_exclude_no_electric_from_rhu(thermostat_missing_days_cooling,
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
+
+    start = 0
+    stop = 60
+    step = 5
+    temperature_bins = list(t for t in range(start, stop+step, step))
+    log.debug(f"JOHN LOOK HERE {type(thermostat_missing_days_cooling)}")
+    rhu_runtime = thermostat_missing_days_cooling.get_resistance_heat_utilization_runtime(
+            core_heating_day_set_type_1_entire)
+    rhu = thermostat_missing_days_cooling.get_resistance_heat_utilization_bins(
+            rhu_runtime,
+            temperature_bins,
+            core_heating_day_set_type_1_entire)
+
+    assert len(rhu) == 12
+
+    for item in rhu.itertuples():
+        bin_name = thermostat_missing_days_cooling._format_rhu('rhu1', item.Index.left, item.Index.right, duty_cycle=None)
+        bin_value = item.rhu
+        log.debug(f"JOHN LOOK HERE {type(thermostat_missing_days_cooling)}")
+        log.debug(f"JOHN LOOK HERE {bin_value}, {metrics_type_1_data[1][bin_name]}")
+        assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
+
+    rhu = thermostat_missing_days_cooling.get_resistance_heat_utilization_bins(
+            None,
+            temperature_bins,
+            core_heating_day_set_type_1_entire)
+
+    assert rhu is None
+"""
 def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_type_1,
         core_heating_day_set_type_1_entire, metrics_type_1_data):
 
