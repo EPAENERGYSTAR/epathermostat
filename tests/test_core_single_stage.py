@@ -413,29 +413,13 @@ def test_thermostat_type_1_get_exclude_no_electric_from_rhu(thermostat_heat_pump
     stop = 60
     step = 5
     temperature_bins = list(t for t in range(start, stop+step, step))
-    log.debug(f"JOHN LOOK HERE {type(thermostat_heat_pump_electric_and_no_electric_backup)}")
-    rhu_runtime = thermostat_heat_pump_electric_and_no_electric_backup.get_resistance_heat_utilization_runtime(
+    
+    try:
+        thermostat_heat_pump_electric_and_no_electric_backup.get_resistance_heat_utilization_runtime(
             core_heating_day_set_type_1_entire)
-    rhu = thermostat_heat_pump_electric_and_no_electric_backup.get_resistance_heat_utilization_bins(
-            rhu_runtime,
-            temperature_bins,
-            core_heating_day_set_type_1_entire)
-
-    assert len(rhu) == 12
-
-    for item in rhu.itertuples():
-        bin_name = thermostat_heat_pump_electric_and_no_electric_backup._format_rhu('rhu1', item.Index.left, item.Index.right, duty_cycle=None)
-        bin_value = item.rhu
-        log.debug(f"JOHN LOOK HERE {type(thermostat_heat_pump_electric_and_no_electric_backup)}")
-        log.debug(f"JOHN LOOK HERE {bin_value}, {metrics_type_1_data[1][bin_name]}")
-        assert_allclose(bin_value, metrics_type_1_data[1][bin_name], rtol=1e-3)
-
-    rhu = thermostat_heat_pump_electric_and_no_electric_backup.get_resistance_heat_utilization_bins(
-            None,
-            temperature_bins,
-            core_heating_day_set_type_1_entire)
-
-    assert rhu is None
+        assert False
+    except ValueError as e:
+        assert True
 
 def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_type_1,
         core_heating_day_set_type_1_entire, metrics_type_1_data):
