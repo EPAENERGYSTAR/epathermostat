@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from numpy import isnan
 import pandas as pd
-
+from loguru import logger as log
 from datetime import datetime
 
 from thermostat.core import (
@@ -31,6 +31,7 @@ from .fixtures.single_stage import (
         core_cooling_day_set_type_5,
         thermostat_zero_days,
         thermostats_multiple_same_key,
+        thermostat_heat_pump_electric_and_no_electric_backup
         )
 
 from .fixtures.metrics_data import(
@@ -404,6 +405,21 @@ def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu1(thermostat_
             core_heating_day_set_type_1_entire)
 
     assert rhu is None
+
+def test_thermostat_type_1_get_exclude_no_electric_from_rhu(thermostat_heat_pump_electric_and_no_electric_backup,
+        core_heating_day_set_type_1_entire, metrics_type_1_data):
+
+    start = 0
+    stop = 60
+    step = 5
+    temperature_bins = list(t for t in range(start, stop+step, step))
+    
+    try:
+        thermostat_heat_pump_electric_and_no_electric_backup.get_resistance_heat_utilization_runtime(
+            core_heating_day_set_type_1_entire)
+        assert False
+    except ValueError as e:
+        assert True
 
 def test_thermostat_type_1_get_resistance_heat_utilization_bins_rhu2(thermostat_type_1,
         core_heating_day_set_type_1_entire, metrics_type_1_data):

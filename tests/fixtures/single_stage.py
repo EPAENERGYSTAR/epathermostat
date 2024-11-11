@@ -214,3 +214,7 @@ def core_cooling_day_set_type_3(thermostat_type_3):
 def core_cooling_day_set_type_5(thermostat_type_5):
     return thermostat_type_5.get_core_cooling_days()[0]
 
+@pytest.fixture(scope="session", params=["../data/single_stage/metadata_heat_pump_electric_and_no_electric_backup.csv"])
+def thermostat_heat_pump_electric_and_no_electric_backup(request):
+    thermostats, _ = from_csv(get_data_path(request.param))
+    return next(thermostats)
