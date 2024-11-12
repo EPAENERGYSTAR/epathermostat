@@ -1,2 +1,3 @@
 six==1.16.0
 mock
+-e ./thermostat
