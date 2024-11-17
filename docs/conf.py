@@ -37,8 +37,10 @@ MOCK_MODULES = [
     'scipy.optimize',
     'scipy.stats',
 ]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-sys.path.insert(0, os.path.abspath('../../'))  # Adjust the path as needed
+sys.path.insert(0, os.path.abspath('..'))
+# sys.path.insert(0, os.path.abspath('../'))  # Adjust this if necessary
+# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+# sys.path.insert(0, os.path.abspath('../../'))  # Adjust the path as needed
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
