@@ -68,3 +68,4 @@ zipcodes==1.2.0
     # via -r requirements.txt
 loguru==0.7.2
     # via -r requirements.in
+pgeocode==0.4.1

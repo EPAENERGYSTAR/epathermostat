@@ -1,5 +1,5 @@
 import pandas as pd
-import zipcodes
+import pgeocode
 from collections import namedtuple
 from eeweather.geo import get_lat_long_climate_zones
 import numpy as np
@@ -69,9 +69,10 @@ def retrieve_climate_zone(zipcode):
             ])
     try:
         zipcode = zipcode.zfill(5)
-        zipcode_details = zipcodes.matching(zipcode).pop()
-        latitude = float(zipcode_details['lat'])
-        longitude = float(zipcode_details['long'])
+        nomi = pgeocode.Nominatim('us')
+        first_location = nomi.query_postal_code(zipcode)
+        latitude = float(first_location.latitude)
+        longitude = float(first_location.longitude)
         ee_climate_zones = get_lat_long_climate_zones(latitude, longitude)
         ba_climate_zone = ee_climate_zones['ba_climate_zone']
         climate_zone = CLIMATE_ZONE_MAPPING.get(ba_climate_zone, ba_climate_zone)
