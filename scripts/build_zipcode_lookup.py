@@ -1,4 +1,4 @@
-import zipcodes
+import pgeocode
 import eeweather
 import collections
 from pprint import pprint
@@ -6,6 +6,7 @@ from thermostat.stations import get_closest_station_by_zipcode
 from thermostat.climate_zone import retrieve_climate_zone
 from multiprocessing import Pool, cpu_count
 from functools import partial
+from datetime import datetime
 
 
 import logging
@@ -16,7 +17,7 @@ logger.setLevel(logging.ERROR)
 
 def get_station_climate_zone(zipcode_obj):
     try:
-        zipcode = zipcode_obj['zip_code']
+        zipcode = zipcode_obj
         station = get_closest_station_by_zipcode(zipcode)
         climate_zone_nt = retrieve_climate_zone(zipcode)
     except Exception:
@@ -32,8 +33,9 @@ def main():
     multiprocess_func_partial = partial(
         get_station_climate_zone,
         )
-
-    result_list = p.imap(multiprocess_func_partial, zipcodes.list_all())
+    nomi = pgeocode.Nominatim('US')
+    us_zipcodes = nomi._data
+    result_list = p.imap(multiprocess_func_partial, us_zipcodes['postal_code'].tolist())
     p.close()
     p.join()
 
@@ -45,8 +47,9 @@ def main():
 
     sorted_zipcode_lookup = collections.OrderedDict(sorted(zipcode_lookup.items()))
     print('from collections import OrderedDict')
-    print(f"# zipcodes version {zipcodes.__version__}")
+    print(f"# zipcodes version {pgeocode.__version__}")
     print(f"# eeweather version {eeweather.__version__}")
+    print(f"# date {datetime.now()}")
     print()
     print("ZIPCODE_LOOKUP = \\")
     pprint(sorted_zipcode_lookup)
