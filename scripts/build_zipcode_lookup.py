@@ -2,7 +2,7 @@ import pgeocode
 import eeweather
 import collections
 from pprint import pprint
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.stations import get_closest_station_by_zipcode, USA_ISO_COUNTRY_CODES
 from thermostat.climate_zone import retrieve_climate_zone
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -20,12 +20,12 @@ def get_station_climate_zone(zipcode_obj):
         zipcode = zipcode_obj
         station = get_closest_station_by_zipcode(zipcode)
         climate_zone_nt = retrieve_climate_zone(zipcode)
-    except Exception:
+    except Exception as e:
         return None, None, None
     return zipcode, station, climate_zone_nt.climate_zone
 
 
-def main():
+def main(countries=USA_ISO_COUNTRY_CODES):
     """This code looks up all available zip codes and generates a data file with station and climate zone lookups"""
     zipcode_lookup = {}
 
@@ -33,9 +33,8 @@ def main():
     multiprocess_func_partial = partial(
         get_station_climate_zone,
         )
-    nomi = pgeocode.Nominatim('US')
-    us_zipcodes = nomi._data
-    result_list = p.imap(multiprocess_func_partial, us_zipcodes['postal_code'].tolist())
+    us_zipcodes = sum((pgeocode.Nominatim(code)._data['postal_code'].tolist() for code in countries), [])
+    result_list = p.imap(multiprocess_func_partial, us_zipcodes)
     p.close()
     p.join()
 
