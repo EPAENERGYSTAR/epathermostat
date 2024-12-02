@@ -28,5 +28,6 @@ setup(name='thermostat',
         'sqlalchemy<=1.4.46',
         'zipcodes==1.2.0',
         'loguru',
+        'pgeocode==0.4.1',
         ],
 )

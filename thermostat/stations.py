@@ -1,6 +1,5 @@
 import logging
 import json
-import zipcodes
 import warnings
 from eeweather import (
         get_isd_file_metadata,
@@ -8,6 +7,7 @@ from eeweather import (
         select_station)
 from eeweather.exceptions import (
         UnrecognizedUSAFIDError)
+import pgeocode
 
 
 logging.getLogger(__name__)
@@ -26,10 +26,10 @@ METHOD = [
 def _zip_to_lat_long(zipcode):
     """ Returns the lat / long for a zip code, or None if none is found. """
     try:
-        zip_location_list = zipcodes.matching(zipcode)
-        first_location = zip_location_list.pop()
-        lat = float(first_location.get('lat'))
-        lon = float(first_location.get('long'))
+        nomi = pgeocode.Nominatim('us')
+        first_location = nomi.query_postal_code(zipcode)
+        lat = float(first_location.latitude)
+        lon = float(first_location.longitude)
     except ValueError:
         logging.warning(f'ZIP Code {zipcode} is invalid')
         return None, None
