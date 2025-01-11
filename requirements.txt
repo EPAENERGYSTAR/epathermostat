@@ -48,7 +48,7 @@ requests==2.28.1
     # via
     #   -r requirements.in
     #   eeweather
-scipy==1.10.0
+scipy==1.15
     # via -r requirements.in
 shapely==2.0.0
     # via
