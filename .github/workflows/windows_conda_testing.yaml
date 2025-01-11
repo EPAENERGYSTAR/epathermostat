@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         # Apparently 3.10 gets converted to 3.1 if it's not a string. Brilliant.
-        python-version: [3.8]
+        python-version: ["3.12"]
 
 
     steps:
@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: 3.8
+        python-version: "3.12"
     - name: Test with pytest
       run: |
         # Activate the base environment
