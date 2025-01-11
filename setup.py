@@ -21,7 +21,7 @@ setup(name='thermostat',
     packages=find_packages(),
     package_data={'': ['*.csv', '*.json']},
     install_requires=[
-        'eeweather==0.3.24',
+        'eeweather==0.3.28',
         'numpy==2.2',
         'pandas==2.2.3',
         'scipy==1.15',
