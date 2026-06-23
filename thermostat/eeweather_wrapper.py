@@ -1,7 +1,10 @@
 from datetime import datetime
+import logging
 import eeweather
 
 import pandas as pd
+
+from thermostat import weather_fallback
 
 # This routine is a compact and distilled version of code that was originally
 # released as eeweather_wrapper.py
@@ -21,6 +24,8 @@ import pandas as pd
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+logger = logging.getLogger(__name__)
+
 
 def _convert_to_farenheit(x):
     """ Converts Celsius to Fahrenheit
@@ -34,6 +39,38 @@ def _convert_to_farenheit(x):
     float
     """
     return 1.8 * x + 32
+
+
+def _fill_gaps_with_ghcnh(tempC, usaf_id, start, end):
+    """Fill NaN values in tempC using NOAA GHCN-H data for the same station.
+
+    Only NaN positions are overwritten; valid cached data is preserved.
+    Returns tempC unchanged if the station has no WBAN ID or the fallback
+    returns no data.
+    """
+    try:
+        metadata = eeweather.get_isd_station_metadata(usaf_id)
+        wban_id = metadata.get("recent_wban_id")
+    except Exception:
+        return tempC
+
+    if not wban_id:
+        return tempC
+
+    nan_count = int(tempC.isna().sum())
+    fallback = weather_fallback.fetch_ghcnh_hourly_temp_data(wban_id, start, end)
+
+    if fallback.empty:
+        return tempC
+
+    filled = tempC.fillna(fallback.reindex(tempC.index))
+    filled_count = nan_count - int(filled.isna().sum())
+    logger.warning(
+        "Station %s: NOAA global-hourly data unavailable for %s to %s; "
+        "filled %d of %d missing hours from NOAA GHCN-H.",
+        usaf_id, start.date(), end.date(), filled_count, nan_count,
+    )
+    return filled
 
 
 def get_indexed_temperatures_eeweather(usaf_id, index):
@@ -58,6 +95,8 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
     end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
     tempC, warnings = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
+    if tempC.isna().any():
+        tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF
