@@ -4,7 +4,7 @@ import pandas as pd
 import pytz
 from unittest.mock import patch, MagicMock
 
-from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
+from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather, NOAA_OUTAGE_DATE
 
 
 def _utc_hourly_index(start, periods):
@@ -34,9 +34,10 @@ def _ghcnh_fill(index):
 # Test: fallback NOT called when eeweather data is complete
 # ---------------------------------------------------------------------------
 
-def test_no_fallback_when_data_complete():
-    full_ts, warns = _full_tempC()
-    index = _utc_hourly_index("2025-06-01", periods=24)
+def test_no_fallback_when_pre_outage_data_complete():
+    """Requests entirely before NOAA_OUTAGE_DATE with no NaN never call GHCN-H."""
+    full_ts, warns = _full_tempC("2024-01-01", periods=8760)
+    index = _utc_hourly_index("2024-06-01", periods=24)
 
     with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
                return_value=(full_ts, warns)), \
@@ -170,3 +171,45 @@ def test_empty_index_returns_empty_series():
     mock_load.assert_not_called()
     assert isinstance(result, pd.Series)
     assert len(result) == 0
+
+
+# ---------------------------------------------------------------------------
+# Test: date-based auto-routing to GHCN-H at NOAA_OUTAGE_DATE boundary
+# ---------------------------------------------------------------------------
+
+def test_ghcnh_called_automatically_for_post_outage_dates():
+    """Requests ending on or after NOAA_OUTAGE_DATE trigger GHCN-H without NaN."""
+    full_ts, warns = _full_tempC("2025-01-01", periods=8760)
+    # No NaN in eeweather response — but date range crosses the outage date.
+    post_outage_index = pd.date_range(
+        NOAA_OUTAGE_DATE, periods=24, freq="h", tz=pytz.UTC
+    )
+
+    with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
+               return_value=(full_ts, warns)), \
+         patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
+               return_value={"recent_wban_id": "23234"}), \
+         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
+               return_value=_ghcnh_fill(full_ts.index)) as mock_ghcnh:
+
+        get_indexed_temperatures_eeweather("722880", post_outage_index)
+
+    mock_ghcnh.assert_called_once()
+
+
+def test_ghcnh_not_called_for_pre_outage_complete_data():
+    """Requests ending before NOAA_OUTAGE_DATE with no NaN skip GHCN-H entirely."""
+    full_ts, warns = _full_tempC("2024-01-01", periods=8760)
+    pre_outage_index = pd.date_range("2024-06-01", periods=24, freq="h", tz=pytz.UTC)
+
+    with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
+               return_value=(full_ts, warns)), \
+         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data") as mock_ghcnh:
+
+        get_indexed_temperatures_eeweather("722880", pre_outage_index)
+
+    mock_ghcnh.assert_not_called()
+
+
+def test_noaa_outage_date_constant_is_correct():
+    assert NOAA_OUTAGE_DATE == pd.Timestamp("2025-08-30", tz="UTC")

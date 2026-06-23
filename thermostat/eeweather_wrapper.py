@@ -3,8 +3,14 @@ import logging
 import eeweather
 
 import pandas as pd
+import pytz
 
 from thermostat import weather_fallback
+
+# First date for which the NOAA global-hourly API stopped returning data.
+# Any request whose end date falls on or after this date routes directly to
+# GHCN-H for the affected portion rather than waiting for a NaN-detection pass.
+NOAA_OUTAGE_DATE = pd.Timestamp("2025-08-30", tz="UTC")
 
 # This routine is a compact and distilled version of code that was originally
 # released as eeweather_wrapper.py
@@ -95,7 +101,9 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
     end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
     tempC, warnings = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
-    if tempC.isna().any():
+    # Route to GHCN-H without waiting for NaN detection when the request
+    # overlaps the known NOAA outage period, or as a general NaN fallback.
+    if end >= NOAA_OUTAGE_DATE or tempC.isna().any():
         tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
