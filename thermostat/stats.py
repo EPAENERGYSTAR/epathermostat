@@ -8,7 +8,7 @@ from itertools import chain
 from warnings import warn
 import json
 from functools import reduce
-from pkg_resources import resource_stream
+import importlib.resources
 import logging
 
 from thermostat import get_version
@@ -828,12 +828,12 @@ def compute_summary_statistics(
             usecols=["climate_zone", "heating_weight", "cooling_weight"],
         ).set_index("climate_zone")
 
-        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].iteritems()}
-        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].iteritems()}
+        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].items()}
+        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].items()}
 
         return heating_weights, cooling_weights
 
-    with resource_stream('thermostat.resources', 'NationalAverageClimateZoneWeightings.csv') as f:
+    with importlib.resources.open_binary('thermostat.resources', 'NationalAverageClimateZoneWeightings.csv') as f:
         heating_weights, cooling_weights = _load_climate_zone_weights(f)
 
     def _compute_national_weightings(stats_by_climate_zone, keys, weights):

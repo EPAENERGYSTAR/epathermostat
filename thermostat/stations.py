@@ -1,6 +1,6 @@
 import logging
 import json
-from pkg_resources import resource_stream
+import importlib.resources
 from eeweather import (
         get_isd_file_metadata,
         zcta_to_lat_long,
@@ -13,7 +13,7 @@ from eeweather.exceptions import (
 logging.getLogger(__name__)
 
 # This is a JSON file with the zipcode to usaf_station mapping that were previously in eemeter.
-zipcode_usaf_json = resource_stream('thermostat.resources', 'zipcode_usaf_station.json').read().decode()
+zipcode_usaf_json = importlib.resources.read_text('thermostat.resources', 'zipcode_usaf_station.json')
 zipcode_usaf = json.loads(zipcode_usaf_json)
 
 # Sort order for rough_quality (returned by eeweather).

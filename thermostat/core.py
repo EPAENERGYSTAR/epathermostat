@@ -8,7 +8,6 @@ import logging
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
-from pkg_resources import resource_stream
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
@@ -460,7 +459,7 @@ class Thermostat(object):
     def _get_hourly_boolean(self, daily_boolean):
         values = np.repeat(daily_boolean.values, 24)
         index = pd.date_range(start=daily_boolean.index[0],
-                periods=daily_boolean.index.shape[0] * 24, freq="H")
+                periods=daily_boolean.index.shape[0] * 24, freq="h")
         hourly_boolean = pd.Series(values, index)
         return hourly_boolean
 
@@ -605,7 +604,7 @@ class Thermostat(object):
 
         # Create the bins and group by them
         runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')[['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
+        runtime_rhu = runtime_temp.groupby('bins', observed=False)[['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
