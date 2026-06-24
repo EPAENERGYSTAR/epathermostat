@@ -605,7 +605,7 @@ class Thermostat(object):
 
         # Create the bins and group by them
         runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes'].sum()
+        runtime_rhu = runtime_temp.groupby('bins')[['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
