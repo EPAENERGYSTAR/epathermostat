@@ -13,21 +13,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install build dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-          build-essential \
-          zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev \
-          libreadline-dev libffi-dev libsqlite3-dev libbz2-dev liblzma-dev tk-dev
-
     - name: Set up Python ${{ matrix.python-version }}
-      uses: shivammathur/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
-        cache: pip
-        check-latest: true
+        cache: 'pip'
 
     - name: Verify Python
       run: |
