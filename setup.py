@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages, Command
 
-version = __import__('thermostat').get_version()
+try:
+    version = __import__('thermostat').get_version()
+except ImportError:
+    version = '1.7.6'
 
 long_description = "Calculate connected thermostat temperature/run-time savings."
 
@@ -23,5 +26,7 @@ setup(name='thermostat',
         'eemeter==3.1.0',
         'eeweather==0.3.30',
         'sqlalchemy',
+        'attrs',
+        'pytz',
         ],
 )
