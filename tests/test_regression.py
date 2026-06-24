@@ -17,7 +17,7 @@ ATOL = 1e-3
     (pd.Series([4, 5, 6, 7]), pd.Series([1, 2, 3, 4]), 1, 3, 0),
     (pd.Series([4, 5, 6, np.nan]), pd.Series([1, 2, 3, 4]), 1, 3, 0),
     (pd.Series([4]), pd.Series([1]), np.nan, np.nan, np.nan),
-    (pd.Series([], dtype=float), pd.Series([], dtype=float), np.nan, np.nan, np.nan),
+    (pd.Series([]), pd.Series([]), np.nan, np.nan, np.nan),
     ])
 def regression_fixture(request):
     return request.param

@@ -63,7 +63,8 @@ def test_fallback_fills_nan_positions():
          patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
                return_value={"recent_wban_id": "23234"}), \
          patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
-               return_value=_ghcnh_fill(nan_index)):
+               return_value=_ghcnh_fill(nan_index)), \
+         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache"):
 
         result = get_indexed_temperatures_eeweather("722880", index)
 
@@ -82,7 +83,8 @@ def test_fallback_fills_nan_in_tail():
          patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
                return_value={"recent_wban_id": "23234"}), \
          patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
-               return_value=_ghcnh_fill(nan_index)):
+               return_value=_ghcnh_fill(nan_index)), \
+         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache"):
 
         result = get_indexed_temperatures_eeweather("722880", index)
 
@@ -107,7 +109,8 @@ def test_fallback_does_not_overwrite_valid_data():
          patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
                return_value={"recent_wban_id": "23234"}), \
          patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
-               return_value=_ghcnh_fill(nan_index)):
+               return_value=_ghcnh_fill(nan_index)), \
+         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache"):
 
         result = get_indexed_temperatures_eeweather("722880", index)
 
@@ -190,7 +193,8 @@ def test_ghcnh_called_automatically_for_post_outage_dates():
          patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
                return_value={"recent_wban_id": "23234"}), \
          patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
-               return_value=_ghcnh_fill(full_ts.index)) as mock_ghcnh:
+               return_value=_ghcnh_fill(full_ts.index)) as mock_ghcnh, \
+         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache"):
 
         get_indexed_temperatures_eeweather("722880", post_outage_index)
 
@@ -213,3 +217,50 @@ def test_ghcnh_not_called_for_pre_outage_complete_data():
 
 def test_noaa_outage_date_constant_is_correct():
     assert NOAA_OUTAGE_DATE == pd.Timestamp("2025-08-30", tz="UTC")
+
+
+# ---------------------------------------------------------------------------
+# Test: successful fill writes result back to eeweather cache
+# ---------------------------------------------------------------------------
+
+def test_cache_writeback_after_successful_fill():
+    """After a GHCN-H fill, write_isd_hourly_temp_data_to_cache is called once per year."""
+    partial_ts, warns = _partial_tempC(nan_start_idx=8000)
+    nan_index = partial_ts[partial_ts.isna()].index
+    index = partial_ts.index[-24:]
+
+    with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
+               return_value=(partial_ts, warns)), \
+         patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
+               return_value={"recent_wban_id": "23234"}), \
+         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
+               return_value=_ghcnh_fill(nan_index)), \
+         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache") as mock_write:
+
+        get_indexed_temperatures_eeweather("722880", index)
+
+    # One call per year covered by the request (2025 only here)
+    mock_write.assert_called_once()
+    call_args = mock_write.call_args
+    assert call_args[0][0] == "722880"
+    assert call_args[0][1] == 2025
+
+
+# ---------------------------------------------------------------------------
+# Test: WBAN sentinel "99999" skips GHCN-H entirely
+# ---------------------------------------------------------------------------
+
+def test_sentinel_wban_skips_fallback():
+    """WBAN id '99999' means unknown station — GHCN-H fetch is never attempted."""
+    partial_ts, warns = _partial_tempC(nan_start_idx=100)
+    index = _utc_hourly_index("2025-01-01", 24)
+
+    with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
+               return_value=(partial_ts, warns)), \
+         patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
+               return_value={"recent_wban_id": "99999"}), \
+         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data") as mock_ghcnh:
+
+        get_indexed_temperatures_eeweather("725314", index)
+
+    mock_ghcnh.assert_not_called()

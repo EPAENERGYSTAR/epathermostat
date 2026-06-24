@@ -16,14 +16,14 @@ def thermostat_template():
     equipment_type = 0
     zipcode = "FAKE"
     station = "FAKE"
-    temperature_in = pd.Series([], dtype=float)
-    temperature_out = pd.Series([], dtype=float)
-    cooling_setpoint = pd.Series([], dtype=float)
-    heating_setpoint = pd.Series([], dtype=float)
-    cool_runtime = pd.Series([], dtype=float)
-    heat_runtime = pd.Series([], dtype=float)
-    auxiliary_heat_runtime = pd.Series([], dtype=float)
-    emergency_heat_runtime = pd.Series([], dtype=float)
+    temperature_in = pd.Series([])
+    temperature_out = pd.Series([])
+    cooling_setpoint = pd.Series([])
+    heating_setpoint = pd.Series([])
+    cool_runtime = pd.Series([])
+    heat_runtime = pd.Series([])
+    auxiliary_heat_runtime = pd.Series([])
+    emergency_heat_runtime = pd.Series([])
 
     thermostat = Thermostat(
         thermostat_id,

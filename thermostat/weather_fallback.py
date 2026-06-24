@@ -70,7 +70,7 @@ def fetch_ghcnh_hourly_temp_data(wban_id, start, end):
 
         ts = pd.Series(temps, index=dates, dtype=float)
         ts = ts.groupby(ts.index).mean()
-        return ts.resample("h").mean()
+        return ts.resample("H").mean()
 
     except Exception as exc:
         logger.warning("GHCN-H response parsing failed for station %s: %s", ghcnh_id, exc)

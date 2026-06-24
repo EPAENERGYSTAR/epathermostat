@@ -60,7 +60,7 @@ def _fill_gaps_with_ghcnh(tempC, usaf_id, start, end):
     except Exception:
         return tempC
 
-    if not wban_id:
+    if not wban_id or wban_id == "99999":
         return tempC
 
     nan_count = int(tempC.isna().sum())
@@ -76,6 +76,15 @@ def _fill_gaps_with_ghcnh(tempC, usaf_id, start, end):
         "filled %d of %d missing hours from NOAA GHCN-H.",
         usaf_id, start.date(), end.date(), filled_count, nan_count,
     )
+
+    # Write the filled series back into the eeweather cache by year so
+    # subsequent calls for the same station/year skip the NCEI network request.
+    for year, group in filled.groupby(filled.index.year):
+        try:
+            eeweather.write_isd_hourly_temp_data_to_cache(usaf_id, int(year), group)
+        except Exception as exc:
+            logger.debug("Cache write-back failed for %s %d: %s", usaf_id, year, exc)
+
     return filled
 
 
@@ -105,6 +114,6 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     # overlaps the known NOAA outage period, or as a general NaN fallback.
     if end >= NOAA_OUTAGE_DATE or tempC.isna().any():
         tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
-    tempC = tempC.resample('h').mean()[index]
+    tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF
