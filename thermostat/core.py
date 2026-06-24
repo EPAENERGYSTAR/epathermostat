@@ -4,11 +4,11 @@ from itertools import repeat
 import inspect
 from warnings import warn
 import logging
-from pkg_resources import resource_stream
 
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
+from pkg_resources import resource_stream
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
