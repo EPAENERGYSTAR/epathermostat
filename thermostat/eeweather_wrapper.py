@@ -105,6 +105,6 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     # overlaps the known NOAA outage period, or as a general NaN fallback.
     if end >= NOAA_OUTAGE_DATE or tempC.isna().any():
         tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
-    tempC = tempC.resample('H').mean()[index]
+    tempC = tempC.resample('h').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF
