@@ -1,9 +1,6 @@
 from setuptools import setup, find_packages, Command
 
-try:
-    version = __import__('thermostat').get_version()
-except ImportError:
-    version = '1.7.6'
+version = __import__('thermostat').get_version()
 
 long_description = "Calculate connected thermostat temperature/run-time savings."
 
