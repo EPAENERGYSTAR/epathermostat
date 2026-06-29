@@ -5,18 +5,26 @@ on: [push]
 jobs:
   build:
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Apparently 3.10 gets converted to 3.1 if it's not a string. Brilliant.
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: x64
+        cache: 'pip'
+
+    - name: Verify Python
+      run: |
+        python --version
+        pip --version
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -27,6 +35,22 @@ jobs:
       run: |
         mkdir $HOME/.eeweather
         zcat $GITHUB_WORKSPACE/thermostat/resources/cache.sql.gz | sqlite3 $HOME/.eeweather/cache.db
+    - name: Verify GHCN-H fallback
+      run: |
+        python - <<'EOF'
+        import pandas as pd
+        from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
+        # Test over a full quarter to smooth over station observation gaps.
+        # GHCN-H stations may miss individual hours; a 50% coverage floor
+        # confirms the fallback is routing to GHCN-H and returning real data.
+        idx = pd.date_range("2025-09-01", periods=2160, freq="H", tz="UTC")
+        temps = get_indexed_temperatures_eeweather("722880", idx)
+        non_nan = temps.notna().sum()
+        assert non_nan > len(idx) * 0.50, \
+            "GHCN-H fallback returned too little data: {}/{} non-NaN hours".format(non_nan, len(idx))
+        print("GHCN-H fallback OK: {}/{} non-NaN hourly values ({:.1%})".format(
+            non_nan, len(idx), non_nan / len(idx)))
+        EOF
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names

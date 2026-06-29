@@ -20,7 +20,7 @@ click==8.0.4
     #   eeweather
 eemeter==3.1.0
     # via -r requirements.in
-eeweather==0.3.24
+eeweather==0.3.30
     # via -r requirements.in
 greenlet==1.1.2
     # via
@@ -95,3 +95,4 @@ urllib3==1.26.8
     # via
     #   -r requirements.in
     #   requests
+pytz

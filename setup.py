@@ -21,7 +21,11 @@ setup(name='thermostat',
     package_data={'': ['*.csv', '*.json']},
     install_requires=[
         'eemeter==3.1.0',
-        'eeweather==0.3.24',
+        'eeweather==0.3.30',
         'sqlalchemy',
+        'attrs',
+        'pytz',
+        'pandas>=1.0,<2',
+        'numpy>=1.20,<2',
         ],
 )
