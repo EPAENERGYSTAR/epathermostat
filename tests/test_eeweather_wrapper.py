@@ -251,16 +251,36 @@ def test_cache_writeback_after_successful_fill():
 # ---------------------------------------------------------------------------
 
 def test_sentinel_wban_skips_fallback():
-    """WBAN id '99999' means unknown station — GHCN-H fetch is never attempted."""
+    """WBAN id '99999' with no historical fallback — GHCN-H fetch is never attempted."""
     partial_ts, warns = _partial_tempC(nan_start_idx=100)
     index = _utc_hourly_index("2025-01-01", 24)
 
     with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
                return_value=(partial_ts, warns)), \
          patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
-               return_value={"recent_wban_id": "99999"}), \
+               return_value={"recent_wban_id": "99999", "wban_ids": "99999"}), \
          patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data") as mock_ghcnh:
 
         get_indexed_temperatures_eeweather("725314", index)
 
     mock_ghcnh.assert_not_called()
+
+
+def test_historical_wban_used_when_recent_is_sentinel():
+    """When recent_wban_id='99999' but wban_ids has a real WBAN, GHCN-H is called with it."""
+    partial_ts, warns = _partial_tempC(nan_start_idx=8000)
+    nan_index = partial_ts[partial_ts.isna()].index
+    index = partial_ts.index[-24:]
+
+    with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
+               return_value=(partial_ts, warns)), \
+         patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
+               return_value={"recent_wban_id": "99999", "wban_ids": "14958,99999"}), \
+         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
+               return_value=_ghcnh_fill(nan_index)) as mock_ghcnh, \
+         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache"):
+
+        result = get_indexed_temperatures_eeweather("727550", index)
+
+    mock_ghcnh.assert_called_once()
+    assert result.notna().all()

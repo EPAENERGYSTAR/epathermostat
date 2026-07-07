@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import numpy as np
 import eeweather
 
 import pandas as pd
@@ -61,6 +62,11 @@ def _fill_gaps_with_ghcnh(tempC, usaf_id, start, end):
         return tempC
 
     if not wban_id or wban_id == "99999":
+        raw = metadata.get("wban_ids", "")
+        candidates = [w.strip() for w in str(raw).split(",") if w.strip() and w.strip() != "99999"]
+        wban_id = candidates[0] if candidates else None
+
+    if not wban_id or wban_id == "99999":
         return tempC
 
     nan_count = int(tempC.isna().sum())
@@ -109,7 +115,14 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     years = sorted(index.groupby(index.year).keys())
     start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
     end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
-    tempC, warnings = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
+    try:
+        tempC, warnings = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
+    except ValueError:
+        # eeweather has no ISD file entries for the requested year(s) — the
+        # local metadata DB predates those files. Create an all-NaN placeholder
+        # so the GHCN-H fallback below can fill the gap.
+        tempC = pd.Series(np.nan, index=pd.date_range(start, end, freq="H", tz="UTC"), dtype=float)
+        warnings = []
     # Route to GHCN-H without waiting for NaN detection when the request
     # overlaps the known NOAA outage period, or as a general NaN fallback.
     if end >= NOAA_OUTAGE_DATE or tempC.isna().any():
