@@ -30,6 +30,7 @@ import json
 import logging
 import os
 import sqlite3
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
 
@@ -108,22 +109,16 @@ def _cache_key(usaf_id, year):
     return "isd-hourly-{}-{}".format(usaf_id, year)
 
 
-def _already_cached(usaf_id, year):
-    """Return True if a non-empty cache entry exists for this station+year."""
+def _load_cached_keys():
+    """Return the set of all isd-hourly-* keys already in the cache."""
     conn = sqlite3.connect(CACHE_PATH)
     try:
-        cur = conn.execute(
-            "SELECT data FROM items WHERE key = ?", (_cache_key(usaf_id, year),)
-        )
-        row = cur.fetchone()
-        if row is None:
-            return False
-        data = json.loads(row[0])
-        # Consider it cached if at least 10% of hours have values
-        non_null = sum(1 for _, v in data if v is not None)
-        return non_null > (365 * 24 * 0.10)
+        rows = conn.execute(
+            "SELECT key FROM items WHERE key LIKE 'isd-hourly-%'"
+        ).fetchall()
+        return {r[0] for r in rows}
     except Exception:
-        return False
+        return set()
     finally:
         conn.close()
 
@@ -178,6 +173,10 @@ def main(workers=8, no_export=False, all_stations=False, min_quality=None):
     years = list(range(OUTAGE_YEAR, CURRENT_YEAR + 1))
     logger.info("Populating years: %s", years)
 
+    # Load all already-cached keys in a single query (much faster than per-item lookups).
+    cached_keys = _load_cached_keys()
+    logger.info("Loaded %d cached keys from %s", len(cached_keys), CACHE_PATH)
+
     # Build work list, skipping already-cached entries.
     # WBAN "99999" is a sentinel for "unknown station" — no real data exists.
     SENTINEL_WBANS = {"99999"}
@@ -191,13 +190,13 @@ def main(workers=8, no_export=False, all_stations=False, min_quality=None):
             skipped_sentinel += 1
             continue
         for year in years:
-            if _already_cached(usaf_id, year):
+            if _cache_key(usaf_id, year) in cached_keys:
                 continue
             work.append((usaf_id, wban_id, year))
 
     if skipped_sentinel:
         logger.info("Skipped %d stations with sentinel WBAN (no real data)", skipped_sentinel)
-    logger.info("%d station-years to fetch (%d already cached)", len(work), len(station_ids) * len(years) - len(work))
+    logger.info("%d station-years to fetch (%d already cached)", len(work), len(cached_keys))
 
     if not work:
         logger.info("Nothing to do.")
@@ -205,6 +204,8 @@ def main(workers=8, no_export=False, all_stations=False, min_quality=None):
         fetched = 0
         written = 0
         failed = 0
+        t_start = time.monotonic()
+        last_log = t_start
 
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {
@@ -226,11 +227,16 @@ def main(workers=8, no_export=False, all_stations=False, min_quality=None):
                     logger.warning("Error for %s %d: %s", usaf_id, year, exc)
                     failed += 1
 
-                if fetched % 50 == 0:
+                now = time.monotonic()
+                if now - last_log >= 60 or fetched == len(work):
+                    elapsed = now - t_start
+                    rate = fetched / elapsed if elapsed > 0 else 0
+                    eta = int((len(work) - fetched) / rate) if rate > 0 else 0
                     logger.info(
-                        "Progress: %d/%d fetched, %d written, %d no-data",
-                        fetched, len(work), written, failed,
+                        "Progress: %d/%d fetched, %d written, %d no-data, eta %dmin",
+                        fetched, len(work), written, failed, eta // 60,
                     )
+                    last_log = now
 
         logger.info(
             "Done: %d fetched, %d written to cache, %d with no GHCN-H data",
