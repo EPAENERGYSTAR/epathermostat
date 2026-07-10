@@ -1,4 +1,6 @@
+import json
 import logging
+import time
 from datetime import datetime
 
 import pandas as pd
@@ -8,6 +10,11 @@ import requests
 logger = logging.getLogger(__name__)
 
 _NCEI_URL = "https://www.ncei.noaa.gov/access/services/data/v1"
+# NOAA holds connections open for ~330s before returning [] for stations with
+# no GHCN-H data, and the per-read timeout=60 doesn't help because they send
+# keepalive bytes every ~40s.  A wall-clock total timeout of 90s skips dead
+# stations quickly while leaving enough room for large data responses (~63s).
+_TOTAL_RESPONSE_TIMEOUT = 90
 
 
 def fetch_ghcnh_hourly_temp_data(wban_id, start, end):
@@ -41,9 +48,18 @@ def fetch_ghcnh_hourly_temp_data(wban_id, start, end):
     }
 
     try:
-        resp = requests.get(_NCEI_URL, params=params, timeout=60)
+        resp = requests.get(_NCEI_URL, params=params, timeout=30, stream=True)
         resp.raise_for_status()
-        records = resp.json()
+        t0 = time.monotonic()
+        chunks = []
+        for chunk in resp.iter_content(chunk_size=8192):
+            if time.monotonic() - t0 > _TOTAL_RESPONSE_TIMEOUT:
+                resp.close()
+                logger.debug("GHCN-H total-timeout for station %s — no data", ghcnh_id)
+                return _empty
+            if chunk:
+                chunks.append(chunk)
+        records = json.loads(b"".join(chunks)) if chunks else []
     except Exception as exc:
         logger.warning("GHCN-H request failed for station %s: %s", ghcnh_id, exc)
         return _empty
