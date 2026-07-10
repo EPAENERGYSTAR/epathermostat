@@ -17,8 +17,11 @@ Usage:
     python scripts/populate_ghcnh_cache.py [--workers N] [--no-export]
 
 Options:
-    --workers N     Number of parallel fetch threads (default: 8)
-    --no-export     Skip re-writing cache.sql.gz (useful for incremental runs)
+    --workers N       Number of parallel fetch threads (default: 8)
+    --no-export       Skip re-writing cache.sql.gz (useful for incremental runs)
+    --all-stations    Fetch all 4,804 non-Canadian eeweather stations instead of
+                      just those in zipcode_usaf_station.json. Use this before
+                      rebuilding the JSON for optimal nearest-station matching.
 """
 
 import argparse
@@ -66,6 +69,19 @@ def _load_station_ids():
     with open(_ZIPCODE_STATION_JSON) as f:
         mapping = json.load(f)
     return sorted(set(v for v in mapping.values() if v))
+
+
+def _load_all_station_ids():
+    """Return all non-Canadian USAF IDs from the eeweather metadata DB."""
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(eeweather.__file__)))
+    db_path = _os.path.join(root, 'eeweather', 'resources', 'metadata.db')
+    conn = sqlite3.connect(db_path)
+    rows = conn.execute(
+        "SELECT usaf_id FROM isd_station_metadata WHERE usaf_id NOT LIKE 'A%'"
+    ).fetchall()
+    conn.close()
+    return sorted(r[0] for r in rows)
 
 
 def _get_wban_id(usaf_id):
@@ -138,9 +154,13 @@ def _export_cache(output_path):
 # Main
 # ---------------------------------------------------------------------------
 
-def main(workers=8, no_export=False):
-    station_ids = _load_station_ids()
-    logger.info("Found %d unique stations", len(station_ids))
+def main(workers=8, no_export=False, all_stations=False):
+    if all_stations:
+        station_ids = _load_all_station_ids()
+        logger.info("Found %d stations in eeweather metadata DB", len(station_ids))
+    else:
+        station_ids = _load_station_ids()
+        logger.info("Found %d unique stations in zipcode JSON", len(station_ids))
 
     years = list(range(OUTAGE_YEAR, CURRENT_YEAR + 1))
     logger.info("Populating years: %s", years)
@@ -216,5 +236,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--workers", type=int, default=8, help="Parallel fetch threads (default: 8)")
     parser.add_argument("--no-export", action="store_true", help="Skip writing cache.sql.gz")
+    parser.add_argument("--all-stations", action="store_true",
+                        help="Fetch all 4,804 non-Canadian eeweather stations instead of just those in the JSON")
     args = parser.parse_args()
-    main(workers=args.workers, no_export=args.no_export)
+    main(workers=args.workers, no_export=args.no_export, all_stations=args.all_stations)
