@@ -1,5 +1,6 @@
 import logging
 import json
+from datetime import date
 from pkg_resources import resource_stream
 import eeweather.connections
 from eeweather import (
@@ -9,12 +10,6 @@ from eeweather import (
 from eeweather.exceptions import (
         UnrecognizedZCTAError,
         UnrecognizedUSAFIDError)
-
-from thermostat.heating_year import HEAT_START, HEAT_END
-
-# Calendar years spanned by the current heating window — used to verify that
-# a candidate station has cache data covering the full test period.
-_REQUIRED_YEARS = sorted({HEAT_START.year, HEAT_END.year})
 
 logging.getLogger(__name__)
 
@@ -51,8 +46,11 @@ def _rank_stations_by_distance_and_quality(lat, lon):
 
 def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM):
     """Walk the distance-ranked station list and return the nearest station
-    with cache data for every year in _REQUIRED_YEARS (derived from the
-    current heating window), within *max_dist_km* kilometres.
+    with cache data for the current mid-year heating window, within
+    *max_dist_km* kilometres.
+
+    Required years are [today.year - 1, today.year]: we always have last
+    year's complete data and this year's partial data, never next year's.
 
     Parameters
     ----------
@@ -66,6 +64,9 @@ def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM):
     usaf_id : str or None
         USAF station ID, or None if no qualifying station was found.
     """
+    today = date.today()
+    required_years = [today.year - 1, today.year]
+
     station_ranking = _rank_stations_by_distance_and_quality(lat, lon)
     store = eeweather.connections.key_value_store_proxy.get_store()
     max_dist_m = max_dist_km * 1000.0
@@ -78,7 +79,7 @@ def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM):
         if usaf.startswith('A'):
             continue  # Canadian airport codes — not usable
         if all(store.key_exists('isd-hourly-{}-{}'.format(usaf, y))
-               for y in _REQUIRED_YEARS):
+               for y in required_years):
             return usaf
     return None
 
@@ -114,10 +115,9 @@ def get_closest_station_by_zipcode(zipcode):
     """Return the nearest both-year weather station for a ZIP code / ZCTA.
 
     Walks the eeweather-ranked station list and selects the first station that
-    has cache data covering every year in _REQUIRED_YEARS (the current heating
-    window), within 500 km of the ZCTA centroid. Falls back to the static JSON
-    map when eeweather does not recognise the ZCTA or no qualifying station is
-    found in range.
+    has cache data for [today.year-1, today.year], within 500 km of the ZCTA
+    centroid. Falls back to the static JSON map when eeweather does not
+    recognise the ZCTA or no qualifying station is found in range.
 
     Parameters
     ----------

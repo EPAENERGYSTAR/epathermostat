@@ -15,6 +15,7 @@ import sqlite3
 import tempfile
 import time
 import warnings
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -24,7 +25,6 @@ import eeweather
 
 from thermostat.importers import from_csv
 from thermostat.multiple import multiple_thermostat_calculate_epa_field_savings_metrics
-from thermostat.heating_year import HEAT_START, HEAT_END
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -33,6 +33,8 @@ from thermostat.heating_year import HEAT_START, HEAT_END
 _RESOURCES_DIR = Path(__file__).parent.parent / "thermostat" / "resources"
 _JSON_PATH = _RESOURCES_DIR / "zipcode_usaf_station.json"
 
+HEAT_START = date(2025, 7, 1)
+HEAT_END = date(2026, 6, 30)
 DATE_RANGE = pd.date_range(str(HEAT_START), str(HEAT_END), freq="D")
 
 HEATING_SETPOINT = 68.0
