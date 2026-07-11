@@ -100,7 +100,15 @@ def _load_all_station_ids(min_quality=None):
 def _get_wban_id(usaf_id):
     try:
         meta = eeweather.get_isd_station_metadata(usaf_id)
-        return meta.get("recent_wban_id")
+        wban = meta.get("recent_wban_id")
+        if wban and wban != "99999":
+            return wban
+        # recent_wban_id is a sentinel — fall back to the first valid WBAN in wban_ids.
+        for candidate in (meta.get("wban_ids") or "").split(","):
+            candidate = candidate.strip()
+            if candidate and candidate != "99999":
+                return candidate
+        return None
     except Exception:
         return None
 
@@ -178,24 +186,15 @@ def main(workers=8, no_export=False, all_stations=False, min_quality=None):
     logger.info("Loaded %d cached keys from %s", len(cached_keys), CACHE_PATH)
 
     # Build work list, skipping already-cached entries.
-    # WBAN "99999" is a sentinel for "unknown station" — no real data exists.
-    SENTINEL_WBANS = {"99999"}
     work = []
-    skipped_sentinel = 0
     for usaf_id in station_ids:
         wban_id = _get_wban_id(usaf_id)
         if not wban_id:
-            continue
-        if wban_id in SENTINEL_WBANS:
-            skipped_sentinel += 1
             continue
         for year in years:
             if _cache_key(usaf_id, year) in cached_keys:
                 continue
             work.append((usaf_id, wban_id, year))
-
-    if skipped_sentinel:
-        logger.info("Skipped %d stations with sentinel WBAN (no real data)", skipped_sentinel)
     logger.info("%d station-years to fetch (%d already cached)", len(work), len(cached_keys))
 
     if not work:
