@@ -56,8 +56,8 @@ def retrieve_climate_zone(climate_zone_mapping, zipcode):
             ])
         df = df.where((pd.notnull(df)), None)
         df = df.set_index('EIA Climate Zone')
-        cooling_regional_baseline_temps = {k: v for k, v in df['Baseline cooling temp (F)'].iteritems()}
-        heating_regional_baseline_temps = {k: v for k, v in df['Baseline heating temp (F)'].iteritems()}
+        cooling_regional_baseline_temps = {k: v for k, v in df['Baseline cooling temp (F)'].items()}
+        heating_regional_baseline_temps = {k: v for k, v in df['Baseline heating temp (F)'].items()}
 
     climate_zone = mapping.get(zipcode)
     baseline_regional_cooling_comfort_temperature = cooling_regional_baseline_temps.get(climate_zone, None)

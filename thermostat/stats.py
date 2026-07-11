@@ -828,8 +828,8 @@ def compute_summary_statistics(
             usecols=["climate_zone", "heating_weight", "cooling_weight"],
         ).set_index("climate_zone")
 
-        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].iteritems()}
-        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].iteritems()}
+        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].items()}
+        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].items()}
 
         return heating_weights, cooling_weights
 
