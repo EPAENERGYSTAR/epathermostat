@@ -9,3 +9,4 @@ dist/
 .cache/
 .tox/
 .coverage
+pyproject.toml
