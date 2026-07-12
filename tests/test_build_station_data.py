@@ -1,4 +1,4 @@
-"""Tests for scripts/build_zipcode_lookup.py."""
+"""Tests for scripts/build_station_data.py."""
 
 import struct
 import tempfile
@@ -6,7 +6,7 @@ import os
 from unittest.mock import patch
 import pytest
 
-from scripts.build_zipcode_lookup import read_census_dbf, lookup_station
+from scripts.build_station_data import read_census_dbf, lookup_station
 
 
 # ---------------------------------------------------------------------------
@@ -125,20 +125,20 @@ def test_read_census_dbf_skips_deleted_records():
 # ---------------------------------------------------------------------------
 
 def test_lookup_station_returns_station_when_found():
-    with patch('scripts.build_zipcode_lookup._get_both_year_station', return_value='725300'):
+    with patch('scripts.build_station_data._get_both_year_station', return_value='725300'):
         zcta, station = lookup_station(('60601', 41.88, -87.63))
     assert zcta == '60601'
     assert station == '725300'
 
 
 def test_lookup_station_returns_none_when_not_found():
-    with patch('scripts.build_zipcode_lookup._get_both_year_station', return_value=None):
+    with patch('scripts.build_station_data._get_both_year_station', return_value=None):
         zcta, station = lookup_station(('96801', 21.30, -157.85))
     assert zcta == '96801'
     assert station is None
 
 
 def test_lookup_station_returns_none_on_exception():
-    with patch('scripts.build_zipcode_lookup._get_both_year_station', side_effect=RuntimeError('oops')):
+    with patch('scripts.build_station_data._get_both_year_station', side_effect=RuntimeError('oops')):
         zcta, station = lookup_station(('00000', 0.0, 0.0))
     assert station is None
