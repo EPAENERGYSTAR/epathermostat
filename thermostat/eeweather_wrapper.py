@@ -2,11 +2,23 @@ from datetime import datetime
 import logging
 import numpy as np
 import eeweather
+import eeweather.stations
 
 import pandas as pd
 import pytz
 
 from thermostat import weather_fallback
+
+# eeweather auto-expires cached ISD hourly data for the *current* data-year after
+# DATA_EXPIRATION_DAYS (default: 1). On the next read it deletes the cached entry
+# and re-fetches from NOAA. During the NOAA outage that re-fetch always fails, so
+# every current-year entry served from our committed/primed cache gets wiped on
+# first read — turning a complete cache into cascading "load_error" failures (and
+# making repeated runs non-deterministic as the cache degrades). Treat the local
+# cache as authoritative by pushing the expiry horizon effectively out of range.
+# Genuinely missing years are still fetched (their keys are absent, not expired)
+# and NaN gaps are still filled from GHCN-H below.
+eeweather.stations.DATA_EXPIRATION_DAYS = 100 * 365  # ~100 years: effectively never
 
 # First date for which the NOAA global-hourly API stopped returning data.
 # Any request whose end date falls on or after this date routes directly to

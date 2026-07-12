@@ -2,7 +2,10 @@ import pytest
 import numpy as np
 import pandas as pd
 import pytz
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
+
+import eeweather.stations
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather, NOAA_OUTAGE_DATE
 
@@ -284,3 +287,29 @@ def test_historical_wban_used_when_recent_is_sentinel():
 
     mock_ghcnh.assert_called_once()
     assert result.notna().all()
+
+
+# ---------------------------------------------------------------------------
+# Test: current-year cache entries are not auto-expired (NOAA-outage safety)
+#
+# eeweather clears a cached current-year ISD entry once it is older than
+# DATA_EXPIRATION_DAYS (default 1) and then re-fetches from NOAA. During the
+# outage that re-fetch fails, so a complete committed/primed cache would be
+# destroyed on first read. Importing the wrapper pushes the expiry horizon out
+# so the cache is treated as authoritative. See eeweather_wrapper.py.
+# ---------------------------------------------------------------------------
+
+def test_wrapper_disables_current_year_cache_expiry():
+    """Importing the wrapper raises eeweather's DATA_EXPIRATION_DAYS well past
+    the default 1-day window so cached data is never auto-expired."""
+    assert eeweather.stations.DATA_EXPIRATION_DAYS >= 100 * 365
+
+
+def test_current_year_cache_entry_not_expired():
+    """A current-year entry cached weeks ago — which the default 1-day policy
+    would expire (and clear) — is reported as *not* expired under the wrapper's
+    setting, so the pipeline reads it from cache instead of re-fetching."""
+    year = datetime.now().year
+    updated_weeks_ago = pytz.UTC.localize(datetime.now() - timedelta(days=30))
+    # Sanity: this timestamp *would* be expired under the old 1-day default.
+    assert eeweather.stations._expired(updated_weeks_ago, year) is False
