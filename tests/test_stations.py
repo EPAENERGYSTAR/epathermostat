@@ -115,6 +115,50 @@ def test_both_year_station_skips_canadian_stations():
     assert result == '725300'
 
 
+def test_both_year_station_defaults_to_current_window():
+    """With no required_years, the filter checks [today.year-1, today.year]."""
+    from datetime import date
+    ranking = _make_ranking([('725300', 10_000)])
+    years_checked = []
+
+    def fake_key_exists(key):
+        years_checked.append(key.rsplit('-', 1)[-1])
+        return True
+
+    with patch('thermostat.stations._rank_stations_by_distance_and_quality', return_value=ranking):
+        with patch('eeweather.connections.key_value_store_proxy') as mock_proxy:
+            mock_store = MagicMock()
+            mock_store.key_exists.side_effect = fake_key_exists
+            mock_proxy.get_store.return_value = mock_store
+
+            _get_both_year_station(40.0, -90.0)
+
+    y = date.today().year
+    assert set(years_checked) == {str(y - 1), str(y)}
+
+
+def test_both_year_station_honors_requested_years():
+    """A historical run can request specific years; the filter checks exactly
+    those years, not the current calendar year."""
+    ranking = _make_ranking([('725300', 10_000)])
+    years_checked = []
+
+    def fake_key_exists(key):
+        years_checked.append(key.rsplit('-', 1)[-1])
+        return True
+
+    with patch('thermostat.stations._rank_stations_by_distance_and_quality', return_value=ranking):
+        with patch('eeweather.connections.key_value_store_proxy') as mock_proxy:
+            mock_store = MagicMock()
+            mock_store.key_exists.side_effect = fake_key_exists
+            mock_proxy.get_store.return_value = mock_store
+
+            result = _get_both_year_station(40.0, -90.0, required_years=[2015, 2016])
+
+    assert result == '725300'
+    assert set(years_checked) == {'2015', '2016'}
+
+
 # ---------------------------------------------------------------------------
 # Tests for get_closest_station_by_zipcode
 # ---------------------------------------------------------------------------
@@ -149,3 +193,24 @@ def test_both_year_station_returned_without_json_fallback():
 
     mock_json.assert_not_called()
     assert result == '725300'
+
+
+def test_get_closest_station_forwards_required_years():
+    """required_years is passed through to the both-year filter (historical run)."""
+    with patch('thermostat.stations.zcta_to_lat_long', return_value=(40.0, -90.0)):
+        with patch('thermostat.stations._get_both_year_station', return_value='725300') as mock_filter:
+            result = get_closest_station_by_zipcode('60601', required_years=[2015, 2016])
+
+    assert result == '725300'
+    _, kwargs = mock_filter.call_args
+    assert kwargs.get('required_years') == [2015, 2016]
+
+
+def test_get_closest_station_defaults_required_years_to_none():
+    """Default call forwards required_years=None so the filter uses today's window."""
+    with patch('thermostat.stations.zcta_to_lat_long', return_value=(40.0, -90.0)):
+        with patch('thermostat.stations._get_both_year_station', return_value='725300') as mock_filter:
+            get_closest_station_by_zipcode('60601')
+
+    _, kwargs = mock_filter.call_args
+    assert kwargs.get('required_years') is None

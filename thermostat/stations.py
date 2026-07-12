@@ -44,13 +44,11 @@ def _rank_stations_by_distance_and_quality(lat, lon):
     return station_ranking
 
 
-def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM):
+def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM,
+                           required_years=None):
     """Walk the distance-ranked station list and return the nearest station
-    with cache data for the current mid-year heating window, within
-    *max_dist_km* kilometres.
-
-    Required years are [today.year - 1, today.year]: we always have last
-    year's complete data and this year's partial data, never next year's.
+    with cache data for every year in *required_years*, within *max_dist_km*
+    kilometres.
 
     Parameters
     ----------
@@ -58,14 +56,21 @@ def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM):
     lon : float
     max_dist_km : float
         Hard distance cap; stations beyond this are not considered.
+    required_years : list of int, optional
+        Calendar years the station must have cached data for.  Pass the years
+        spanned by the thermostat's interval data so selection matches the
+        period being analysed (e.g. [2015, 2016] for a 2016 heating-year run).
+        Defaults to [today.year - 1, today.year] — the current mid-year heating
+        window — when not supplied.
 
     Returns
     -------
     usaf_id : str or None
         USAF station ID, or None if no qualifying station was found.
     """
-    today = date.today()
-    required_years = [today.year - 1, today.year]
+    if required_years is None:
+        today = date.today()
+        required_years = [today.year - 1, today.year]
 
     station_ranking = _rank_stations_by_distance_and_quality(lat, lon)
     store = eeweather.connections.key_value_store_proxy.get_store()
@@ -111,18 +116,24 @@ def _get_closest_station_by_zcta_ranked(zcta):
     return station, warnings, lat, lon
 
 
-def get_closest_station_by_zipcode(zipcode):
-    """Return the nearest both-year weather station for a ZIP code / ZCTA.
+def get_closest_station_by_zipcode(zipcode, required_years=None):
+    """Return the nearest weather station for a ZIP code / ZCTA that has cache
+    data for the years being analysed.
 
     Walks the eeweather-ranked station list and selects the first station that
-    has cache data for [today.year-1, today.year], within 500 km of the ZCTA
-    centroid. Falls back to the static JSON map when eeweather does not
+    has cache data for every year in *required_years*, within 500 km of the
+    ZCTA centroid. Falls back to the static JSON map when eeweather does not
     recognise the ZCTA or no qualifying station is found in range.
 
     Parameters
     ----------
     zipcode : string
         5-digit ZIP code or ZCTA.
+    required_years : list of int, optional
+        Calendar years the station must have cached data for.  Callers running
+        historical data should pass the years spanned by that data so station
+        selection matches the analysed period rather than the current calendar
+        year. Defaults to [today.year-1, today.year] when not supplied.
 
     Returns
     -------
@@ -135,12 +146,14 @@ def get_closest_station_by_zipcode(zipcode):
         logging.warning("Unrecognized ZCTA %s — falling back to JSON map.", zipcode)
         return lookup_usaf_station_by_zipcode(zipcode)
 
-    station = _get_both_year_station(lat, lon)
+    station = _get_both_year_station(lat, lon, required_years=required_years)
     if station is not None:
         return station
 
     logging.warning(
-        "No both-year station within %d km for zipcode %s — falling back to JSON map.",
+        "No station with data for %s within %d km of zipcode %s — "
+        "falling back to JSON map.",
+        required_years if required_years is not None else "the current heating window",
         _MAX_STATION_DISTANCE_KM, zipcode,
     )
     return lookup_usaf_station_by_zipcode(zipcode)
