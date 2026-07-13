@@ -183,25 +183,27 @@ def test_empty_index_returns_empty_series():
 # Test: date-based auto-routing to GHCN-H at NOAA_OUTAGE_DATE boundary
 # ---------------------------------------------------------------------------
 
-def test_ghcnh_called_automatically_for_post_outage_dates():
-    """Requests ending on or after NOAA_OUTAGE_DATE trigger GHCN-H without NaN."""
+def test_ghcnh_not_called_for_post_outage_complete_data():
+    """Post-outage requests whose cached data has no NaN must NOT hit GHCN-H.
+
+    The fallback is driven by real gaps, not by the calendar: a primed cache
+    (e.g. hours previously written back from GHCN-H) serves entirely offline
+    even for date ranges inside the outage window.
+    """
     full_ts, warns = _full_tempC("2025-01-01", periods=8760)
-    # No NaN in eeweather response — but date range crosses the outage date.
+    # No NaN in eeweather response, and the date range crosses the outage date.
     post_outage_index = pd.date_range(
         NOAA_OUTAGE_DATE, periods=24, freq="h", tz=pytz.UTC
     )
 
     with patch("thermostat.eeweather_wrapper.eeweather.load_isd_hourly_temp_data",
                return_value=(full_ts, warns)), \
-         patch("thermostat.eeweather_wrapper.eeweather.get_isd_station_metadata",
-               return_value={"recent_wban_id": "23234"}), \
-         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data",
-               return_value=_ghcnh_fill(full_ts.index)) as mock_ghcnh, \
-         patch("thermostat.eeweather_wrapper.eeweather.write_isd_hourly_temp_data_to_cache"):
+         patch("thermostat.eeweather_wrapper.weather_fallback.fetch_ghcnh_hourly_temp_data") as mock_ghcnh:
 
-        get_indexed_temperatures_eeweather("722880", post_outage_index)
+        result = get_indexed_temperatures_eeweather("722880", post_outage_index)
 
-    mock_ghcnh.assert_called_once()
+    mock_ghcnh.assert_not_called()
+    assert result.notna().all()
 
 
 def test_ghcnh_not_called_for_pre_outage_complete_data():

@@ -21,8 +21,10 @@ from thermostat import weather_fallback
 eeweather.stations.DATA_EXPIRATION_DAYS = 100 * 365  # ~100 years: effectively never
 
 # First date for which the NOAA global-hourly API stopped returning data.
-# Any request whose end date falls on or after this date routes directly to
-# GHCN-H for the affected portion rather than waiting for a NaN-detection pass.
+# Retained as documentation of the outage start; the GHCN-H fallback is now
+# driven purely by whether the cached series actually has gaps (see
+# get_indexed_temperatures_eeweather), so a primed cache serves offline and the
+# network is only touched for genuinely missing hours.
 NOAA_OUTAGE_DATE = pd.Timestamp("2025-08-30", tz="UTC")
 
 # This routine is a compact and distilled version of code that was originally
@@ -64,9 +66,13 @@ def _fill_gaps_with_ghcnh(tempC, usaf_id, start, end):
     """Fill NaN values in tempC using NOAA GHCN-H data for the same station.
 
     Only NaN positions are overwritten; valid cached data is preserved.
-    Returns tempC unchanged if the station has no WBAN ID or the fallback
-    returns no data.
+    Returns tempC unchanged if there are no gaps to fill, if the station has no
+    WBAN ID, or if the fallback returns no data.
     """
+    if not tempC.isna().any():
+        # Cache already covers the requested range — no network request needed.
+        return tempC
+
     try:
         metadata = eeweather.get_isd_station_metadata(usaf_id)
         wban_id = metadata.get("recent_wban_id")
@@ -135,9 +141,11 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
         # so the GHCN-H fallback below can fill the gap.
         tempC = pd.Series(np.nan, index=pd.date_range(start, end, freq="H", tz="UTC"), dtype=float)
         warnings = []
-    # Route to GHCN-H without waiting for NaN detection when the request
-    # overlaps the known NOAA outage period, or as a general NaN fallback.
-    if end >= NOAA_OUTAGE_DATE or tempC.isna().any():
+    # Fill from GHCN-H only when the cached series actually has gaps. A primed
+    # cache (including hours previously written back from GHCN-H) therefore
+    # serves entirely offline; the NCEI network is touched only for genuinely
+    # missing hours, not on every current-period lookup.
+    if tempC.isna().any():
         tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
     tempC = tempC.resample('H').mean()[index]
     tempF = _convert_to_farenheit(tempC)
