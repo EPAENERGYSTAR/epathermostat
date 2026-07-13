@@ -1,3 +1,5 @@
+import json as _json
+
 import pytest
 import pandas as pd
 import pytz
@@ -10,7 +12,9 @@ from thermostat.weather_fallback import fetch_ghcnh_hourly_temp_data
 def _mock_response(json_data, status_code=200):
     mock = MagicMock()
     mock.status_code = status_code
-    mock.json.return_value = json_data
+    # iter_content used by the streaming implementation
+    encoded = _json.dumps(json_data).encode("utf-8")
+    mock.iter_content.return_value = iter([encoded])
     if status_code >= 400:
         mock.raise_for_status.side_effect = requests.exceptions.HTTPError(
             "HTTP {}".format(status_code)

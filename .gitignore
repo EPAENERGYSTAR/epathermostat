@@ -9,3 +9,5 @@ dist/
 .cache/
 .tox/
 .coverage
+pyproject.toml
+scripts/overnight_run.py

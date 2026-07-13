@@ -1,7 +1,7 @@
 from thermostat.core import Thermostat
 
 import pandas as pd
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DISTANCE_KM
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
@@ -310,12 +310,16 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
 
-    # load outdoor temperatures
-    station = get_closest_station_by_zipcode(zipcode)
+    # load outdoor temperatures — select a station that has data for the years
+    # this thermostat's interval data actually spans, so a historical run
+    # (e.g. 2016) picks a station on that year's data rather than requiring the
+    # current calendar year.
+    data_years = sorted(set(hourly_index.year))
+    station = get_closest_station_by_zipcode(zipcode, required_years=data_years)
 
     if station is None:
-        message = "Could not locate a valid source of outdoor temperature " \
-                "data for ZIP code {}".format(zipcode)
+        message = "No weather station with sufficient recent data within " \
+                "{} km of ZIP code {}".format(_MAX_STATION_DISTANCE_KM, zipcode)
         raise RuntimeError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
