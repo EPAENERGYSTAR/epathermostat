@@ -67,7 +67,7 @@ pytz==2021.3
     # via
     #   -r requirements.in
     #   pandas
-requests==2.27.1
+requests==2.32.0
     # via
     #   -r requirements.in
     #   eeweather
