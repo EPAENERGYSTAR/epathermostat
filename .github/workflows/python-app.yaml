@@ -8,13 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
@@ -43,7 +43,7 @@ jobs:
         # Test over a full quarter to smooth over station observation gaps.
         # GHCN-H stations may miss individual hours; a 50% coverage floor
         # confirms the fallback is routing to GHCN-H and returning real data.
-        idx = pd.date_range("2025-09-01", periods=2160, freq="H", tz="UTC")
+        idx = pd.date_range("2025-09-01", periods=2160, freq="h", tz="UTC")
         temps = get_indexed_temperatures_eeweather("722880", idx)
         non_nan = temps.notna().sum()
         assert non_nan > len(idx) * 0.50, \

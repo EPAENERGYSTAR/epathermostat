@@ -1,6 +1,5 @@
 pytest
 sphinx
-mock==2.0.0
 coverage
 jupyter
 tox
