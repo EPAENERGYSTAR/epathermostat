@@ -1,3 +1,4 @@
+from thermostat import get_version
 from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 from thermostat.regression import runtime_regression
@@ -16,14 +17,14 @@ def thermostat_template():
     equipment_type = 0
     zipcode = "FAKE"
     station = "FAKE"
-    temperature_in = pd.Series([])
-    temperature_out = pd.Series([])
-    cooling_setpoint = pd.Series([])
-    heating_setpoint = pd.Series([])
-    cool_runtime = pd.Series([])
-    heat_runtime = pd.Series([])
-    auxiliary_heat_runtime = pd.Series([])
-    emergency_heat_runtime = pd.Series([])
+    temperature_in = pd.Series([], dtype=float)
+    temperature_out = pd.Series([], dtype=float)
+    cooling_setpoint = pd.Series([], dtype=float)
+    heating_setpoint = pd.Series([], dtype=float)
+    cool_runtime = pd.Series([], dtype=float)
+    heat_runtime = pd.Series([], dtype=float)
+    auxiliary_heat_runtime = pd.Series([], dtype=float)
+    emergency_heat_runtime = pd.Series([], dtype=float)
 
     thermostat = Thermostat(
         thermostat_id,
@@ -169,7 +170,7 @@ def metrics_type_1_data():
 
     # this data comes from a script in scripts/test_data_generation.ipynb
     data = [{
-        'sw_version': '1.7.9',
+        'sw_version': get_version(),
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'equipment_type': 1,
         'heating_or_cooling': 'cooling_ALL',
@@ -211,7 +212,7 @@ def metrics_type_1_data():
         'core_mean_indoor_temperature': 73.95971753003002,
         'core_mean_outdoor_temperature': 79.8426321875
         }, {
-        'sw_version': '1.7.9',
+        'sw_version': get_version(),
         'ct_identifier': '8465829e-df0d-449e-97bf-96317c24dec3',
         'equipment_type': 1,
         'heating_or_cooling': 'heating_ALL',
