@@ -281,8 +281,8 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     # load indices
     dates = pd.to_datetime(df["date"])
     daily_index = pd.date_range(start=dates[0], periods=dates.shape[0], freq="D")
-    hourly_index = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H")
-    hourly_index_utc = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H", tz=pytz.UTC)
+    hourly_index = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="h")
+    hourly_index_utc = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="h", tz=pytz.UTC)
 
     # raise an error if dates are not aligned
     if not all(dates == daily_index):

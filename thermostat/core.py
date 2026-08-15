@@ -8,7 +8,6 @@ import logging
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
-from pkg_resources import resource_stream
 
 from thermostat.regression import runtime_regression
 from thermostat import get_version
@@ -460,7 +459,7 @@ class Thermostat(object):
     def _get_hourly_boolean(self, daily_boolean):
         values = np.repeat(daily_boolean.values, 24)
         index = pd.date_range(start=daily_boolean.index[0],
-                periods=daily_boolean.index.shape[0] * 24, freq="H")
+                periods=daily_boolean.index.shape[0] * 24, freq="h")
         hourly_boolean = pd.Series(values, index)
         return hourly_boolean
 
@@ -605,7 +604,8 @@ class Thermostat(object):
 
         # Create the bins and group by them
         runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes'].sum()
+        runtime_rhu = runtime_temp.groupby('bins', observed=False)[
+            ['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
@@ -619,11 +619,12 @@ class Thermostat(object):
 
         # If we're passed min_runtime_minutes (RHU2) then treat the thermostat as not having run during that period
         if min_runtime_minutes:
-            runtime_rhu['rhu'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['aux_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['emg_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['compressor_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['total_runtime'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+            below_min = runtime_rhu.total_runtime < min_runtime_minutes
+            runtime_rhu.loc[below_min, 'rhu'] = np.nan
+            runtime_rhu.loc[below_min, 'aux_duty_cycle'] = np.nan
+            runtime_rhu.loc[below_min, 'emg_duty_cycle'] = np.nan
+            runtime_rhu.loc[below_min, 'compressor_duty_cycle'] = np.nan
+            runtime_rhu.loc[below_min, 'total_runtime'] = np.nan
 
         runtime_rhu['data_is_nonsense'] = (runtime_rhu['aux_runtime'] > runtime_rhu['heat_runtime'])
         runtime_rhu.loc[runtime_rhu.data_is_nonsense == True, 'rhu'] = np.nan  # noqa: E712
@@ -709,7 +710,7 @@ class Thermostat(object):
             return result
 
     def get_cooling_demand(self, core_cooling_day_set):
-        """
+        r"""
         Calculates a measure of cooling demand using the hourlyavgCTD method.
 
         Starting with an assumed value of zero for Tau :math:`(\\tau_c)`,
@@ -834,7 +835,7 @@ class Thermostat(object):
         return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
     def get_heating_demand(self, core_heating_day_set):
-        """
+        r"""
         Calculates a measure of heating demand using the hourlyavgCTD method.
 
         :math:`\\text{daily HTD}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly} \Delta T_{d.n} - \\tau_h]_{+}}{24}`, where
@@ -944,7 +945,7 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            logger.warn(
+            logger.warning(
                 'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
@@ -1039,7 +1040,7 @@ class Thermostat(object):
 
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
-        """ Calculate baseline cooling demand for a particular core cooling
+        r""" Calculate baseline cooling demand for a particular core cooling
         day set and fitted physical parameters.
 
         :math:`\\text{daily CTD base}_d = \\frac{\sum_{i=1}^{24} [\\tau_c - \\text{hourly } \Delta T \\text{ base cool}_{d.n}]_{+}}{24}`, where
@@ -1080,7 +1081,7 @@ class Thermostat(object):
         return pd.Series(demand, index=index)
 
     def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline, tau):
-        """ Calculate baseline heating demand for a particular core heating day
+        r""" Calculate baseline heating demand for a particular core heating day
         set and fitted physical parameters.
 
         :math:`\\text{daily HTD base}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly } \Delta T \\text{ base heat}_{d.n} - \\tau_h]_{+}}{24}`, where
@@ -1120,7 +1121,7 @@ class Thermostat(object):
         return pd.Series(demand, index=index)
 
     def get_baseline_cooling_runtime(self, baseline_cooling_demand, alpha):
-        """ Calculate baseline cooling runtime given baseline cooling demand
+        r""" Calculate baseline cooling runtime given baseline cooling demand
         and fitted physical parameters.
 
         :math:`RT_{\\text{base cool}} (\\text{minutes}) = \\alpha_c \cdot \\text{daily CTD base}_d`
@@ -1140,7 +1141,7 @@ class Thermostat(object):
         return np.maximum(alpha * (baseline_cooling_demand), 0)
 
     def get_baseline_heating_runtime(self, baseline_heating_demand, alpha):
-        """ Calculate baseline heating runtime given baseline heating demand.
+        r""" Calculate baseline heating runtime given baseline heating demand.
         and fitted physical parameters.
 
         :math:`RT_{\\text{base heat}} (\\text{minutes}) = \\alpha_h \cdot \\text{daily HTD base}_d`

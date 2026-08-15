@@ -139,7 +139,7 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
         # eeweather has no ISD file entries for the requested year(s) — the
         # local metadata DB predates those files. Create an all-NaN placeholder
         # so the GHCN-H fallback below can fill the gap.
-        tempC = pd.Series(np.nan, index=pd.date_range(start, end, freq="H", tz="UTC"), dtype=float)
+        tempC = pd.Series(np.nan, index=pd.date_range(start, end, freq="h", tz="UTC"), dtype=float)
         warnings = []
     # Fill from GHCN-H only when the cached series actually has gaps. A primed
     # cache (including hours previously written back from GHCN-H) therefore
@@ -147,6 +147,6 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     # missing hours, not on every current-period lookup.
     if tempC.isna().any():
         tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
-    tempC = tempC.resample('H').mean()[index]
+    tempC = tempC.resample('h').mean()[index]
     tempF = _convert_to_farenheit(tempC)
     return tempF

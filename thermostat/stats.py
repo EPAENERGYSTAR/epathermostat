@@ -8,7 +8,7 @@ from itertools import chain
 from warnings import warn
 import json
 from functools import reduce
-from pkg_resources import resource_stream
+from importlib.resources import files
 import logging
 
 from thermostat import get_version
@@ -833,7 +833,7 @@ def compute_summary_statistics(
 
         return heating_weights, cooling_weights
 
-    with resource_stream('thermostat.resources', 'NationalAverageClimateZoneWeightings.csv') as f:
+    with (files('thermostat.resources') / 'NationalAverageClimateZoneWeightings.csv').open('rb') as f:
         heating_weights, cooling_weights = _load_climate_zone_weights(f)
 
     def _compute_national_weightings(stats_by_climate_zone, keys, weights):
