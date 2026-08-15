@@ -1,5 +1,5 @@
 import pandas as pd
-from pkg_resources import resource_stream
+from importlib.resources import files
 from collections import namedtuple
 
 
@@ -37,9 +37,8 @@ def retrieve_climate_zone(climate_zone_mapping, zipcode):
 
     ClimateZone = namedtuple('ClimateZone', ['climate_zone', 'baseline_regional_cooling_comfort_temperature', 'baseline_regional_heating_comfort_temperature'])
     if climate_zone_mapping is None:
-        with resource_stream(
-                'thermostat.resources',
-                'Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv') as f:
+        with (files('thermostat.resources') /
+                'Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv').open('rb') as f:
             mapping = _load_mapping(f)
     else:
         try:
@@ -47,7 +46,7 @@ def retrieve_climate_zone(climate_zone_mapping, zipcode):
         except Exception as e:
             raise ValueError("Could not load climate zone mapping: %s" % e)
 
-    with resource_stream('thermostat.resources', 'regional_baselines.csv') as f:
+    with (files('thermostat.resources') / 'regional_baselines.csv').open('rb') as f:
         df = pd.read_csv(
             f, usecols=[
                 'EIA Climate Zone',
