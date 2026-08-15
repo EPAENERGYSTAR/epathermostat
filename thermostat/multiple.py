@@ -43,6 +43,10 @@ def multiple_thermostat_calculate_epa_field_savings_metrics(thermostats):
 
     metrics_dict = {}
     for output in results:
+        # a thermostat with no qualifying core day sets yields no metrics;
+        # skip it rather than indexing an empty result (which would raise)
+        if not output:
+            continue
         thermostat_id = output[0]['ct_identifier']
         metrics_dict[thermostat_id] = []
         for individual_output in output:
