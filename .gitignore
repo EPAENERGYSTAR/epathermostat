@@ -18,3 +18,4 @@ scripts/overnight_run.py
 env/
 venv/
 *.egg-info/
+thermostat/resources/cache.sql.gz
