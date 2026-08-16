@@ -67,8 +67,7 @@ def get_closest_station_by_zipcode(zipcode, required_years=None):
         if not inventory:
             continue
         first, last = inventory
-        # Registry inventory replaces probing a primed cache for
-        # 'isd-hourly-{usaf}-{year}' keys.
+        # Keep the station only if its coverage inventory spans every required year.
         if all(first <= y <= last for y in required_years):
             usaf_ids = station.ids.get("usaf") or ()
             usaf = usaf_ids[0] if usaf_ids else None
