@@ -5,7 +5,7 @@ from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DIS
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.cache import KeyValueStore
-from eeweather.exceptions import ISDDataNotAvailableError
+from eeweather.exceptions import DataNotAvailableError
 import json
 
 import warnings
@@ -228,7 +228,7 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
             .format(row.thermostat_id, row.zipcode))
         return
 
-    except ISDDataNotAvailableError as e:
+    except DataNotAvailableError as e:
         warnings.warn(
             "Skipping import of thermostat(id={} because the NCDC "
             "does not have data: {}"

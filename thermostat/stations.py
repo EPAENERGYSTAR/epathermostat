@@ -2,14 +2,9 @@ import logging
 import json
 from datetime import date
 from importlib.resources import files
-import eeweather.connections
-from eeweather import (
-        zcta_to_lat_long,
-        rank_stations,
-        select_station)
-from eeweather.exceptions import (
-        UnrecognizedZCTAError,
-        UnrecognizedUSAFIDError)
+
+from eeweather import WeatherLocation, WeatherStation
+from eeweather.exceptions import UnrecognizedPlaceError
 
 logging.getLogger(__name__)
 
@@ -17,120 +12,25 @@ logging.getLogger(__name__)
 zipcode_usaf_json = (files('thermostat.resources') / 'zipcode_usaf_station.json').read_text()
 zipcode_usaf = json.loads(zipcode_usaf_json)
 
-# Sort order for rough_quality (returned by eeweather).
-QUALITY_SORT = {'high': 0, 'medium': 1, 'low': 2}
-
 # Maximum distance (km) from ZCTA centroid to assigned station.
 _MAX_STATION_DISTANCE_KM = 500
 
 
-def _rank_stations_by_distance_and_quality(lat, lon):
-    """ Ranks the stations by distance and quality based on latitude / longitude
-
-    Parameters
-    ----------
-    lat : float
-        latitude for the search
-    lon : float
-        longitude for the search
-
-    Returns
-    -------
-    station_ranking : Pandas.DataFrame
-    """
-    station_ranking = rank_stations(lat, lon)
-    station_ranking['enumerated_quality'] = station_ranking['rough_quality'].map(QUALITY_SORT)
-    station_ranking = station_ranking.sort_values(by=['distance_meters', 'enumerated_quality'])
-    return station_ranking
-
-
-def _get_both_year_station(lat, lon, max_dist_km=_MAX_STATION_DISTANCE_KM,
-                           required_years=None):
-    """Walk the distance-ranked station list and return the nearest station
-    with cache data for every year in *required_years*, within *max_dist_km*
-    kilometres.
-
-    Parameters
-    ----------
-    lat : float
-    lon : float
-    max_dist_km : float
-        Hard distance cap; stations beyond this are not considered.
-    required_years : list of int, optional
-        Calendar years the station must have cached data for.  Pass the years
-        spanned by the thermostat's interval data so selection matches the
-        period being analysed (e.g. [2015, 2016] for a 2016 heating-year run).
-        Defaults to [today.year - 1, today.year] — the current mid-year heating
-        window — when not supplied.
-
-    Returns
-    -------
-    usaf_id : str or None
-        USAF station ID, or None if no qualifying station was found.
-    """
-    if required_years is None:
-        today = date.today()
-        required_years = [today.year - 1, today.year]
-
-    station_ranking = _rank_stations_by_distance_and_quality(lat, lon)
-    store = eeweather.connections.key_value_store_proxy.get_store()
-    max_dist_m = max_dist_km * 1000.0
-
-    for usaf_id, row in station_ranking.iterrows():
-        if row['distance_meters'] > max_dist_m:
-            # Ranked list is sorted ascending by distance; nothing closer follows.
-            break
-        usaf = str(usaf_id)
-        if usaf.startswith('A'):
-            continue  # Canadian airport codes — not usable
-        if all(store.key_exists('isd-hourly-{}-{}'.format(usaf, y))
-               for y in required_years):
-            return usaf
-    return None
-
-
-def _get_closest_station_by_zcta_ranked(zcta):
-    """Return the geographically nearest non-Canadian station for a ZCTA.
-
-    This is kept for backward compatibility. It does NOT apply the both-year
-    cache filter. Use get_closest_station_by_zipcode for production lookups.
-
-    Parameters
-    ----------
-    zcta : string
-
-    Returns
-    -------
-    station, warnings, lat, lon
-    """
-    zcta = zcta.zfill(5)
-    lat, lon = zcta_to_lat_long(zcta)
-    finding_station = True
-    rank = 0
-    while finding_station:
-        rank = rank + 1
-        station_ranking = _rank_stations_by_distance_and_quality(lat, lon)
-        station, warnings = select_station(station_ranking, rank=rank)
-        if str(station)[0] != 'A':
-            finding_station = False
-    return station, warnings, lat, lon
-
-
 def get_closest_station_by_zipcode(zipcode, required_years=None):
-    """Return the nearest weather station for a ZIP code / ZCTA that has cache
-    data for the years being analysed.
+    """Return the nearest weather station for a ZIP code / ZCTA whose GHCNh
+    record covers the years being analysed.
 
-    Walks the eeweather-ranked station list and selects the first station that
-    has cache data for every year in *required_years*, within 500 km of the
-    ZCTA centroid. Falls back to the static JSON map when eeweather does not
-    recognise the ZCTA or no qualifying station is found in range.
+    Ranks the ZCTA's candidate GHCNh stations by distance (within 500 km of the
+    ZCTA centroid) and selects the nearest whose registry inventory covers every
+    year in *required_years*. Falls back to the static JSON map when eeweather
+    does not recognise the ZCTA or no qualifying station is found in range.
 
     Parameters
     ----------
     zipcode : string
         5-digit ZIP code or ZCTA.
     required_years : list of int, optional
-        Calendar years the station must have cached data for.  Callers running
+        Calendar years the station must have data for. Callers running
         historical data should pass the years spanned by that data so station
         selection matches the analysed period rather than the current calendar
         year. Defaults to [today.year-1, today.year] when not supplied.
@@ -140,21 +40,44 @@ def get_closest_station_by_zipcode(zipcode, required_years=None):
     station : string or None
         USAF station ID, or None if no station could be determined.
     """
+    if required_years is None:
+        today = date.today()
+        required_years = [today.year - 1, today.year]
+
     try:
-        lat, lon = zcta_to_lat_long(zipcode.zfill(5))
-    except UnrecognizedZCTAError:
+        location = WeatherLocation.from_place(
+            "zcta", zipcode.zfill(5), sources=("ghcnh",)
+        )
+    except UnrecognizedPlaceError:
         logging.warning("Unrecognized ZCTA %s — falling back to JSON map.", zipcode)
         return lookup_usaf_station_by_zipcode(zipcode)
 
-    station = _get_both_year_station(lat, lon, required_years=required_years)
-    if station is not None:
-        return station
+    # Distance-ranked GHCNh candidates within the cap. Ranking (distance, then
+    # quality) and the distance cap are native to rank_stations now, so the
+    # hand-rolled QUALITY_SORT/re-sort is gone.
+    candidates = location.candidates(
+        has_sources=("ghcnh",),
+        max_distance_meters=_MAX_STATION_DISTANCE_KM * 1000.0,
+    )
+
+    for station_id, _row in candidates.iterrows():
+        station = WeatherStation(station_id)
+        inventory = station.inventory_years.get("ghcnh")
+        if not inventory:
+            continue
+        first, last = inventory
+        # Registry inventory replaces probing a primed cache for
+        # 'isd-hourly-{usaf}-{year}' keys.
+        if all(first <= y <= last for y in required_years):
+            usaf_ids = station.ids.get("usaf") or ()
+            usaf = usaf_ids[0] if usaf_ids else None
+            if usaf and not str(usaf).startswith("A"):  # skip Canadian airport codes
+                return usaf
 
     logging.warning(
         "No station with data for %s within %d km of zipcode %s — "
         "falling back to JSON map.",
-        required_years if required_years is not None else "the current heating window",
-        _MAX_STATION_DISTANCE_KM, zipcode,
+        required_years, _MAX_STATION_DISTANCE_KM, zipcode,
     )
     return lookup_usaf_station_by_zipcode(zipcode)
 

@@ -1,31 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
-import numpy as np
-import eeweather
-import eeweather.stations
 
 import pandas as pd
-import pytz
 
-from thermostat import weather_fallback
-
-# eeweather auto-expires cached ISD hourly data for the *current* data-year after
-# DATA_EXPIRATION_DAYS (default: 1). On the next read it deletes the cached entry
-# and re-fetches from NOAA. During the NOAA outage that re-fetch always fails, so
-# every current-year entry served from our committed/primed cache gets wiped on
-# first read — turning a complete cache into cascading "load_error" failures (and
-# making repeated runs non-deterministic as the cache degrades). Treat the local
-# cache as authoritative by pushing the expiry horizon effectively out of range.
-# Genuinely missing years are still fetched (their keys are absent, not expired)
-# and NaN gaps are still filled from GHCN-H below.
-eeweather.stations.DATA_EXPIRATION_DAYS = 100 * 365  # ~100 years: effectively never
-
-# First date for which the NOAA global-hourly API stopped returning data.
-# Retained as documentation of the outage start; the GHCN-H fallback is now
-# driven purely by whether the cached series actually has gaps (see
-# get_indexed_temperatures_eeweather), so a primed cache serves offline and the
-# network is only touched for genuinely missing hours.
-NOAA_OUTAGE_DATE = pd.Timestamp("2025-08-30", tz="UTC")
+from eeweather import WeatherStation
 
 # This routine is a compact and distilled version of code that was originally
 # released as eeweather_wrapper.py
@@ -62,58 +40,14 @@ def _convert_to_farenheit(x):
     return 1.8 * x + 32
 
 
-def _fill_gaps_with_ghcnh(tempC, usaf_id, start, end):
-    """Fill NaN values in tempC using NOAA GHCN-H data for the same station.
-
-    Only NaN positions are overwritten; valid cached data is preserved.
-    Returns tempC unchanged if there are no gaps to fill, if the station has no
-    WBAN ID, or if the fallback returns no data.
-    """
-    if not tempC.isna().any():
-        # Cache already covers the requested range — no network request needed.
-        return tempC
-
-    try:
-        metadata = eeweather.get_isd_station_metadata(usaf_id)
-        wban_id = metadata.get("recent_wban_id")
-    except Exception:
-        return tempC
-
-    if not wban_id or wban_id == "99999":
-        raw = metadata.get("wban_ids", "")
-        candidates = [w.strip() for w in str(raw).split(",") if w.strip() and w.strip() != "99999"]
-        wban_id = candidates[0] if candidates else None
-
-    if not wban_id or wban_id == "99999":
-        return tempC
-
-    nan_count = int(tempC.isna().sum())
-    fallback = weather_fallback.fetch_ghcnh_hourly_temp_data(wban_id, start, end)
-
-    if fallback.empty:
-        return tempC
-
-    filled = tempC.fillna(fallback.reindex(tempC.index))
-    filled_count = nan_count - int(filled.isna().sum())
-    logger.warning(
-        "Station %s: NOAA global-hourly data unavailable for %s to %s; "
-        "filled %d of %d missing hours from NOAA GHCN-H.",
-        usaf_id, start.date(), end.date(), filled_count, nan_count,
-    )
-
-    # Write the filled series back into the eeweather cache by year so
-    # subsequent calls for the same station/year skip the NCEI network request.
-    for year, group in filled.groupby(filled.index.year):
-        try:
-            eeweather.write_isd_hourly_temp_data_to_cache(usaf_id, int(year), group)
-        except Exception as exc:
-            logger.debug("Cache write-back failed for %s %d: %s", usaf_id, year, exc)
-
-    return filled
-
-
 def get_indexed_temperatures_eeweather(usaf_id, index):
     """ Helper routine to return average temperatures over the given index in Fahrenheit
+
+    Temperatures come from a single NOAA source: the station's GHCNh
+    observations, read from NOAA's static by-year files (eeweather's default
+    ``sources=("ghcnh",)``). There is no dynamic-API dependency, so no cache
+    priming, expiry workaround, or second-source gap fill is needed; hours the
+    station did not report are returned as NaN.
 
     Parameters
     ----------
@@ -127,26 +61,17 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     temperatures : pandas.Series with DatetimeIndex
         Average temperatures over series indexed by :code:`index`.
     """
-
     if index.shape == (0,):
         return pd.Series([], index=index, dtype=float)
+
     years = sorted(index.groupby(index.year).keys())
-    start = pd.to_datetime(datetime(years[0], 1, 1), utc=True)
-    end = pd.to_datetime(datetime(years[-1], 12, 31, 23, 59), utc=True)
-    try:
-        tempC, warnings = eeweather.load_isd_hourly_temp_data(usaf_id, start, end)
-    except ValueError:
-        # eeweather has no ISD file entries for the requested year(s) — the
-        # local metadata DB predates those files. Create an all-NaN placeholder
-        # so the GHCN-H fallback below can fill the gap.
-        tempC = pd.Series(np.nan, index=pd.date_range(start, end, freq="h", tz="UTC"), dtype=float)
-        warnings = []
-    # Fill from GHCN-H only when the cached series actually has gaps. A primed
-    # cache (including hours previously written back from GHCN-H) therefore
-    # serves entirely offline; the NCEI network is touched only for genuinely
-    # missing hours, not on every current-period lookup.
-    if tempC.isna().any():
-        tempC = _fill_gaps_with_ghcnh(tempC, usaf_id, start, end)
-    tempC = tempC.resample('h').mean()[index]
-    tempF = _convert_to_farenheit(tempC)
-    return tempF
+    start = datetime(years[0], 1, 1, tzinfo=timezone.utc)
+    end = datetime(years[-1], 12, 31, 23, 59, tzinfo=timezone.utc)
+
+    station = WeatherStation.from_usaf(usaf_id)
+    df, _warnings = station.load_data(
+        start, end, frequency="h", variables=("temperature",)
+    )
+
+    tempC = df["temperature"].reindex(index)
+    return _convert_to_farenheit(tempC)
