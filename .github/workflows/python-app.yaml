@@ -8,9 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # shapely/pyproj wheels are not yet published for 3.14; the 1.8.0
-        # preview builds on 3.11-3.13.
-        python-version: ["3.11", "3.12", "3.13"]
+        # numpy/scipy/pandas/shapely/pyproj all publish cp314 wheels at the
+        # versions pinned in requirements.txt, and the full suite passes on
+        # 3.14, so the matrix spans 3.11-3.14 (setup.py's floor is 3.11).
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v4
