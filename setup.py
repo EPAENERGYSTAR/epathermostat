@@ -25,12 +25,14 @@ setup(name='thermostat',
     package_data={'': ['*.csv', '*.json']},
     python_requires='>=3.11',
     install_requires=[
-        'eeweather==0.3.30',
-        # eeweather 0.3.30 needs attrs (import time) and sqlalchemy (its
-        # KeyValueStore cache) but omits both from its own requirements, so we
-        # must pull them in here.
-        'attrs',
-        'sqlalchemy',
+        # Reshaped eeweather (WeatherStation/WeatherLocation API), the upstream
+        # feature branch this 1.8.0 preview targets. It declares its own deps
+        # (numpy, pandas>=2.2, platformdirs, pyproj, requests, shapely) and no
+        # longer needs attrs/sqlalchemy.
+        # NOTE: the static-by-year GHCNh transport that makes fetches survive
+        # the NOAA dynamic-API outage is a pending PR against this branch; until
+        # it merges, live fetches route through the (currently down) dynamic API.
+        'eeweather @ git+https://github.com/opendsm/eeweather.git@feature/power-source',
         'numpy>=2,<3',
         'pandas>=2.2,<3',
         'scipy>=1.11',

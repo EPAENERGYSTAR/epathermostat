@@ -1,6 +1,4 @@
-eeweather==0.3.30
-attrs
-sqlalchemy
+eeweather @ git+https://github.com/opendsm/eeweather.git@feature/power-source
 numpy>=2,<3
 pandas>=2.2,<3
 scipy>=1.11
