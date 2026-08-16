@@ -44,10 +44,10 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     """ Helper routine to return average temperatures over the given index in Fahrenheit
 
     Temperatures come from a single NOAA source: the station's GHCNh
-    observations, read from NOAA's static by-year files (eeweather's default
-    ``sources=("ghcnh",)``). There is no dynamic-API dependency, so no cache
-    priming, expiry workaround, or second-source gap fill is needed; hours the
-    station did not report are returned as NaN.
+    observations, fetched by eeweather (default ``sources=("ghcnh",)``) from
+    NOAA's GHCNh access API. There is no cache priming, expiry workaround, or
+    second-source gap fill; hours the station did not report are returned as
+    NaN. eeweather's data-coverage warnings are logged rather than discarded.
 
     Parameters
     ----------
@@ -69,9 +69,14 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     end = datetime(years[-1], 12, 31, 23, 59, tzinfo=timezone.utc)
 
     station = WeatherStation.from_usaf(usaf_id)
-    df, _warnings = station.load_data(
+    df, warnings = station.load_data(
         start, end, frequency="h", variables=("temperature",)
     )
+    for warning in warnings:
+        logger.warning(
+            "eeweather %s for station %s: %s",
+            warning.qualified_name, usaf_id, warning.description,
+        )
 
     tempC = df["temperature"].reindex(index)
     return _convert_to_farenheit(tempC)

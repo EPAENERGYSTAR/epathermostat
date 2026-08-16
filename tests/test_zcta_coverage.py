@@ -65,8 +65,8 @@ _HALF_SPLIT = "2025-12-31"
 def _patch_block_noaa_network():
     """Block DNS lookups for NOAA hostnames so data comes only from local cache.
 
-    NOAA's ISD API has been down since 2025-08-29; connections hang for ~127 s
-    before timing out.  This patch makes them fail immediately.
+    Forces NOAA hostname resolution to fail immediately, keeping this coverage
+    test offline and deterministic regardless of network reachability.
     """
     import socket as _socket
 
