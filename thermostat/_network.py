@@ -17,12 +17,10 @@ eeweather's ISD fetch (eeweather.access_api.make_api_request) is wrapped in
     HTTPSConnectionPool(host='www.ncei.noaa.gov', port=443): Max retries
     exceeded with url: /access/services/data/v1?dataTypes=TMP&dataset=...
 
-The consequence is not limited to failed runs.  When the ISD fetch fails but a
-cached series is available, thermostat.weather_fallback swallows the resulting
-GHCN-H error and returns an empty series, leaving the gaps unfilled.  Days with
-more than two missing hours are then dropped from the core day set by
-Thermostat._get_core_day_sets, so metrics are computed over a shorter period
-with nothing in the output to indicate it.
+The consequence is not limited to failed runs.  When the fetch fails, the
+affected hours are left as NaN; days with more than two missing hours are then
+dropped from the core day set by Thermostat._get_core_day_sets, so metrics are
+computed over a shorter period with nothing in the output to indicate it.
 
 Pinning the address family to AF_INET restores normal operation.  This is a
 workaround for a defect on NOAA's side, not a permanent change.  Once NOAA's

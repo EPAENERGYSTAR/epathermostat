@@ -28,10 +28,10 @@ setup(name='thermostat',
         # Reshaped eeweather (WeatherStation/WeatherLocation API), the upstream
         # feature branch this 1.8.0 preview targets. It declares its own deps
         # (numpy, pandas>=2.2, platformdirs, pyproj, requests, shapely) and no
-        # longer needs attrs/sqlalchemy.
-        # NOTE: the static-by-year GHCNh transport that makes fetches survive
-        # the NOAA dynamic-API outage is a pending PR against this branch; until
-        # it merges, live fetches route through the (currently down) dynamic API.
+        # longer needs attrs/sqlalchemy. Live fetches route through NOAA's GHCNh
+        # access API. (A static-by-year GHCNh transport is a separate pending
+        # eeweather PR that adds resilience against future dynamic-API outages;
+        # it is not required for normal operation.)
         'eeweather @ git+https://github.com/opendsm/eeweather.git@feature/power-source',
         'numpy>=2,<3',
         'pandas>=2.2,<3',

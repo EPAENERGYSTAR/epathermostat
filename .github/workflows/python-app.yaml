@@ -47,16 +47,12 @@ jobs:
 
     - name: Test with pytest
       # This 1.8.0 preview migrates the weather layer to the reshaped eeweather
-      # (a single static-GHCNh source; see thermostat/eeweather_wrapper.py and
-      # thermostat/stations.py). The gate here is the migrated weather units,
-      # which are mocked and fully offline.
-      #
-      # The full regulated suite (test_metrics / test_core / test_demand / ...)
-      # fetches live weather during from_csv. It can run green only once the
-      # static-by-year GHCNh transport lands in the eeweather branch this depends
-      # on; until then those fetches route through NOAA's dynamic access API,
-      # which is currently down (it hangs rather than errors). Run the full suite
-      # locally against the static-transport eeweather branch. `-o addopts=""`
-      # drops the repo's default --cov flags for this scoped run.
+      # (a single GHCNh source; see thermostat/eeweather_wrapper.py and
+      # thermostat/stations.py). The full regulated suite (test_metrics /
+      # test_core / test_demand / ...) fetches live weather during from_csv from
+      # NOAA's GHCNh access API, so this job hits the network on purpose. The
+      # golden reference metrics were regenerated against GHCNh for 1.8.0.
+      # `-o addopts=""` drops the repo's default --cov flags. Slow ZCTA-coverage
+      # tests stay opt-in (no --runslow).
       run: |
-        python -m pytest tests/test_eeweather_wrapper.py tests/test_stations.py -o addopts="" -v
+        python -m pytest tests/ -o addopts="" -v
