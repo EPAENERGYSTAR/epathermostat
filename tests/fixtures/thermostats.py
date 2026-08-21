@@ -1,6 +1,8 @@
 from thermostat import get_version
 from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
+
+from .weather import recorded_weather
 from thermostat.regression import runtime_regression
 from thermostat.core import Thermostat, CoreDaySet
 
@@ -42,15 +44,13 @@ def thermostat_template():
     )
     return thermostat
 
-# Note:
-# The following fixtures can be quite slow without a prebuilt weather cache
-# they the from_csv command fetches weather data. (This happens with builds on
-# travis.)
-# To speed this up, spoof the weather source.
+# These fixtures used to fetch live weather from NOAA during collection, which
+# made the regulated golden values depend on the network. They now read the
+# recorded fixture; see tests/fixtures/weather.py.
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single_utc_offset_0.csv"])
 def thermostat_type_1_utc(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single_utc_offset_bad.csv"])
@@ -61,46 +61,46 @@ def thermostat_type_1_utc_bad(request):
     to have no return statement, which made the test asserting on it pass
     unconditionally.
     """
-    return list(from_csv(get_data_path(request.param)))
+    return list(from_csv(get_data_path(request.param), weather_source=recorded_weather))
 
 @pytest.fixture(scope="session", params=["../data/metadata_multiple_same_key.csv"])
 def thermostats_multiple_same_key(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return thermostats
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_1_single.csv"])
 def thermostat_type_1(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_2_single.csv"])
 def thermostat_type_2(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_3_single.csv"])
 def thermostat_type_3(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_4_single.csv"])
 def thermostat_type_4(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_type_5_single.csv"])
 def thermostat_type_5(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_single_zero_days.csv"])
 def thermostat_zero_days(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return next(thermostats)
 
 @pytest.fixture(scope="session", params=["../data/metadata_single_emg_aux_constant_on_outlier.csv"])
 def thermostat_emg_aux_constant_on_outlier(request):
-    thermostats = from_csv(get_data_path(request.param))
+    thermostats = from_csv(get_data_path(request.param), weather_source=recorded_weather)
     return thermostats
 
 @pytest.fixture(scope="session")
