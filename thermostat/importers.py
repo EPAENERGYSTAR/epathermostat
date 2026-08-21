@@ -56,7 +56,8 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None):
+def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None,
+             weather_source=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -68,6 +69,14 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None):
         Set to True to output a more detailed log of import activity.
     shuffle: boolean
         Shuffle the thermostats into a random order.
+    weather_source : callable, optional
+        Override for the outdoor temperature lookup, called as
+        ``weather_source(station, index)`` and returning a pandas Series of
+        degrees Fahrenheit over ``index``. Defaults to
+        :func:`thermostat.eeweather_wrapper.get_indexed_temperatures_eeweather`.
+        Supplying one lets a caller (notably the test suite) run without
+        network access. It is dispatched to worker processes, so it must be
+        picklable -- a module-level function, not a lambda or closure.
 
     Returns
     -------
@@ -97,7 +106,8 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None):
     multiprocess_func_partial = partial(
             multiprocess_func,
             metadata_filename=metadata_filename,
-            verbose=verbose)
+            verbose=verbose,
+            weather_source=weather_source)
     result_list = p.imap(multiprocess_func_partial, metadata.iterrows())
     p.close()
     p.join()
@@ -121,7 +131,8 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None):
     return iter(results)
 
 
-def multiprocess_func(metadata, metadata_filename, verbose=False):
+def multiprocess_func(metadata, metadata_filename, verbose=False,
+                      weather_source=None):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
     i, row = metadata
@@ -145,6 +156,7 @@ def multiprocess_func(metadata, metadata_filename, verbose=False):
                 row.equipment_type,
                 row.utc_offset,
                 interval_data_filename,
+                weather_source=weather_source,
         )
     except ValueError as e:
         # Could not locate a station for the thermostat. Warn and skip.
@@ -177,7 +189,8 @@ def multiprocess_func(metadata, metadata_filename, verbose=False):
 
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type,
-                          utc_offset, interval_data_filename):
+                          utc_offset, interval_data_filename,
+                          weather_source=None):
     """ Load a single thermostat directly from an interval data file.
 
     Parameters
@@ -195,6 +208,8 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         method dateutil.parser.parse.
     interval_data_filename : str
         The path to the CSV in which the interval data is stored.
+    weather_source : callable, optional
+        Override for the outdoor temperature lookup; see :func:`from_csv`.
 
     Returns
     -------
@@ -250,7 +265,8 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         raise RuntimeError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
-    temp_out = get_indexed_temperatures_eeweather(station, hourly_index_utc - utc_offset)
+    fetch_temperatures = weather_source or get_indexed_temperatures_eeweather
+    temp_out = fetch_temperatures(station, hourly_index_utc - utc_offset)
     temp_out.index = hourly_index
 
     # load daily time series values

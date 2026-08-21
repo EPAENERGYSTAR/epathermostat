@@ -1,6 +1,13 @@
 name: Python package
 
-on: [push]
+on:
+  push:
+  # Without this, pull requests -- including every fork PR -- were never tested.
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -53,7 +60,10 @@ jobs:
       # test_core / test_demand / ...) fetches live weather during from_csv from
       # NOAA's GHCNh access API, so this job hits the network on purpose. The
       # golden reference metrics were regenerated against GHCNh for 1.8.0.
-      # `-o addopts=""` drops the repo's default --cov flags. Slow ZCTA-coverage
-      # tests stay opt-in (no --runslow).
+      # `-o addopts=""` drops the repo's default -x/--cov flags; coverage is
+      # requested explicitly below so it is actually collected (the bare
+      # -o addopts="" used to switch it off entirely). Slow ZCTA-coverage tests
+      # stay opt-in (no --runslow).
       run: |
-        python -m pytest tests/ -o addopts="" -v
+        python -m pytest tests/ -o addopts="" -v \
+          --cov=thermostat --cov-report=term-missing --cov-report=xml
