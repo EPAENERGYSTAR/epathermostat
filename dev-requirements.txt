@@ -1,7 +1,11 @@
+# Local development. Runtime and docs dependencies come from pyproject.toml
+# (`pip install -e .[dev,docs]`); this file is the loose superset used by CI.
 pytest
-sphinx
+pytest-cov
 coverage
+pyflakes
+sphinx
+sphinx_rtd_theme
 jupyter
 tox
-pytest-cov
 pip-tools

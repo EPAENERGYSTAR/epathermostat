@@ -6,6 +6,9 @@ by hand in five places, and metrics_to_csv builds its frame with
 so a metric added in core.py could vanish from the CSV with no error, and
 three of them had.
 """
+import re
+from pathlib import Path
+
 import pytest
 
 from thermostat.core import (
@@ -81,3 +84,23 @@ def test_schema_names_every_emitted_metric(thermostat_type_1):  # noqa: F811
         emitted |= set(record.keys())
 
     assert set(COLUMNS) - emitted == set()
+
+
+def test_the_documented_columns_are_the_schema_columns():
+    """docs/data_files.rst is the fifth hand-typed copy of the schema.
+
+    It had drifted three ways: three ``rhu2_*_duty_cycle`` rows for columns
+    the CSV never carried, two comfort-temperature rows still using the
+    internal ``baseline10``/``baseline90`` variable names instead of the
+    emitted ones, and two demand columns missing entirely.
+    """
+    docs = (
+        Path(__file__).resolve().parent.parent / "docs" / "data_files.rst"
+    ).read_text(encoding="utf-8")
+
+    # The output table is the only one whose rows carry the leading-underscore
+    # and rhu names, but other tables in the file document input columns and
+    # summary statistics -- so check containment in that direction only.
+    documented = set(re.findall(r":code:`([A-Za-z0-9_]+)`", docs))
+
+    assert [name for name in COLUMNS if name not in documented] == []
