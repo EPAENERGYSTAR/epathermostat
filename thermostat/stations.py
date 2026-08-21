@@ -1,17 +1,26 @@
 import logging
 import json
 from datetime import date
+from functools import lru_cache
 from importlib.resources import files
 
 from eeweather import WeatherLocation, WeatherStation
 from eeweather.exceptions import UnrecognizedPlaceError
 
-logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# Static JSON fallback map (committed resource), used only when the reshaped
-# eeweather registry can't resolve a ZCTA to a station.
-zipcode_usaf_json = (files('thermostat.resources') / 'zipcode_usaf_station.json').read_text()
-zipcode_usaf = json.loads(zipcode_usaf_json)
+
+@lru_cache(maxsize=None)
+def _zipcode_usaf():
+    """Static JSON fallback map (committed resource), used only when the
+    reshaped eeweather registry can't resolve a ZCTA to a station.
+
+    Loaded on first use rather than at import: it is ~700 kB, every worker
+    process paid for it, and the fallback is rarely reached. The parsed dict
+    is kept; the raw text is not.
+    """
+    with (files('thermostat.resources') / 'zipcode_usaf_station.json').open('rb') as f:
+        return json.load(f)
 
 # Maximum distance (km) from ZCTA centroid to assigned station.
 _MAX_STATION_DISTANCE_KM = 500
@@ -50,7 +59,7 @@ def get_closest_station_by_zipcode(zipcode, required_years=None):
             "zcta", zipcode.zfill(5), sources=("ghcnh",)
         )
     except UnrecognizedPlaceError:
-        logging.warning("Unrecognized ZCTA %s — falling back to JSON map.", zipcode)
+        logger.warning("Unrecognized ZCTA %s — falling back to JSON map.", zipcode)
         return lookup_usaf_station_by_zipcode(zipcode)
 
     # Distance-ranked GHCNh candidates within the cap. Ranking (distance, then
@@ -74,7 +83,7 @@ def get_closest_station_by_zipcode(zipcode, required_years=None):
             if usaf and not str(usaf).startswith("A"):  # skip Canadian airport codes
                 return usaf
 
-    logging.warning(
+    logger.warning(
         "No station with data for %s within %d km of zipcode %s — "
         "falling back to JSON map.",
         required_years, _MAX_STATION_DISTANCE_KM, zipcode,
@@ -93,4 +102,4 @@ def lookup_usaf_station_by_zipcode(zipcode):
     -------
     station : string or None
     """
-    return zipcode_usaf.get(zipcode, None)
+    return _zipcode_usaf().get(zipcode, None)

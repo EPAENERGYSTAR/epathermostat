@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
-from itertools import repeat
 import inspect
 from warnings import warn
 import logging
@@ -9,21 +8,8 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
 
-from thermostat.regression import runtime_regression
 from thermostat import get_version
 from thermostat.climate_zone import retrieve_climate_zone
-
-try:
-    if "0.21." in pd.__version__:
-        warn(
-            "WARNING: Pandas version 0.21.x has known issues and is not supported. "
-            "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
-except TypeError:
-    pass  # Documentation mocks out pd, so ignore if not present.
-
-# Ignore divide-by-zero errors
-np.seterr(divide='ignore', invalid='ignore')
-
 
 CoreDaySet = namedtuple("CoreDaySet", ["name", "daily", "hourly", "start_date", "end_date"])
 
@@ -221,22 +207,22 @@ class Thermostat(object):
         return series.interpolate(method="linear", limit=1, limit_direction="both")
 
     def _protect_heating(self):
-        function_name = inspect.stack()[1][3]
         if self.equipment_type not in self.HEATING_EQUIPMENT_TYPES:
+            function_name = inspect.stack()[1][3]
             message = "The function '{}', which is heating specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
     def _protect_cooling(self):
-        function_name = inspect.stack()[1][3]
         if self.equipment_type not in self.COOLING_EQUIPMENT_TYPES:
+            function_name = inspect.stack()[1][3]
             message = "The function '{}', which is cooling specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
     def _protect_aux_emerg(self):
-        function_name = inspect.stack()[1][3]
         if self.equipment_type not in self.AUX_EMERG_EQUIPMENT_TYPES:
+            function_name = inspect.stack()[1][3]
             message = "The function '{}', which is auxiliary/emergency heating specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
@@ -1160,14 +1146,6 @@ class Thermostat(object):
         """
         return np.maximum(alpha * (baseline_heating_demand), 0)
 
-    def get_daily_avoided_cooling_runtime(
-            self, baseline_runtime, core_cooling_day_set):
-        return baseline_runtime - self.cool_runtime[core_cooling_day_set]
-
-    def get_daily_avoided_heating_runtime(
-            self, baseline_runtime, core_heating_day_set):
-        return baseline_runtime - self.heat_runtime[core_heating_day_set]
-
     def calculate_epa_field_savings_metrics(self,
             core_cooling_day_set_method="entire_dataset",
             core_heating_day_set_method="entire_dataset",
@@ -1255,21 +1233,18 @@ class Thermostat(object):
 
                 if np.isnan(total_runtime_core_cooling):
                     warn(
-                        "WARNING: Total Runtime Core Cooling Days is nan. "
-                        "This may mean that you have pandas 0.21.x installed "
-                        "(which is not supported).")
+                        "WARNING: Total Runtime Core Cooling Days is nan.")
 
                 if n_days == 0:
                     warn(
                         "WARNING: Number of valid cooling days is zero.")
 
-                # Raise a division error if dividing by zero and replace with np.nan instead
-                old_err_state = np.seterr(divide='raise')
-                try:
-                    average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
-                except FloatingPointError:
+                # No valid days means no average; guard the division rather
+                # than flipping global numpy error state to catch it.
+                if n_days == 0:
                     average_daily_cooling_runtime = np.nan
-                np.seterr(**old_err_state)
+                else:
+                    average_daily_cooling_runtime = total_runtime_core_cooling / n_days
 
                 baseline10_demand = self.get_baseline_cooling_demand(
                     core_cooling_day_set,
@@ -1411,21 +1386,18 @@ class Thermostat(object):
 
                 if np.isnan(total_runtime_core_heating):
                     warn(
-                        "WARNING: Total Runtime Core Heating is nan. "
-                        "This may mean that you have pandas 0.21.x installed "
-                        "(which is not supported).")
+                        "WARNING: Total Runtime Core Heating is nan.")
 
                 if n_days == 0:
                     warn(
                         "WARNING: Number of valid heating days is zero.")
 
-                # Raise a division error if dividing by zero and replace with np.nan instead
-                old_err_state = np.seterr(divide='raise')
-                try:
-                    average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
-                except FloatingPointError:
+                # No valid days means no average; guard the division rather
+                # than flipping global numpy error state to catch it.
+                if n_days == 0:
                     average_daily_heating_runtime = np.nan
-                np.seterr(**old_err_state)
+                else:
+                    average_daily_heating_runtime = total_runtime_core_heating / n_days
 
                 baseline90_demand = self.get_baseline_heating_demand(
                     core_heating_day_set,

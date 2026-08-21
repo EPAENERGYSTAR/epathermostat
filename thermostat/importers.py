@@ -158,8 +158,7 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
                 interval_data_filename,
                 weather_source=weather_source,
         )
-    except ValueError as e:
-        # Could not locate a station for the thermostat. Warn and skip.
+    except ValueError:
         warnings.warn(
             "Skipping import of thermostat (id={}) for which "
             "a sufficient source of outdoor weather data could not"

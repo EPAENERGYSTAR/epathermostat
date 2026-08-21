@@ -1,12 +1,9 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import norm
 
 from collections import OrderedDict
-from collections import defaultdict
 from itertools import chain
 from warnings import warn
-import json
 from functools import reduce
 from importlib.resources import files
 import logging
@@ -14,7 +11,6 @@ import logging
 from thermostat import get_version
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
-IQR_FILTER_PARAMETER = 1.5
 TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
 UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
 
