@@ -36,35 +36,19 @@ def multiple_thermostat_calculate_epa_field_savings_metrics(thermostats):
     # Convert the thermostats iterator to a list
     thermostats_list = list(thermostats)
 
-    pool = Pool()
-    results = pool.imap(_calc_epa_func, thermostats_list)
-    pool.close()
-    pool.join()
+    # Pool.map preserves input order, so the results already match the order
+    # they were sent in. The previous code used imap and then rebuilt the
+    # order by hand from a dict keyed on thermostat_id, which silently dropped
+    # the second of any two thermostats sharing an id.
+    with Pool() as pool:
+        results = pool.map(_calc_epa_func, thermostats_list)
 
-    metrics_dict = {}
+    metrics = []
     for output in results:
         # a thermostat with no qualifying core day sets yields no metrics;
         # skip it rather than indexing an empty result (which would raise)
         if not output:
             continue
-        thermostat_id = output[0]['ct_identifier']
-        metrics_dict[thermostat_id] = []
-        for individual_output in output:
-            metrics_dict[thermostat_id].append(individual_output)
-
-    # Get the order of the thermostats from the original input so the output
-    # matches the order that was sent in
-    thermostat_ids = \
-        [thermostat.thermostat_id for thermostat in thermostats_list]
-    metrics = []
-    for thermostat_id in thermostat_ids:
-        try:
-            for metric in metrics_dict[thermostat_id]:
-                metrics.append(metric)
-            # Prevent duplicate thermostat IDs from being double-counted
-            metrics_dict.pop(thermostat_id, None)
-        # Trap for missing keys
-        except KeyError:
-            pass
+        metrics.extend(output)
 
     return metrics

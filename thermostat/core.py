@@ -31,8 +31,6 @@ RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
 RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESISTANCE_HEAT_USE_BIN_SECOND[i+1])
                                         for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
 
-# FIXME: Turning off these warnings for now
-pd.set_option('mode.chained_assignment', None)
 
 
 class Thermostat(object):
@@ -588,8 +586,12 @@ class Thermostat(object):
         if runtime_temp is None:
             return None
 
-        # Create the bins and group by them
-        runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
+        # Create the bins and group by them. assign() copies: this frame is
+        # the caller's, and it is reused across the rhu1/rhu2 passes, so
+        # writing 'bins' into it leaked the first pass's column into the
+        # second.
+        runtime_temp = runtime_temp.assign(
+            bins=pd.cut(runtime_temp['temperature'], bins))
         runtime_rhu = runtime_temp.groupby('bins', observed=False)[
             ['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
@@ -1525,22 +1527,33 @@ class Thermostat(object):
                     }
 
                     # Add RHU Calculations
+                    #
+                    # The runtime frame does not depend on rhu_type, so it is
+                    # built once rather than per iteration.
+                    rhu_runtime = self.get_resistance_heat_utilization_runtime(
+                        core_heating_day_set)
+
+                    # Thermostat-level duty cycles. These are sums over the
+                    # whole runtime frame and so are also independent of
+                    # rhu_type; emitting them inside the loop produced
+                    # rhu2_*_duty_cycle keys numerically identical to the
+                    # rhu1_* ones, which the exporter then dropped silently
+                    # because only the rhu1_* names are in COLUMNS. Computed
+                    # once here under the names the schema declares.
+                    if rhu_runtime is not None:
+                        total_minutes = rhu_runtime.total_minutes.sum()
+                        additional_outputs['rhu1_aux_duty_cycle'] = \
+                            rhu_runtime.aux_runtime.sum() / total_minutes
+                        additional_outputs['rhu1_emg_duty_cycle'] = \
+                            rhu_runtime.emg_runtime.sum() / total_minutes
+                        additional_outputs['rhu1_compressor_duty_cycle'] = \
+                            rhu_runtime.heat_runtime.sum() / total_minutes
+
                     for rhu_type in ('rhu1', 'rhu2'):
                         if rhu_type == 'rhu2':
                             min_runtime_minutes = VAR_MIN_RHU_RUNTIME
                         else:
                             min_runtime_minutes = None
-
-                        rhu_runtime = self.get_resistance_heat_utilization_runtime(core_heating_day_set)
-
-                        # Add duty cycle records
-                        heat_runtime = rhu_runtime.heat_runtime.sum()
-                        aux_runtime = rhu_runtime.aux_runtime.sum()
-                        emg_runtime = rhu_runtime.emg_runtime.sum()
-                        total_minutes = rhu_runtime.total_minutes.sum()
-                        additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_minutes
-                        additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_minutes
-                        additional_outputs[rhu_type + '_compressor_duty_cycle'] = heat_runtime / total_minutes
 
                         rhu_first = self.get_resistance_heat_utilization_bins(
                                 rhu_runtime,

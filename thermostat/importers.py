@@ -5,6 +5,10 @@ from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DIS
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.exceptions import DataNotAvailableError
+from thermostat.exceptions import (
+    StationNotFoundError,
+    InvalidIntervalDataError,
+)
 
 import warnings
 import dateutil.parser
@@ -56,8 +60,8 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None,
-             weather_source=None):
+def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
+             quiet=None, weather_source=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -69,6 +73,10 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None,
         Set to True to output a more detailed log of import activity.
     shuffle: boolean
         Shuffle the thermostats into a random order.
+    seed : int, optional
+        Seed for the shuffle. Without one the order -- and therefore the
+        order of rows in the output -- varies between runs on identical
+        input. Pass a seed when reproducibility matters.
     weather_source : callable, optional
         Override for the outdoor temperature lookup, called as
         ``weather_source(station, index)`` and returning a pandas Series of
@@ -85,7 +93,8 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None,
     """
 
     if quiet:
-        logging.warning('quiet argument has been deprecated. Please remove this flag from your code.')
+        logger.warning(
+            'quiet argument has been deprecated. Please remove this flag from your code.')
 
     metadata = pd.read_csv(
         metadata_filename,
@@ -99,8 +108,8 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None,
     )
 
     if shuffle:
-        logging.info("Randomizing thermostat order.")
-        metadata = metadata.sample(frac=1).reset_index(drop=True)
+        logger.info("Randomizing thermostat order.")
+        metadata = metadata.sample(frac=1, random_state=seed).reset_index(drop=True)
 
     p = Pool(AVAILABLE_PROCESSES)
     multiprocess_func_partial = partial(
@@ -121,11 +130,11 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, quiet=None,
     missing_thermostats = metadata_thermostat_ids.difference(loaded_thermostat_ids)
     missing_thermostats_num = len(missing_thermostats)
     if missing_thermostats_num > 0:
-        logging.warning("Unable to load {} thermostat records because of "
-                        "errors. Please check the logs for the following thermostats:".format(
-                            missing_thermostats_num))
+        logger.warning("Unable to load %d thermostat records because of "
+                       "errors. Please check the logs for the following "
+                       "thermostats:", missing_thermostats_num)
         for thermostat in missing_thermostats:
-            logging.warning(thermostat)
+            logger.warning(thermostat)
 
     # Convert this to an iterator to maintain compatibility
     return iter(results)
@@ -158,11 +167,11 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
                 interval_data_filename,
                 weather_source=weather_source,
         )
-    except ValueError:
+    except StationNotFoundError:
         warnings.warn(
             "Skipping import of thermostat (id={}) for which "
-            "a sufficient source of outdoor weather data could not"
-            "be located using the given ZIP code ({}). This likely "
+            "a sufficient source of outdoor weather data could not "
+            "be located using the given ZIP code ({}). This is likely "
             "due to the discrepancy between US Postal Service ZIP "
             "codes (which do not always map well to locations) and "
             "Census Bureau ZCTAs (which usually do). Please supply "
@@ -177,7 +186,19 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
             .format(row.thermostat_id, e))
         return
 
+    except (InvalidIntervalDataError, ValueError) as e:
+        warnings.warn(
+            "Skipping import of thermostat (id={}) because its interval "
+            "data could not be read: {}"
+            .format(row.thermostat_id, e))
+        return
+
     except Exception as e:
+        # Last resort. Log the traceback rather than only the message: this
+        # handler turns any bug -- a typo, a schema mistake -- into a silently
+        # missing output row, so the detail has to go somewhere.
+        logger.exception(
+            "Unexpected error importing thermostat %s", row.thermostat_id)
         warnings.warn(
             "Skipping import of thermostat(id={}) because of "
             "the following error: {}"
@@ -229,7 +250,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     if not all(dates == daily_index):
         message = ("Dates provided for thermostat_id={} may contain some "
                    "which are out of order, missing, or duplicated.".format(thermostat_id))
-        raise RuntimeError(message)
+        raise InvalidIntervalDataError(message)
 
     # load hourly time series values
     temp_in = pd.Series(_get_hourly_block(df, "temp_in"), hourly_index)
@@ -261,7 +282,7 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     if station is None:
         message = "No weather station with sufficient recent data within " \
                 "{} km of ZIP code {}".format(_MAX_STATION_DISTANCE_KM, zipcode)
-        raise RuntimeError(message)
+        raise StationNotFoundError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
     fetch_temperatures = weather_source or get_indexed_temperatures_eeweather
