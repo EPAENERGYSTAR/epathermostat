@@ -32,6 +32,84 @@ RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESI
                                         for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
 
 
+# --- season descriptors ---------------------------------------------------
+#
+# The heating and cooling arms of calculate_epa_field_savings_metrics were the
+# same ~150-line algorithm written out twice with cool<->heat,
+# baseline10<->baseline90 and cdd<->hdd swapped. Everything that genuinely
+# differs between them is named here: the methods that supply that season's
+# day sets, runtime, demand and baselines, and the eight schema columns whose
+# names carry the season.
+#
+# The duplication had already produced drift. The cooling dict read
+# `percent_savings_baseline_regional` from one local and the heating dict read
+# `savings_baseline_regional` from another -- the same value, by luck, since
+# the first is assigned from the second -- and the nan warning said "Total
+# Runtime Core Cooling Days" on one side and "Total Runtime Core Heating" on
+# the other. Written once, neither can happen again.
+
+Season = namedtuple("Season", [
+    "name",                        # "cooling" / "heating"
+    "title",                       # "Cooling" / "Heating", for warning text
+    "equipment_types",             # attribute naming the applicable types
+    "day_sets",                    # -> list of CoreDaySet
+    "baseline_setpoint",           # -> percentile comfort temperature
+    "runtime",                     # daily runtime Series attribute
+    "demand",                      # -> (demand, tau, alpha, mse, ...)
+    "baseline_demand",
+    "baseline_runtime",
+    "regional_comfort",            # field on the climate-zone record
+    "n_core_days_column",
+    "comfort_column",
+    "regional_comfort_column",
+    "total_runtime_column",
+    "daily_mean_runtime_column",
+    "mean_indoor_column",
+    "mean_outdoor_column",
+])
+
+
+COOLING_SEASON = Season(
+    name="cooling",
+    title="Cooling",
+    equipment_types="COOLING_EQUIPMENT_TYPES",
+    day_sets="get_core_cooling_days",
+    baseline_setpoint="get_core_cooling_day_baseline_setpoint",
+    runtime="cool_runtime",
+    demand="get_cooling_demand",
+    baseline_demand="get_baseline_cooling_demand",
+    baseline_runtime="get_baseline_cooling_runtime",
+    regional_comfort="baseline_regional_cooling_comfort_temperature",
+    n_core_days_column="n_core_cooling_days",
+    comfort_column="baseline_percentile_core_cooling_comfort_temperature",
+    regional_comfort_column="regional_average_baseline_cooling_comfort_temperature",
+    total_runtime_column="total_core_cooling_runtime",
+    daily_mean_runtime_column="daily_mean_core_cooling_runtime",
+    mean_indoor_column="core_cooling_days_mean_indoor_temperature",
+    mean_outdoor_column="core_cooling_days_mean_outdoor_temperature",
+)
+
+
+HEATING_SEASON = Season(
+    name="heating",
+    title="Heating",
+    equipment_types="HEATING_EQUIPMENT_TYPES",
+    day_sets="get_core_heating_days",
+    baseline_setpoint="get_core_heating_day_baseline_setpoint",
+    runtime="heat_runtime",
+    demand="get_heating_demand",
+    baseline_demand="get_baseline_heating_demand",
+    baseline_runtime="get_baseline_heating_runtime",
+    regional_comfort="baseline_regional_heating_comfort_temperature",
+    n_core_days_column="n_core_heating_days",
+    comfort_column="baseline_percentile_core_heating_comfort_temperature",
+    regional_comfort_column="regional_average_baseline_heating_comfort_temperature",
+    total_runtime_column="total_core_heating_runtime",
+    daily_mean_runtime_column="daily_mean_core_heating_runtime",
+    mean_indoor_column="core_heating_days_mean_indoor_temperature",
+    mean_outdoor_column="core_heating_days_mean_outdoor_temperature",
+)
+
 
 class Thermostat(object):
     """ Main thermostat data container. Each parameter which contains
@@ -1188,429 +1266,287 @@ class Thermostat(object):
             or cooling days.
         """
 
-        retval = retrieve_climate_zone(climate_zone_mapping, self.zipcode)
-        climate_zone = retval.climate_zone
-        baseline_regional_cooling_comfort_temperature = retval.baseline_regional_cooling_comfort_temperature
-        baseline_regional_heating_comfort_temperature = retval.baseline_regional_heating_comfort_temperature
+        climate_zone_record = retrieve_climate_zone(
+            climate_zone_mapping, self.zipcode)
+        climate_zone = climate_zone_record.climate_zone
 
         metrics = []
 
-        def avoided(baseline, observed):
-            return baseline - observed
+        for season, day_set_method in (
+                (COOLING_SEASON, core_cooling_day_set_method),
+                (HEATING_SEASON, core_heating_day_set_method)):
+
+            if self.equipment_type not in getattr(self, season.equipment_types):
+                continue
+
+            regional_comfort_temperature = getattr(
+                climate_zone_record, season.regional_comfort)
+
+            for core_day_set in getattr(self, season.day_sets)(
+                    method=day_set_method):
+                metrics.append(self._core_day_set_metrics(
+                    season,
+                    core_day_set,
+                    climate_zone,
+                    regional_comfort_temperature))
 
-        def percent_savings(avoided, baseline):
-            try:
-                savings = (avoided.mean() / baseline.mean()) * 100.0
-            except ZeroDivisionError:
-                logger.debug(
-                    'percent_savings divided by zero: %s / %s '
-                    'for thermostat_id %s ' % (
-                        avoided.mean(), baseline.mean(),
-                        self.thermostat_id))
-                savings = np.nan
-            return savings
-
-        if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
-            for core_cooling_day_set in self.get_core_cooling_days(
-                    method=core_cooling_day_set_method):
-
-                baseline10_comfort_temperature = \
-                    self.get_core_cooling_day_baseline_setpoint(core_cooling_day_set)
-
-                daily_runtime = self.cool_runtime[core_cooling_day_set.daily]
-
-                (
-                    demand,
-                    tau,
-                    alpha,
-                    mse,
-                    rmse,
-                    cvrmse,
-                    mape,
-                    mae,
-                ) = self.get_cooling_demand(core_cooling_day_set)
-
-                total_runtime_core_cooling = daily_runtime.sum()
-                n_days = core_cooling_day_set.daily.sum()
-
-                if np.isnan(total_runtime_core_cooling):
-                    warn(
-                        "WARNING: Total Runtime Core Cooling Days is nan.")
-
-                if n_days == 0:
-                    warn(
-                        "WARNING: Number of valid cooling days is zero.")
-
-                # No valid days means no average; guard the division rather
-                # than flipping global numpy error state to catch it.
-                if n_days == 0:
-                    average_daily_cooling_runtime = np.nan
-                else:
-                    average_daily_cooling_runtime = total_runtime_core_cooling / n_days
-
-                baseline10_demand = self.get_baseline_cooling_demand(
-                    core_cooling_day_set,
-                    baseline10_comfort_temperature,
-                    tau,
-                )
-
-                baseline10_runtime = self.get_baseline_cooling_runtime(
-                    baseline10_demand,
-                    alpha
-                )
-
-                avoided_runtime_baseline10 = avoided(baseline10_runtime, daily_runtime)
-
-                savings_baseline10 = percent_savings(avoided_runtime_baseline10, baseline10_runtime)
-
-                if baseline_regional_cooling_comfort_temperature is not None:
-
-                    baseline_regional_demand = self.get_baseline_cooling_demand(
-                        core_cooling_day_set,
-                        baseline_regional_cooling_comfort_temperature,
-                        tau
-                    )
-
-                    baseline_regional_runtime = self.get_baseline_cooling_runtime(
-                        baseline_regional_demand,
-                        alpha
-                    )
-
-                    avoided_runtime_baseline_regional = avoided(baseline_regional_runtime, daily_runtime)
-
-                    savings_baseline_regional = percent_savings(avoided_runtime_baseline_regional, baseline_regional_runtime)
-
-                    percent_savings_baseline_regional = savings_baseline_regional
-                    avoided_daily_mean_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.mean()
-                    avoided_total_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_baseline_regional = baseline_regional_runtime.mean()
-                    baseline_total_core_day_runtime_baseline_regional = baseline_regional_runtime.sum()
-                    _daily_mean_core_day_demand_baseline_baseline_regional = np.nanmean(baseline_regional_demand)
-
-                else:
-
-                    baseline_regional_demand = None
-                    baseline_regional_runtime = None
-
-                    avoided_runtime_baseline_regional = None
-
-                    savings_baseline_regional = None
-
-                    percent_savings_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_baseline_regional = None
-                    avoided_total_core_day_runtime_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_baseline_regional = None
-                    baseline_total_core_day_runtime_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_baseline_regional = None
-
-                n_days_both, n_days_insufficient_data = self.get_ignored_days(core_cooling_day_set)
-                n_core_cooling_days = self.get_core_day_set_n_days(core_cooling_day_set)
-                n_days_in_inputfile_date_range = self.get_inputfile_date_range(core_cooling_day_set)
-
-                core_cooling_days_mean_indoor_temperature = self.temperature_in[core_cooling_day_set.hourly].mean()
-                core_cooling_days_mean_outdoor_temperature = self.temperature_out[core_cooling_day_set.hourly].mean()
-
-                outputs = {
-                    "sw_version": get_version(),
-
-                    "ct_identifier": self.thermostat_id,
-                    "equipment_type": self.equipment_type,
-                    "heating_or_cooling": core_cooling_day_set.name,
-                    "zipcode": self.zipcode,
-                    "station": self.station,
-                    "climate_zone": climate_zone,
-
-                    "start_date": pd.Timestamp(core_cooling_day_set.start_date).to_pydatetime().isoformat(),
-                    "end_date": pd.Timestamp(core_cooling_day_set.end_date).to_pydatetime().isoformat(),
-                    "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
-                    "n_days_both_heating_and_cooling": n_days_both,
-                    "n_days_insufficient_data": n_days_insufficient_data,
-                    "n_core_cooling_days": n_core_cooling_days,
-
-                    "baseline_percentile_core_cooling_comfort_temperature": baseline10_comfort_temperature,
-                    "regional_average_baseline_cooling_comfort_temperature": baseline_regional_cooling_comfort_temperature,
-
-                    "percent_savings_baseline_percentile": savings_baseline10,
-                    "avoided_daily_mean_core_day_runtime_baseline_percentile": avoided_runtime_baseline10.mean(),
-                    "avoided_total_core_day_runtime_baseline_percentile": avoided_runtime_baseline10.sum(),
-                    "baseline_daily_mean_core_day_runtime_baseline_percentile": baseline10_runtime.mean(),
-                    "baseline_total_core_day_runtime_baseline_percentile": baseline10_runtime.sum(),
-                    "_daily_mean_core_day_demand_baseline_baseline_percentile": np.nanmean(baseline10_demand),
-                    "percent_savings_baseline_regional": percent_savings_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_baseline_regional": avoided_daily_mean_core_day_runtime_baseline_regional,
-                    "avoided_total_core_day_runtime_baseline_regional": avoided_total_core_day_runtime_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_baseline_regional": baseline_daily_mean_core_day_runtime_baseline_regional,
-                    "baseline_total_core_day_runtime_baseline_regional": baseline_total_core_day_runtime_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_baseline_regional": _daily_mean_core_day_demand_baseline_baseline_regional,
-                    "mean_demand": np.nanmean(demand),
-                    "tau": tau,
-                    "alpha": alpha,
-                    "mean_sq_err": mse,
-                    "root_mean_sq_err": rmse,
-                    "cv_root_mean_sq_err": cvrmse,
-                    "mean_abs_pct_err": mape,
-                    "mean_abs_err": mae,
-
-                    "total_core_cooling_runtime": total_runtime_core_cooling,
-
-                    "daily_mean_core_cooling_runtime": average_daily_cooling_runtime,
-
-                    "core_cooling_days_mean_indoor_temperature": core_cooling_days_mean_indoor_temperature,
-                    "core_cooling_days_mean_outdoor_temperature": core_cooling_days_mean_outdoor_temperature,
-                    "core_mean_indoor_temperature": core_cooling_days_mean_indoor_temperature,
-                    "core_mean_outdoor_temperature": core_cooling_days_mean_outdoor_temperature,
-                }
-
-                metrics.append(outputs)
-
-        if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
-            for core_heating_day_set in self.get_core_heating_days(method=core_heating_day_set_method):
-
-                baseline90_comfort_temperature = \
-                        self.get_core_heating_day_baseline_setpoint(core_heating_day_set)
-
-                # deltaT
-                daily_runtime = self.heat_runtime[core_heating_day_set.daily]
-
-                (
-                    demand,
-                    tau,
-                    alpha,
-                    mse,
-                    rmse,
-                    cvrmse,
-                    mape,
-                    mae,
-                ) = self.get_heating_demand(core_heating_day_set)
-
-                total_runtime_core_heating = daily_runtime.sum()
-                n_days = core_heating_day_set.daily.sum()
-
-                if np.isnan(total_runtime_core_heating):
-                    warn(
-                        "WARNING: Total Runtime Core Heating is nan.")
-
-                if n_days == 0:
-                    warn(
-                        "WARNING: Number of valid heating days is zero.")
-
-                # No valid days means no average; guard the division rather
-                # than flipping global numpy error state to catch it.
-                if n_days == 0:
-                    average_daily_heating_runtime = np.nan
-                else:
-                    average_daily_heating_runtime = total_runtime_core_heating / n_days
-
-                baseline90_demand = self.get_baseline_heating_demand(
-                    core_heating_day_set,
-                    baseline90_comfort_temperature,
-                    tau,
-                )
-
-                baseline90_runtime = self.get_baseline_heating_runtime(
-                    baseline90_demand,
-                    alpha,
-                )
-
-                avoided_runtime_baseline90 = avoided(baseline90_runtime, daily_runtime)
-
-                savings_baseline90 = percent_savings(avoided_runtime_baseline90, baseline90_runtime)
-
-                if baseline_regional_heating_comfort_temperature is not None:
-
-                    baseline_regional_demand = self.get_baseline_heating_demand(
-                        core_heating_day_set,
-                        baseline_regional_heating_comfort_temperature,
-                        tau,
-                    )
-
-                    baseline_regional_runtime = self.get_baseline_heating_runtime(
-                        baseline_regional_demand,
-                        alpha,
-                    )
-
-                    avoided_runtime_baseline_regional = avoided(baseline_regional_runtime, daily_runtime)
-
-                    savings_baseline_regional = percent_savings(avoided_runtime_baseline_regional, baseline_regional_runtime)
-
-                    percent_savings_baseline_regional = savings_baseline_regional
-                    avoided_daily_mean_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.mean()
-                    avoided_total_core_day_runtime_baseline_regional = avoided_runtime_baseline_regional.sum()
-                    baseline_daily_mean_core_day_runtime_baseline_regional = baseline_regional_runtime.mean()
-                    baseline_total_core_day_runtime_baseline_regional = baseline_regional_runtime.sum()
-                    _daily_mean_core_day_demand_baseline_baseline_regional = np.nanmean(baseline_regional_demand)
-
-                else:
-
-                    baseline_regional_demand = None
-
-                    baseline_regional_runtime = None
-
-                    avoided_runtime_baseline_regional = None
-
-                    savings_baseline_regional = None
-
-                    percent_savings_baseline_regional = None
-                    avoided_daily_mean_core_day_runtime_baseline_regional = None
-                    avoided_total_core_day_runtime_baseline_regional = None
-                    baseline_daily_mean_core_day_runtime_baseline_regional = None
-                    baseline_total_core_day_runtime_baseline_regional = None
-                    _daily_mean_core_day_demand_baseline_baseline_regional = None
-
-                n_days_both, n_days_insufficient_data = self.get_ignored_days(core_heating_day_set)
-                n_core_heating_days = self.get_core_day_set_n_days(core_heating_day_set)
-                n_days_in_inputfile_date_range = self.get_inputfile_date_range(core_heating_day_set)
-
-                core_heating_days_mean_indoor_temperature = self.temperature_in[core_heating_day_set.hourly].mean()
-                core_heating_days_mean_outdoor_temperature = self.temperature_out[core_heating_day_set.hourly].mean()
-
-                outputs = {
-                    "sw_version": get_version(),
-
-                    "ct_identifier": self.thermostat_id,
-                    "equipment_type": self.equipment_type,
-                    "heating_or_cooling": core_heating_day_set.name,
-                    "zipcode": self.zipcode,
-                    "station": self.station,
-                    "climate_zone": climate_zone,
-
-                    "start_date": pd.Timestamp(core_heating_day_set.start_date).to_pydatetime().isoformat(),
-                    "end_date": pd.Timestamp(core_heating_day_set.end_date).to_pydatetime().isoformat(),
-                    "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
-                    "n_days_both_heating_and_cooling": n_days_both,
-                    "n_days_insufficient_data": n_days_insufficient_data,
-                    "n_core_heating_days": n_core_heating_days,
-
-                    "baseline_percentile_core_heating_comfort_temperature": baseline90_comfort_temperature,
-                    "regional_average_baseline_heating_comfort_temperature": baseline_regional_heating_comfort_temperature,
-
-                    "percent_savings_baseline_percentile": savings_baseline90,
-                    "avoided_daily_mean_core_day_runtime_baseline_percentile": avoided_runtime_baseline90.mean(),
-                    "avoided_total_core_day_runtime_baseline_percentile": avoided_runtime_baseline90.sum(),
-                    "baseline_daily_mean_core_day_runtime_baseline_percentile": baseline90_runtime.mean(),
-                    "baseline_total_core_day_runtime_baseline_percentile": baseline90_runtime.sum(),
-                    "_daily_mean_core_day_demand_baseline_baseline_percentile": np.nanmean(baseline90_demand),
-                    "percent_savings_baseline_regional": savings_baseline_regional,
-                    "avoided_daily_mean_core_day_runtime_baseline_regional": avoided_daily_mean_core_day_runtime_baseline_regional,
-                    "avoided_total_core_day_runtime_baseline_regional": avoided_total_core_day_runtime_baseline_regional,
-                    "baseline_daily_mean_core_day_runtime_baseline_regional": baseline_daily_mean_core_day_runtime_baseline_regional,
-                    "baseline_total_core_day_runtime_baseline_regional": baseline_total_core_day_runtime_baseline_regional,
-                    "_daily_mean_core_day_demand_baseline_baseline_regional": _daily_mean_core_day_demand_baseline_baseline_regional,
-                    "mean_demand": np.nanmean(demand),
-                    "tau": tau,
-                    "alpha": alpha,
-                    "mean_sq_err": mse,
-                    "root_mean_sq_err": rmse,
-                    "cv_root_mean_sq_err": cvrmse,
-                    "mean_abs_pct_err": mape,
-                    "mean_abs_err": mae,
-
-                    "total_core_heating_runtime": total_runtime_core_heating,
-
-                    "daily_mean_core_heating_runtime": average_daily_heating_runtime,
-
-                    "core_heating_days_mean_indoor_temperature": core_heating_days_mean_indoor_temperature,
-                    "core_heating_days_mean_outdoor_temperature": core_heating_days_mean_outdoor_temperature,
-                    "core_mean_indoor_temperature": core_heating_days_mean_indoor_temperature,
-                    "core_mean_outdoor_temperature": core_heating_days_mean_outdoor_temperature,
-                }
-
-                if self.equipment_type in self.AUX_EMERG_EQUIPMENT_TYPES:
-
-                    additional_outputs = {
-                        "total_auxiliary_heating_core_day_runtime":
-                            self.total_auxiliary_heating_runtime(
-                                core_heating_day_set),
-                        "total_emergency_heating_core_day_runtime":
-                            self.total_emergency_heating_runtime(
-                                core_heating_day_set),
-                    }
-
-                    # Add RHU Calculations
-                    #
-                    # The runtime frame does not depend on rhu_type, so it is
-                    # built once rather than per iteration.
-                    rhu_runtime = self.get_resistance_heat_utilization_runtime(
-                        core_heating_day_set)
-
-                    # Thermostat-level duty cycles. These are sums over the
-                    # whole runtime frame and so are also independent of
-                    # rhu_type; emitting them inside the loop produced
-                    # rhu2_*_duty_cycle keys numerically identical to the
-                    # rhu1_* ones, which the exporter then dropped silently
-                    # because only the rhu1_* names are in COLUMNS. Computed
-                    # once here under the names the schema declares.
-                    if rhu_runtime is not None:
-                        total_minutes = rhu_runtime.total_minutes.sum()
-                        additional_outputs['rhu1_aux_duty_cycle'] = \
-                            rhu_runtime.aux_runtime.sum() / total_minutes
-                        additional_outputs['rhu1_emg_duty_cycle'] = \
-                            rhu_runtime.emg_runtime.sum() / total_minutes
-                        additional_outputs['rhu1_compressor_duty_cycle'] = \
-                            rhu_runtime.heat_runtime.sum() / total_minutes
-
-                    for rhu_type in ('rhu1', 'rhu2'):
-                        if rhu_type == 'rhu2':
-                            min_runtime_minutes = VAR_MIN_RHU_RUNTIME
-                        else:
-                            min_runtime_minutes = None
-
-                        rhu_first = self.get_resistance_heat_utilization_bins(
-                                rhu_runtime,
-                                RESISTANCE_HEAT_USE_BIN_FIRST,
-                                core_heating_day_set,
-                                min_runtime_minutes)
-
-                        rhu_second = self.get_resistance_heat_utilization_bins(
-                                rhu_runtime,
-                                RESISTANCE_HEAT_USE_BIN_SECOND,
-                                core_heating_day_set,
-                                min_runtime_minutes)
-
-                        for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle', 'compressor_duty_cycle'):
-
-                            if rhu_first is not None:
-
-                                for item in rhu_first.itertuples():
-                                    column = self._format_rhu(
-                                        rhu_type=rhu_type,
-                                        low=item.Index.left,
-                                        high=item.Index.right,
-                                        duty_cycle=duty_cycle)
-                                    if duty_cycle is None:
-                                        additional_outputs[column] = item.rhu
-                                    else:
-                                        additional_outputs[column] = getattr(item, duty_cycle)
-                            else:
-                                for (low, high) in RESISTANCE_HEAT_USE_BIN_FIRST_TUPLE:
-                                    column = self._format_rhu(
-                                            rhu_type,
-                                            low,
-                                            high,
-                                            duty_cycle)
-                                    additional_outputs[column] = None
-
-                            if rhu_second is not None:
-                                for item in rhu_second.itertuples():
-                                    column = self._format_rhu(
-                                        rhu_type=rhu_type,
-                                        low=item.Index.left,
-                                        high=item.Index.right,
-                                        duty_cycle=duty_cycle)
-                                    if duty_cycle is None:
-                                        additional_outputs[column] = item.rhu
-                                    else:
-                                        additional_outputs[column] = getattr(item, duty_cycle)
-                            else:
-                                for (low, high) in RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE:
-                                    column = self._format_rhu(
-                                            rhu_type,
-                                            low,
-                                            high,
-                                            duty_cycle)
-                                    additional_outputs[column] = None
-
-                    outputs.update(additional_outputs)
-
-                metrics.append(outputs)
         return metrics
+
+    def _percent_savings(self, avoided, baseline):
+        try:
+            savings = (avoided.mean() / baseline.mean()) * 100.0
+        except ZeroDivisionError:
+            logger.debug(
+                'percent_savings divided by zero: %s / %s '
+                'for thermostat_id %s ' % (
+                    avoided.mean(), baseline.mean(),
+                    self.thermostat_id))
+            savings = np.nan
+        return savings
+
+    def _core_day_set_metrics(self, season, core_day_set, climate_zone,
+                              regional_comfort_temperature):
+        """ Savings metrics for a single core day set.
+
+        This is the body that calculate_epa_field_savings_metrics used to
+        carry twice, once per season. See the Season descriptors above for
+        what differs between the two.
+
+        Parameters
+        ----------
+        season : thermostat.core.Season
+            COOLING_SEASON or HEATING_SEASON.
+        core_day_set : thermostat.core.CoreDaySet
+            The core day set to summarize.
+        climate_zone : str
+            EPA climate zone for this thermostat's zipcode.
+        regional_comfort_temperature : float or None
+            Regional average baseline comfort temperature for the climate
+            zone, or None if the zone has no regional baseline.
+
+        Returns
+        -------
+        outputs : dict
+            One output record, keyed by the names in thermostat.schema.
+        """
+        comfort_temperature = getattr(self, season.baseline_setpoint)(
+            core_day_set)
+
+        daily_runtime = getattr(self, season.runtime)[core_day_set.daily]
+
+        (
+            demand,
+            tau,
+            alpha,
+            mse,
+            rmse,
+            cvrmse,
+            mape,
+            mae,
+        ) = getattr(self, season.demand)(core_day_set)
+
+        total_runtime = daily_runtime.sum()
+        n_days = core_day_set.daily.sum()
+
+        if np.isnan(total_runtime):
+            warn("WARNING: Total Runtime Core {} Days is nan.".format(
+                season.title))
+
+        if n_days == 0:
+            warn("WARNING: Number of valid {} days is zero.".format(
+                season.name))
+
+        # No valid days means no average; guard the division rather than
+        # flipping global numpy error state to catch it.
+        if n_days == 0:
+            average_daily_runtime = np.nan
+        else:
+            average_daily_runtime = total_runtime / n_days
+
+        get_baseline_demand = getattr(self, season.baseline_demand)
+        get_baseline_runtime = getattr(self, season.baseline_runtime)
+
+        percentile_demand = get_baseline_demand(
+            core_day_set, comfort_temperature, tau)
+        percentile_runtime = get_baseline_runtime(percentile_demand, alpha)
+        avoided_percentile = percentile_runtime - daily_runtime
+
+        if regional_comfort_temperature is not None:
+            regional_demand = get_baseline_demand(
+                core_day_set, regional_comfort_temperature, tau)
+            regional_runtime = get_baseline_runtime(regional_demand, alpha)
+            avoided_regional = regional_runtime - daily_runtime
+
+            percent_savings_baseline_regional = self._percent_savings(
+                avoided_regional, regional_runtime)
+            avoided_daily_mean_regional = avoided_regional.mean()
+            avoided_total_regional = avoided_regional.sum()
+            baseline_daily_mean_regional = regional_runtime.mean()
+            baseline_total_regional = regional_runtime.sum()
+            daily_mean_demand_regional = np.nanmean(regional_demand)
+        else:
+            percent_savings_baseline_regional = None
+            avoided_daily_mean_regional = None
+            avoided_total_regional = None
+            baseline_daily_mean_regional = None
+            baseline_total_regional = None
+            daily_mean_demand_regional = None
+
+        n_days_both, n_days_insufficient_data = self.get_ignored_days(
+            core_day_set)
+        n_core_days = self.get_core_day_set_n_days(core_day_set)
+        n_days_in_inputfile_date_range = self.get_inputfile_date_range(
+            core_day_set)
+
+        mean_indoor_temperature = \
+            self.temperature_in[core_day_set.hourly].mean()
+        mean_outdoor_temperature = \
+            self.temperature_out[core_day_set.hourly].mean()
+
+        outputs = {
+            "sw_version": get_version(),
+
+            "ct_identifier": self.thermostat_id,
+            "equipment_type": self.equipment_type,
+            "heating_or_cooling": core_day_set.name,
+            "zipcode": self.zipcode,
+            "station": self.station,
+            "climate_zone": climate_zone,
+
+            "start_date": pd.Timestamp(core_day_set.start_date).to_pydatetime().isoformat(),
+            "end_date": pd.Timestamp(core_day_set.end_date).to_pydatetime().isoformat(),
+            "n_days_in_inputfile_date_range": n_days_in_inputfile_date_range,
+            "n_days_both_heating_and_cooling": n_days_both,
+            "n_days_insufficient_data": n_days_insufficient_data,
+            season.n_core_days_column: n_core_days,
+
+            season.comfort_column: comfort_temperature,
+            season.regional_comfort_column: regional_comfort_temperature,
+
+            "percent_savings_baseline_percentile": self._percent_savings(
+                avoided_percentile, percentile_runtime),
+            "avoided_daily_mean_core_day_runtime_baseline_percentile": avoided_percentile.mean(),
+            "avoided_total_core_day_runtime_baseline_percentile": avoided_percentile.sum(),
+            "baseline_daily_mean_core_day_runtime_baseline_percentile": percentile_runtime.mean(),
+            "baseline_total_core_day_runtime_baseline_percentile": percentile_runtime.sum(),
+            "_daily_mean_core_day_demand_baseline_baseline_percentile": np.nanmean(percentile_demand),
+
+            "percent_savings_baseline_regional": percent_savings_baseline_regional,
+            "avoided_daily_mean_core_day_runtime_baseline_regional": avoided_daily_mean_regional,
+            "avoided_total_core_day_runtime_baseline_regional": avoided_total_regional,
+            "baseline_daily_mean_core_day_runtime_baseline_regional": baseline_daily_mean_regional,
+            "baseline_total_core_day_runtime_baseline_regional": baseline_total_regional,
+            "_daily_mean_core_day_demand_baseline_baseline_regional": daily_mean_demand_regional,
+
+            "mean_demand": np.nanmean(demand),
+            "tau": tau,
+            "alpha": alpha,
+            "mean_sq_err": mse,
+            "root_mean_sq_err": rmse,
+            "cv_root_mean_sq_err": cvrmse,
+            "mean_abs_pct_err": mape,
+            "mean_abs_err": mae,
+
+            season.total_runtime_column: total_runtime,
+            season.daily_mean_runtime_column: average_daily_runtime,
+
+            season.mean_indoor_column: mean_indoor_temperature,
+            season.mean_outdoor_column: mean_outdoor_temperature,
+            "core_mean_indoor_temperature": mean_indoor_temperature,
+            "core_mean_outdoor_temperature": mean_outdoor_temperature,
+        }
+
+        if (season is HEATING_SEASON
+                and self.equipment_type in self.AUX_EMERG_EQUIPMENT_TYPES):
+            outputs.update(self._resistance_heat_metrics(core_day_set))
+
+        return outputs
+
+    def _resistance_heat_metrics(self, core_heating_day_set):
+        """ Auxiliary/emergency heat metrics for a core heating day set.
+
+        Only equipment in AUX_EMERG_EQUIPMENT_TYPES reports these; for
+        everything else the columns are absent and the exporter fills NaN.
+
+        Parameters
+        ----------
+        core_heating_day_set : thermostat.core.CoreDaySet
+            Core heating days over which to calculate resistance heat use.
+
+        Returns
+        -------
+        additional_outputs : dict
+            Aux/emergency runtime totals and the 147 resistance-heat-use
+            columns that thermostat.schema generates.
+        """
+        additional_outputs = {
+            "total_auxiliary_heating_core_day_runtime":
+                self.total_auxiliary_heating_runtime(
+                    core_heating_day_set),
+            "total_emergency_heating_core_day_runtime":
+                self.total_emergency_heating_runtime(
+                    core_heating_day_set),
+        }
+
+        # Add RHU Calculations
+        #
+        # The runtime frame does not depend on rhu_type, so it is
+        # built once rather than per iteration.
+        rhu_runtime = self.get_resistance_heat_utilization_runtime(
+            core_heating_day_set)
+
+        # Thermostat-level duty cycles. These are sums over the whole runtime
+        # frame and so are also independent of rhu_type; emitting them inside
+        # the loop produced rhu2_*_duty_cycle keys numerically identical to
+        # the rhu1_* ones, which the exporter then dropped silently because
+        # only the rhu1_* names are in COLUMNS. Computed once here under the
+        # names the schema declares.
+        if rhu_runtime is not None:
+            total_minutes = rhu_runtime.total_minutes.sum()
+            additional_outputs['rhu1_aux_duty_cycle'] = \
+                rhu_runtime.aux_runtime.sum() / total_minutes
+            additional_outputs['rhu1_emg_duty_cycle'] = \
+                rhu_runtime.emg_runtime.sum() / total_minutes
+            additional_outputs['rhu1_compressor_duty_cycle'] = \
+                rhu_runtime.heat_runtime.sum() / total_minutes
+
+        for rhu_type in ('rhu1', 'rhu2'):
+            if rhu_type == 'rhu2':
+                min_runtime_minutes = VAR_MIN_RHU_RUNTIME
+            else:
+                min_runtime_minutes = None
+
+            for bins, bin_tuples in (
+                    (RESISTANCE_HEAT_USE_BIN_FIRST,
+                     RESISTANCE_HEAT_USE_BIN_FIRST_TUPLE),
+                    (RESISTANCE_HEAT_USE_BIN_SECOND,
+                     RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE)):
+
+                rhu = self.get_resistance_heat_utilization_bins(
+                    rhu_runtime,
+                    bins,
+                    core_heating_day_set,
+                    min_runtime_minutes)
+
+                for duty_cycle in (None, 'aux_duty_cycle', 'emg_duty_cycle',
+                                   'compressor_duty_cycle'):
+                    if rhu is None:
+                        for (low, high) in bin_tuples:
+                            column = self._format_rhu(
+                                rhu_type, low, high, duty_cycle)
+                            additional_outputs[column] = None
+                        continue
+
+                    for item in rhu.itertuples():
+                        column = self._format_rhu(
+                            rhu_type=rhu_type,
+                            low=item.Index.left,
+                            high=item.Index.right,
+                            duty_cycle=duty_cycle)
+                        if duty_cycle is None:
+                            additional_outputs[column] = item.rhu
+                        else:
+                            additional_outputs[column] = getattr(
+                                item, duty_cycle)
+
+        return additional_outputs

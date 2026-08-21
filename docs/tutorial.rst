@@ -63,7 +63,7 @@ Check to make sure you are on the most recent version of the package.
 
     >>> import thermostat; thermostat.get_version()
 
-    '1.8.0'
+    '1.8.1'
 
 If you are not on the correct version, you should upgrade:
 
