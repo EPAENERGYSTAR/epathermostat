@@ -17,6 +17,11 @@ logger = logging.getLogger('epathermostat')
 
 VAR_MIN_RHU_RUNTIME = 30 * 60  # Unit is in minutes (30 hours * 60 minutes)
 
+# A day with more missing hourly temperature readings than this is not a
+# core day. Regulated threshold; was written as a bare 2 in both
+# get_core_heating_days and get_core_cooling_days.
+MAX_MISSING_HOURS_PER_DAY = 2
+
 RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
 RESISTANCE_HEAT_USE_BINS_MAX_TEMP = 60  # Unit is 1 degree F.
 RESISTANCE_HEAT_USE_BIN_TEMP_WIDTH = 5  # Unit is 1 degree F.
@@ -52,6 +57,8 @@ Season = namedtuple("Season", [
     "name",                        # "cooling" / "heating"
     "title",                       # "Cooling" / "Heating", for warning text
     "equipment_types",             # attribute naming the applicable types
+    "protect",                     # raises if the thermostat lacks the equipment
+    "demand_sign",                 # +1 accumulates (deltaT - tau), -1 the reverse
     "day_sets",                    # -> list of CoreDaySet
     "baseline_setpoint",           # -> percentile comfort temperature
     "runtime",                     # daily runtime Series attribute
@@ -73,6 +80,8 @@ COOLING_SEASON = Season(
     name="cooling",
     title="Cooling",
     equipment_types="COOLING_EQUIPMENT_TYPES",
+    protect="_protect_cooling",
+    demand_sign=-1,
     day_sets="get_core_cooling_days",
     baseline_setpoint="get_core_cooling_day_baseline_setpoint",
     runtime="cool_runtime",
@@ -94,6 +103,8 @@ HEATING_SEASON = Season(
     name="heating",
     title="Heating",
     equipment_types="HEATING_EQUIPMENT_TYPES",
+    protect="_protect_heating",
+    demand_sign=1,
     day_sets="get_core_heating_days",
     baseline_setpoint="get_core_heating_day_baseline_setpoint",
     runtime="heat_runtime",
@@ -303,6 +314,25 @@ class Thermostat(object):
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
+    def _enough_hourly_temperature(self):
+        """ Days with enough indoor and outdoor hourly temperature to use.
+
+        Both core day set methods applied this test, identically, as a
+        copy-pasted block with the threshold written out as a bare 2.
+
+        Returns
+        -------
+        enough : pandas.Series
+            Boolean, indexed daily; True where both the indoor and the
+            outdoor series have at most MAX_MISSING_HOURS_PER_DAY missing
+            hours on that day.
+        """
+        def enough(series):
+            return series.groupby(series.index.date).apply(
+                lambda x: x.isnull().sum() <= MAX_MISSING_HOURS_PER_DAY)
+
+        return enough(self.temperature_in) & enough(self.temperature_out)
+
     def get_core_heating_days(self, method="entire_dataset",
             min_minutes_heating=30, max_minutes_cooling=0):
         """ Determine core heating days from data associated with this thermostat
@@ -355,16 +385,7 @@ class Thermostat(object):
 
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
-        # enough temperature_in
-        enough_temp_in = \
-                self.temperature_in.groupby(self.temperature_in.index.date) \
-                .apply(lambda x: x.isnull().sum() <= 2)
-
-        enough_temp_out = \
-                self.temperature_out.groupby(self.temperature_out.index.date) \
-                .apply(lambda x: x.isnull().sum() <= 2)
-
-        meets_thresholds &= enough_temp_in & enough_temp_out
+        meets_thresholds &= self._enough_hourly_temperature()
 
         data_start_date = np.datetime64(self.heat_runtime.index[0])
         data_end_date = np.datetime64(self.heat_runtime.index[-1])
@@ -464,16 +485,7 @@ class Thermostat(object):
         meets_cooling_thresholds = self.cool_runtime >= min_minutes_cooling
         meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
 
-        # enough temperature_in
-        enough_temp_in = \
-                self.temperature_in.groupby(self.temperature_in.index.date) \
-                .apply(lambda x: x.isnull().sum() <= 2)
-
-        enough_temp_out = \
-                self.temperature_out.groupby(self.temperature_out.index.date) \
-                .apply(lambda x: x.isnull().sum() <= 2)
-
-        meets_thresholds &= enough_temp_in & enough_temp_out
+        meets_thresholds &= self._enough_hourly_temperature()
 
         if method == "year_end_to_end":
             start_year = data_start_date.item().year
@@ -836,69 +848,7 @@ class Thermostat(object):
             Mean absolute error
         """
 
-        self._protect_cooling()
-
-        core_day_set_temp_in = self.temperature_in[core_cooling_day_set.hourly]
-        core_day_set_temp_out = self.temperature_out[core_cooling_day_set.hourly]
-        core_day_set_deltaT = core_day_set_temp_in - core_day_set_temp_out
-
-        daily_index = core_cooling_day_set.daily[core_cooling_day_set.daily].index
-
-        def calc_cdd(tau):
-            hourly_cdd = (tau - core_day_set_deltaT).apply(lambda x: np.maximum(x, 0))
-            # Note - `x / 24` this should be thought of as a unit conversion, not an average.
-            return np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(core_day_set_deltaT.index.date)])
-
-        daily_runtime = self.cool_runtime[core_cooling_day_set.daily]
-        total_runtime = daily_runtime.sum()
-
-        def calc_estimates(tau):
-            cdd = calc_cdd(tau)
-            total_cdd = np.sum(cdd)
-            try:
-                alpha_estimate = total_runtime / total_cdd
-            except ZeroDivisionError:
-                logger.debug(
-                    'Alpha Estimate divided by zero: %s / %s'
-                    'for thermostat %s' % (
-                        total_runtime, total_cdd,
-                        self.thermostat_id))
-                alpha_estimate = np.nan
-            runtime_estimate = cdd * alpha_estimate
-            errors = daily_runtime - runtime_estimate
-            return cdd, alpha_estimate, errors
-
-        def estimate_errors(tau_estimate):
-            _, _, errors = calc_estimates(tau_estimate)
-            return errors
-
-        tau_starting_guess = 0
-        try:
-            y, _ = leastsq(estimate_errors, tau_starting_guess)
-        except TypeError: # len 0
-            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
-            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
-
-        tau_estimate = y[0]
-
-        cdd, alpha_estimate, errors = calc_estimates(tau_estimate)
-        mse = np.nanmean((errors)**2)
-        rmse = mse ** 0.5
-        mean_daily_runtime = np.nanmean(daily_runtime)
-        try:
-            cvrmse = rmse / mean_daily_runtime
-        except ZeroDivisionError:
-            logger.debug(
-                'CVRMSE divided by zero: %s / %s '
-                'for thermostat_id %s ' % (
-                    rmse, mean_daily_runtime,
-                    self.thermostat_id))
-            cvrmse = np.nan
-
-        mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
-        mae = np.nanmean(np.absolute(errors))
-
-        return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
+        return self._fit_demand(COOLING_SEASON, core_cooling_day_set)
 
     def get_heating_demand(self, core_heating_day_set):
         r"""
@@ -958,37 +908,66 @@ class Thermostat(object):
             Mean absolute error
         """
 
-        self._protect_heating()
+        return self._fit_demand(HEATING_SEASON, core_heating_day_set)
 
-        core_day_set_temp_in = self.temperature_in[core_heating_day_set.hourly]
-        core_day_set_temp_out = self.temperature_out[core_heating_day_set.hourly]
+    def _fit_demand(self, season, core_day_set):
+        """ Fit the daily demand model for one core day set.
+
+        hourlyavgCTD and hourlyavgHTD are the same procedure. They differ
+        only in the sign of the degree-day term -- cooling accumulates
+        :math:`[\\tau - \\Delta T]_{+}`, heating accumulates
+        :math:`[\\Delta T - \\tau]_{+}` -- which is what
+        ``season.demand_sign`` carries. get_cooling_demand and
+        get_heating_demand are the documented entry points; this is their
+        shared body.
+
+        Parameters
+        ----------
+        season : thermostat.core.Season
+            COOLING_SEASON or HEATING_SEASON.
+        core_day_set : thermostat.core.CoreDaySet
+            Core day set over which to calculate demand.
+
+        Returns
+        -------
+        demand, tau, alpha, mse, rmse, cvrmse, mape, mae
+            As documented on get_cooling_demand.
+        """
+        getattr(self, season.protect)()
+
+        core_day_set_temp_in = self.temperature_in[core_day_set.hourly]
+        core_day_set_temp_out = self.temperature_out[core_day_set.hourly]
         core_day_set_deltaT = core_day_set_temp_in - core_day_set_temp_out
 
-        daily_index = core_heating_day_set.daily[core_heating_day_set.daily].index
+        daily_index = core_day_set.daily[core_day_set.daily].index
 
-        def calc_hdd(tau):
-            hourly_hdd = (core_day_set_deltaT - tau).apply(lambda x: np.maximum(x, 0))
-            # Note - this `x / 24` should be thought of as a unit conversion, not an average.
-            return np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(core_day_set_deltaT.index.date)])
+        def calc_degree_days(tau):
+            hourly_dd = (
+                season.demand_sign * (core_day_set_deltaT - tau)
+            ).apply(lambda x: np.maximum(x, 0))
+            # Note - `x / 24` should be thought of as a unit conversion, not
+            # an average.
+            return np.array([dd.sum() / 24 for day, dd
+                             in hourly_dd.groupby(core_day_set_deltaT.index.date)])
 
-        daily_runtime = self.heat_runtime[core_heating_day_set.daily]
+        daily_runtime = getattr(self, season.runtime)[core_day_set.daily]
         total_runtime = daily_runtime.sum()
 
         def calc_estimates(tau):
-            hdd = calc_hdd(tau)
-            total_hdd = np.sum(hdd)
+            degree_days = calc_degree_days(tau)
+            total_degree_days = np.sum(degree_days)
             try:
-                alpha_estimate = total_runtime / total_hdd
+                alpha_estimate = total_runtime / total_degree_days
             except ZeroDivisionError:
                 logger.debug(
                     'alpha_estimate divided by zero: %s / %s '
                     'for thermostat_id %s ' % (
-                        total_runtime, total_hdd,
+                        total_runtime, total_degree_days,
                         self.thermostat_id))
                 alpha_estimate = np.nan
-            runtime_estimate = hdd * alpha_estimate
+            runtime_estimate = degree_days * alpha_estimate
             errors = daily_runtime - runtime_estimate
-            return hdd, alpha_estimate, errors
+            return degree_days, alpha_estimate, errors
 
         def estimate_errors(tau_estimate):
             _, _, errors = calc_estimates(tau_estimate)
@@ -998,20 +977,22 @@ class Thermostat(object):
 
         try:
             y, _ = leastsq(estimate_errors, tau_starting_guess)
-        except TypeError: # len 0
-            assert daily_runtime.shape[0] == 0 # make sure no other type errors are sneaking in
-            return pd.Series([], index=daily_index), np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+        except TypeError:  # len 0
+            # make sure no other type errors are sneaking in
+            assert daily_runtime.shape[0] == 0
+            return (pd.Series([], index=daily_index), np.nan, np.nan, np.nan,
+                    np.nan, np.nan, np.nan, np.nan)
 
         tau_estimate = y[0]
 
-        hdd, alpha_estimate, errors = calc_estimates(tau_estimate)
+        degree_days, alpha_estimate, errors = calc_estimates(tau_estimate)
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            logger.warning(
+            logger.debug(
                 'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
@@ -1022,7 +1003,7 @@ class Thermostat(object):
         mae = np.nanmean(np.absolute(errors))
 
         return (
-            pd.Series(hdd, index=daily_index),
+            pd.Series(degree_days, index=daily_index),
             tau_estimate,
             alpha_estimate,
             mse,
@@ -1031,6 +1012,42 @@ class Thermostat(object):
             mape,
             mae
         )
+
+    def _baseline_demand(self, season, core_day_set, temp_baseline, tau):
+        """ Baseline demand for one core day set at a fixed comfort setpoint.
+
+        Shared body of get_baseline_cooling_demand and
+        get_baseline_heating_demand, which differed only in the sign of the
+        degree-day term.
+
+        Parameters
+        ----------
+        season : thermostat.core.Season
+            COOLING_SEASON or HEATING_SEASON.
+        core_day_set : thermostat.core.CoreDaySet
+            Core days over which to calculate baseline demand.
+        temp_baseline : float
+            Baseline comfort temperature.
+        tau : float
+            From the fitted demand model.
+
+        Returns
+        -------
+        baseline_demand : pandas.Series
+            Baseline daily demand for the core day set.
+        """
+        getattr(self, season.protect)()
+
+        hourly_temp_out = self.temperature_out[core_day_set.hourly]
+
+        hourly_dd = (
+            season.demand_sign * ((temp_baseline - hourly_temp_out) - tau)
+        ).apply(lambda x: np.maximum(x, 0))
+        demand = np.array([dd.sum() / 24 for day, dd
+                           in hourly_dd.groupby(hourly_temp_out.index.date)])
+
+        index = core_day_set.daily[core_day_set.daily].index
+        return pd.Series(demand, index=index)
 
     def get_core_cooling_day_baseline_setpoint(self, core_cooling_day_set,
             method='tenth_percentile', source='temperature_in'):
@@ -1136,15 +1153,8 @@ class Thermostat(object):
             A series containing baseline daily heating demand for the core
             cooling day set.
         """
-        self._protect_cooling()
-
-        hourly_temp_out = self.temperature_out[core_cooling_day_set.hourly]
-
-        hourly_cdd = (tau - (temp_baseline - hourly_temp_out)).apply(lambda x: np.maximum(x, 0))
-        demand = np.array([cdd.sum() / 24 for day, cdd in hourly_cdd.groupby(hourly_temp_out.index.date)])
-
-        index = core_cooling_day_set.daily[core_cooling_day_set.daily].index
-        return pd.Series(demand, index=index)
+        return self._baseline_demand(
+            COOLING_SEASON, core_cooling_day_set, temp_baseline, tau)
 
     def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline, tau):
         r""" Calculate baseline heating demand for a particular core heating day
@@ -1176,15 +1186,8 @@ class Thermostat(object):
         baseline_heating_demand : pandas.Series
             A series containing baseline daily heating demand for the core heating days.
         """
-        self._protect_heating()
-
-        hourly_temp_out = self.temperature_out[core_heating_day_set.hourly]
-
-        hourly_hdd = (temp_baseline - hourly_temp_out - tau).apply(lambda x: np.maximum(x, 0))
-        demand = np.array([hdd.sum() / 24 for day, hdd in hourly_hdd.groupby(hourly_temp_out.index.date)])
-
-        index = core_heating_day_set.daily[core_heating_day_set.daily].index
-        return pd.Series(demand, index=index)
+        return self._baseline_demand(
+            HEATING_SEASON, core_heating_day_set, temp_baseline, tau)
 
     def get_baseline_cooling_runtime(self, baseline_cooling_demand, alpha):
         r""" Calculate baseline cooling runtime given baseline cooling demand
