@@ -1,5 +1,6 @@
 from thermostat.core import Thermostat
 
+import numpy as np
 import pandas as pd
 from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DISTANCE_KM
 
@@ -106,9 +107,10 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     shuffle: boolean
         Shuffle the thermostats into a random order.
     seed : int, optional
-        Seed for the shuffle. Without one the order -- and therefore the
-        order of rows in the output -- varies between runs on identical
-        input. Pass a seed when reproducibility matters.
+        Seed for the shuffle. When shuffling without one, a seed is drawn and
+        recorded on the returned run summary, so the row order of any run can
+        be reproduced after the fact by passing that seed back. Pass the
+        EPA-supplied seed for a submission run.
     weather_source : callable, optional
         Override for the outdoor temperature lookup, called as
         ``weather_source(station, index)`` and returning a pandas Series of
@@ -142,7 +144,16 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     )
 
     if shuffle:
-        logger.info("Randomizing thermostat order.")
+        # An unseeded shuffle used to make the output row order unreproducible
+        # -- there was no record of what order had been used, so a run could
+        # not be replayed even in principle. Draw a seed when the caller does
+        # not supply one and record it, so someone testing their own data
+        # still has to pass nothing, and the run is still reproducible after
+        # the fact. EPA-supplied seeds pass straight through unchanged.
+        if seed is None:
+            seed = int(np.random.SeedSequence().entropy % (2 ** 32))
+            logger.info("No shuffle seed supplied; drew %d.", seed)
+        logger.info("Randomizing thermostat order with seed %d.", seed)
         metadata = metadata.sample(frac=1, random_state=seed).reset_index(drop=True)
 
     p = Pool(AVAILABLE_PROCESSES)
@@ -158,7 +169,7 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     # A record that could not be imported comes back as a DropOut naming the
     # reason, rather than as a bare None that says only "something happened".
     results = []
-    summary = RunSummary(requested=len(metadata))
+    summary = RunSummary(requested=len(metadata), shuffle=shuffle, seed=seed)
     for item in result_list:
         if isinstance(item, DropOut):
             summary.extend([item])

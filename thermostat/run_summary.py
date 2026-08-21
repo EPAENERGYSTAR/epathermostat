@@ -48,8 +48,12 @@ class RunSummary(object):
         loss was detected.
     """
 
-    def __init__(self, requested=0):
+    def __init__(self, requested=0, shuffle=None, seed=None):
         self.requested = requested
+        self.shuffle = shuffle
+        #: The seed the row order was produced with. Recorded even when the
+        #: caller supplied none, so the order can be reproduced after the fact.
+        self.seed = seed
         self.drop_outs = []
 
     @property
@@ -96,10 +100,15 @@ class RunSummary(object):
                  "thermostats delivered: {} ({:.1%})".format(
                      self.delivered, self.completeness),
                  "thermostats dropped:   {}".format(self.dropped)]
+        if self.shuffle:
+            lines.append("row order seed:        {} (pass seed={} to reproduce)"
+                         .format(self.seed, self.seed))
+        elif self.shuffle is False:
+            lines.append("row order:             input order (not shuffled)")
         for (stage, reason), count in sorted(self.by_reason().items()):
             lines.append("  {:<8} {:<28} {}".format(stage, reason, count))
         return "\n".join(lines)
 
     def __repr__(self):
-        return "RunSummary(requested={}, delivered={}, dropped={})".format(
-            self.requested, self.delivered, self.dropped)
+        return "RunSummary(requested={}, delivered={}, dropped={}, seed={})".format(
+            self.requested, self.delivered, self.dropped, self.seed)
