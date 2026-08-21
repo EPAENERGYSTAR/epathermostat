@@ -45,6 +45,15 @@ def main():
     output_dir = "."
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
+    # Account for every record that went in. A thermostat can be lost at
+    # import (bad file, no weather station) or at calculation (no qualifying
+    # core days); both land here, one row each, with a machine-readable
+    # reason. Check this file every run -- a fleet quietly losing 3% of its
+    # records to dead weather stations otherwise looks exactly like a clean one.
+    summary = thermostats.summary
+    logger.info("Run summary:\n%s", summary.describe())
+    summary.to_csv(os.path.join(output_dir, "thermostat_example_run_summary.csv"))
+
     output_filename = os.path.join(output_dir, "thermostat_example_output.csv")
     metrics_out = metrics_to_csv(metrics, output_filename)
 

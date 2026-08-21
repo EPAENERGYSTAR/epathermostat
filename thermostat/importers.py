@@ -8,6 +8,17 @@ from eeweather.exceptions import DataNotAvailableError
 from thermostat.exceptions import (
     StationNotFoundError,
     InvalidIntervalDataError,
+    InvalidUTCOffsetError,
+)
+from thermostat.run_summary import (
+    DropOut,
+    RunSummary,
+    INVALID_INTERVAL_DATA,
+    INVALID_UTC_OFFSET,
+    STATION_NOT_FOUND,
+    UNEXPECTED_ERROR,
+    UNSUPPORTED_EQUIPMENT_TYPE,
+    WEATHER_DATA_NOT_AVAILABLE,
 )
 
 import warnings
@@ -55,9 +66,30 @@ def normalize_utc_offset(utc_offset):
         return delta
 
     except (ValueError, TypeError, AttributeError) as e:
-        raise TypeError("Invalid UTC offset: {} ({})".format(
+        raise InvalidUTCOffsetError("Invalid UTC offset: {} ({})".format(
            utc_offset,
            e))
+
+
+class ImportedThermostats(object):
+    """ The thermostats a run loaded, plus the account of the ones it lost.
+
+    Iterating over this yields Thermostat objects exactly as the plain
+    iterator that :func:`from_csv` used to return did, so existing callers
+    are unaffected. ``.summary`` is the addition: a
+    :class:`thermostat.run_summary.RunSummary` recording how many records
+    were asked for and why each missing one is missing.
+    """
+
+    def __init__(self, thermostats, summary):
+        self.summary = summary
+        self._iterator = iter(thermostats)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._iterator)
 
 
 def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
@@ -88,8 +120,10 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
 
     Returns
     -------
-    thermostats : iterator over thermostat.Thermostat objects
-        Thermostats imported from the given CSV input files.
+    thermostats : ImportedThermostats
+        Iterator over the imported thermostat.Thermostat objects. Its
+        ``.summary`` attribute carries the run's drop-out accounting; see
+        :mod:`thermostat.run_summary`.
     """
 
     if quiet:
@@ -121,40 +155,52 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     p.close()
     p.join()
 
-    # Bad thermostats return None so remove those.
-    results = [x for x in result_list if x is not None]
+    # A record that could not be imported comes back as a DropOut naming the
+    # reason, rather than as a bare None that says only "something happened".
+    results = []
+    summary = RunSummary(requested=len(metadata))
+    for item in result_list:
+        if isinstance(item, DropOut):
+            summary.extend([item])
+        else:
+            results.append(item)
 
-    # Check for thermostats that were not loaded and log them
-    metadata_thermostat_ids = set(metadata.thermostat_id)
-    loaded_thermostat_ids = set([x.thermostat_id for x in results])
-    missing_thermostats = metadata_thermostat_ids.difference(loaded_thermostat_ids)
-    missing_thermostats_num = len(missing_thermostats)
-    if missing_thermostats_num > 0:
-        logger.warning("Unable to load %d thermostat records because of "
-                       "errors. Please check the logs for the following "
-                       "thermostats:", missing_thermostats_num)
-        for thermostat in missing_thermostats:
-            logger.warning(thermostat)
+    if summary.dropped:
+        logger.warning(
+            "Unable to load %d of %d thermostat records:\n%s",
+            summary.dropped, summary.requested, summary.describe())
+        for drop_out in summary.drop_outs:
+            logger.warning("  %s (%s): %s -- %s", drop_out.thermostat_id,
+                           drop_out.zipcode, drop_out.reason, drop_out.detail)
 
-    # Convert this to an iterator to maintain compatibility
-    return iter(results)
+    return ImportedThermostats(results, summary)
 
 
 def multiprocess_func(metadata, metadata_filename, verbose=False,
                       weather_source=None):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
-    It is not intended to be called directly."""
+    It is not intended to be called directly.
+
+    Returns either a Thermostat or, when the record cannot be imported, a
+    thermostat.run_summary.DropOut naming the reason."""
     i, row = metadata
     logger.info("Importing thermostat {}".format(row.thermostat_id))
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print("Importing thermostat {}".format(row.thermostat_id))
 
+    def dropped(reason, detail):
+        warnings.warn("Skipping import of thermostat (id={}): {}".format(
+            row.thermostat_id, detail))
+        return DropOut(
+            thermostat_id=row.thermostat_id, zipcode=row.zipcode,
+            station=None, stage="import", reason=reason, detail=detail)
+
     # make sure this thermostat type is supported.
     if row.equipment_type not in [1, 2, 3, 4, 5]:
-        warnings.warn(
-            "Skipping import of thermostat controlling equipment"
-            " of unsupported type. (id={})".format(row.thermostat_id))
-        return
+        return dropped(
+            UNSUPPORTED_EQUIPMENT_TYPE,
+            "it controls equipment of unsupported type {}".format(
+                row.equipment_type))
 
     interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
@@ -168,30 +214,29 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
                 weather_source=weather_source,
         )
     except StationNotFoundError:
-        warnings.warn(
-            "Skipping import of thermostat (id={}) for which "
-            "a sufficient source of outdoor weather data could not "
-            "be located using the given ZIP code ({}). This is likely "
-            "due to the discrepancy between US Postal Service ZIP "
-            "codes (which do not always map well to locations) and "
-            "Census Bureau ZCTAs (which usually do). Please supply "
-            "a zipcode which corresponds to a US Census Bureau ZCTA."
-            .format(row.thermostat_id, row.zipcode))
-        return
+        return dropped(
+            STATION_NOT_FOUND,
+            "a sufficient source of outdoor weather data could not be "
+            "located using the given ZIP code ({}). This is likely due to "
+            "the discrepancy between US Postal Service ZIP codes (which do "
+            "not always map well to locations) and Census Bureau ZCTAs "
+            "(which usually do). Please supply a zipcode which corresponds "
+            "to a US Census Bureau ZCTA.".format(row.zipcode))
 
     except DataNotAvailableError as e:
-        warnings.warn(
-            "Skipping import of thermostat (id={}) because NCEI "
-            "does not have data: {}"
-            .format(row.thermostat_id, e))
-        return
+        return dropped(
+            WEATHER_DATA_NOT_AVAILABLE,
+            "NCEI does not have data: {}".format(e))
+
+    except InvalidUTCOffsetError as e:
+        return dropped(
+            INVALID_UTC_OFFSET,
+            "its UTC offset could not be read: {}".format(e))
 
     except (InvalidIntervalDataError, ValueError) as e:
-        warnings.warn(
-            "Skipping import of thermostat (id={}) because its interval "
-            "data could not be read: {}"
-            .format(row.thermostat_id, e))
-        return
+        return dropped(
+            INVALID_INTERVAL_DATA,
+            "its interval data could not be read: {}".format(e))
 
     except Exception as e:
         # Last resort. Log the traceback rather than only the message: this
@@ -199,11 +244,8 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
         # missing output row, so the detail has to go somewhere.
         logger.exception(
             "Unexpected error importing thermostat %s", row.thermostat_id)
-        warnings.warn(
-            "Skipping import of thermostat(id={}) because of "
-            "the following error: {}"
-            .format(row.thermostat_id, e))
-        return
+        return dropped(
+            UNEXPECTED_ERROR, "{}: {}".format(type(e).__name__, e))
 
     return thermostat
 

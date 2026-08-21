@@ -238,6 +238,41 @@ replace the above code with the following method call:
 
     metrics = multiple_thermostat_calculate_epa_field_savings_metrics(thermostats)
 
+Accounting for what did not make it
+-----------------------------------
+
+Not every record in the metadata file produces output. A thermostat can be
+lost at import -- an unreadable interval file, a ZIP code no weather station
+serves -- or during the calculation, when it imports cleanly but qualifies
+for no core heating or cooling days. The second case is the one to watch: a
+thermostat matched to a station that reported nothing over the analysed years
+looks perfectly healthy on the way in and simply contributes no rows.
+
+``from_csv`` returns an iterator that also carries a run summary, and
+``multiple_thermostat_calculate_epa_field_savings_metrics`` adds the losses it
+sees to it. Write it out alongside the metrics:
+
+.. code-block:: python
+
+    summary = thermostats.summary
+    print(summary.describe())
+    summary.to_csv("run_summary.csv")
+
+``describe()`` gives the counts::
+
+    thermostats requested: 4000
+    thermostats delivered: 3872 (96.8%)
+    thermostats dropped:   128
+      import   station_not_found            31
+      metrics  no_qualifying_core_days      97
+
+and ``to_csv`` gives one row per lost thermostat, with its ID, ZIP code,
+weather station, the stage it was lost at, a stable ``reason`` slug, and the
+detail behind it. Compare the reason counts run over run: a jump in
+``no_qualifying_core_days`` is a weather-coverage problem, a jump in
+``invalid_interval_data`` is an upstream data problem, and the two need
+different responses.
+
 This will use all of the available CPUs on the machine in order to calculate
 the savings metrics. 
 
