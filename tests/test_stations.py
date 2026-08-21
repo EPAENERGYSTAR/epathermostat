@@ -101,3 +101,52 @@ def test_no_qualifying_station_falls_back_to_json():
 def test_lookup_usaf_station_by_zipcode_reads_static_map():
     # smoke test on the static JSON fallback map
     assert lookup_usaf_station_by_zipcode("00000-not-a-zip") is None
+
+
+def test_reported_during_is_permissive_without_the_coverage_api():
+    """Behavior is unchanged until eeweather exposes coverage."""
+    from thermostat import stations
+
+    with patch.object(stations, "get_station_coverage", None):
+        assert stations._reported_during(MagicMock(), [2011, 2012]) is True
+
+
+def test_reported_during_uses_inventory_coverage_when_available():
+    from thermostat import stations
+
+    station = MagicMock()
+    station.id = "USI0000KSVE"
+
+    with patch.object(stations, "get_station_coverage", return_value=0.0):
+        assert stations._reported_during(station, [2011, 2014]) is False
+    with patch.object(stations, "get_station_coverage", return_value=0.95):
+        assert stations._reported_during(station, [2011, 2014]) is True
+
+
+def test_spans_years_is_only_a_necessary_condition():
+    """A span encloses the years; it does not mean data exists in them."""
+    from thermostat import stations
+
+    station = MagicMock()
+    station.inventory_years = {"ghcnh": (1973, 2026)}
+    assert stations._spans_years(station, [2011, 2014]) is True
+
+    station.inventory_years = {"ghcnh": (1973, 1996)}
+    assert stations._spans_years(station, [2011, 2014]) is False
+
+    station.inventory_years = {}
+    assert stations._spans_years(station, [2011, 2014]) is False
+
+
+def test_usaf_id_skips_canadian_and_missing_ids():
+    from thermostat import stations
+
+    station = MagicMock()
+    station.ids = {"usaf": ["722880"]}
+    assert stations._usaf_id(station) == "722880"
+
+    station.ids = {"usaf": ["A00001"]}
+    assert stations._usaf_id(station) is None
+
+    station.ids = {}
+    assert stations._usaf_id(station) is None
