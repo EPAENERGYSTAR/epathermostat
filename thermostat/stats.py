@@ -17,6 +17,11 @@ from thermostat.schema import (
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
 TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
+# regulated filter thresholds, previously inline literals
+TAU_MINIMUM = 0
+TAU_MAXIMUM = 25
+CVRMSE_MAXIMUM = 0.6
+SAVINGS_PERCENTILE_FILTER = 0.01
 UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
 
 logger = logging.getLogger('epathermostat')
@@ -42,12 +47,17 @@ def combine_output_dataframes(dfs):
 
 
 def get_filtered_stats(
-        df, row_filter, label, heating_or_cooling, target_columns,
-        target_baseline_method):
+        df, keep_mask, label, heating_or_cooling, target_columns):
+    """Summary statistics over the rows ``keep_mask`` selects.
 
+    ``keep_mask`` is called once with the whole frame and returns a boolean
+    Series. It used to be a per-row predicate applied through iterrows(),
+    with the percentile filters recomputing whole-column quantiles inside
+    that loop -- O(n^2) on the population-statistics path.
+    """
     n_rows_total = df.shape[0]
 
-    filtered_df = df[[row_filter(row, df) for i, row in df.iterrows()]]
+    filtered_df = df[keep_mask(df)]
 
     n_rows_kept = filtered_df.shape[0]
     n_rows_discarded = n_rows_total - n_rows_kept
@@ -190,62 +200,70 @@ def compute_summary_statistics(
         )
         raise ValueError(message)
 
-    def _identity_filter(row, df):
-        return True
-
-    def _range_filter(row, column_name, heating_or_cooling, lower_bound=-np.inf, upper_bound=np.inf, target_baseline=False):
+    # Every filter takes the frame and returns a boolean Series. NaN
+    # compares False in both directions, which is the same exclusion the
+    # per-row `lower < value < upper` gave.
+    def _column(column_name, target_baseline):
         if target_baseline:
-            full_column_selector = "{}_{}".format(column_name, target_baseline_method)
-        else:
-            full_column_selector = column_name
-        column_value = row[full_column_selector]
-        return lower_bound < column_value < upper_bound
+            return "{}_{}".format(column_name, target_baseline_method)
 
-    def _percentile_range_filter(row, column_name, heating_or_cooling, df, quantile=0.0, target_baseline=False):
-        if target_baseline:
-            full_column_selector = "{}_{}".format(column_name, target_baseline_method)
-        else:
-            full_column_selector = column_name
-        lower_bound = df[full_column_selector].dropna().quantile(0.0 + quantile)
-        upper_bound = df[full_column_selector].dropna().quantile(1.0 - quantile)
-        return _range_filter(row, column_name, heating_or_cooling, lower_bound, upper_bound, target_baseline)
+        return column_name
 
-    def _tau_filter_heating(row, df):
-        return _range_filter(row, "tau", "heating", 0, 25)
+    def _identity_filter(df):
+        return pd.Series(True, index=df.index)
 
-    def _tau_filter_cooling(row, df):
-        return _range_filter(row, "tau", "cooling", 0, 25)
+    def _range_filter(column_name, lower_bound=-np.inf, upper_bound=np.inf,
+                      target_baseline=False):
+        def _filter(df):
+            column = df[_column(column_name, target_baseline)]
 
-    def _cvrmse_filter_heating(row, df):
-        return _range_filter(row, "cv_root_mean_sq_err", "heating", upper_bound=0.6)
+            return (column > lower_bound) & (column < upper_bound)
 
-    def _cvrmse_filter_cooling(row, df):
-        return _range_filter(row, "cv_root_mean_sq_err", "cooling", upper_bound=0.6)
+        return _filter
 
-    def _savings_filter_p01_heating(row, df):
-        return _percentile_range_filter(row, "percent_savings", "heating", df, 0.01, True)
+    def _percentile_range_filter(column_name, quantile=0.0, target_baseline=False):
+        """Bounds from the quantiles of the frame being filtered.
 
-    def _savings_filter_p01_cooling(row, df):
-        return _percentile_range_filter(row, "percent_savings", "cooling", df, 0.01, True)
+        The bounds are a property of the whole frame, so they are computed
+        once here rather than once per row as they were before.
+        """
+        def _filter(df):
+            values = df[_column(column_name, target_baseline)].dropna()
+            lower_bound = values.quantile(0.0 + quantile)
+            upper_bound = values.quantile(1.0 - quantile)
+
+            return _range_filter(
+                column_name, lower_bound, upper_bound, target_baseline
+            )(df)
+
+        return _filter
+
+    _tau_filter = _range_filter("tau", TAU_MINIMUM, TAU_MAXIMUM)
+    _cvrmse_filter = _range_filter(
+        "cv_root_mean_sq_err", upper_bound=CVRMSE_MAXIMUM
+    )
+    _savings_filter_p01 = _percentile_range_filter(
+        "percent_savings", SAVINGS_PERCENTILE_FILTER, target_baseline=True
+    )
 
     def _combine_filters(filters):
-        def _new_filter(row, df):
-            return reduce(lambda x, y: x and y(row, df), filters, True)
+        def _new_filter(df):
+            return reduce(lambda mask, f: mask & f(df), filters,
+                          pd.Series(True, index=df.index))
+
         return _new_filter
 
     def heating_stats(df, filter_, label):
-        heating_df = df[["heating" in name for name in df["heating_or_cooling"]]]
+        heating_df = df[df["heating_or_cooling"].str.contains("heating")]
         return get_filtered_stats(
             heating_df, filter_, label,
-            "heating", REAL_OR_INTEGER_VALUED_COLUMNS_HEATING,
-            target_baseline_method)
+            "heating", REAL_OR_INTEGER_VALUED_COLUMNS_HEATING)
 
     def cooling_stats(df, filter_, label):
-        cooling_df = df[["cooling" in name for name in df["heating_or_cooling"]]]
+        cooling_df = df[df["heating_or_cooling"].str.contains("cooling")]
         return get_filtered_stats(
             cooling_df, filter_, label,
-            "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING,
-            target_baseline_method)
+            "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING)
 
     very_cold_cold_df = metrics_df[[
         (cz is not None) and "Very-Cold/Cold" in cz
@@ -268,13 +286,15 @@ def compute_summary_statistics(
         for cz in metrics_df["climate_zone"]
     ]]
 
+    # The heating and cooling variants of each filter were identical: the
+    # season argument threaded through _range_filter was never read.
     filter_0 = _identity_filter
-    filter_1_heating = _combine_filters([_tau_filter_heating])
-    filter_1_cooling = _combine_filters([_tau_filter_cooling])
-    filter_2_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating])
-    filter_2_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling])
-    filter_3_heating = _combine_filters([_tau_filter_heating, _cvrmse_filter_heating, _savings_filter_p01_heating])
-    filter_3_cooling = _combine_filters([_tau_filter_cooling, _cvrmse_filter_cooling, _savings_filter_p01_cooling])
+    filter_1 = _combine_filters([_tau_filter])
+    filter_2 = _combine_filters([_tau_filter, _cvrmse_filter])
+    filter_3 = _combine_filters([_tau_filter, _cvrmse_filter, _savings_filter_p01])
+    filter_1_heating = filter_1_cooling = filter_1
+    filter_2_heating = filter_2_cooling = filter_2
+    filter_3_heating = filter_3_cooling = filter_3
 
     if advanced_filtering:
         stats = list(chain.from_iterable([
