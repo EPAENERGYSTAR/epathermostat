@@ -1,22 +1,9 @@
-certifi>=2022.12.07
-charset-normalizer
-click
-eemeter
-eeweather
-greenlet
-idna
-numpy
-packaging
-pandas
-patsy
-pyparsing
-pyproj
+# Pinned to a commit, not to @feature/power-source: a branch tip moves, and
+# requirements.txt already resolved this exact commit -- the two could
+# silently install different eeweather.
+eeweather @ git+https://github.com/opendsm/eeweather.git@854480763a7467ccce00fd42f9919b17c17b55cf
+numpy>=2,<3
+pandas>=2.2,<3
+scipy>=1.11
 python-dateutil
 pytz
-requests
-scipy
-shapely
-six
-sqlalchemy
-statsmodels
-urllib3

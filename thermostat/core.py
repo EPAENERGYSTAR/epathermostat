@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
-from itertools import repeat
 import inspect
 from warnings import warn
 import logging
@@ -8,23 +7,9 @@ import logging
 import pandas as pd
 import numpy as np
 from scipy.optimize import leastsq
-from pkg_resources import resource_stream
 
-from thermostat.regression import runtime_regression
 from thermostat import get_version
 from thermostat.climate_zone import retrieve_climate_zone
-
-try:
-    if "0.21." in pd.__version__:
-        warn(
-            "WARNING: Pandas version 0.21.x has known issues and is not supported. "
-            "Please either downgrade to Pandas 0.20.3 or upgrade to the latest Pandas version.")
-except TypeError:
-    pass  # Documentation mocks out pd, so ignore if not present.
-
-# Ignore divide-by-zero errors
-np.seterr(divide='ignore', invalid='ignore')
-
 
 CoreDaySet = namedtuple("CoreDaySet", ["name", "daily", "hourly", "start_date", "end_date"])
 
@@ -46,8 +31,6 @@ RESISTANCE_HEAT_USE_BIN_SECOND = [-np.inf, 10, 20, 30, 40, 50, 60]
 RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESISTANCE_HEAT_USE_BIN_SECOND[i+1])
                                         for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
 
-# FIXME: Turning off these warnings for now
-pd.set_option('mode.chained_assignment', None)
 
 
 class Thermostat(object):
@@ -222,22 +205,22 @@ class Thermostat(object):
         return series.interpolate(method="linear", limit=1, limit_direction="both")
 
     def _protect_heating(self):
-        function_name = inspect.stack()[1][3]
         if self.equipment_type not in self.HEATING_EQUIPMENT_TYPES:
+            function_name = inspect.stack()[1][3]
             message = "The function '{}', which is heating specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
     def _protect_cooling(self):
-        function_name = inspect.stack()[1][3]
         if self.equipment_type not in self.COOLING_EQUIPMENT_TYPES:
+            function_name = inspect.stack()[1][3]
             message = "The function '{}', which is cooling specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
 
     def _protect_aux_emerg(self):
-        function_name = inspect.stack()[1][3]
         if self.equipment_type not in self.AUX_EMERG_EQUIPMENT_TYPES:
+            function_name = inspect.stack()[1][3]
             message = "The function '{}', which is auxiliary/emergency heating specific, cannot be" \
                       " called for equipment_type {}".format(function_name, self.equipment_type)
             raise ValueError(message)
@@ -460,7 +443,7 @@ class Thermostat(object):
     def _get_hourly_boolean(self, daily_boolean):
         values = np.repeat(daily_boolean.values, 24)
         index = pd.date_range(start=daily_boolean.index[0],
-                periods=daily_boolean.index.shape[0] * 24, freq="H")
+                periods=daily_boolean.index.shape[0] * 24, freq="h")
         hourly_boolean = pd.Series(values, index)
         return hourly_boolean
 
@@ -603,9 +586,14 @@ class Thermostat(object):
         if runtime_temp is None:
             return None
 
-        # Create the bins and group by them
-        runtime_temp['bins'] = pd.cut(runtime_temp['temperature'], bins)
-        runtime_rhu = runtime_temp.groupby('bins')['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes'].sum()
+        # Create the bins and group by them. assign() copies: this frame is
+        # the caller's, and it is reused across the rhu1/rhu2 passes, so
+        # writing 'bins' into it leaked the first pass's column into the
+        # second.
+        runtime_temp = runtime_temp.assign(
+            bins=pd.cut(runtime_temp['temperature'], bins))
+        runtime_rhu = runtime_temp.groupby('bins', observed=False)[
+            ['heat_runtime', 'aux_runtime', 'emg_runtime', 'total_minutes']].sum()
 
         # Calculate the RHU based on the bins
         runtime_rhu['rhu'] = (runtime_rhu['aux_runtime'] + runtime_rhu['emg_runtime']) / (runtime_rhu['heat_runtime'] + runtime_rhu['emg_runtime'])
@@ -619,11 +607,12 @@ class Thermostat(object):
 
         # If we're passed min_runtime_minutes (RHU2) then treat the thermostat as not having run during that period
         if min_runtime_minutes:
-            runtime_rhu['rhu'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['aux_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['emg_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['compressor_duty_cycle'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
-            runtime_rhu['total_runtime'].loc[runtime_rhu.total_runtime < min_runtime_minutes] = np.nan
+            below_min = runtime_rhu.total_runtime < min_runtime_minutes
+            runtime_rhu.loc[below_min, 'rhu'] = np.nan
+            runtime_rhu.loc[below_min, 'aux_duty_cycle'] = np.nan
+            runtime_rhu.loc[below_min, 'emg_duty_cycle'] = np.nan
+            runtime_rhu.loc[below_min, 'compressor_duty_cycle'] = np.nan
+            runtime_rhu.loc[below_min, 'total_runtime'] = np.nan
 
         runtime_rhu['data_is_nonsense'] = (runtime_rhu['aux_runtime'] > runtime_rhu['heat_runtime'])
         runtime_rhu.loc[runtime_rhu.data_is_nonsense == True, 'rhu'] = np.nan  # noqa: E712
@@ -709,7 +698,7 @@ class Thermostat(object):
             return result
 
     def get_cooling_demand(self, core_cooling_day_set):
-        """
+        r"""
         Calculates a measure of cooling demand using the hourlyavgCTD method.
 
         Starting with an assumed value of zero for Tau :math:`(\\tau_c)`,
@@ -834,7 +823,7 @@ class Thermostat(object):
         return pd.Series(cdd, index=daily_index), tau_estimate, alpha_estimate, mse, rmse, cvrmse, mape, mae
 
     def get_heating_demand(self, core_heating_day_set):
-        """
+        r"""
         Calculates a measure of heating demand using the hourlyavgCTD method.
 
         :math:`\\text{daily HTD}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly} \Delta T_{d.n} - \\tau_h]_{+}}{24}`, where
@@ -944,7 +933,7 @@ class Thermostat(object):
         try:
             cvrmse = rmse / mean_daily_runtime
         except ZeroDivisionError:
-            logger.warn(
+            logger.warning(
                 'CVRMSE divided by zero: %s / %s '
                 'for thermostat_id %s ' % (
                     rmse, mean_daily_runtime,
@@ -1039,7 +1028,7 @@ class Thermostat(object):
 
 
     def get_baseline_cooling_demand(self, core_cooling_day_set, temp_baseline, tau):
-        """ Calculate baseline cooling demand for a particular core cooling
+        r""" Calculate baseline cooling demand for a particular core cooling
         day set and fitted physical parameters.
 
         :math:`\\text{daily CTD base}_d = \\frac{\sum_{i=1}^{24} [\\tau_c - \\text{hourly } \Delta T \\text{ base cool}_{d.n}]_{+}}{24}`, where
@@ -1080,7 +1069,7 @@ class Thermostat(object):
         return pd.Series(demand, index=index)
 
     def get_baseline_heating_demand(self, core_heating_day_set, temp_baseline, tau):
-        """ Calculate baseline heating demand for a particular core heating day
+        r""" Calculate baseline heating demand for a particular core heating day
         set and fitted physical parameters.
 
         :math:`\\text{daily HTD base}_d = \\frac{\sum_{i=1}^{24} [\\text{hourly } \Delta T \\text{ base heat}_{d.n} - \\tau_h]_{+}}{24}`, where
@@ -1120,7 +1109,7 @@ class Thermostat(object):
         return pd.Series(demand, index=index)
 
     def get_baseline_cooling_runtime(self, baseline_cooling_demand, alpha):
-        """ Calculate baseline cooling runtime given baseline cooling demand
+        r""" Calculate baseline cooling runtime given baseline cooling demand
         and fitted physical parameters.
 
         :math:`RT_{\\text{base cool}} (\\text{minutes}) = \\alpha_c \cdot \\text{daily CTD base}_d`
@@ -1140,7 +1129,7 @@ class Thermostat(object):
         return np.maximum(alpha * (baseline_cooling_demand), 0)
 
     def get_baseline_heating_runtime(self, baseline_heating_demand, alpha):
-        """ Calculate baseline heating runtime given baseline heating demand.
+        r""" Calculate baseline heating runtime given baseline heating demand.
         and fitted physical parameters.
 
         :math:`RT_{\\text{base heat}} (\\text{minutes}) = \\alpha_h \cdot \\text{daily HTD base}_d`
@@ -1158,14 +1147,6 @@ class Thermostat(object):
             A series containing estimated daily baseline heating runtime.
         """
         return np.maximum(alpha * (baseline_heating_demand), 0)
-
-    def get_daily_avoided_cooling_runtime(
-            self, baseline_runtime, core_cooling_day_set):
-        return baseline_runtime - self.cool_runtime[core_cooling_day_set]
-
-    def get_daily_avoided_heating_runtime(
-            self, baseline_runtime, core_heating_day_set):
-        return baseline_runtime - self.heat_runtime[core_heating_day_set]
 
     def calculate_epa_field_savings_metrics(self,
             core_cooling_day_set_method="entire_dataset",
@@ -1254,21 +1235,18 @@ class Thermostat(object):
 
                 if np.isnan(total_runtime_core_cooling):
                     warn(
-                        "WARNING: Total Runtime Core Cooling Days is nan. "
-                        "This may mean that you have pandas 0.21.x installed "
-                        "(which is not supported).")
+                        "WARNING: Total Runtime Core Cooling Days is nan.")
 
                 if n_days == 0:
                     warn(
                         "WARNING: Number of valid cooling days is zero.")
 
-                # Raise a division error if dividing by zero and replace with np.nan instead
-                old_err_state = np.seterr(divide='raise')
-                try:
-                    average_daily_cooling_runtime = np.divide(total_runtime_core_cooling, n_days)
-                except FloatingPointError:
+                # No valid days means no average; guard the division rather
+                # than flipping global numpy error state to catch it.
+                if n_days == 0:
                     average_daily_cooling_runtime = np.nan
-                np.seterr(**old_err_state)
+                else:
+                    average_daily_cooling_runtime = total_runtime_core_cooling / n_days
 
                 baseline10_demand = self.get_baseline_cooling_demand(
                     core_cooling_day_set,
@@ -1410,21 +1388,18 @@ class Thermostat(object):
 
                 if np.isnan(total_runtime_core_heating):
                     warn(
-                        "WARNING: Total Runtime Core Heating is nan. "
-                        "This may mean that you have pandas 0.21.x installed "
-                        "(which is not supported).")
+                        "WARNING: Total Runtime Core Heating is nan.")
 
                 if n_days == 0:
                     warn(
                         "WARNING: Number of valid heating days is zero.")
 
-                # Raise a division error if dividing by zero and replace with np.nan instead
-                old_err_state = np.seterr(divide='raise')
-                try:
-                    average_daily_heating_runtime = np.divide(total_runtime_core_heating, n_days)
-                except FloatingPointError:
+                # No valid days means no average; guard the division rather
+                # than flipping global numpy error state to catch it.
+                if n_days == 0:
                     average_daily_heating_runtime = np.nan
-                np.seterr(**old_err_state)
+                else:
+                    average_daily_heating_runtime = total_runtime_core_heating / n_days
 
                 baseline90_demand = self.get_baseline_heating_demand(
                     core_heating_day_set,
@@ -1552,22 +1527,33 @@ class Thermostat(object):
                     }
 
                     # Add RHU Calculations
+                    #
+                    # The runtime frame does not depend on rhu_type, so it is
+                    # built once rather than per iteration.
+                    rhu_runtime = self.get_resistance_heat_utilization_runtime(
+                        core_heating_day_set)
+
+                    # Thermostat-level duty cycles. These are sums over the
+                    # whole runtime frame and so are also independent of
+                    # rhu_type; emitting them inside the loop produced
+                    # rhu2_*_duty_cycle keys numerically identical to the
+                    # rhu1_* ones, which the exporter then dropped silently
+                    # because only the rhu1_* names are in COLUMNS. Computed
+                    # once here under the names the schema declares.
+                    if rhu_runtime is not None:
+                        total_minutes = rhu_runtime.total_minutes.sum()
+                        additional_outputs['rhu1_aux_duty_cycle'] = \
+                            rhu_runtime.aux_runtime.sum() / total_minutes
+                        additional_outputs['rhu1_emg_duty_cycle'] = \
+                            rhu_runtime.emg_runtime.sum() / total_minutes
+                        additional_outputs['rhu1_compressor_duty_cycle'] = \
+                            rhu_runtime.heat_runtime.sum() / total_minutes
+
                     for rhu_type in ('rhu1', 'rhu2'):
                         if rhu_type == 'rhu2':
                             min_runtime_minutes = VAR_MIN_RHU_RUNTIME
                         else:
                             min_runtime_minutes = None
-
-                        rhu_runtime = self.get_resistance_heat_utilization_runtime(core_heating_day_set)
-
-                        # Add duty cycle records
-                        heat_runtime = rhu_runtime.heat_runtime.sum()
-                        aux_runtime = rhu_runtime.aux_runtime.sum()
-                        emg_runtime = rhu_runtime.emg_runtime.sum()
-                        total_minutes = rhu_runtime.total_minutes.sum()
-                        additional_outputs[rhu_type + '_aux_duty_cycle'] = aux_runtime / total_minutes
-                        additional_outputs[rhu_type + '_emg_duty_cycle'] = emg_runtime / total_minutes
-                        additional_outputs[rhu_type + '_compressor_duty_cycle'] = heat_runtime / total_minutes
 
                         rhu_first = self.get_resistance_heat_utilization_bins(
                                 rhu_runtime,

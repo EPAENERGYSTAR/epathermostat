@@ -23,7 +23,7 @@ make it easier to debug.
     (venv)$ pip install thermostat
 
     # if using conda (see note below - conda is distributed with Anaconda)
-    # Certain Windows installations may have issues with Thermostat 1.7.x. See "Windows Notes" below.
+    # Certain Windows installations may have issues. See "Windows Notes" below.
     $ conda create --yes --name thermostat pip
     $ conda activate thermostat
     (thermostat)$ pip install thermostat
@@ -63,7 +63,7 @@ Check to make sure you are on the most recent version of the package.
 
     >>> import thermostat; thermostat.get_version()
 
-    '1.7.4'
+    '1.8.0'
 
 If you are not on the correct version, you should upgrade:
 
@@ -170,14 +170,18 @@ logger, which this uses.
 
 .. note::
 
-    The thermostat package depends on the eemeter and eeweather packages for weather data
-    fetching. The eeweather package automatically creates its own cache directory
-    in which it keeps cached versions of weather source data. This speeds up
-    the (generally I/O bound) NOAA weather fetching routine on subsequent
-    internal calls to fetch the same weather data (i.e. getting outdoor
-    temperature data for thermostats that map to the same weather station).
+    The thermostat package depends on the eeweather package for weather data
+    fetching. Outdoor temperatures come from a single NOAA source, the
+    station's GHCNh observations; hours the station did not report are
+    returned as NaN rather than filled from elsewhere.
 
-    For more information, see the `eeweather package <http://eeweather.openee.io/en/latest/index.html>`_.
+    eeweather caches fetched data in a local directory, so thermostats that
+    map to the same weather station only pay for the (I/O bound) download
+    once. The cache location can be set with the ``EEWEATHER_CACHE_URL``
+    environment variable.
+
+    For more information, see the `eeweather package
+    <https://github.com/opendsm/eeweather>`_.
 
 .. note::
 
@@ -200,10 +204,9 @@ format information.
 Fabricated example data from 35 thermostats in various climate zones, is
 available for download :download:`here <./examples/examples.zip>`.
 
-Loading the thermostat data below will take more than a few minutes, even if
-the weather cache is enabled (see note above). This is because loading
-thermostat data involves downloading hourly weather data from a remote
-source - in this case, the NCDC.
+Loading the thermostat data below will take more than a few minutes on a cold
+cache (see note above). This is because loading thermostat data involves
+downloading hourly weather data from NOAA.
 
 The following loads an lazy iterator over the thermostats. The thermostats
 will be loaded into memory as necessary in the following steps.
@@ -330,14 +333,18 @@ Other platforms should not be affected by this.
 Notes for Windows Conda Users
 -----------------------------
 
-Thermostat 1.7.x may have issues installing on Windows machines using pip because of issues with the Shapely wheel and numpy. If you are receiving strange behavior such as "WindowsError: [Error 126] The specified module could not be found" then please try this method to install the Thermostat module:
-    
+Thermostat may have issues installing on Windows machines using pip because of
+issues with the shapely wheel and numpy. (shapely is not a direct dependency;
+it arrives with eeweather.) If you are receiving strange behavior such as
+"WindowsError: [Error 126] The specified module could not be found" then
+please try this method to install the Thermostat module:
+
 .. code-block:: bash
 
     $ conda env remove --name thermostat
-    $ conda create --yes --name thermostat python==3.10
-    $ conda install -c conda-forge shapely pandas==1.4.1 numpy==1.22.2
-    $ pip install thermostat==1.7.4
+    $ conda create --yes --name thermostat python==3.12
+    $ conda install -c conda-forge shapely pandas numpy
+    $ pip install thermostat
 
 .. note::
 

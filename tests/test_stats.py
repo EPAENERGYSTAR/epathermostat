@@ -516,16 +516,24 @@ def test_compute_summary_statistics(combined_dataframe):
             9105, 901, 9105, 901,
             ]
 
-    def test_compute_summary_statistics_advanced(combined_dataframe):
-        summary_statistics = compute_summary_statistics(combined_dataframe,
-                advanced_filtering=True)
-        assert [len(s) for s in summary_statistics] == [
-                49, 49, 49, 49, 49, 49, 49, 49,
-                9105, 901, 9105, 901, 9105, 901, 9105, 901,
-                ]
 
-        def test_summary_statistics_to_csv(combined_dataframe):
-            summary_statistics = compute_summary_statistics(combined_dataframe)
+def test_compute_summary_statistics_advanced(combined_dataframe):
+    """advanced_filtering=True runs the four-filter ladder rather than two.
+
+    This test and test_summary_statistics_to_csv were nested inside
+    test_compute_summary_statistics, so pytest never collected them and the
+    advanced_filtering branch of compute_summary_statistics went untested.
+    """
+    summary_statistics = compute_summary_statistics(combined_dataframe,
+            advanced_filtering=True)
+    assert [len(s) for s in summary_statistics] == [
+            49, 49, 49, 49, 49, 49, 49, 49,
+            9105, 901, 9105, 901, 9105, 901, 9105, 901,
+            ]
+
+
+def test_summary_statistics_to_csv(combined_dataframe):
+    summary_statistics = compute_summary_statistics(combined_dataframe)
 
     _, fname = tempfile.mkstemp()
     product_id = "FAKE"

@@ -22,19 +22,35 @@ thermostat.exporters
     :inherited-members:
     :show-inheritance:
 
+thermostat.climate_zone
+-----------------------
+
+.. automodule:: thermostat.climate_zone
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+thermostat.schema
+-----------------
+
+.. automodule:: thermostat.schema
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+thermostat.exceptions
+---------------------
+
+.. automodule:: thermostat.exceptions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 thermostat.core
 ---------------
 
 .. automodule:: thermostat.core
     :members:
-    :show-inheritance:
-
-thermostat.regression
----------------------
-
-.. automodule:: thermostat.regression
-    :members:
-    :undoc-members:
     :show-inheritance:
 
 thermostat.stats
@@ -60,6 +76,8 @@ thermostat.multiple
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. _thermostat-stations:
 
 thermostat.stations
 -------------------

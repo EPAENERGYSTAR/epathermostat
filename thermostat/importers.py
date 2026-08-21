@@ -4,14 +4,15 @@ import pandas as pd
 from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DISTANCE_KM
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
-from eeweather.cache import KeyValueStore
-from eeweather.exceptions import ISDDataNotAvailableError
-import json
+from eeweather.exceptions import DataNotAvailableError
+from thermostat.exceptions import (
+    StationNotFoundError,
+    InvalidIntervalDataError,
+)
 
 import warnings
 import dateutil.parser
 import os
-import errno
 import pytz
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -21,70 +22,15 @@ try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
 except AttributeError:
     NUMBER_OF_CORES = cpu_count()
-MAX_FTP_CONNECTIONS = 3
-AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_FTP_CONNECTIONS)
+# Cap on concurrent weather fetches. eeweather retrieves over HTTPS from
+# NOAA's GHCNh API (and caches locally), so this is a politeness limit on
+# simultaneous requests to NOAA, not the old FTP-connection cap. Tune down if
+# NOAA rate-limits large runs.
+MAX_WEATHER_CONNECTIONS = 8
+AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_WEATHER_CONNECTIONS)
 
 
 logger = logging.getLogger(__name__)
-
-
-def __prime_eeweather_cache():
-    """ Primes the eemeter / eeweather caches by doing a non-existent query
-    This creates the cache directories sooner than if they were created
-    during normal processing (which can lead to a race condition and missing
-    thermostats)
-    """
-    sql_json = KeyValueStore()
-    if sql_json.key_exists('0') is not False:
-        raise Exception("eeweather cache was not properly primed. Aborting.")
-
-
-def save_json_cache(index, thermostat_id, station, cache_path=None):
-    """ Saves the cached results from eeweather into a JSON file.
-
-    Parameters
-    ----------
-    index : pd.DatetimeIndex
-        hourly index used to compute the years needed.
-    thermostat_id : str
-        A unique identifier for the termostat (used for the filename)
-    station : str
-        Station ID used to retrieve the weather data.
-    cache_path : str
-        Directory path to save the cached data
-    """
-    if cache_path is None:
-        directory = os.path.join(
-            os.curdir,
-            "epathermostat_weather_data")
-    else:
-        directory = os.path.normpath(
-            cache_path)
-
-    try:
-        os.mkdir(directory)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
-    json_cache = {}
-
-    sqlite_json_store = KeyValueStore()
-    years = index.groupby(index.year).keys()
-    for year in years:
-        filename = "ISD-{station}-{year}.json".format(
-                station=station,
-                year=year)
-        json_cache[filename] = sqlite_json_store.retrieve_json(filename)
-
-    thermostat_filename = "{thermostat_id}.json".format(thermostat_id=thermostat_id)
-    thermostat_path = os.path.join(directory, thermostat_filename)
-    try:
-        with open(thermostat_path, 'w') as outfile:
-            json.dump(json_cache, outfile)
-
-    except Exception as e:
-        warnings.warn("Unable to write JSON file: {}".format(e))
 
 
 def normalize_utc_offset(utc_offset):
@@ -114,7 +60,8 @@ def normalize_utc_offset(utc_offset):
            e))
 
 
-def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, cache_path=None, quiet=None):
+def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
+             quiet=None, weather_source=None):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -124,12 +71,20 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
         Path to a file containing the thermostat metadata.
     verbose : boolean
         Set to True to output a more detailed log of import activity.
-    save_cache: boolean
-        Set to True to save the cached data to a json file (based on Thermostat ID).
     shuffle: boolean
-        Shuffles the thermostats to give them random ordering if desired (helps with caching).
-    cache_path: str
-        Directory path to save the cached data
+        Shuffle the thermostats into a random order.
+    seed : int, optional
+        Seed for the shuffle. Without one the order -- and therefore the
+        order of rows in the output -- varies between runs on identical
+        input. Pass a seed when reproducibility matters.
+    weather_source : callable, optional
+        Override for the outdoor temperature lookup, called as
+        ``weather_source(station, index)`` and returning a pandas Series of
+        degrees Fahrenheit over ``index``. Defaults to
+        :func:`thermostat.eeweather_wrapper.get_indexed_temperatures_eeweather`.
+        Supplying one lets a caller (notably the test suite) run without
+        network access. It is dispatched to worker processes, so it must be
+        picklable -- a module-level function, not a lambda or closure.
 
     Returns
     -------
@@ -138,9 +93,8 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     """
 
     if quiet:
-        logging.warning('quiet argument has been deprecated. Please remove this flag from your code.')
-
-    __prime_eeweather_cache()
+        logger.warning(
+            'quiet argument has been deprecated. Please remove this flag from your code.')
 
     metadata = pd.read_csv(
         metadata_filename,
@@ -153,18 +107,16 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
         }
     )
 
-    # Shuffle the results to help alleviate cache issues
     if shuffle:
-        logging.info("Metadata randomized to prevent collisions in cache.")
-        metadata = metadata.sample(frac=1).reset_index(drop=True)
+        logger.info("Randomizing thermostat order.")
+        metadata = metadata.sample(frac=1, random_state=seed).reset_index(drop=True)
 
     p = Pool(AVAILABLE_PROCESSES)
     multiprocess_func_partial = partial(
             multiprocess_func,
             metadata_filename=metadata_filename,
             verbose=verbose,
-            save_cache=save_cache,
-            cache_path=cache_path)
+            weather_source=weather_source)
     result_list = p.imap(multiprocess_func_partial, metadata.iterrows())
     p.close()
     p.join()
@@ -178,17 +130,18 @@ def from_csv(metadata_filename, verbose=False, save_cache=False, shuffle=True, c
     missing_thermostats = metadata_thermostat_ids.difference(loaded_thermostat_ids)
     missing_thermostats_num = len(missing_thermostats)
     if missing_thermostats_num > 0:
-        logging.warning("Unable to load {} thermostat records because of "
-                        "errors. Please check the logs for the following thermostats:".format(
-                            missing_thermostats_num))
+        logger.warning("Unable to load %d thermostat records because of "
+                       "errors. Please check the logs for the following "
+                       "thermostats:", missing_thermostats_num)
         for thermostat in missing_thermostats:
-            logging.warning(thermostat)
+            logger.warning(thermostat)
 
     # Convert this to an iterator to maintain compatibility
     return iter(results)
 
 
-def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=False, cache_path=None):
+def multiprocess_func(metadata, metadata_filename, verbose=False,
+                      weather_source=None):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
     It is not intended to be called directly."""
     i, row = metadata
@@ -212,15 +165,13 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
                 row.equipment_type,
                 row.utc_offset,
                 interval_data_filename,
-                save_cache=save_cache,
-                cache_path=cache_path,
+                weather_source=weather_source,
         )
-    except ValueError as e:
-        # Could not locate a station for the thermostat. Warn and skip.
+    except StationNotFoundError:
         warnings.warn(
             "Skipping import of thermostat (id={}) for which "
-            "a sufficient source of outdoor weather data could not"
-            "be located using the given ZIP code ({}). This likely "
+            "a sufficient source of outdoor weather data could not "
+            "be located using the given ZIP code ({}). This is likely "
             "due to the discrepancy between US Postal Service ZIP "
             "codes (which do not always map well to locations) and "
             "Census Bureau ZCTAs (which usually do). Please supply "
@@ -228,14 +179,26 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
             .format(row.thermostat_id, row.zipcode))
         return
 
-    except ISDDataNotAvailableError as e:
+    except DataNotAvailableError as e:
         warnings.warn(
-            "Skipping import of thermostat(id={} because the NCDC "
+            "Skipping import of thermostat (id={}) because NCEI "
             "does not have data: {}"
             .format(row.thermostat_id, e))
         return
 
+    except (InvalidIntervalDataError, ValueError) as e:
+        warnings.warn(
+            "Skipping import of thermostat (id={}) because its interval "
+            "data could not be read: {}"
+            .format(row.thermostat_id, e))
+        return
+
     except Exception as e:
+        # Last resort. Log the traceback rather than only the message: this
+        # handler turns any bug -- a typo, a schema mistake -- into a silently
+        # missing output row, so the detail has to go somewhere.
+        logger.exception(
+            "Unexpected error importing thermostat %s", row.thermostat_id)
         warnings.warn(
             "Skipping import of thermostat(id={}) because of "
             "the following error: {}"
@@ -246,7 +209,8 @@ def multiprocess_func(metadata, metadata_filename, verbose=False, save_cache=Fal
 
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type,
-                          utc_offset, interval_data_filename, save_cache=False, cache_path=None):
+                          utc_offset, interval_data_filename,
+                          weather_source=None):
     """ Load a single thermostat directly from an interval data file.
 
     Parameters
@@ -264,10 +228,8 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         method dateutil.parser.parse.
     interval_data_filename : str
         The path to the CSV in which the interval data is stored.
-    save_cache: boolean
-        Set to True to save the cached data to a json file (based on Thermostat ID).
-    cache_path: str
-        Directory path to save the cached data
+    weather_source : callable, optional
+        Override for the outdoor temperature lookup; see :func:`from_csv`.
 
     Returns
     -------
@@ -281,14 +243,14 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     # load indices
     dates = pd.to_datetime(df["date"])
     daily_index = pd.date_range(start=dates[0], periods=dates.shape[0], freq="D")
-    hourly_index = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H")
-    hourly_index_utc = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="H", tz=pytz.UTC)
+    hourly_index = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="h")
+    hourly_index_utc = pd.date_range(start=dates[0], periods=dates.shape[0] * 24, freq="h", tz=pytz.UTC)
 
     # raise an error if dates are not aligned
     if not all(dates == daily_index):
         message = ("Dates provided for thermostat_id={} may contain some "
                    "which are out of order, missing, or duplicated.".format(thermostat_id))
-        raise RuntimeError(message)
+        raise InvalidIntervalDataError(message)
 
     # load hourly time series values
     temp_in = pd.Series(_get_hourly_block(df, "temp_in"), hourly_index)
@@ -320,15 +282,12 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     if station is None:
         message = "No weather station with sufficient recent data within " \
                 "{} km of ZIP code {}".format(_MAX_STATION_DISTANCE_KM, zipcode)
-        raise RuntimeError(message)
+        raise StationNotFoundError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
-    temp_out = get_indexed_temperatures_eeweather(station, hourly_index_utc - utc_offset)
+    fetch_temperatures = weather_source or get_indexed_temperatures_eeweather
+    temp_out = fetch_temperatures(station, hourly_index_utc - utc_offset)
     temp_out.index = hourly_index
-
-    # Export the data from the cache
-    if save_cache:
-        save_json_cache(hourly_index, thermostat_id, station, cache_path)
 
     # load daily time series values
     if cooling:

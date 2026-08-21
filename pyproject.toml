@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thermostat"
+description = "Calculate connected thermostat temperature/run-time savings"
+readme = "README.md"
+license = { file = "osi-mit--license.txt" }
+authors = [{ name = "Phil Ngo" }]
+keywords = ["thermostat", "savings", "EPA"]
+requires-python = ">=3.11"
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    # The reshaped eeweather (WeatherStation/WeatherLocation + load_data).
+    # 0.3.x on PyPI is the *old* API and this package cannot run against it,
+    # so the floor is the reshape's release version. Until that release
+    # exists, install the pinned commit from requirements.txt -- a direct
+    # git URL must not live here, both because it makes the project
+    # unpublishable and because it pinned a mutable branch tip.
+    "eeweather>=0.4",
+    "numpy>=2,<3",
+    "pandas>=2.2,<3",
+    "scipy>=1.11",
+    "python-dateutil",
+    "pytz",
+]
+
+[project.urls]
+Homepage = "https://github.com/EPAENERGYSTAR/epathermostat"
+Documentation = "https://epathermostat.readthedocs.io/"
+
+[project.optional-dependencies]
+docs = ["sphinx", "sphinx_rtd_theme"]
+dev = ["pytest", "pytest-cov", "coverage", "tox", "pyflakes"]
+
+[tool.setuptools.dynamic]
+version = { attr = "thermostat._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["thermostat*"]
+
+[tool.setuptools.package-data]
+"thermostat.resources" = ["*.csv", "*.json"]

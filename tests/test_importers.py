@@ -45,4 +45,31 @@ def test_utc_offset(thermostat_type_1_utc, thermostat_type_1_utc_bad):
 
     # Load a thermostat with utc offset == 0
     assert(isinstance(thermostat_type_1_utc.cool_runtime, pd.Series))
-    assert(thermostat_type_1_utc_bad is None)
+    # the bad utc_offset row is skipped, so no thermostat is imported
+    assert thermostat_type_1_utc_bad == []
+
+
+def constant_60F(station, index):
+    """A weather_source stand-in: 60 F for every hour, no network."""
+    return pd.Series(60.0, index=index, dtype=float)
+
+
+def test_from_csv_accepts_a_weather_source():
+    """from_csv can be handed temperatures instead of fetching them.
+
+    Without this seam every fixture in the suite reaches NOAA during import,
+    which is what made the regression tests depend on network availability.
+    """
+    thermostats = list(from_csv(
+        # NB: get_data_path resolves relative to the *calling* file
+        get_data_path("data/metadata_type_1_single.csv"),
+        shuffle=False,
+        weather_source=constant_60F,
+    ))
+
+    assert len(thermostats) == 1
+    temp_out = thermostats[0].temperature_out
+    assert isinstance(temp_out, pd.Series)
+    assert (temp_out == 60.0).all()
+    # the index is the thermostat's own local hourly index, not the fetch index
+    assert temp_out.index.equals(thermostats[0].temperature_in.index)
