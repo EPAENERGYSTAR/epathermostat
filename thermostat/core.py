@@ -941,14 +941,19 @@ class Thermostat(object):
 
         daily_index = core_day_set.daily[core_day_set.daily].index
 
+        # leastsq calls this once per iteration, so it is the hot path of the
+        # whole calculation. .clip is the vectorized form of the elementwise
+        # apply(np.maximum) it replaces and gives bit-identical results.
+        by_day = core_day_set_deltaT.index.date
+
         def calc_degree_days(tau):
             hourly_dd = (
                 season.demand_sign * (core_day_set_deltaT - tau)
-            ).apply(lambda x: np.maximum(x, 0))
+            ).clip(lower=0)
             # Note - `x / 24` should be thought of as a unit conversion, not
             # an average.
             return np.array([dd.sum() / 24 for day, dd
-                             in hourly_dd.groupby(core_day_set_deltaT.index.date)])
+                             in hourly_dd.groupby(by_day)])
 
         daily_runtime = getattr(self, season.runtime)[core_day_set.daily]
         total_runtime = daily_runtime.sum()
@@ -1042,7 +1047,7 @@ class Thermostat(object):
 
         hourly_dd = (
             season.demand_sign * ((temp_baseline - hourly_temp_out) - tau)
-        ).apply(lambda x: np.maximum(x, 0))
+        ).clip(lower=0)
         demand = np.array([dd.sum() / 24 for day, dd
                            in hourly_dd.groupby(hourly_temp_out.index.date)])
 
