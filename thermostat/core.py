@@ -17,6 +17,24 @@ logger = logging.getLogger('epathermostat')
 
 VAR_MIN_RHU_RUNTIME = 30 * 60  # Unit is in minutes (30 hours * 60 minutes)
 
+
+def _ratio(numerator, denominator, name, thermostat_id):
+    """ Divides, reporting a non-finite result as a missing value.
+
+    These divisions used to sit under ``except ZeroDivisionError``, which
+    never fires: numpy and pandas floats return +/-inf or NaN on a zero
+    denominator rather than raising.  A non-finite ratio is not a metric, so
+    it is logged and reported as NaN, which is what the handler always meant.
+    """
+    result = numerator / denominator
+    if not np.isfinite(result):
+        logger.debug(
+            '%s is not finite: %s / %s for thermostat_id %s' % (
+                name, numerator, denominator, thermostat_id))
+        return np.nan
+    return result
+
+
 # A day with more missing hourly temperature readings than this is not a
 # core day. Regulated threshold; was written as a bare 2 in both
 # get_core_heating_days and get_core_cooling_days.
@@ -776,16 +794,8 @@ class Thermostat(object):
         if isinstance(delta, timedelta):
             return delta.days
         else:
-            try:
-                result = int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
-            except ZeroDivisionError:
-                logger.debug(
-                    'Date Range divided by zero: %s / %s '
-                    'for thermostat_id %s' % (
-                        delta.astype('timedelta64[D]'), np.timedelta64(1, 'D'),
-                        self.thermostat_id))
-                result = np.nan
-            return result
+            # The divisor is the constant one day, so this cannot fail.
+            return int(delta.astype('timedelta64[D]') / np.timedelta64(1, 'D'))
 
     def get_cooling_demand(self, core_cooling_day_set):
         r"""
@@ -961,15 +971,9 @@ class Thermostat(object):
         def calc_estimates(tau):
             degree_days = calc_degree_days(tau)
             total_degree_days = np.sum(degree_days)
-            try:
-                alpha_estimate = total_runtime / total_degree_days
-            except ZeroDivisionError:
-                logger.debug(
-                    'alpha_estimate divided by zero: %s / %s '
-                    'for thermostat_id %s ' % (
-                        total_runtime, total_degree_days,
-                        self.thermostat_id))
-                alpha_estimate = np.nan
+            alpha_estimate = _ratio(
+                total_runtime, total_degree_days,
+                'alpha_estimate', self.thermostat_id)
             runtime_estimate = degree_days * alpha_estimate
             errors = daily_runtime - runtime_estimate
             return degree_days, alpha_estimate, errors
@@ -994,15 +998,8 @@ class Thermostat(object):
         mse = np.nanmean((errors)**2)
         rmse = mse ** 0.5
         mean_daily_runtime = np.nanmean(daily_runtime)
-        try:
-            cvrmse = rmse / mean_daily_runtime
-        except ZeroDivisionError:
-            logger.debug(
-                'CVRMSE divided by zero: %s / %s '
-                'for thermostat_id %s ' % (
-                    rmse, mean_daily_runtime,
-                    self.thermostat_id))
-            cvrmse = np.nan
+        cvrmse = _ratio(
+            rmse, mean_daily_runtime, 'CVRMSE', self.thermostat_id)
 
         mape = np.nanmean(np.absolute(errors / mean_daily_runtime))
         mae = np.nanmean(np.absolute(errors))
@@ -1301,16 +1298,9 @@ class Thermostat(object):
         return metrics
 
     def _percent_savings(self, avoided, baseline):
-        try:
-            savings = (avoided.mean() / baseline.mean()) * 100.0
-        except ZeroDivisionError:
-            logger.debug(
-                'percent_savings divided by zero: %s / %s '
-                'for thermostat_id %s ' % (
-                    avoided.mean(), baseline.mean(),
-                    self.thermostat_id))
-            savings = np.nan
-        return savings
+        return _ratio(
+            avoided.mean(), baseline.mean(),
+            'percent_savings', self.thermostat_id) * 100.0
 
     def _core_day_set_metrics(self, season, core_day_set, climate_zone,
                               regional_comfort_temperature):
