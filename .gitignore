@@ -9,8 +9,6 @@ dist/
 .cache/
 .tox/
 .coverage
-pyproject.toml
-scripts/overnight_run.py
 
 # virtualenvs and local caches (do not commit)
 .venv/
