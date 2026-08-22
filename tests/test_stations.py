@@ -1,13 +1,16 @@
-"""Tests for thermostat/stations.py — ZCTA->station selection against the
-reshaped eeweather WeatherLocation/WeatherStation API (registry-inventory based,
-no primed-cache probe)."""
+"""Tests for thermostat/stations.py — ZCTA->candidate-station selection.
+
+Selection returns a short ranked list rather than one station: whether a
+station has usable data is only knowable once it is loaded, so the importer
+walks these in order. See test_importers.py for that half."""
 import pandas as pd
 from unittest.mock import patch, MagicMock
 
 from eeweather.exceptions import UnrecognizedPlaceError
 
 from thermostat.stations import (
-    get_closest_station_by_zipcode,
+    MAX_CANDIDATES_TRIED,
+    get_candidate_stations_by_zipcode,
     lookup_usaf_station_by_zipcode,
 )
 
@@ -33,10 +36,10 @@ def test_returns_nearest_station_covering_years():
         "thermostat.stations.WeatherStation", side_effect=lambda sid: stations[sid]
     ):
         WL.from_place.return_value = location
-        result = get_closest_station_by_zipcode("91104", required_years=[2016, 2017])
+        result = get_candidate_stations_by_zipcode("91104", required_years=[2016, 2017])
 
-    # nearest candidate that covers the years wins
-    assert result == "111111"
+    # nearest first, and every qualifying candidate is offered
+    assert result == ["111111", "222222"]
     WL.from_place.assert_called_once_with("zcta", "91104", sources=("ghcnh",))
 
 
@@ -52,9 +55,9 @@ def test_skips_station_missing_years():
         "thermostat.stations.WeatherStation", side_effect=lambda sid: stations[sid]
     ):
         WL.from_place.return_value = location
-        result = get_closest_station_by_zipcode("91104", required_years=[2016])
+        result = get_candidate_stations_by_zipcode("91104", required_years=[2016])
 
-    assert result == "222222"
+    assert result == ["222222"]
 
 
 def test_skips_canadian_stations():
@@ -66,9 +69,9 @@ def test_skips_canadian_stations():
         "thermostat.stations.WeatherStation", side_effect=lambda sid: stations[sid]
     ):
         WL.from_place.return_value = location
-        result = get_closest_station_by_zipcode("91104", required_years=[2020])
+        result = get_candidate_stations_by_zipcode("91104", required_years=[2020])
 
-    assert result == "722222"
+    assert result == ["722222"]
 
 
 def test_unrecognized_zcta_falls_back_to_json():
@@ -76,9 +79,9 @@ def test_unrecognized_zcta_falls_back_to_json():
         "thermostat.stations.lookup_usaf_station_by_zipcode", return_value="JSONSTN"
     ) as json_fallback:
         WL.from_place.side_effect = UnrecognizedPlaceError("zcta", "00000")
-        result = get_closest_station_by_zipcode("00000", required_years=[2020])
+        result = get_candidate_stations_by_zipcode("00000", required_years=[2020])
 
-    assert result == "JSONSTN"
+    assert result == ["JSONSTN"]
     json_fallback.assert_called_once()
 
 
@@ -93,9 +96,9 @@ def test_no_qualifying_station_falls_back_to_json():
         "thermostat.stations.lookup_usaf_station_by_zipcode", return_value="JSONSTN"
     ):
         WL.from_place.return_value = location
-        result = get_closest_station_by_zipcode("91104", required_years=[2020])
+        result = get_candidate_stations_by_zipcode("91104", required_years=[2020])
 
-    assert result == "JSONSTN"
+    assert result == ["JSONSTN"]
 
 
 def test_lookup_usaf_station_by_zipcode_reads_static_map():
@@ -103,50 +106,35 @@ def test_lookup_usaf_station_by_zipcode_reads_static_map():
     assert lookup_usaf_station_by_zipcode("00000-not-a-zip") is None
 
 
-def test_reported_during_is_permissive_without_the_coverage_api():
-    """Behavior is unchanged until eeweather exposes coverage."""
-    from thermostat import stations
+def test_offers_at_most_max_candidates_tried():
+    """The walk is bounded: a fleet run against an unresponsive NOAA must not
+    turn one site into an unbounded search."""
+    location = MagicMock()
+    location.candidates.return_value = _candidates(["S1", "S2", "S3", "S4", "S5"])
+    stations = {sid: _station("11111%d" % i)
+                for i, sid in enumerate(["S1", "S2", "S3", "S4", "S5"])}
 
-    with patch.object(stations, "get_station_coverage", None):
-        assert stations._reported_during(MagicMock(), [2011, 2012]) is True
+    with patch("thermostat.stations.WeatherLocation") as WL, patch(
+        "thermostat.stations.WeatherStation", side_effect=lambda sid: stations[sid]
+    ):
+        WL.from_place.return_value = location
+        result = get_candidate_stations_by_zipcode("91104", required_years=[2020])
 
-
-def test_reported_during_uses_inventory_coverage_when_available():
-    from thermostat import stations
-
-    station = MagicMock()
-    station.id = "USI0000KSVE"
-
-    with patch.object(stations, "get_station_coverage", return_value=0.0):
-        assert stations._reported_during(station, [2011, 2014]) is False
-    with patch.object(stations, "get_station_coverage", return_value=0.95):
-        assert stations._reported_during(station, [2011, 2014]) is True
+    assert len(result) == MAX_CANDIDATES_TRIED
 
 
-def test_spans_years_is_only_a_necessary_condition():
-    """A span encloses the years; it does not mean data exists in them."""
-    from thermostat import stations
+def test_candidates_are_nearest_first():
+    """Order is the contract -- the importer keeps the first that delivers,
+    so a mis-ordered list silently picks a more distant station."""
+    location = MagicMock()
+    location.candidates.return_value = _candidates(["near", "mid", "far"])
+    stations = {"near": _station("111111"), "mid": _station("222222"),
+                "far": _station("333333")}
 
-    station = MagicMock()
-    station.inventory_years = {"ghcnh": (1973, 2026)}
-    assert stations._spans_years(station, [2011, 2014]) is True
+    with patch("thermostat.stations.WeatherLocation") as WL, patch(
+        "thermostat.stations.WeatherStation", side_effect=lambda sid: stations[sid]
+    ):
+        WL.from_place.return_value = location
+        result = get_candidate_stations_by_zipcode("91104", required_years=[2020])
 
-    station.inventory_years = {"ghcnh": (1973, 1996)}
-    assert stations._spans_years(station, [2011, 2014]) is False
-
-    station.inventory_years = {}
-    assert stations._spans_years(station, [2011, 2014]) is False
-
-
-def test_usaf_id_skips_canadian_and_missing_ids():
-    from thermostat import stations
-
-    station = MagicMock()
-    station.ids = {"usaf": ["722880"]}
-    assert stations._usaf_id(station) == "722880"
-
-    station.ids = {"usaf": ["A00001"]}
-    assert stations._usaf_id(station) is None
-
-    station.ids = {}
-    assert stations._usaf_id(station) is None
+    assert result == ["111111", "222222", "333333"]

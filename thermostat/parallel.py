@@ -4,7 +4,7 @@ from itertools import cycle
 from zipfile import ZipFile
 import tempfile
 import os
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.stations import get_candidate_stations_by_zipcode
 
 
 def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=None):
@@ -46,9 +46,11 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
     # Resolve each station once. required_years is deliberately left at its
     # default here: batching only needs a stable grouping key, not the
-    # station that will ultimately serve the analysis.
+    # station that will ultimately serve the analysis -- which is why the
+    # nearest candidate is enough, even though the import may end up
+    # choosing a different one after loading.
     station_by_zipcode = {
-        zipcode: get_closest_station_by_zipcode(zipcode)
+        zipcode: next(iter(get_candidate_stations_by_zipcode(zipcode)), None)
         for zipcode in metadata_df.zipcode.unique()
     }
     stations = [station_by_zipcode[z] for z in metadata_df.zipcode]

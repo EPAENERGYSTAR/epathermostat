@@ -2,7 +2,11 @@ from thermostat.core import Thermostat
 
 import numpy as np
 import pandas as pd
-from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DISTANCE_KM
+from thermostat.stations import (
+    get_candidate_stations_by_zipcode,
+    MIN_HOURLY_COVERAGE,
+    _MAX_STATION_DISTANCE_KM,
+)
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.exceptions import DataNotAvailableError
@@ -261,6 +265,48 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
     return thermostat
 
 
+def _load_outdoor_temperatures(candidates, fetch_temperatures, index, zipcode):
+    """The first candidate station that actually delivers, and its series.
+
+    Whether a station has usable data cannot be known before loading it. Its
+    registry span says only (first, last), and USI0000KSVE reports
+    (1973, 2026) while having no rows between 1997 and 2015. So load the
+    nearest, look at what came back, and move on if it is too thin.
+
+    This is exact where a coverage estimate is not: it measures the series
+    the calculation will actually use, at the same threshold the regulated
+    missing-data rules are written against. Nationally 23 ZCTAs have a
+    nearest station that reported nothing in 2025, and every one recovers on
+    the second candidate.
+
+    Falls back to the nearest station's series when nothing clears the bar,
+    so a thermostat is never dropped for want of a better option -- the run
+    summary reports the coverage either way.
+    """
+    first_station = first_series = None
+    for station in candidates:
+        series = fetch_temperatures(station, index)
+        present = float(series.notna().mean()) if len(series) else 0.0
+        if first_station is None:
+            first_station, first_series = station, series
+        if present >= MIN_HOURLY_COVERAGE:
+            if station != first_station:
+                logger.info(
+                    "Station %s served only part of the period for zipcode "
+                    "%s; using %s instead.", first_station, zipcode, station)
+
+            return station, series
+
+    logger.warning(
+        "No station within %d km of zipcode %s delivered %.0f%% of the "
+        "analysed hours; using the nearest, %s.",
+        _MAX_STATION_DISTANCE_KM, zipcode, 100 * MIN_HOURLY_COVERAGE,
+        first_station,
+    )
+
+    return first_station, first_series
+
+
 def get_single_thermostat(thermostat_id, zipcode, equipment_type,
                           utc_offset, interval_data_filename,
                           weather_source=None):
@@ -330,16 +376,18 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
     # (e.g. 2016) picks a station on that year's data rather than requiring the
     # current calendar year.
     data_years = sorted(set(hourly_index.year))
-    station = get_closest_station_by_zipcode(zipcode, required_years=data_years)
+    candidates = get_candidate_stations_by_zipcode(
+        zipcode, required_years=data_years)
 
-    if station is None:
+    if not candidates:
         message = "No weather station with sufficient recent data within " \
                 "{} km of ZIP code {}".format(_MAX_STATION_DISTANCE_KM, zipcode)
         raise StationNotFoundError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
     fetch_temperatures = weather_source or get_indexed_temperatures_eeweather
-    temp_out = fetch_temperatures(station, hourly_index_utc - utc_offset)
+    station, temp_out = _load_outdoor_temperatures(
+        candidates, fetch_temperatures, hourly_index_utc - utc_offset, zipcode)
     temp_out.index = hourly_index
 
     # load daily time series values
