@@ -20,6 +20,10 @@ Two things the capture has to respect:
   is asked for a differently-shifted window depending on the thermostat's
   offset. Entries are keyed by the request, not by the station -- merging the
   windows silently shifts the values.
+* Station selection loads candidates in order and keeps the first that
+  delivers, so a thermostat whose nearest station is thin asks for more than
+  one. Every request the walk makes is captured, not just the one it settles
+  on -- otherwise replaying it raises KeyError at the second candidate.
 
 Run it against a warm eeweather cache::
 
