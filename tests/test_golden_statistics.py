@@ -74,15 +74,35 @@ def test_every_statistic_matches_the_golden_reference(computed):
     mismatched = []
     for column in want.columns:
         a, b = want[column], got[column]
-        if pd.api.types.is_numeric_dtype(a) and pd.api.types.is_numeric_dtype(b):
-            x, y = a.to_numpy(dtype=float), b.to_numpy(dtype=float)
-            if not np.allclose(x, y, rtol=RTOL, equal_nan=True):
-                worst = np.nanmax(np.abs(x - y) / np.maximum(np.abs(x), 1e-12))
+        # summary_statistics_to_csv writes the frame transposed, so every
+        # column mixes label strings with numbers and reads back as object.
+        # Comparing those as text compares float *reprs*, which differ in the
+        # last bit across interpreters -- 22.3843965029659 against
+        # 22.384396502965902 is agreement to 1e-16 and a string mismatch.
+        # Coerce per cell and compare numerically wherever both sides are
+        # numbers, falling back to text only for genuinely non-numeric cells.
+        x = pd.to_numeric(a, errors="coerce").to_numpy(dtype=float)
+        y = pd.to_numeric(b, errors="coerce").to_numpy(dtype=float)
+        numeric = ~np.isnan(x) | ~np.isnan(y)
+
+        bad = 0
+        if numeric.any():
+            close = np.isclose(x[numeric], y[numeric], rtol=RTOL, equal_nan=True)
+            bad += int((~close).sum())
+            if bad:
+                worst = np.nanmax(
+                    np.abs(x[numeric] - y[numeric])
+                    / np.maximum(np.abs(x[numeric]), 1e-12))
                 mismatched.append("{} (worst rel {:.3e})".format(column, worst))
-        else:
-            same = (a.isna() & b.isna()) | (a.astype(str) == b.astype(str))
+                continue
+
+        text = ~numeric
+        if text.any():
+            same = a[text].isna() & b[text].isna()
+            same |= a[text].astype(str) == b[text].astype(str)
             if not same.all():
-                mismatched.append("{} ({} rows)".format(column, int((~same).sum())))
+                mismatched.append("{} ({} text rows)".format(
+                    column, int((~same).sum())))
 
     assert not mismatched, "statistics moved in {} column(s): {}".format(
         len(mismatched), mismatched[:8])
