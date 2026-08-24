@@ -45,10 +45,7 @@ def multiple_thermostat_calculate_epa_field_savings_metrics(thermostats):
     # Convert the thermostats iterator to a list
     thermostats_list = list(thermostats)
 
-    # Pool.map preserves input order, so the results already match the order
-    # they were sent in. The previous code used imap and then rebuilt the
-    # order by hand from a dict keyed on thermostat_id, which silently dropped
-    # the second of any two thermostats sharing an id.
+    # Pool.map preserves input order, so results already match; no manual reordering.
     with Pool() as pool:
         results = pool.map(_calc_epa_func, thermostats_list)
 

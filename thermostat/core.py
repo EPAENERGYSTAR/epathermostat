@@ -35,9 +35,7 @@ def _ratio(numerator, denominator, name, thermostat_id):
     return result
 
 
-# A day with more missing hourly temperature readings than this is not a
-# core day. Regulated threshold; was written as a bare 2 in both
-# get_core_heating_days and get_core_cooling_days.
+# Max missing hourly temperatures for a day to still count as a core day.
 MAX_MISSING_HOURS_PER_DAY = 2
 
 RESISTANCE_HEAT_USE_BINS_MIN_TEMP = 0  # Unit is 1 degree F.
@@ -55,21 +53,8 @@ RESISTANCE_HEAT_USE_BIN_SECOND_TUPLE = [(RESISTANCE_HEAT_USE_BIN_SECOND[i], RESI
                                         for i in range(0, len(RESISTANCE_HEAT_USE_BIN_SECOND) - 1)]
 
 
-# --- season descriptors ---------------------------------------------------
-#
-# The heating and cooling arms of calculate_epa_field_savings_metrics were the
-# same ~150-line algorithm written out twice with cool<->heat,
-# baseline10<->baseline90 and cdd<->hdd swapped. Everything that genuinely
-# differs between them is named here: the methods that supply that season's
-# day sets, runtime, demand and baselines, and the eight schema columns whose
-# names carry the season.
-#
-# The duplication had already produced drift. The cooling dict read
-# `percent_savings_baseline_regional` from one local and the heating dict read
-# `savings_baseline_regional` from another -- the same value, by luck, since
-# the first is assigned from the second -- and the nan warning said "Total
-# Runtime Core Cooling Days" on one side and "Total Runtime Core Heating" on
-# the other. Written once, neither can happen again.
+# Season descriptors: everything that differs between the heating and cooling
+# arms, so calculate_epa_field_savings_metrics is written once, not twice.
 
 Season = namedtuple("Season", [
     "name",                        # "cooling" / "heating"
@@ -694,10 +679,7 @@ class Thermostat(object):
         if runtime_temp is None:
             return None
 
-        # Create the bins and group by them. assign() copies: this frame is
-        # the caller's, and it is reused across the rhu1/rhu2 passes, so
-        # writing 'bins' into it leaked the first pass's column into the
-        # second.
+        # assign() copies; the caller's frame is reused across the rhu1/rhu2 passes.
         runtime_temp = runtime_temp.assign(
             bins=pd.cut(runtime_temp['temperature'], bins))
         runtime_rhu = runtime_temp.groupby('bins', observed=False)[
@@ -951,9 +933,7 @@ class Thermostat(object):
 
         daily_index = core_day_set.daily[core_day_set.daily].index
 
-        # leastsq calls this once per iteration, so it is the hot path of the
-        # whole calculation. .clip is the vectorized form of the elementwise
-        # apply(np.maximum) it replaces and gives bit-identical results.
+        # hot path (leastsq calls this per iteration); .clip is bit-identical to np.maximum.
         by_day = core_day_set_deltaT.index.date
 
         def calc_degree_days(tau):
@@ -1486,19 +1466,12 @@ class Thermostat(object):
                     core_heating_day_set),
         }
 
-        # Add RHU Calculations
-        #
-        # The runtime frame does not depend on rhu_type, so it is
-        # built once rather than per iteration.
+        # Add RHU calculations. The runtime frame is rhu_type-independent, so build it once.
         rhu_runtime = self.get_resistance_heat_utilization_runtime(
             core_heating_day_set)
 
-        # Thermostat-level duty cycles. These are sums over the whole runtime
-        # frame and so are also independent of rhu_type; emitting them inside
-        # the loop produced rhu2_*_duty_cycle keys numerically identical to
-        # the rhu1_* ones, which the exporter then dropped silently because
-        # only the rhu1_* names are in COLUMNS. Computed once here under the
-        # names the schema declares.
+        # Thermostat-level duty cycles: rhu_type-independent, emitted once under
+        # the schema names (inside the loop they produced dropped rhu2_* duplicates).
         if rhu_runtime is not None:
             total_minutes = rhu_runtime.total_minutes.sum()
             additional_outputs['rhu1_aux_duty_cycle'] = \

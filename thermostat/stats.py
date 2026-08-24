@@ -17,14 +17,7 @@ from thermostat.schema import (
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
 
-# The five EIA climate zones the Method requires the sample to be split into,
-# each with the display name that appears in the metrics `climate_zone` column
-# and the slug that appears in every statistics label. These two spellings
-# used to be written out separately in four places -- the frame subsetting,
-# the 48 hand-typed dispatch calls, the weighting-table key map, and the list
-# the national weighting re-derived its labels from. A disagreement between
-# any two of them made `stats_dict.get()` return None and silently dropped a
-# zone out of the national average.
+# The five EIA climate zones: display name (as in the metrics column) and label slug.
 ClimateZone = namedtuple("ClimateZone", ["name", "slug"])
 
 CLIMATE_ZONES = (
@@ -41,9 +34,7 @@ REPORTED_ZONES = (NATIONAL,) + CLIMATE_ZONES
 
 SEASONS = ("heating", "cooling")
 
-# Filter names in the order they are reported. advanced_filtering=True reports
-# all four; the default reports the unfiltered population and the fully
-# filtered one.
+# Filter names in report order; advanced reports all four, the default the first and last.
 FILTER_NAMES = (
     "no_filter",
     "tau_filter",
@@ -98,9 +89,7 @@ def climate_zone_weights():
           / 'NationalAverageClimateZoneWeightings.csv').open('rb') as f:
         return _load_climate_zone_weights(f)
 
-# Every filter takes the frame and returns a boolean Series. NaN
-# compares False in both directions, which is the same exclusion the
-# per-row `lower < value < upper` gave.
+# Each filter returns a boolean Series; NaN compares False, as the old per-row bounds did.
 def _column(column_name, target_baseline, target_baseline_method):
     if target_baseline:
         return "{}_{}".format(column_name, target_baseline_method)
@@ -411,11 +400,8 @@ def compute_summary_statistics(
 
         return get_filtered_stats(season_df, filter_, label, season, columns)
 
-    # Zone membership is a substring test because the metrics column carries
-    # the display name. Reading it off the frame rather than looping in Python
-    # also makes a NaN climate_zone -- what you get from re-reading a written
-    # metrics.csv, as opposed to the None the in-memory path produces --
-    # simply not match, instead of raising TypeError.
+    # Substring test on the display name; off the frame a NaN climate_zone simply
+    # fails to match rather than raising TypeError.
     zone_names = metrics_df["climate_zone"].astype("object").where(
         metrics_df["climate_zone"].notna(), "")
     frames = {NATIONAL.slug: metrics_df}
@@ -435,11 +421,7 @@ def compute_summary_statistics(
 
     active_filters = FILTER_NAMES if advanced_filtering else BASIC_FILTER_NAMES
 
-    # This product replaces 96 lines of hand-typed calls -- 48 of them, then
-    # 24 of the same ones retyped in an else: branch -- whose labels were
-    # rebuilt by format string 160 lines further down against separate
-    # hardcoded lists. Filter, then zone, then season is the order the output
-    # rows have always been in.
+    # Filter, then zone, then season -- the order the output rows have always been in.
     stats = list(chain.from_iterable(
         season_stats(frames[zone.slug], filters[filter_name],
                      "{}_{}".format(zone.slug, filter_name), season)

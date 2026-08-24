@@ -15,11 +15,7 @@ from collections import Counter, namedtuple
 import pandas as pd
 
 
-#: One lost thermostat.
-#:
-#: ``stage`` is ``"import"`` or ``"metrics"``. ``reason`` is a stable slug --
-#: safe to group or filter on across releases -- and ``detail`` is the
-#: human-readable message behind it.
+# One lost thermostat. stage is 'import' or 'metrics'; reason is a stable slug.
 DropOut = namedtuple(
     "DropOut", ["thermostat_id", "zipcode", "station", "stage", "reason", "detail"])
 
