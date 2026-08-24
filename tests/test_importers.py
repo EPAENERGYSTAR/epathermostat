@@ -145,21 +145,25 @@ def test_a_station_just_over_the_bar_is_accepted():
     assert station == "NEAR"
 
 
-def test_the_nearest_is_used_when_nothing_clears_the_bar():
-    """A thermostat is never dropped for want of a better option; the run
-    summary reports the coverage either way."""
+def test_the_best_covered_is_used_when_nothing_clears_the_bar():
+    """When no candidate is good enough, the best-covered one is returned --
+    not the nearest. A thermostat is never dropped here for want of a better
+    option; a station too thin to yield core days drops downstream instead."""
     index = _hours()
+    coverage = {"NEAR": 0.50, "MID": 0.88, "FAR": 0.60}
 
     def source(station, idx):
         series = pd.Series(60.0, index=idx, dtype=float)
-        series.iloc[: int(0.5 * len(idx))] = np.nan
+        series.iloc[: int((1 - coverage[station]) * len(idx))] = np.nan
         return series
 
+    # all three are loaded (none clears 0.9), and the 0.88 wins over the
+    # nearer 0.50 -- the old code returned NEAR and discarded MID.
     station, series = _load_outdoor_temperatures(
         ["NEAR", "MID", "FAR"], source, index, "91104")
 
-    assert station == "NEAR"
-    assert series.notna().mean() == pytest.approx(0.5)
+    assert station == "MID"
+    assert series.notna().mean() == pytest.approx(0.88, abs=1e-3)
 
 
 def test_the_walk_stops_at_the_first_success():

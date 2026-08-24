@@ -38,10 +38,7 @@ try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
 except AttributeError:
     NUMBER_OF_CORES = cpu_count()
-# Cap on concurrent weather fetches. eeweather retrieves over HTTPS from
-# NOAA's GHCNh API (and caches locally), so this is a politeness limit on
-# simultaneous requests to NOAA, not the old FTP-connection cap. Tune down if
-# NOAA rate-limits large runs.
+# Politeness cap on concurrent HTTPS fetches to NOAA's GHCNh API. Lower if rate-limited.
 MAX_WEATHER_CONNECTIONS = 8
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_WEATHER_CONNECTIONS)
 
@@ -148,12 +145,8 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     )
 
     if shuffle:
-        # An unseeded shuffle used to make the output row order unreproducible
-        # -- there was no record of what order had been used, so a run could
-        # not be replayed even in principle. Draw a seed when the caller does
-        # not supply one and record it, so someone testing their own data
-        # still has to pass nothing, and the run is still reproducible after
-        # the fact. EPA-supplied seeds pass straight through unchanged.
+        # Draw and record a seed when none is given, so an unseeded run stays
+        # reproducible. EPA-supplied seeds pass through unchanged.
         if seed is None:
             seed = int(np.random.SeedSequence().entropy % (2 ** 32))
             logger.info("No shuffle seed supplied; drew %d.", seed)
@@ -254,9 +247,7 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
             "its interval data could not be read: {}".format(e))
 
     except Exception as e:
-        # Last resort. Log the traceback rather than only the message: this
-        # handler turns any bug -- a typo, a schema mistake -- into a silently
-        # missing output row, so the detail has to go somewhere.
+        # Last resort: log the traceback, since this handler turns any bug into a missing row.
         logger.exception(
             "Unexpected error importing thermostat %s", row.thermostat_id)
         return dropped(
@@ -266,45 +257,40 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
 
 
 def _load_outdoor_temperatures(candidates, fetch_temperatures, index, zipcode):
-    """The first candidate station that actually delivers, and its series.
+    """The best-covered candidate station, and its series.
 
     Whether a station has usable data cannot be known before loading it. Its
     registry span says only (first, last), and USI0000KSVE reports
-    (1973, 2026) while having no rows between 1997 and 2015. So load the
-    nearest, look at what came back, and move on if it is too thin.
+    (1973, 2026) while having no rows between 1997 and 2015 -- a span test
+    picks it and every hour comes back NaN. So load candidates nearest-first,
+    keep the one that delivers the most of the analysed hours, and stop as
+    soon as one is good enough to not bother looking further.
 
-    This is exact where a coverage estimate is not: it measures the series
-    the calculation will actually use, at the same threshold the regulated
-    missing-data rules are written against. Nationally 23 ZCTAs have a
-    nearest station that reported nothing in 2025, and every one recovers on
-    the second candidate.
-
-    Falls back to the nearest station's series when nothing clears the bar,
-    so a thermostat is never dropped for want of a better option -- the run
-    summary reports the coverage either way.
+    There is no separate fallback: the best available station is always what
+    is returned, and the regulated per-day core-day rule remains the sole
+    exclusion gate. A station too thin to yield any core day drops downstream
+    as no_qualifying_core_days (see thermostat.multiple), which is the
+    Method's own exclusion rather than one invented here.
     """
-    first_station = first_series = None
+    best_station = best_series = None
+    best_coverage = -1.0
     for station in candidates:
         series = fetch_temperatures(station, index)
-        present = float(series.notna().mean()) if len(series) else 0.0
-        if first_station is None:
-            first_station, first_series = station, series
-        if present >= MIN_HOURLY_COVERAGE:
-            if station != first_station:
-                logger.info(
-                    "Station %s served only part of the period for zipcode "
-                    "%s; using %s instead.", first_station, zipcode, station)
+        coverage = float(series.notna().mean()) if len(series) else 0.0
+        if coverage > best_coverage:
+            best_station, best_series, best_coverage = station, series, coverage
+        if coverage >= MIN_HOURLY_COVERAGE:
+            break
 
-            return station, series
+    if best_coverage < MIN_HOURLY_COVERAGE:
+        logger.warning(
+            "No station within %d km of zipcode %s delivered %.0f%% of the "
+            "analysed hours; using the best available (%s, %.0f%%).",
+            _MAX_STATION_DISTANCE_KM, zipcode, 100 * MIN_HOURLY_COVERAGE,
+            best_station, 100 * best_coverage,
+        )
 
-    logger.warning(
-        "No station within %d km of zipcode %s delivered %.0f%% of the "
-        "analysed hours; using the nearest, %s.",
-        _MAX_STATION_DISTANCE_KM, zipcode, 100 * MIN_HOURLY_COVERAGE,
-        first_station,
-    )
-
-    return first_station, first_series
+    return best_station, best_series
 
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type,
@@ -371,10 +357,8 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
 
-    # load outdoor temperatures — select a station that has data for the years
-    # this thermostat's interval data actually spans, so a historical run
-    # (e.g. 2016) picks a station on that year's data rather than requiring the
-    # current calendar year.
+    # Select a station on the years this data actually spans, so a historical run
+    # matches its period rather than the current calendar year.
     data_years = sorted(set(hourly_index.year))
     candidates = get_candidate_stations_by_zipcode(
         zipcode, required_years=data_years)

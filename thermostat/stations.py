@@ -25,16 +25,18 @@ def _zipcode_usaf():
 # Maximum distance (km) from ZCTA centroid to assigned station.
 _MAX_STATION_DISTANCE_KM = 500
 
-# Fraction of the analysed hours a station must actually deliver before it
-# is accepted. Measured on the loaded series, not predicted from a summary:
-# the packaged observation inventory lags NOAA by about six months and
-# counts observations rather than hours, so it can only ever be a proxy.
+# Coverage that makes a station good enough to stop looking -- a search
+# short-circuit, not an exclusion gate. The importer keeps the best-covered
+# candidate regardless; the per-day core-day rule is the real gate.
 MIN_HOURLY_COVERAGE = 0.9
 
-# How many candidates to load before giving up and taking the nearest. A
-# fleet run against an unresponsive NOAA must not turn one site into an
-# unbounded search.
-MAX_CANDIDATES_TRIED = 3
+# Bound on candidates loaded, so an unresponsive NOAA can't make one site an
+# unbounded search. A network-cost knob, not a correctness gate: the importer
+# keeps the best of whatever it loads, and the per-day core-day rule backstops
+# a too-thin result. Offline over every US ZCTA, 96% clear the bar on the first
+# candidate and 99.9% within three; five covers the deepest observed with
+# margin (the inventory proxy understates real depth, so headroom is deliberate).
+MAX_CANDIDATES_TRIED = 5
 
 
 def get_candidate_stations_by_zipcode(zipcode, required_years=None):
@@ -47,10 +49,8 @@ def get_candidate_stations_by_zipcode(zipcode, required_years=None):
     between 1997 and 2015, so a span test picks it for a 2011-2014 analysis
     and every hour comes back NaN.
 
-    The caller loads these in order and keeps the first that delivers; see
-    thermostat.importers.get_single_thermostat. Measured over every US ZCTA,
-    23 have a nearest station that reported nothing in 2025, and all 23
-    recover on the second candidate, a median 9 km further away.
+    The caller loads these in order and keeps the best-covered; see
+    thermostat.importers._load_outdoor_temperatures.
 
     Parameters
     ----------
@@ -82,9 +82,7 @@ def get_candidate_stations_by_zipcode(zipcode, required_years=None):
 
         return [fallback] if fallback else []
 
-    # Distance-ranked GHCNh candidates within the cap. Ranking (distance, then
-    # quality) and the distance cap are native to rank_stations now, so the
-    # hand-rolled QUALITY_SORT/re-sort is gone.
+    # Distance-ranked GHCNh candidates within the cap; ranking and cap are native to rank_stations.
     candidates = location.candidates(
         has_sources=("ghcnh",),
         max_distance_meters=_MAX_STATION_DISTANCE_KM * 1000.0,
