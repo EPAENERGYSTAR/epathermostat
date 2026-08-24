@@ -51,12 +51,14 @@ Note that all rows of data are still accounted for, even if there is no data. Al
 Missing Weather Station Data
 ----------------------------
 
-Sometimes a ZIP Code / ZCTA will map to a weather station that doesn't have any data. That error will look like the following in the log file:
+Sometimes a ZIP Code / ZCTA will map to a weather station that doesn't have any data. eeweather reports that as a structured warning, which the thermostat software logs:
 
 .. code-block:: console
 
-   2021-08-09 11:26:44,208 - eeweather.connections - WARNING - Failed RETR /pub/data/noaa/2011/720516-99999-2011.gz:
-   550 /pub/data/noaa/2011/720516-99999-2011.gz: No such file or directory
+   2026-08-09 11:26:44,208 - thermostat.eeweather_wrapper - WARNING - eeweather eeweather.data_not_available for station 720516: Data not available
+   2026-08-09 11:26:44,209 - thermostat.eeweather_wrapper - WARNING - eeweather eeweather.no_data_in_requested_range for station 720516: No data was available within the requested range.
+
+A station may also have data for only part of the requested period, which is reported the same way (``eeweather.data_gap``, ``eeweather.data_starts_late``, ``eeweather.data_truncated``). Hours the station did not report come back as NaN; days with more than two missing hours are excluded from the analysis.
 
 If the thermostat software cannot find data for a particular location to compare against it will throw out the thermostat.
 
