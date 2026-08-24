@@ -75,6 +75,11 @@ Season = namedtuple("Season", [
     "daily_mean_runtime_column",
     "mean_indoor_column",
     "mean_outdoor_column",
+    "opposite_equipment_types",    # types whose runtime disqualifies a core day
+    "opposite_runtime",            # the other season's daily runtime attribute
+    "period_method",               # the windowed method name this season accepts
+    "period_start_month",          # month a windowed period begins (7 heat, 1 cool)
+    "period_pairs_years",          # windowed label pairs consecutive years or not
 ])
 
 
@@ -98,6 +103,11 @@ COOLING_SEASON = Season(
     daily_mean_runtime_column="daily_mean_core_cooling_runtime",
     mean_indoor_column="core_cooling_days_mean_indoor_temperature",
     mean_outdoor_column="core_cooling_days_mean_outdoor_temperature",
+    opposite_equipment_types="HEATING_EQUIPMENT_TYPES",
+    opposite_runtime="heat_runtime",
+    period_method="year_end_to_end",
+    period_start_month=1,
+    period_pairs_years=False,
 )
 
 
@@ -121,6 +131,11 @@ HEATING_SEASON = Season(
     daily_mean_runtime_column="daily_mean_core_heating_runtime",
     mean_indoor_column="core_heating_days_mean_indoor_temperature",
     mean_outdoor_column="core_heating_days_mean_outdoor_temperature",
+    opposite_equipment_types="COOLING_EQUIPMENT_TYPES",
+    opposite_runtime="cool_runtime",
+    period_method="year_mid_to_mid",
+    period_start_month=7,
+    period_pairs_years=True,
 )
 
 
@@ -332,6 +347,60 @@ class Thermostat(object):
 
         return enough(self.temperature_in) & enough(self.temperature_out)
 
+    def _period_windows(self, season, data_start_date, data_end_date):
+        """(label, period_start, period_end) for each windowed core day set."""
+        first = data_start_date.item().year
+        last = data_end_date.item().year
+        if season.period_pairs_years:
+            year_starts = range(first - 1, last + 1)
+        else:
+            year_starts = range(first, last + 1)
+        windows = []
+        for year in year_starts:
+            start = np.datetime64(datetime(year, season.period_start_month, 1))
+            end = np.datetime64(datetime(year + 1, season.period_start_month, 1))
+            if season.period_pairs_years:
+                label = "{}-{}".format(year, year + 1)
+            else:
+                label = "{}".format(year)
+            windows.append((label, start, end))
+        return windows
+
+    def _core_day_sets(self, season, method, min_primary, max_opposite):
+        """Core day sets for one season; the shared body behind
+        get_core_heating_days and get_core_cooling_days."""
+        getattr(self, season.protect)()
+
+        primary = getattr(self, season.runtime)
+        data_start_date = np.datetime64(primary.index[0])
+        data_end_date = np.datetime64(primary.index[-1])
+
+        meets_thresholds = primary >= min_primary
+        if self.equipment_type in getattr(self, season.opposite_equipment_types):
+            meets_thresholds &= getattr(self, season.opposite_runtime) <= max_opposite
+        meets_thresholds &= self._enough_hourly_temperature()
+
+        if method == "entire_dataset":
+            inclusion_daily = pd.Series(meets_thresholds, index=primary.index)
+            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+            return [CoreDaySet(
+                "{}_ALL".format(season.name), inclusion_daily, inclusion_hourly,
+                data_start_date, data_end_date)]
+
+        core_day_sets = []
+        for label, period_start, period_end in self._period_windows(
+                season, data_start_date, data_end_date):
+            start_date = max(period_start, data_start_date).item()
+            end_date = min(period_end, data_end_date).item()
+            in_range = self._get_range_boolean(primary.index, start_date, end_date)
+            inclusion_daily = pd.Series(in_range & meets_thresholds, index=primary.index)
+            if any(inclusion_daily):
+                inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
+                core_day_sets.append(CoreDaySet(
+                    "{}_{}".format(season.name, label), inclusion_daily,
+                    inclusion_hourly, start_date, end_date))
+        return core_day_sets
+
     def get_core_heating_days(self, method="entire_dataset",
             min_minutes_heating=30, max_minutes_cooling=0):
         """ Determine core heating days from data associated with this thermostat
@@ -369,66 +438,10 @@ class Thermostat(object):
             "heating_YYYY-YYYY"
         """
 
-        if method not in ["year_mid_to_mid", "entire_dataset"]:
+        if method not in (HEATING_SEASON.period_method, "entire_dataset"):
             raise NotImplementedError
-
-        self._protect_heating()
-
-        # compute inclusion thresholds
-        meets_heating_thresholds = self.heat_runtime >= min_minutes_heating
-
-        if self.equipment_type in self.COOLING_EQUIPMENT_TYPES:
-            meets_cooling_thresholds = self.cool_runtime <= max_minutes_cooling
-        else:
-            meets_cooling_thresholds = True
-
-        meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
-
-        meets_thresholds &= self._enough_hourly_temperature()
-
-        data_start_date = np.datetime64(self.heat_runtime.index[0])
-        data_end_date = np.datetime64(self.heat_runtime.index[-1])
-
-        if method == "year_mid_to_mid":
-            # find all potential core heating day ranges
-            start_year = data_start_date.item().year - 1
-            end_year = data_end_date.item().year + 1
-            potential_core_day_sets = zip(range(start_year, end_year),
-                                    range(start_year + 1, end_year + 1))
-
-            # for each potential core day set, look for core heating days.
-            core_heating_day_sets = []
-            for start_year_, end_year_ in potential_core_day_sets:
-                core_day_set_start_date = np.datetime64(datetime(start_year_, 7, 1))
-                core_day_set_end_date = np.datetime64(datetime(end_year_, 7, 1))
-                start_date = max(core_day_set_start_date, data_start_date).item()
-                end_date = min(core_day_set_end_date, data_end_date).item()
-                in_range = self._get_range_boolean(self.heat_runtime.index,
-                        start_date, end_date)
-                inclusion_daily = pd.Series(in_range & meets_thresholds,
-                        index=self.heat_runtime.index)
-
-                if any(inclusion_daily):
-                    name = "heating_{}-{}".format(start_year_, end_year_)
-                    inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-                    core_day_set = CoreDaySet(name, inclusion_daily, inclusion_hourly,
-                            start_date, end_date)
-                    core_heating_day_sets.append(core_day_set)
-
-            return core_heating_day_sets
-
-        elif method == "entire_dataset":
-            inclusion_daily = pd.Series(meets_thresholds, index=self.heat_runtime.index)
-            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-            core_heating_day_set = CoreDaySet(
-                "heating_ALL",
-                inclusion_daily,
-                inclusion_hourly,
-                data_start_date,
-                data_end_date)
-            # returned as list for consistency
-            core_heating_day_sets = [core_heating_day_set]
-            return core_heating_day_sets
+        return self._core_day_sets(
+            HEATING_SEASON, method, min_minutes_heating, max_minutes_cooling)
 
     def get_core_cooling_days(self, method="entire_dataset",
             min_minutes_cooling=30, max_minutes_heating=0):
@@ -466,63 +479,10 @@ class Thermostat(object):
             is "year_end_to_end", names of core day sets are of the form
             "cooling_YYYY"
         """
-        if method not in ["year_end_to_end", "entire_dataset"]:
+        if method not in (COOLING_SEASON.period_method, "entire_dataset"):
             raise NotImplementedError
-
-        self._protect_cooling()
-
-        # find all potential core cooling day ranges
-        data_start_date = np.datetime64(self.cool_runtime.index[0])
-        data_end_date = np.datetime64(self.cool_runtime.index[-1])
-
-        # compute inclusion thresholds
-        if self.equipment_type in self.HEATING_EQUIPMENT_TYPES:
-            meets_heating_thresholds = self.heat_runtime <= max_minutes_heating
-        else:
-            meets_heating_thresholds = True
-
-        meets_cooling_thresholds = self.cool_runtime >= min_minutes_cooling
-        meets_thresholds = meets_heating_thresholds & meets_cooling_thresholds
-
-        meets_thresholds &= self._enough_hourly_temperature()
-
-        if method == "year_end_to_end":
-            start_year = data_start_date.item().year
-            end_year = data_end_date.item().year
-            potential_core_day_sets = range(start_year, end_year + 1)
-
-
-            # for each potential core day set, look for cooling days.
-            core_cooling_day_sets = []
-            for year in potential_core_day_sets:
-                core_day_set_start_date = np.datetime64(datetime(year, 1, 1))
-                core_day_set_end_date = np.datetime64(datetime(year + 1, 1, 1))
-                start_date = max(core_day_set_start_date, data_start_date).item()
-                end_date = min(core_day_set_end_date, data_end_date).item()
-                in_range = self._get_range_boolean(self.cool_runtime.index,
-                        start_date, end_date)
-                inclusion_daily = pd.Series(in_range & meets_thresholds,
-                        index=self.cool_runtime.index)
-
-                if any(inclusion_daily):
-                    name = "cooling_{}".format(year)
-                    inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-                    core_day_set = CoreDaySet(name, inclusion_daily, inclusion_hourly,
-                            start_date, end_date)
-                    core_cooling_day_sets.append(core_day_set)
-
-            return core_cooling_day_sets
-        elif method == "entire_dataset":
-            inclusion_daily = pd.Series(meets_thresholds, index=self.cool_runtime.index)
-            inclusion_hourly = self._get_hourly_boolean(inclusion_daily)
-            core_day_set = CoreDaySet(
-                "cooling_ALL",
-                inclusion_daily,
-                inclusion_hourly,
-                data_start_date,
-                data_end_date)
-            core_cooling_day_sets = [core_day_set]
-            return core_cooling_day_sets
+        return self._core_day_sets(
+            COOLING_SEASON, method, min_minutes_cooling, max_minutes_heating)
 
     def _get_range_boolean(self, dt_index, start_date, end_date):
         after_start = dt_index >= start_date
