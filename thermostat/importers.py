@@ -105,7 +105,7 @@ class ImportedThermostats(object):
 
 
 def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
-             quiet=None, weather_source=None):
+             quiet=None, weather_source=None, legacy_return=False):
     """
     Creates Thermostat objects from data stored in CSV files.
 
@@ -130,13 +130,21 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
         Supplying one lets a caller (notably the test suite) run without
         network access. It is dispatched to worker processes, so it must be
         picklable -- a module-level function, not a lambda or closure.
+    legacy_return : boolean
+        Opt-in backward-compatibility switch for a caller that needs the
+        pre-1.8 return shape. When True, return a plain ``iter(results)`` over
+        the loaded thermostats with the dropped records excluded and no
+        ``RunSummary`` attached -- byte-for-byte the object 1.7.x returned.
+        The default (False) returns :class:`ImportedThermostats`, which
+        iterates identically but also carries ``.summary``. Drops are logged
+        either way; this only changes the returned object, not the metrics.
 
     Returns
     -------
-    thermostats : ImportedThermostats
-        Iterator over the imported thermostat.Thermostat objects. Its
-        ``.summary`` attribute carries the run's drop-out accounting; see
-        :mod:`thermostat.run_summary`.
+    thermostats : ImportedThermostats, or iterator when legacy_return=True
+        Iterator over the imported thermostat.Thermostat objects. Unless
+        ``legacy_return`` is set, its ``.summary`` attribute carries the run's
+        drop-out accounting; see :mod:`thermostat.run_summary`.
     """
 
     if quiet:
@@ -192,6 +200,11 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
         for drop_out in summary.drop_outs:
             logger.warning("  %s (%s): %s -- %s", drop_out.thermostat_id,
                            drop_out.zipcode, drop_out.reason, drop_out.detail)
+
+    if legacy_return:
+        # Pre-1.8 shape: a bare iterator of the loaded thermostats, dropped
+        # records excluded, no summary attached. See the legacy_return note.
+        return iter(results)
 
     return ImportedThermostats(results, summary)
 

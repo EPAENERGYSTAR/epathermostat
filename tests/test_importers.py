@@ -76,6 +76,26 @@ def test_from_csv_accepts_a_weather_source():
     assert temp_out.index.equals(thermostats[0].temperature_in.index)
 
 
+def test_legacy_return_gives_the_pre_1_8_shape():
+    """legacy_return=True yields the bare iterator 1.7.x returned, with no
+    summary attached, while the default carries one."""
+    args = (get_data_path("data/metadata_type_1_single.csv"),)
+    kwargs = dict(shuffle=False, weather_source=constant_60F)
+
+    default = from_csv(*args, **kwargs)
+    legacy = from_csv(*args, legacy_return=True, **kwargs)
+
+    # default keeps the drop-out accounting; legacy has no summary at all
+    assert hasattr(default, "summary")
+    assert not hasattr(legacy, "summary")
+
+    # both iterate to the same loaded thermostats
+    legacy_list = list(legacy)
+    assert [t.thermostat_id for t in legacy_list] == \
+        [t.thermostat_id for t in default]
+    assert len(legacy_list) == 1
+
+
 # choosing a station by what it actually delivers
 
 
