@@ -1195,10 +1195,8 @@ class Thermostat(object):
 
         climate_zone_mapping : filename, default: None
 
-            A mapping from climate zone to zipcode. If None is provided, uses
-            default zipcode to climate zone mapping provided in tutorial.
-
-            :download:`default mapping <./resources/Building America Climate Zone to Zipcode Database_Rev2_2016.09.08.csv>`
+            A caller-supplied climate-zone mapping. If None (the default),
+            the zone comes from eeweather's Building America geometry.
 
         Returns
         -------
