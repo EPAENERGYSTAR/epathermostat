@@ -4,7 +4,7 @@
 # merges all four -- a commit, not a branch tip, so requirements.in and
 # requirements.txt cannot silently install different eeweather.
 # TODO: replace with the opendsm/eeweather release once #106-109 ship.
-eeweather @ git+https://github.com/john-zither/check-eeweather.git@2bb3d01f18136c5be175b15dcb09f46b2db87db3
+eeweather @ git+https://github.com/john-zither/eeweather.git@2bb3d01f18136c5be175b15dcb09f46b2db87db3
 numpy>=2,<3
 pandas>=2.2,<3
 scipy>=1.11

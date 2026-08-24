@@ -6,7 +6,7 @@ certifi==2026.7.22
     #   requests
 charset-normalizer==3.5.1
     # via requests
-eeweather @ git+https://github.com/john-zither/check-eeweather.git@2bb3d01f18136c5be175b15dcb09f46b2db87db3
+eeweather @ git+https://github.com/john-zither/eeweather.git@2bb3d01f18136c5be175b15dcb09f46b2db87db3
     # via -r requirements.in
 idna==3.18
     # via requests
