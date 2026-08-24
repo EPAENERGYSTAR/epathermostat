@@ -15,10 +15,20 @@ def _idx(start, periods):
     return pd.date_range(start, periods=periods, freq="h", tz=pytz.UTC)
 
 
-def _station_returning(tempC):
-    """A mock WeatherStation whose load_data returns tempC as the temperature."""
+def _station_returning(tempC, imputed_fraction=0.0):
+    """A mock WeatherStation whose load_data returns tempC as the temperature.
+
+    With ``imputation=True`` the reshaped eeweather returns a companion
+    ``temperature_imputed_fraction`` column (0 = observed, 1 = fabricated);
+    the wrapper reads it to flag heavily-interpolated stations, so the mock
+    frame carries it too. Defaults to fully observed.
+    """
     station = MagicMock()
-    station.load_data.return_value = (pd.DataFrame({"temperature": tempC}), [])
+    df = pd.DataFrame({
+        "temperature": tempC,
+        "temperature_imputed_fraction": pd.Series(imputed_fraction, index=tempC.index),
+    })
+    station.load_data.return_value = (df, [])
     return station
 
 
@@ -70,3 +80,29 @@ def test_hours_absent_from_source_reindex_to_nan():
 
     assert result.iloc[:48].notna().all()
     assert result.iloc[48:].isna().all()
+
+
+def test_heavily_interpolated_station_is_flagged(caplog):
+    tempC = pd.Series(np.linspace(0.0, 20.0, 8760), index=_idx("2024-01-01", 8760))
+    index = _idx("2024-06-01", 24)
+
+    with patch("thermostat.eeweather_wrapper.WeatherStation") as WS:
+        # half the hours fabricated -- well over the 10% warn threshold
+        WS.from_usaf.return_value = _station_returning(
+            tempC, imputed_fraction=[1.0] * 4380 + [0.0] * 4380)
+        with caplog.at_level("WARNING"):
+            get_indexed_temperatures_eeweather("722880", index)
+
+    assert any("gap-interpolated" in r.message for r in caplog.records)
+
+
+def test_a_well_observed_station_is_not_flagged(caplog):
+    tempC = pd.Series(np.linspace(0.0, 20.0, 8760), index=_idx("2024-01-01", 8760))
+    index = _idx("2024-06-01", 24)
+
+    with patch("thermostat.eeweather_wrapper.WeatherStation") as WS:
+        WS.from_usaf.return_value = _station_returning(tempC)  # fully observed
+        with caplog.at_level("WARNING"):
+            get_indexed_temperatures_eeweather("722880", index)
+
+    assert not any("gap-interpolated" in r.message for r in caplog.records)
