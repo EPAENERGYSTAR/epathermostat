@@ -38,6 +38,14 @@ thermostat.schema
     :undoc-members:
     :show-inheritance:
 
+thermostat.run_summary
+----------------------
+
+.. automodule:: thermostat.run_summary
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 thermostat.exceptions
 ---------------------
 

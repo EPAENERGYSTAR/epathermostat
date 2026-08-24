@@ -31,12 +31,8 @@ THERMOSTAT_DUTY_CYCLE_COLUMNS = (
     "rhu1_compressor_duty_cycle",
 )
 
-# rhu1_00F_to_05F_aux_duty_cycle has always sat at the end of the rhu1
-# second-bin-set block rather than with its eleven siblings -- a
-# copy-paste slip that stats.py faithfully reproduces. Column order is
-# part of the CSV contract, so it is preserved here deliberately rather
-# than silently corrected. Drop this when a column-order change is
-# acceptable.
+# rhu1_00F_to_05F_aux_duty_cycle sits at the end of this block, not with its siblings
+# -- a historical slip mirrored in stats.py. Column order is CSV contract, kept as-is.
 _LEGACY_MISPLACED_COLUMN = "rhu1_00F_to_05F_aux_duty_cycle"
 _LEGACY_MISPLACED_AFTER = "rhu1_50F_to_60F"
 

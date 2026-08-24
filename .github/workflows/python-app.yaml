@@ -54,16 +54,19 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest
-      # This 1.8.0 preview migrates the weather layer to the reshaped eeweather
-      # (a single GHCNh source; see thermostat/eeweather_wrapper.py and
-      # thermostat/stations.py). The full regulated suite (test_metrics /
-      # test_core / test_demand / ...) fetches live weather during from_csv from
-      # NOAA's GHCNh access API, so this job hits the network on purpose. The
-      # golden reference metrics were regenerated against GHCNh for 1.8.0.
+      # The suite is offline. Every thermostat fixture used to call from_csv,
+      # which fetched live weather from NOAA during collection -- so a NOAA
+      # outage turned this job red for reasons unrelated to the code, and a
+      # real regression in a regulated value looked exactly the same. The
+      # weather the corpus needs is recorded in tests/data/weather_fixture.npz.xz
+      # (see scripts/build_weather_fixture.py); EEWEATHER_AUTO_UPDATE=0 stops
+      # eeweather refreshing its registry mid-run, which would make station
+      # selection depend on the day the job happened to run.
+      #
       # `-o addopts=""` drops the repo's default -x/--cov flags; coverage is
-      # requested explicitly below so it is actually collected (the bare
-      # -o addopts="" used to switch it off entirely). Slow ZCTA-coverage tests
-      # stay opt-in (no --runslow).
+      # requested explicitly so it is actually collected.
+      env:
+        EEWEATHER_AUTO_UPDATE: "0"
       run: |
         python -m pytest tests/ -o addopts="" -v \
           --cov=thermostat --cov-report=term-missing --cov-report=xml

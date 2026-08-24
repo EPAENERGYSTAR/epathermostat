@@ -18,3 +18,11 @@ class StationNotFoundError(ThermostatImportError):
 
 class InvalidIntervalDataError(ThermostatImportError):
     """The interval data file is missing, misshapen, or has bad dates."""
+
+
+class InvalidUTCOffsetError(ThermostatImportError, TypeError):
+    """The metadata row's utc_offset could not be parsed.
+
+    Also a TypeError, which is what normalize_utc_offset raised before this
+    type existed and what callers outside the import loop still catch.
+    """

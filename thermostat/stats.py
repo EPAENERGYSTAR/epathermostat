@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from itertools import chain
 from warnings import warn
-from functools import reduce
+from functools import lru_cache, reduce
 from importlib.resources import files
 import logging
 
@@ -16,6 +16,32 @@ from thermostat.schema import (
 )
 
 QUANTILE = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 98, 99]
+
+# The five EIA climate zones: display name (as in the metrics column) and label slug.
+ClimateZone = namedtuple("ClimateZone", ["name", "slug"])
+
+CLIMATE_ZONES = (
+    ClimateZone("Very-Cold/Cold", "very-cold_cold"),
+    ClimateZone("Mixed-Humid", "mixed-humid"),
+    ClimateZone("Mixed-Dry/Hot-Dry", "mixed-dry_hot-dry"),
+    ClimateZone("Hot-Humid", "hot-humid"),
+    ClimateZone("Marine", "marine"),
+)
+
+# The unsegmented frame is reported alongside the zones under the slug "all".
+NATIONAL = ClimateZone(None, "all")
+REPORTED_ZONES = (NATIONAL,) + CLIMATE_ZONES
+
+SEASONS = ("heating", "cooling")
+
+# Filter names in report order; advanced reports all four, the default the first and last.
+FILTER_NAMES = (
+    "no_filter",
+    "tau_filter",
+    "tau_cvrmse_filter",
+    "tau_cvrmse_savings_p01_filter",
+)
+BASIC_FILTER_NAMES = ("no_filter", "tau_cvrmse_savings_p01_filter")
 TOP_ONLY_PERCENTILE_FILTER = .05  # Filters top 5 percent for RHU2 calculation
 # regulated filter thresholds, previously inline literals
 TAU_MINIMUM = 0
@@ -27,6 +53,154 @@ UNFILTERED_PERCENTILE = 1 - TOP_ONLY_PERCENTILE_FILTER
 logger = logging.getLogger('epathermostat')
 
 
+
+
+# 1.96 standard errors is the two-sided 95% normal interval the Program
+# Requirements report against. It appeared as a bare literal eight times.
+Z_95 = 1.96
+
+# The national weighting retyped QUANTILE as strings here; generate it so the
+# two cannot drift.
+NATIONAL_WEIGHTED_STATISTICS = ["mean"] + [
+    "q{}".format(quantile) for quantile in QUANTILE]
+
+
+def _load_climate_zone_weights(filename_or_buffer):
+    climate_zone_keys = {zone.name: zone.slug for zone in CLIMATE_ZONES}
+    df = pd.read_csv(
+        filename_or_buffer,
+        usecols=["climate_zone", "heating_weight", "cooling_weight"],
+    ).set_index("climate_zone")
+
+    heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].items()}
+    cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].items()}
+
+    return heating_weights, cooling_weights
+
+@lru_cache(maxsize=1)
+def climate_zone_weights():
+    """The packaged national weighting table, loaded once per process.
+
+    Returns (heating_weights, cooling_weights), each keyed on the zone slug
+    and **in the file's row order** -- the weighted sums iterate these dicts,
+    so reordering them would change the floating-point result.
+    """
+    with (files('thermostat.resources')
+          / 'NationalAverageClimateZoneWeightings.csv').open('rb') as f:
+        return _load_climate_zone_weights(f)
+
+# Each filter returns a boolean Series; NaN compares False, as the old per-row bounds did.
+def _column(column_name, target_baseline, target_baseline_method):
+    if target_baseline:
+        return "{}_{}".format(column_name, target_baseline_method)
+
+    return column_name
+
+def _identity_filter(df):
+    return pd.Series(True, index=df.index)
+
+def _range_filter(column_name, lower_bound=-np.inf, upper_bound=np.inf,
+                  target_baseline=False, target_baseline_method=None):
+    def _filter(df):
+        column = df[_column(column_name, target_baseline, target_baseline_method)]
+
+        return (column > lower_bound) & (column < upper_bound)
+
+    return _filter
+
+def _percentile_range_filter(column_name, quantile=0.0, target_baseline=False,
+                             target_baseline_method=None):
+    """Bounds from the quantiles of the frame being filtered.
+
+    The bounds are a property of the whole frame, so they are computed
+    once here rather than once per row as they were before.
+    """
+    def _filter(df):
+        values = df[_column(column_name, target_baseline, target_baseline_method)].dropna()
+        lower_bound = values.quantile(0.0 + quantile)
+        upper_bound = values.quantile(1.0 - quantile)
+
+        return _range_filter(
+            column_name, lower_bound, upper_bound, target_baseline,
+            target_baseline_method
+        )(df)
+
+    return _filter
+
+def _compute_national_weightings(stats_by_climate_zone, keys, weights):
+    def _national_weight(key):
+        results = []
+        for cz, weight in weights.items():
+            stat_cz = stats_by_climate_zone.get(cz)
+            if stat_cz is None:
+                value = None
+            else:
+                value = stat_cz.get(key)
+            if pd.notnull(weight) and pd.notnull(value):
+                results.append((weight, value))
+        if len(results) == 0:
+            return None
+        else:
+            weighted_sum = sum([weight * value for weight, value in results])
+            sum_of_weights = sum([weight for weight, _ in results])
+            return weighted_sum / sum_of_weights
+
+    stats = NATIONAL_WEIGHTED_STATISTICS
+
+    key_stats = [
+        "{}_{}".format(key, stat)
+        for key in keys for stat in stats
+    ]
+
+    return {
+        "{}_{}".format(key_stat, "national_weighted_mean"): _national_weight(key_stat)
+        for key_stat in key_stats
+    }
+
+def _compute_national_weighting_lower_and_upper_bounds(
+        stats_by_climate_zone, keys, weights):
+
+    def _compute_bounds(key):
+
+        # compute sem savings
+        means, sems, weights_ = [], [], []
+        for cz, weight in weights.items():
+            stat_cz = stats_by_climate_zone.get(cz)
+            if stat_cz is None:
+                mean, sem = None, None
+            else:
+                mean = stat_cz.get("{}_mean".format(key), None)
+                sem = stat_cz.get("{}_sem".format(key), None)
+
+            if pd.notnull(weight) and pd.notnull(mean) and pd.notnull(sem):
+                weights_.append(weight)
+                means.append(mean)
+                sems.append(sem)
+
+        if len(weights_) == 0:
+            return {}
+        else:
+            weighted_sum = sum([
+                weight * mean for weight, mean in zip(weights_, means)
+            ])
+            weighted_mean = weighted_sum / sum(weights_)  # renormalize
+
+            weighted_sem = sum([
+                (weight*sem) ** 2 for weight, sem in zip(weights_, sems)
+            ]) ** 0.5
+
+            lower_bound = weighted_mean - (Z_95 * weighted_sem)
+            upper_bound = weighted_mean + (Z_95 * weighted_sem)
+
+            return {
+                "{}_lower_bound_95_perc_conf_national_weighted_mean".format(key): lower_bound,
+                "{}_upper_bound_95_perc_conf_national_weighted_mean".format(key): upper_bound
+            }
+
+    items = {}
+    for key in keys:
+        items.update(_compute_bounds(key))
+    return items
 
 
 def combine_output_dataframes(dfs):
@@ -200,50 +374,15 @@ def compute_summary_statistics(
         )
         raise ValueError(message)
 
-    # Every filter takes the frame and returns a boolean Series. NaN
-    # compares False in both directions, which is the same exclusion the
-    # per-row `lower < value < upper` gave.
-    def _column(column_name, target_baseline):
-        if target_baseline:
-            return "{}_{}".format(column_name, target_baseline_method)
-
-        return column_name
-
-    def _identity_filter(df):
-        return pd.Series(True, index=df.index)
-
-    def _range_filter(column_name, lower_bound=-np.inf, upper_bound=np.inf,
-                      target_baseline=False):
-        def _filter(df):
-            column = df[_column(column_name, target_baseline)]
-
-            return (column > lower_bound) & (column < upper_bound)
-
-        return _filter
-
-    def _percentile_range_filter(column_name, quantile=0.0, target_baseline=False):
-        """Bounds from the quantiles of the frame being filtered.
-
-        The bounds are a property of the whole frame, so they are computed
-        once here rather than once per row as they were before.
-        """
-        def _filter(df):
-            values = df[_column(column_name, target_baseline)].dropna()
-            lower_bound = values.quantile(0.0 + quantile)
-            upper_bound = values.quantile(1.0 - quantile)
-
-            return _range_filter(
-                column_name, lower_bound, upper_bound, target_baseline
-            )(df)
-
-        return _filter
+    heating_weights, cooling_weights = climate_zone_weights()
 
     _tau_filter = _range_filter("tau", TAU_MINIMUM, TAU_MAXIMUM)
     _cvrmse_filter = _range_filter(
         "cv_root_mean_sq_err", upper_bound=CVRMSE_MAXIMUM
     )
     _savings_filter_p01 = _percentile_range_filter(
-        "percent_savings", SAVINGS_PERCENTILE_FILTER, target_baseline=True
+        "percent_savings", SAVINGS_PERCENTILE_FILTER, target_baseline=True,
+        target_baseline_method=target_baseline_method
     )
 
     def _combine_filters(filters):
@@ -253,291 +392,65 @@ def compute_summary_statistics(
 
         return _new_filter
 
-    def heating_stats(df, filter_, label):
-        heating_df = df[df["heating_or_cooling"].str.contains("heating")]
-        return get_filtered_stats(
-            heating_df, filter_, label,
-            "heating", REAL_OR_INTEGER_VALUED_COLUMNS_HEATING)
+    def season_stats(df, filter_, label, season):
+        """Summary statistics for one (frame, filter, season) combination."""
+        season_df = df[df["heating_or_cooling"].str.contains(season)]
+        columns = (REAL_OR_INTEGER_VALUED_COLUMNS_HEATING if season == "heating"
+                   else REAL_OR_INTEGER_VALUED_COLUMNS_COOLING)
 
-    def cooling_stats(df, filter_, label):
-        cooling_df = df[df["heating_or_cooling"].str.contains("cooling")]
-        return get_filtered_stats(
-            cooling_df, filter_, label,
-            "cooling", REAL_OR_INTEGER_VALUED_COLUMNS_COOLING)
+        return get_filtered_stats(season_df, filter_, label, season, columns)
 
-    very_cold_cold_df = metrics_df[[
-        (cz is not None) and "Very-Cold/Cold" in cz
-        for cz in metrics_df["climate_zone"]
-    ]]
-    mixed_humid_df = metrics_df[[
-        (cz is not None) and "Mixed-Humid" in cz
-        for cz in metrics_df["climate_zone"]
-    ]]
-    mixed_dry_hot_dry_df = metrics_df[[
-        (cz is not None) and "Mixed-Dry/Hot-Dry" in cz
-        for cz in metrics_df["climate_zone"]
-    ]]
-    hot_humid_df = metrics_df[[
-        (cz is not None) and "Hot-Humid" in cz
-        for cz in metrics_df["climate_zone"]
-    ]]
-    marine_df = metrics_df[[
-        (cz is not None) and "Marine" in cz
-        for cz in metrics_df["climate_zone"]
-    ]]
+    # Substring test on the display name; off the frame a NaN climate_zone simply
+    # fails to match rather than raising TypeError.
+    zone_names = metrics_df["climate_zone"].astype("object").where(
+        metrics_df["climate_zone"].notna(), "")
+    frames = {NATIONAL.slug: metrics_df}
+    for zone in CLIMATE_ZONES:
+        frames[zone.slug] = metrics_df[
+            zone_names.str.contains(zone.name, regex=False)]
 
     # The heating and cooling variants of each filter were identical: the
     # season argument threaded through _range_filter was never read.
-    filter_0 = _identity_filter
-    filter_1 = _combine_filters([_tau_filter])
-    filter_2 = _combine_filters([_tau_filter, _cvrmse_filter])
-    filter_3 = _combine_filters([_tau_filter, _cvrmse_filter, _savings_filter_p01])
-    filter_1_heating = filter_1_cooling = filter_1
-    filter_2_heating = filter_2_cooling = filter_2
-    filter_3_heating = filter_3_cooling = filter_3
+    filters = {
+        "no_filter": _identity_filter,
+        "tau_filter": _combine_filters([_tau_filter]),
+        "tau_cvrmse_filter": _combine_filters([_tau_filter, _cvrmse_filter]),
+        "tau_cvrmse_savings_p01_filter": _combine_filters(
+            [_tau_filter, _cvrmse_filter, _savings_filter_p01]),
+    }
 
-    if advanced_filtering:
-        stats = list(chain.from_iterable([
-            heating_stats(metrics_df, filter_0, "all_no_filter"),
-            cooling_stats(metrics_df, filter_0, "all_no_filter"),
-            heating_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
-            cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
-            heating_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
-            cooling_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
-            heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
-            cooling_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
-            heating_stats(hot_humid_df, filter_0, "hot-humid_no_filter"),
-            cooling_stats(hot_humid_df, filter_0, "hot-humid_no_filter"),
-            heating_stats(marine_df, filter_0, "marine_no_filter"),
-            cooling_stats(marine_df, filter_0, "marine_no_filter"),
+    active_filters = FILTER_NAMES if advanced_filtering else BASIC_FILTER_NAMES
 
-            heating_stats(metrics_df, filter_1_heating, "all_tau_filter"),
-            cooling_stats(metrics_df, filter_1_cooling, "all_tau_filter"),
-            heating_stats(very_cold_cold_df, filter_1_heating, "very-cold_cold_tau_filter"),
-            cooling_stats(very_cold_cold_df, filter_1_cooling, "very-cold_cold_tau_filter"),
-            heating_stats(mixed_humid_df, filter_1_heating, "mixed-humid_tau_filter"),
-            cooling_stats(mixed_humid_df, filter_1_cooling, "mixed-humid_tau_filter"),
-            heating_stats(mixed_dry_hot_dry_df, filter_1_heating, "mixed-dry_hot-dry_tau_filter"),
-            cooling_stats(mixed_dry_hot_dry_df, filter_1_cooling, "mixed-dry_hot-dry_tau_filter"),
-            heating_stats(hot_humid_df, filter_1_heating, "hot-humid_tau_filter"),
-            cooling_stats(hot_humid_df, filter_1_cooling, "hot-humid_tau_filter"),
-            heating_stats(marine_df, filter_1_heating, "marine_tau_filter"),
-            cooling_stats(marine_df, filter_1_cooling, "marine_tau_filter"),
-
-            heating_stats(metrics_df, filter_2_heating, "all_tau_cvrmse_filter"),
-            cooling_stats(metrics_df, filter_2_cooling, "all_tau_cvrmse_filter"),
-            heating_stats(very_cold_cold_df, filter_2_heating, "very-cold_cold_tau_cvrmse_filter"),
-            cooling_stats(very_cold_cold_df, filter_2_cooling, "very-cold_cold_tau_cvrmse_filter"),
-            heating_stats(mixed_humid_df, filter_2_heating, "mixed-humid_tau_cvrmse_filter"),
-            cooling_stats(mixed_humid_df, filter_2_cooling, "mixed-humid_tau_cvrmse_filter"),
-            heating_stats(mixed_dry_hot_dry_df, filter_2_heating, "mixed-dry_hot-dry_tau_cvrmse_filter"),
-            cooling_stats(mixed_dry_hot_dry_df, filter_2_cooling, "mixed-dry_hot-dry_tau_cvrmse_filter"),
-            heating_stats(hot_humid_df, filter_2_heating, "hot-humid_tau_cvrmse_filter"),
-            cooling_stats(hot_humid_df, filter_2_cooling, "hot-humid_tau_cvrmse_filter"),
-            heating_stats(marine_df, filter_2_heating, "marine_tau_cvrmse_filter"),
-            cooling_stats(marine_df, filter_2_cooling, "marine_tau_cvrmse_filter"),
-
-            heating_stats(metrics_df, filter_3_heating, "all_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(metrics_df, filter_3_cooling, "all_tau_cvrmse_savings_p01_filter"),
-            heating_stats(very_cold_cold_df, filter_3_heating, "very-cold_cold_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(very_cold_cold_df, filter_3_cooling, "very-cold_cold_tau_cvrmse_savings_p01_filter"),
-            heating_stats(mixed_humid_df, filter_3_heating, "mixed-humid_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(mixed_humid_df, filter_3_cooling, "mixed-humid_tau_cvrmse_savings_p01_filter"),
-            heating_stats(mixed_dry_hot_dry_df, filter_3_heating, "mixed-dry_hot-dry_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(mixed_dry_hot_dry_df, filter_3_cooling, "mixed-dry_hot-dry_tau_cvrmse_savings_p01_filter"),
-            heating_stats(hot_humid_df, filter_3_heating, "hot-humid_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(hot_humid_df, filter_3_cooling, "hot-humid_tau_cvrmse_savings_p01_filter"),
-            heating_stats(marine_df, filter_3_heating, "marine_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(marine_df, filter_3_cooling, "marine_tau_cvrmse_savings_p01_filter"),
-        ]))
-    else:
-        stats = list(chain.from_iterable([
-            heating_stats(metrics_df, filter_0, "all_no_filter"),
-            cooling_stats(metrics_df, filter_0, "all_no_filter"),
-            heating_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
-            cooling_stats(very_cold_cold_df, filter_0, "very-cold_cold_no_filter"),
-            heating_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
-            cooling_stats(mixed_humid_df, filter_0, "mixed-humid_no_filter"),
-            heating_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
-            cooling_stats(mixed_dry_hot_dry_df, filter_0, "mixed-dry_hot-dry_no_filter"),
-            heating_stats(hot_humid_df, filter_0, "hot-humid_no_filter"),
-            cooling_stats(hot_humid_df, filter_0, "hot-humid_no_filter"),
-            heating_stats(marine_df, filter_0, "marine_no_filter"),
-            cooling_stats(marine_df, filter_0, "marine_no_filter"),
-
-            heating_stats(metrics_df, filter_3_heating, "all_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(metrics_df, filter_3_cooling, "all_tau_cvrmse_savings_p01_filter"),
-            heating_stats(very_cold_cold_df, filter_3_heating, "very-cold_cold_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(very_cold_cold_df, filter_3_cooling, "very-cold_cold_tau_cvrmse_savings_p01_filter"),
-            heating_stats(mixed_humid_df, filter_3_heating, "mixed-humid_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(mixed_humid_df, filter_3_cooling, "mixed-humid_tau_cvrmse_savings_p01_filter"),
-            heating_stats(mixed_dry_hot_dry_df, filter_3_heating, "mixed-dry_hot-dry_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(mixed_dry_hot_dry_df, filter_3_cooling, "mixed-dry_hot-dry_tau_cvrmse_savings_p01_filter"),
-            heating_stats(hot_humid_df, filter_3_heating, "hot-humid_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(hot_humid_df, filter_3_cooling, "hot-humid_tau_cvrmse_savings_p01_filter"),
-            heating_stats(marine_df, filter_3_heating, "marine_tau_cvrmse_savings_p01_filter"),
-            cooling_stats(marine_df, filter_3_cooling, "marine_tau_cvrmse_savings_p01_filter"),
-        ]))
+    # Filter, then zone, then season -- the order the output rows have always been in.
+    stats = list(chain.from_iterable(
+        season_stats(frames[zone.slug], filters[filter_name],
+                     "{}_{}".format(zone.slug, filter_name), season)
+        for filter_name in active_filters
+        for zone in REPORTED_ZONES
+        for season in SEASONS
+    ))
 
     stats_dict = {stat["label"]: stat for stat in stats}
 
-    def _load_climate_zone_weights(filename_or_buffer):
-        climate_zone_keys = {
-            "Very-Cold/Cold": "very-cold_cold",
-            "Mixed-Humid": "mixed-humid",
-            "Mixed-Dry/Hot-Dry": "mixed-dry_hot-dry",
-            "Hot-Humid": "hot-humid",
-            "Marine": "marine",
-        }
-        df = pd.read_csv(
-            filename_or_buffer,
-            usecols=["climate_zone", "heating_weight", "cooling_weight"],
-        ).set_index("climate_zone")
-
-        heating_weights = {climate_zone_keys[cz]: weight for cz, weight in df["heating_weight"].items()}
-        cooling_weights = {climate_zone_keys[cz]: weight for cz, weight in df["cooling_weight"].items()}
-
-        return heating_weights, cooling_weights
-
-    with (files('thermostat.resources') / 'NationalAverageClimateZoneWeightings.csv').open('rb') as f:
-        heating_weights, cooling_weights = _load_climate_zone_weights(f)
-
-    def _compute_national_weightings(stats_by_climate_zone, keys, weights):
-        def _national_weight(key):
-            results = []
-            for cz, weight in weights.items():
-                stat_cz = stats_by_climate_zone.get(cz)
-                if stat_cz is None:
-                    value = None
-                else:
-                    value = stat_cz.get(key)
-                if pd.notnull(weight) and pd.notnull(value):
-                    results.append((weight, value))
-            if len(results) == 0:
-                return None
-            else:
-                weighted_sum = sum([weight * value for weight, value in results])
-                sum_of_weights = sum([weight for weight, _ in results])
-                return weighted_sum / sum_of_weights
-
-        stats = [
-            "mean",
-            "q1",
-            "q2.5",
-            "q5",
-            "q10",
-            "q15",
-            "q20",
-            "q25",
-            "q30",
-            "q35",
-            "q40",
-            "q45",
-            "q50",
-            "q55",
-            "q60",
-            "q65",
-            "q70",
-            "q75",
-            "q80",
-            "q85",
-            "q90",
-            "q95",
-            "q98",
-            "q99",
-        ]
-
-        key_stats = [
-            "{}_{}".format(key, stat)
-            for key in keys for stat in stats
-        ]
-
-        return {
-            "{}_{}".format(key_stat, "national_weighted_mean"): _national_weight(key_stat)
-            for key_stat in key_stats
-        }
-
-    def _compute_national_weighting_lower_and_upper_bounds(
-            stats_by_climate_zone, keys, weights):
-
-        def _compute_bounds(key):
-
-            # compute sem savings
-            means, sems, weights_ = [], [], []
-            for cz, weight in weights.items():
-                stat_cz = stats_by_climate_zone.get(cz)
-                if stat_cz is None:
-                    mean, sem = None, None
-                else:
-                    mean = stat_cz.get("{}_mean".format(key), None)
-                    sem = stat_cz.get("{}_sem".format(key), None)
-
-                if pd.notnull(weight) and pd.notnull(mean) and pd.notnull(sem):
-                    weights_.append(weight)
-                    means.append(mean)
-                    sems.append(sem)
-
-            if len(weights_) == 0:
-                return {}
-            else:
-                weighted_sum = sum([
-                    weight * mean for weight, mean in zip(weights_, means)
-                ])
-                weighted_mean = weighted_sum / sum(weights_)  # renormalize
-
-                weighted_sem = sum([
-                    (weight*sem) ** 2 for weight, sem in zip(weights_, sems)
-                ]) ** 0.5
-
-                lower_bound = weighted_mean - (1.96 * weighted_sem)
-                upper_bound = weighted_mean + (1.96 * weighted_sem)
-
-                return {
-                    "{}_lower_bound_95_perc_conf_national_weighted_mean".format(key): lower_bound,
-                    "{}_upper_bound_95_perc_conf_national_weighted_mean".format(key): upper_bound
-                }
-
-        items = {}
-        for key in keys:
-            items.update(_compute_bounds(key))
-        return items
-
     national_weighting_stats = []
 
-    if advanced_filtering:
-        filters = [
-            "no_filter",
-            "tau_filter",
-            "tau_cvrmse_filter",
-            "tau_cvrmse_savings_p01_filter",
-        ]
-    else:
-        filters = [
-            "no_filter",
-            "tau_cvrmse_savings_p01_filter",
-        ]
-
-    climate_zones = [
-        "mixed-humid",
-        "mixed-dry_hot-dry",
-        "marine",
-        "hot-humid",
-        "very-cold_cold"
-    ]
     methods = [
         "baseline_percentile",
         "baseline_regional",
     ]
-    for season_type in ["heating", "cooling"]:
+    for season_type in SEASONS:
         if season_type == "heating":
             weights = heating_weights
         else:
             weights = cooling_weights
 
-        for filter_ in filters:
+        for filter_ in active_filters:
+            # The same slug that built the label above, so the two can no
+            # longer drift apart and quietly drop a zone from the average.
             stats_by_climate_zone = {
-                cz: stats_dict.get("{}_{}_{}".format(cz, filter_, season_type))
-                for cz in climate_zones
+                zone.slug: stats_dict.get(
+                    "{}_{}_{}".format(zone.slug, filter_, season_type))
+                for zone in CLIMATE_ZONES
             }
 
             keys = ["percent_savings_{}".format(method) for method in methods]

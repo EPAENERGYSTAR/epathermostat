@@ -1,13 +1,29 @@
 from thermostat.core import Thermostat
 
+import numpy as np
 import pandas as pd
-from thermostat.stations import get_closest_station_by_zipcode, _MAX_STATION_DISTANCE_KM
+from thermostat.stations import (
+    get_candidate_stations_by_zipcode,
+    MIN_HOURLY_COVERAGE,
+    _MAX_STATION_DISTANCE_KM,
+)
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
 from eeweather.exceptions import DataNotAvailableError
 from thermostat.exceptions import (
     StationNotFoundError,
     InvalidIntervalDataError,
+    InvalidUTCOffsetError,
+)
+from thermostat.run_summary import (
+    DropOut,
+    RunSummary,
+    INVALID_INTERVAL_DATA,
+    INVALID_UTC_OFFSET,
+    STATION_NOT_FOUND,
+    UNEXPECTED_ERROR,
+    UNSUPPORTED_EQUIPMENT_TYPE,
+    WEATHER_DATA_NOT_AVAILABLE,
 )
 
 import warnings
@@ -22,10 +38,7 @@ try:
     NUMBER_OF_CORES = len(os.sched_getaffinity(0))
 except AttributeError:
     NUMBER_OF_CORES = cpu_count()
-# Cap on concurrent weather fetches. eeweather retrieves over HTTPS from
-# NOAA's GHCNh API (and caches locally), so this is a politeness limit on
-# simultaneous requests to NOAA, not the old FTP-connection cap. Tune down if
-# NOAA rate-limits large runs.
+# Politeness cap on concurrent HTTPS fetches to NOAA's GHCNh API. Lower if rate-limited.
 MAX_WEATHER_CONNECTIONS = 8
 AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_WEATHER_CONNECTIONS)
 
@@ -55,9 +68,30 @@ def normalize_utc_offset(utc_offset):
         return delta
 
     except (ValueError, TypeError, AttributeError) as e:
-        raise TypeError("Invalid UTC offset: {} ({})".format(
+        raise InvalidUTCOffsetError("Invalid UTC offset: {} ({})".format(
            utc_offset,
            e))
+
+
+class ImportedThermostats(object):
+    """ The thermostats a run loaded, plus the account of the ones it lost.
+
+    Iterating over this yields Thermostat objects exactly as the plain
+    iterator that :func:`from_csv` used to return did, so existing callers
+    are unaffected. ``.summary`` is the addition: a
+    :class:`thermostat.run_summary.RunSummary` recording how many records
+    were asked for and why each missing one is missing.
+    """
+
+    def __init__(self, thermostats, summary):
+        self.summary = summary
+        self._iterator = iter(thermostats)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._iterator)
 
 
 def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
@@ -74,9 +108,10 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     shuffle: boolean
         Shuffle the thermostats into a random order.
     seed : int, optional
-        Seed for the shuffle. Without one the order -- and therefore the
-        order of rows in the output -- varies between runs on identical
-        input. Pass a seed when reproducibility matters.
+        Seed for the shuffle. When shuffling without one, a seed is drawn and
+        recorded on the returned run summary, so the row order of any run can
+        be reproduced after the fact by passing that seed back. Pass the
+        EPA-supplied seed for a submission run.
     weather_source : callable, optional
         Override for the outdoor temperature lookup, called as
         ``weather_source(station, index)`` and returning a pandas Series of
@@ -88,8 +123,10 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
 
     Returns
     -------
-    thermostats : iterator over thermostat.Thermostat objects
-        Thermostats imported from the given CSV input files.
+    thermostats : ImportedThermostats
+        Iterator over the imported thermostat.Thermostat objects. Its
+        ``.summary`` attribute carries the run's drop-out accounting; see
+        :mod:`thermostat.run_summary`.
     """
 
     if quiet:
@@ -108,7 +145,12 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     )
 
     if shuffle:
-        logger.info("Randomizing thermostat order.")
+        # Draw and record a seed when none is given, so an unseeded run stays
+        # reproducible. EPA-supplied seeds pass through unchanged.
+        if seed is None:
+            seed = int(np.random.SeedSequence().entropy % (2 ** 32))
+            logger.info("No shuffle seed supplied; drew %d.", seed)
+        logger.info("Randomizing thermostat order with seed %d.", seed)
         metadata = metadata.sample(frac=1, random_state=seed).reset_index(drop=True)
 
     p = Pool(AVAILABLE_PROCESSES)
@@ -121,40 +163,52 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     p.close()
     p.join()
 
-    # Bad thermostats return None so remove those.
-    results = [x for x in result_list if x is not None]
+    # A record that could not be imported comes back as a DropOut naming the
+    # reason, rather than as a bare None that says only "something happened".
+    results = []
+    summary = RunSummary(requested=len(metadata), shuffle=shuffle, seed=seed)
+    for item in result_list:
+        if isinstance(item, DropOut):
+            summary.extend([item])
+        else:
+            results.append(item)
 
-    # Check for thermostats that were not loaded and log them
-    metadata_thermostat_ids = set(metadata.thermostat_id)
-    loaded_thermostat_ids = set([x.thermostat_id for x in results])
-    missing_thermostats = metadata_thermostat_ids.difference(loaded_thermostat_ids)
-    missing_thermostats_num = len(missing_thermostats)
-    if missing_thermostats_num > 0:
-        logger.warning("Unable to load %d thermostat records because of "
-                       "errors. Please check the logs for the following "
-                       "thermostats:", missing_thermostats_num)
-        for thermostat in missing_thermostats:
-            logger.warning(thermostat)
+    if summary.dropped:
+        logger.warning(
+            "Unable to load %d of %d thermostat records:\n%s",
+            summary.dropped, summary.requested, summary.describe())
+        for drop_out in summary.drop_outs:
+            logger.warning("  %s (%s): %s -- %s", drop_out.thermostat_id,
+                           drop_out.zipcode, drop_out.reason, drop_out.detail)
 
-    # Convert this to an iterator to maintain compatibility
-    return iter(results)
+    return ImportedThermostats(results, summary)
 
 
 def multiprocess_func(metadata, metadata_filename, verbose=False,
                       weather_source=None):
     """ This function is a partial function for multiproccessing and shares the same arguments as from_csv.
-    It is not intended to be called directly."""
+    It is not intended to be called directly.
+
+    Returns either a Thermostat or, when the record cannot be imported, a
+    thermostat.run_summary.DropOut naming the reason."""
     i, row = metadata
     logger.info("Importing thermostat {}".format(row.thermostat_id))
     if verbose and logger.getEffectiveLevel() > logging.INFO:
         print("Importing thermostat {}".format(row.thermostat_id))
 
+    def dropped(reason, detail):
+        warnings.warn("Skipping import of thermostat (id={}): {}".format(
+            row.thermostat_id, detail))
+        return DropOut(
+            thermostat_id=row.thermostat_id, zipcode=row.zipcode,
+            station=None, stage="import", reason=reason, detail=detail)
+
     # make sure this thermostat type is supported.
     if row.equipment_type not in [1, 2, 3, 4, 5]:
-        warnings.warn(
-            "Skipping import of thermostat controlling equipment"
-            " of unsupported type. (id={})".format(row.thermostat_id))
-        return
+        return dropped(
+            UNSUPPORTED_EQUIPMENT_TYPE,
+            "it controls equipment of unsupported type {}".format(
+                row.equipment_type))
 
     interval_data_filename = os.path.join(os.path.dirname(metadata_filename), row.interval_data_filename)
 
@@ -168,44 +222,75 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
                 weather_source=weather_source,
         )
     except StationNotFoundError:
-        warnings.warn(
-            "Skipping import of thermostat (id={}) for which "
-            "a sufficient source of outdoor weather data could not "
-            "be located using the given ZIP code ({}). This is likely "
-            "due to the discrepancy between US Postal Service ZIP "
-            "codes (which do not always map well to locations) and "
-            "Census Bureau ZCTAs (which usually do). Please supply "
-            "a zipcode which corresponds to a US Census Bureau ZCTA."
-            .format(row.thermostat_id, row.zipcode))
-        return
+        return dropped(
+            STATION_NOT_FOUND,
+            "a sufficient source of outdoor weather data could not be "
+            "located using the given ZIP code ({}). This is likely due to "
+            "the discrepancy between US Postal Service ZIP codes (which do "
+            "not always map well to locations) and Census Bureau ZCTAs "
+            "(which usually do). Please supply a zipcode which corresponds "
+            "to a US Census Bureau ZCTA.".format(row.zipcode))
 
     except DataNotAvailableError as e:
-        warnings.warn(
-            "Skipping import of thermostat (id={}) because NCEI "
-            "does not have data: {}"
-            .format(row.thermostat_id, e))
-        return
+        return dropped(
+            WEATHER_DATA_NOT_AVAILABLE,
+            "NCEI does not have data: {}".format(e))
+
+    except InvalidUTCOffsetError as e:
+        return dropped(
+            INVALID_UTC_OFFSET,
+            "its UTC offset could not be read: {}".format(e))
 
     except (InvalidIntervalDataError, ValueError) as e:
-        warnings.warn(
-            "Skipping import of thermostat (id={}) because its interval "
-            "data could not be read: {}"
-            .format(row.thermostat_id, e))
-        return
+        return dropped(
+            INVALID_INTERVAL_DATA,
+            "its interval data could not be read: {}".format(e))
 
     except Exception as e:
-        # Last resort. Log the traceback rather than only the message: this
-        # handler turns any bug -- a typo, a schema mistake -- into a silently
-        # missing output row, so the detail has to go somewhere.
+        # Last resort: log the traceback, since this handler turns any bug into a missing row.
         logger.exception(
             "Unexpected error importing thermostat %s", row.thermostat_id)
-        warnings.warn(
-            "Skipping import of thermostat(id={}) because of "
-            "the following error: {}"
-            .format(row.thermostat_id, e))
-        return
+        return dropped(
+            UNEXPECTED_ERROR, "{}: {}".format(type(e).__name__, e))
 
     return thermostat
+
+
+def _load_outdoor_temperatures(candidates, fetch_temperatures, index, zipcode):
+    """The best-covered candidate station, and its series.
+
+    Whether a station has usable data cannot be known before loading it. Its
+    registry span says only (first, last), and USI0000KSVE reports
+    (1973, 2026) while having no rows between 1997 and 2015 -- a span test
+    picks it and every hour comes back NaN. So load candidates nearest-first,
+    keep the one that delivers the most of the analysed hours, and stop as
+    soon as one is good enough to not bother looking further.
+
+    There is no separate fallback: the best available station is always what
+    is returned, and the regulated per-day core-day rule remains the sole
+    exclusion gate. A station too thin to yield any core day drops downstream
+    as no_qualifying_core_days (see thermostat.multiple), which is the
+    Method's own exclusion rather than one invented here.
+    """
+    best_station = best_series = None
+    best_coverage = -1.0
+    for station in candidates:
+        series = fetch_temperatures(station, index)
+        coverage = float(series.notna().mean()) if len(series) else 0.0
+        if coverage > best_coverage:
+            best_station, best_series, best_coverage = station, series, coverage
+        if coverage >= MIN_HOURLY_COVERAGE:
+            break
+
+    if best_coverage < MIN_HOURLY_COVERAGE:
+        logger.warning(
+            "No station within %d km of zipcode %s delivered %.0f%% of the "
+            "analysed hours; using the best available (%s, %.0f%%).",
+            _MAX_STATION_DISTANCE_KM, zipcode, 100 * MIN_HOURLY_COVERAGE,
+            best_station, 100 * best_coverage,
+        )
+
+    return best_station, best_series
 
 
 def get_single_thermostat(thermostat_id, zipcode, equipment_type,
@@ -272,21 +357,21 @@ def get_single_thermostat(thermostat_id, zipcode, equipment_type,
         auxiliary_heat_runtime = None
         emergency_heat_runtime = None
 
-    # load outdoor temperatures — select a station that has data for the years
-    # this thermostat's interval data actually spans, so a historical run
-    # (e.g. 2016) picks a station on that year's data rather than requiring the
-    # current calendar year.
+    # Select a station on the years this data actually spans, so a historical run
+    # matches its period rather than the current calendar year.
     data_years = sorted(set(hourly_index.year))
-    station = get_closest_station_by_zipcode(zipcode, required_years=data_years)
+    candidates = get_candidate_stations_by_zipcode(
+        zipcode, required_years=data_years)
 
-    if station is None:
+    if not candidates:
         message = "No weather station with sufficient recent data within " \
                 "{} km of ZIP code {}".format(_MAX_STATION_DISTANCE_KM, zipcode)
         raise StationNotFoundError(message)
 
     utc_offset = normalize_utc_offset(utc_offset)
     fetch_temperatures = weather_source or get_indexed_temperatures_eeweather
-    temp_out = fetch_temperatures(station, hourly_index_utc - utc_offset)
+    station, temp_out = _load_outdoor_temperatures(
+        candidates, fetch_temperatures, hourly_index_utc - utc_offset, zipcode)
     temp_out.index = hourly_index
 
     # load daily time series values
