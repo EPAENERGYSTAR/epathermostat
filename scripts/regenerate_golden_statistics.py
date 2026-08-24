@@ -4,6 +4,9 @@
 Same contract as regenerate_golden_corpus.py: a diff here means a regulated
 statistic moved, which is never routine. Run deliberately, and land the
 result in its own commit that says which cells moved and why.
+
+Only ever run this against the committed public test corpus -- see the
+provenance note in regenerate_golden_corpus.py.
 """
 import os
 import sys

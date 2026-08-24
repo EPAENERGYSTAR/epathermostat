@@ -8,6 +8,11 @@ cells moved and why.
 
 It prints a summary of what changed so that commit message can be written
 from measurement rather than from memory.
+
+Only ever run this against the committed public test corpus. It reads
+whatever tests/data/metadata.csv points at; run against a real partner
+submission it would write real fleet data (UUID + ZIP + service dates per
+household) into the golden file, which is committed to a public repo.
 """
 import os
 import sys
