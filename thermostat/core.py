@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
-import inspect
 from warnings import warn
 import logging
 
@@ -298,24 +297,21 @@ class Thermostat(object):
 
     def _protect_heating(self):
         if self.equipment_type not in self.HEATING_EQUIPMENT_TYPES:
-            function_name = inspect.stack()[1][3]
-            message = "The function '{}', which is heating specific, cannot be" \
-                      " called for equipment_type {}".format(function_name, self.equipment_type)
-            raise ValueError(message)
+            raise ValueError(
+                "A heating-specific function cannot be called for"
+                " equipment_type {}".format(self.equipment_type))
 
     def _protect_cooling(self):
         if self.equipment_type not in self.COOLING_EQUIPMENT_TYPES:
-            function_name = inspect.stack()[1][3]
-            message = "The function '{}', which is cooling specific, cannot be" \
-                      " called for equipment_type {}".format(function_name, self.equipment_type)
-            raise ValueError(message)
+            raise ValueError(
+                "A cooling-specific function cannot be called for"
+                " equipment_type {}".format(self.equipment_type))
 
     def _protect_aux_emerg(self):
         if self.equipment_type not in self.AUX_EMERG_EQUIPMENT_TYPES:
-            function_name = inspect.stack()[1][3]
-            message = "The function '{}', which is auxiliary/emergency heating specific, cannot be" \
-                      " called for equipment_type {}".format(function_name, self.equipment_type)
-            raise ValueError(message)
+            raise ValueError(
+                "An auxiliary/emergency-heating-specific function cannot be"
+                " called for equipment_type {}".format(self.equipment_type))
 
     def _enough_hourly_temperature(self):
         """ Days with enough indoor and outdoor hourly temperature to use.
