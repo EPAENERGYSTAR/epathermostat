@@ -21,12 +21,14 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    # The reshaped eeweather (WeatherStation/WeatherLocation + load_data).
-    # 0.3.x on PyPI is the *old* API and this package cannot run against it,
-    # so the floor is the reshape's release version. Until that release
-    # exists, install the pinned commit from requirements.txt -- a direct
-    # git URL must not live here, both because it makes the project
-    # unpublishable and because it pinned a mutable branch tip.
+    # The reshaped eeweather (WeatherStation/WeatherLocation + load_data), plus
+    # the imputation-labelling, fetch-robustness, and ZCTA-geography work from
+    # opendsm/eeweather #106-109 that 1.8.2 depends on. 0.3.x on PyPI is the
+    # *old* API and this package cannot run against it, so the floor is the
+    # release that carries those changes. Until that release exists, install
+    # the pinned integration commit from requirements.txt -- a direct git URL
+    # must not live here, both because it makes the project unpublishable and
+    # because it pinned a mutable branch tip.
     "eeweather>=0.4",
     "numpy>=2,<3",
     "pandas>=2.2,<3",

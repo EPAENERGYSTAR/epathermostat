@@ -1,7 +1,10 @@
-# Pinned to a commit, not to @feature/power-source: a branch tip moves, and
-# requirements.txt already resolved this exact commit -- the two could
-# silently install different eeweather.
-eeweather @ git+https://github.com/opendsm/eeweather.git@854480763a7467ccce00fd42f9919b17c17b55cf
+# 1.8.2 uses eeweather APIs that land only once opendsm/eeweather #106-109 are
+# merged (imputation labelling, fetch robustness/deadline, ZCTA geography +
+# registry vintage). Until that release exists, pin the integration build that
+# merges all four -- a commit, not a branch tip, so requirements.in and
+# requirements.txt cannot silently install different eeweather.
+# TODO: replace with the opendsm/eeweather release once #106-109 ship.
+eeweather @ git+https://github.com/john-zither/check-eeweather.git@2bb3d01f18136c5be175b15dcb09f46b2db87db3
 numpy>=2,<3
 pandas>=2.2,<3
 scipy>=1.11
