@@ -50,4 +50,4 @@ version = { attr = "thermostat._version.__version__" }
 include = ["thermostat*"]
 
 [tool.setuptools.package-data]
-"thermostat.resources" = ["*.csv", "*.json"]
+"thermostat.resources" = ["*.csv"]

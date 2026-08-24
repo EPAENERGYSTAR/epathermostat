@@ -1,26 +1,11 @@
 import logging
-import json
 from datetime import date
-from functools import lru_cache
-from importlib.resources import files
 
 from eeweather import WeatherLocation, WeatherStation
 from eeweather.exceptions import UnrecognizedPlaceError
 
 logger = logging.getLogger(__name__)
 
-
-@lru_cache(maxsize=None)
-def _zipcode_usaf():
-    """Static JSON fallback map (committed resource), used only when the
-    reshaped eeweather registry can't resolve a ZCTA to a station.
-
-    Loaded on first use rather than at import: it is ~700 kB, every worker
-    process paid for it, and the fallback is rarely reached. The parsed dict
-    is kept; the raw text is not.
-    """
-    with (files('thermostat.resources') / 'zipcode_usaf_station.json').open('rb') as f:
-        return json.load(f)
 
 # Maximum distance (km) from ZCTA centroid to assigned station.
 _MAX_STATION_DISTANCE_KM = 500
@@ -77,10 +62,8 @@ def get_candidate_stations_by_zipcode(zipcode, required_years=None):
             "zcta", zipcode.zfill(5), sources=("ghcnh",)
         )
     except UnrecognizedPlaceError:
-        logger.warning("Unrecognized ZCTA %s — falling back to JSON map.", zipcode)
-        fallback = lookup_usaf_station_by_zipcode(zipcode)
-
-        return [fallback] if fallback else []
+        logger.warning("No ZCTA %s in the registry; no station.", zipcode)
+        return []
 
     # Distance-ranked GHCNh candidates within the cap; ranking and cap are native to rank_stations.
     candidates = location.candidates(
@@ -101,13 +84,10 @@ def get_candidate_stations_by_zipcode(zipcode, required_years=None):
         return usaf_ids
 
     logger.warning(
-        "No station with data for %s within %d km of zipcode %s — "
-        "falling back to JSON map.",
+        "No station with data for %s within %d km of zipcode %s.",
         required_years, _MAX_STATION_DISTANCE_KM, zipcode,
     )
-    fallback = lookup_usaf_station_by_zipcode(zipcode)
-
-    return [fallback] if fallback else []
+    return []
 
 
 def _usaf_id(station):
@@ -133,16 +113,3 @@ def _spans_years(station, required_years):
 
     return all(first <= year <= last for year in required_years)
 
-
-def lookup_usaf_station_by_zipcode(zipcode):
-    """Static JSON map lookup (fallback method).
-
-    Parameters
-    ----------
-    zipcode : string
-
-    Returns
-    -------
-    station : string or None
-    """
-    return _zipcode_usaf().get(zipcode, None)
