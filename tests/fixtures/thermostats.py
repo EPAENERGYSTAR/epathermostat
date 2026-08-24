@@ -3,7 +3,6 @@ from thermostat.importers import from_csv
 from thermostat.util.testing import get_data_path
 
 from .weather import recorded_weather
-from thermostat.regression import runtime_regression
 from thermostat.core import Thermostat, CoreDaySet
 
 import pandas as pd
