@@ -26,6 +26,7 @@ COLUMNS = list(DropOut._fields)
 UNSUPPORTED_EQUIPMENT_TYPE = "unsupported_equipment_type"
 STATION_NOT_FOUND = "station_not_found"
 WEATHER_DATA_NOT_AVAILABLE = "weather_data_not_available"
+WEATHER_FETCH_FAILED = "weather_fetch_failed"
 INVALID_INTERVAL_DATA = "invalid_interval_data"
 INVALID_UTC_OFFSET = "invalid_utc_offset"
 UNEXPECTED_ERROR = "unexpected_error"
@@ -44,9 +45,14 @@ class RunSummary(object):
         loss was detected.
     """
 
-    def __init__(self, requested=0, shuffle=None, seed=None):
+    def __init__(self, requested=0, shuffle=None, seed=None,
+                 registry_vintage=None):
         self.requested = requested
         self.shuffle = shuffle
+        #: The eeweather station-registry vintage the run resolved against,
+        #: recorded so a result can be tied to the reference data that
+        #: produced it.
+        self.registry_vintage = registry_vintage
         #: The seed the row order was produced with. Recorded even when the
         #: caller supplied none, so the order can be reproduced after the fact.
         self.seed = seed
@@ -101,6 +107,8 @@ class RunSummary(object):
                          .format(self.seed, self.seed))
         elif self.shuffle is False:
             lines.append("row order:             input order (not shuffled)")
+        if self.registry_vintage is not None:
+            lines.append("eeweather registry:    {}".format(self.registry_vintage))
         for (stage, reason), count in sorted(self.by_reason().items()):
             lines.append("  {:<8} {:<28} {}".format(stage, reason, count))
         return "\n".join(lines)

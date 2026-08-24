@@ -143,3 +143,15 @@ def test_an_empty_run_does_not_divide_by_zero():
     summary = RunSummary(requested=0)
     assert pd.isna(summary.completeness)
     assert "nan" in summary.describe().lower()
+
+
+def test_the_registry_vintage_is_reported_when_known():
+    summary = RunSummary(requested=1, registry_vintage="2026-07-23")
+
+    assert "eeweather registry:    2026-07-23" in summary.describe()
+
+
+def test_a_missing_registry_vintage_is_simply_omitted():
+    summary = RunSummary(requested=1)
+
+    assert "eeweather registry" not in summary.describe()

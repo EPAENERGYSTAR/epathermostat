@@ -9,7 +9,7 @@ from thermostat.stations import (
 )
 
 from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
-from eeweather.exceptions import DataNotAvailableError
+from eeweather.exceptions import DataNotAvailableError, FetchError
 from thermostat.exceptions import (
     StationNotFoundError,
     InvalidIntervalDataError,
@@ -24,6 +24,7 @@ from thermostat.run_summary import (
     UNEXPECTED_ERROR,
     UNSUPPORTED_EQUIPMENT_TYPE,
     WEATHER_DATA_NOT_AVAILABLE,
+    WEATHER_FETCH_FAILED,
 )
 
 import warnings
@@ -44,6 +45,15 @@ AVAILABLE_PROCESSES = min(NUMBER_OF_CORES, MAX_WEATHER_CONNECTIONS)
 
 
 logger = logging.getLogger(__name__)
+
+
+def _registry_vintage():
+    """The eeweather station-registry vintage, or None if unavailable."""
+    try:
+        from eeweather.registry.update import refreshed_at
+        return refreshed_at()
+    except Exception:  # pragma: no cover - depends on the installed eeweather
+        return None
 
 
 def normalize_utc_offset(utc_offset):
@@ -166,7 +176,9 @@ def from_csv(metadata_filename, verbose=False, shuffle=True, seed=None,
     # A record that could not be imported comes back as a DropOut naming the
     # reason, rather than as a bare None that says only "something happened".
     results = []
-    summary = RunSummary(requested=len(metadata), shuffle=shuffle, seed=seed)
+    summary = RunSummary(
+        requested=len(metadata), shuffle=shuffle, seed=seed,
+        registry_vintage=_registry_vintage())
     for item in result_list:
         if isinstance(item, DropOut):
             summary.extend([item])
@@ -230,6 +242,12 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
             "not always map well to locations) and Census Bureau ZCTAs "
             "(which usually do). Please supply a zipcode which corresponds "
             "to a US Census Bureau ZCTA.".format(row.zipcode))
+
+    except FetchError as e:
+        return dropped(
+            WEATHER_FETCH_FAILED,
+            "the weather fetch failed (network, timeout, or deadline): {}"
+            .format(e))
 
     except DataNotAvailableError as e:
         return dropped(
