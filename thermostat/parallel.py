@@ -4,7 +4,7 @@ from itertools import cycle
 from zipfile import ZipFile
 import tempfile
 import os
-from thermostat.stations import get_closest_station_by_zipcode
+from thermostat.stations import get_candidate_stations_by_zipcode
 
 
 def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=None):
@@ -44,7 +44,16 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             raise ValueError(message)
 
     metadata_df = pd.read_csv(metadata_filename, dtype={"zipcode": str})
-    stations = [get_closest_station_by_zipcode(zipcode) for zipcode in metadata_df.zipcode]
+    # Resolve each station once. required_years is deliberately left at its
+    # default here: batching only needs a stable grouping key, not the
+    # station that will ultimately serve the analysis -- which is why the
+    # nearest candidate is enough, even though the import may end up
+    # choosing a different one after loading.
+    station_by_zipcode = {
+        zipcode: next(iter(get_candidate_stations_by_zipcode(zipcode)), None)
+        for zipcode in metadata_df.zipcode.unique()
+    }
+    stations = [station_by_zipcode[z] for z in metadata_df.zipcode]
 
     n_rows = metadata_df.shape[0]
 
@@ -90,15 +99,24 @@ def schedule_batches(metadata_filename, n_batches, zip_files=False, batches_dir=
             batch_zipfile_name = os.path.join(batches_dir, batch_name)
             batch_zipfile_names.append(batch_zipfile_name)
 
-            _, fname = tempfile.mkstemp()
-            batch_df.to_csv(fname, index=False)
+            # mkstemp's descriptor was leaked and the file left on disk, once
+            # per batch; close it and clean up.
+            fd, fname = tempfile.mkstemp()
+            os.close(fd)
+            try:
+                batch_df.to_csv(fname, index=False)
 
-            with ZipFile(batch_zipfile_name, 'w') as batch_zip:
-                batch_zip.write(fname, arcname=os.path.join('data', 'metadata.csv'))
+                with ZipFile(batch_zipfile_name, 'w') as batch_zip:
+                    batch_zip.write(fname, arcname=os.path.join('data', 'metadata.csv'))
 
-                for filename in batch_df.interval_data_filename:
-                    interval_data_source = os.path.join(os.path.dirname(metadata_filename), filename)
-                    batch_zip.write(interval_data_source, arcname=os.path.join('data', filename))
+                    for filename in batch_df.interval_data_filename:
+                        interval_data_source = os.path.join(
+                            os.path.dirname(metadata_filename), filename)
+                        batch_zip.write(
+                            interval_data_source,
+                            arcname=os.path.join('data', filename))
+            finally:
+                os.unlink(fname)
 
         return batch_zipfile_names
 

@@ -1,21 +1,27 @@
 """
 smoke_test_2025.py
 ==================
-End-to-end visual confirmation that the NOAA GHCN-H fallback is working for 2025 data.
+End-to-end visual confirmation that live GHCNh weather is serving recent data.
+
+This checked the GHCN-H *fallback* when outdoor temperatures came from ISD with
+a second-source gap fill. That fallback is gone: weather now comes from a single
+GHCNh source, so what this confirms is that the one source covers a recent year.
 
 Usage (from epathermostat/ dir):
-    uv run python scripts/smoke_test_2025.py [zipcode]
+    python scripts/smoke_test_2025.py [zipcode]
 
 Default zipcode: 62223 (Belleville IL - used in the standard test fixtures)
 
 The script:
   1. Generates a synthetic 2025 interval CSV (indoor temps, setpoints, runtimes)
-  2. Loads a Thermostat via the real from_csv() importer, which fetches 2025
-     outdoor temperatures and applies the GHCN-H fallback
+  2. Loads a Thermostat via the real importer, which fetches 2025 outdoor
+     temperatures from NOAA
   3. Prints the first/last 30 hours of outdoor temperature data
   4. Prints a month-by-month coverage table
   5. Runs calculate_epa_field_savings_metrics() and prints key outputs
   6. Exits non-zero if overall coverage < 50%
+
+Hours the station did not report are NaN; nothing fills them.
 """
 
 import sys
@@ -125,7 +131,7 @@ def run_pipeline(thermostat):
 def main():
     zipcode = sys.argv[1] if len(sys.argv) > 1 else "62223"
     print("=" * 60)
-    print("GHCN-H fallback smoke test — 2025 data for zipcode {}".format(zipcode))
+    print("Live GHCNh smoke test — 2025 data for zipcode {}".format(zipcode))
     print("=" * 60)
     print()
 
@@ -137,7 +143,7 @@ def main():
         generate_interval_csv(csv_path)
 
         print("Loading thermostat via get_single_thermostat() importer (zipcode={}, utc_offset=-6) ...".format(zipcode))
-        print("(GHCN-H fallback will fire for 2025 outdoor temperatures)")
+        print("(single GHCNh source; unreported hours stay NaN)")
         print()
 
         try:
