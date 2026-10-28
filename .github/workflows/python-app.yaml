@@ -36,10 +36,10 @@ jobs:
         pip --version
 
     - name: Install dependencies
-      # requirements.txt pins the reshaped eeweather from its public upstream
-      # feature branch (opendsm/eeweather@feature/power-source), so this installs
-      # without any secret. No cache priming: the reshaped eeweather fetches on
-      # demand, so the old ~/.eeweather sqlite prime step is gone.
+      # requirements.txt pins eeweather-epa, a frozen snapshot of upstream
+      # eeweather published on PyPI, so this installs without any secret. No
+      # cache priming: eeweather fetches on demand, so the old ~/.eeweather
+      # sqlite prime step is gone.
       run: |
         python -m pip install --upgrade pip
         pip install flake8

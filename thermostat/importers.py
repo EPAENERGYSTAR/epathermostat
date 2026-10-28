@@ -2,14 +2,18 @@ from thermostat.core import Thermostat
 
 import numpy as np
 import pandas as pd
+import requests
 from thermostat.stations import (
     get_candidate_stations_by_zipcode,
     MIN_HOURLY_COVERAGE,
     _MAX_STATION_DISTANCE_KM,
 )
 
-from thermostat.eeweather_wrapper import get_indexed_temperatures_eeweather
-from eeweather.exceptions import DataNotAvailableError, FetchError
+from thermostat.eeweather_wrapper import (
+    get_indexed_temperatures_eeweather,
+    WeatherFetchTimeout,
+)
+from eeweather.exceptions import DataNotAvailableError
 from thermostat.exceptions import (
     StationNotFoundError,
     InvalidIntervalDataError,
@@ -256,7 +260,8 @@ def multiprocess_func(metadata, metadata_filename, verbose=False,
             "(which usually do). Please supply a zipcode which corresponds "
             "to a US Census Bureau ZCTA.".format(row.zipcode))
 
-    except FetchError as e:
+    # eeweather raises transport failures as plain requests exceptions
+    except (requests.RequestException, WeatherFetchTimeout) as e:
         return dropped(
             WEATHER_FETCH_FAILED,
             "the weather fetch failed (network, timeout, or deadline): {}"
