@@ -6,39 +6,41 @@ certifi==2026.7.22
     #   requests
 charset-normalizer==3.5.1
     # via requests
-eeweather @ git+https://github.com/john-zither/eeweather.git@2bb3d01f18136c5be175b15dcb09f46b2db87db3
+eeweather-epa==2026.10.13
     # via -r requirements.in
 idna==3.18
     # via requests
 numpy==2.4.6
     # via
     #   -r requirements.in
-    #   eeweather
+    #   eeweather-epa
     #   pandas
     #   scipy
     #   shapely
 pandas==2.3.3
     # via
     #   -r requirements.in
-    #   eeweather
+    #   eeweather-epa
 platformdirs==4.11.3
-    # via eeweather
+    # via eeweather-epa
 pyproj==3.7.2
-    # via eeweather
+    # via eeweather-epa
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements.in
     #   pandas
 pytz==2026.3.post1
-    # via pandas
+    # via
+    #   -r requirements.in
+    #   pandas
 requests==2.34.2
     # via
     #   -r requirements.in
-    #   eeweather
+    #   eeweather-epa
 scipy==1.17.1
     # via -r requirements.in
 shapely==2.1.2
-    # via eeweather
+    # via eeweather-epa
 six==1.17.0
     # via python-dateutil
 tzdata==2026.3

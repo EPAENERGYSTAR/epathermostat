@@ -1,12 +1,18 @@
 """Tests for thermostat/eeweather_wrapper.py — the single-source (static GHCNh)
 temperature fetch against the reshaped eeweather WeatherStation API."""
+import threading
+
 import numpy as np
 import pandas as pd
+import pytest
 import pytz
+import requests
 from unittest.mock import patch, MagicMock
 
+from thermostat import eeweather_wrapper
 from thermostat.eeweather_wrapper import (
     get_indexed_temperatures_eeweather,
+    WeatherFetchTimeout,
     _convert_to_farenheit,
 )
 
@@ -15,19 +21,10 @@ def _idx(start, periods):
     return pd.date_range(start, periods=periods, freq="h", tz=pytz.UTC)
 
 
-def _station_returning(tempC, imputed_fraction=0.0):
-    """A mock WeatherStation whose load_data returns tempC as the temperature.
-
-    With ``imputation=True`` the reshaped eeweather returns a companion
-    ``temperature_imputed_fraction`` column (0 = observed, 1 = fabricated);
-    the wrapper reads it to flag heavily-interpolated stations, so the mock
-    frame carries it too. Defaults to fully observed.
-    """
+def _station_returning(tempC):
+    """A mock WeatherStation whose load_data returns tempC as the temperature."""
     station = MagicMock()
-    df = pd.DataFrame({
-        "temperature": tempC,
-        "temperature_imputed_fraction": pd.Series(imputed_fraction, index=tempC.index),
-    })
+    df = pd.DataFrame({"temperature": tempC})
     station.load_data.return_value = (df, [])
     return station
 
@@ -50,6 +47,8 @@ def test_returns_fahrenheit_over_index_from_single_ghcnh_source():
     _args, kwargs = WS.from_usaf.return_value.load_data.call_args
     assert kwargs["variables"] == ("temperature",)
     assert kwargs["frequency"] == "h"
+    # only keywords upstream eeweather's load_data accepts
+    assert set(kwargs) == {"variables", "frequency"}
     assert result.index.equals(index)
     pd.testing.assert_series_equal(
         result, _convert_to_farenheit(tempC.reindex(index)), check_names=False
@@ -82,27 +81,23 @@ def test_hours_absent_from_source_reindex_to_nan():
     assert result.iloc[48:].isna().all()
 
 
-def test_heavily_interpolated_station_is_flagged(caplog):
-    tempC = pd.Series(np.linspace(0.0, 20.0, 8760), index=_idx("2024-01-01", 8760))
-    index = _idx("2024-06-01", 24)
+def test_a_fetch_past_the_deadline_is_abandoned(monkeypatch):
+    monkeypatch.setattr(eeweather_wrapper, "WEATHER_FETCH_DEADLINE_SECONDS", 0.05)
+    release = threading.Event()
 
     with patch("thermostat.eeweather_wrapper.WeatherStation") as WS:
-        # half the hours fabricated -- well over the 10% warn threshold
-        WS.from_usaf.return_value = _station_returning(
-            tempC, imputed_fraction=[1.0] * 4380 + [0.0] * 4380)
-        with caplog.at_level("WARNING"):
-            get_indexed_temperatures_eeweather("722880", index)
+        WS.from_usaf.return_value.load_data.side_effect = (
+            lambda *args, **kwargs: release.wait(5))
+        try:
+            with pytest.raises(WeatherFetchTimeout):
+                get_indexed_temperatures_eeweather("722880", _idx("2024-06-01", 24))
+        finally:
+            release.set()  # let the abandoned fetch thread finish
 
-    assert any("gap-interpolated" in r.message for r in caplog.records)
 
-
-def test_a_well_observed_station_is_not_flagged(caplog):
-    tempC = pd.Series(np.linspace(0.0, 20.0, 8760), index=_idx("2024-01-01", 8760))
-    index = _idx("2024-06-01", 24)
-
+def test_a_fetch_error_reaches_the_caller():
     with patch("thermostat.eeweather_wrapper.WeatherStation") as WS:
-        WS.from_usaf.return_value = _station_returning(tempC)  # fully observed
-        with caplog.at_level("WARNING"):
-            get_indexed_temperatures_eeweather("722880", index)
-
-    assert not any("gap-interpolated" in r.message for r in caplog.records)
+        WS.from_usaf.return_value.load_data.side_effect = (
+            requests.ConnectionError("NOAA unreachable"))
+        with pytest.raises(requests.ConnectionError):
+            get_indexed_temperatures_eeweather("722880", _idx("2024-06-01", 24))

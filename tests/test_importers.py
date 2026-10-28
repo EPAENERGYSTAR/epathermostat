@@ -1,10 +1,13 @@
 from thermostat.importers import from_csv, _load_outdoor_temperatures
 from thermostat.importers import normalize_utc_offset
+from thermostat.eeweather_wrapper import WeatherFetchTimeout
+from thermostat.run_summary import WEATHER_FETCH_FAILED
 from thermostat.util.testing import get_data_path
 import datetime
 
 import numpy as np
 import pandas as pd
+import requests
 
 import pytest
 
@@ -74,6 +77,28 @@ def test_from_csv_accepts_a_weather_source():
     assert (temp_out == 60.0).all()
     # the index is the thermostat's own local hourly index, not the fetch index
     assert temp_out.index.equals(thermostats[0].temperature_in.index)
+
+
+def network_down(station, index):
+    raise requests.ConnectionError("NOAA unreachable")
+
+
+def past_deadline(station, index):
+    raise WeatherFetchTimeout("weather fetch for station {} exceeded 600s".format(station))
+
+
+@pytest.mark.parametrize("weather_source", [network_down, past_deadline])
+def test_a_failed_weather_fetch_is_dropped_as_such(weather_source):
+    """A transport failure or the fetch deadline drops the thermostat as
+    weather_fetch_failed, not as an unexpected error."""
+    result = from_csv(
+        get_data_path("data/metadata_type_1_single.csv"),
+        shuffle=False,
+        weather_source=weather_source,
+    )
+
+    assert list(result) == []
+    assert [d.reason for d in result.summary.drop_outs] == [WEATHER_FETCH_FAILED]
 
 
 def test_legacy_return_gives_the_pre_1_8_shape():

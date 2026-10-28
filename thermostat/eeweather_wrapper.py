@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 import logging
+import threading
 
 import pandas as pd
 
 from eeweather import WeatherStation
-from eeweather.sources.vocabulary import imputed_fraction_name
 
 # This routine is a compact and distilled version of code that was originally
 # released as eeweather_wrapper.py
@@ -27,14 +27,47 @@ from eeweather.sources.vocabulary import imputed_fraction_name
 logger = logging.getLogger(__name__)
 
 
-# Wall-clock seconds one station's outdoor-temperature fetch may spend on the
-# network before eeweather raises FetchDeadlineExceeded. Bounds an unattended
-# fleet run against an unresponsive NOAA, which otherwise retries indefinitely.
+# Wall-clock seconds one station's outdoor-temperature fetch may take before
+# it is abandoned. eeweather retries each station-year three times at a 120
+# second socket timeout and caps nothing in total, so against an unresponsive
+# NOAA a four-year fetch can hold an unattended fleet run for ~25 minutes per
+# station.
 WEATHER_FETCH_DEADLINE_SECONDS = 600
 
-# Above this fraction of fabricated (gap-interpolated) hours, the outdoor
-# series is thin enough to warn about even though it passed station selection.
-_HIGH_IMPUTED_FRACTION = 0.10
+
+class WeatherFetchTimeout(Exception):
+    """A station's weather fetch outlived WEATHER_FETCH_DEADLINE_SECONDS."""
+
+
+def _load_within_deadline(station, start, end, usaf_id):
+    """``station.load_data`` for hourly temperature, abandoned at the deadline.
+
+    eeweather has no deadline of its own, so the load runs on a daemon thread
+    that is waited on for at most the deadline. A thread cannot be cancelled:
+    an abandoned load keeps retrying in the background until eeweather gives
+    up, but nothing waits on it, and as a daemon it never holds up exit.
+    """
+    outcome = {}
+
+    def load():
+        try:
+            outcome["result"] = station.load_data(
+                start, end, frequency="h", variables=("temperature",))
+        except BaseException as error:  # re-raised on the calling thread
+            outcome["error"] = error
+
+    worker = threading.Thread(
+        target=load, name="eeweather-{}".format(usaf_id), daemon=True)
+    worker.start()
+    worker.join(WEATHER_FETCH_DEADLINE_SECONDS)
+    if worker.is_alive():
+        raise WeatherFetchTimeout(
+            "weather fetch for station {} exceeded {}s".format(
+                usaf_id, WEATHER_FETCH_DEADLINE_SECONDS))
+    if "error" in outcome:
+        raise outcome["error"]
+
+    return outcome["result"]
 
 
 def _convert_to_farenheit(x):
@@ -71,6 +104,11 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     -------
     temperatures : pandas.Series with DatetimeIndex
         Average temperatures over series indexed by :code:`index`.
+
+    Raises
+    ------
+    WeatherFetchTimeout
+        If the fetch outlives :data:`WEATHER_FETCH_DEADLINE_SECONDS`.
     """
     if index.shape == (0,):
         return pd.Series([], index=index, dtype=float)
@@ -80,26 +118,12 @@ def get_indexed_temperatures_eeweather(usaf_id, index):
     end = datetime(years[-1], 12, 31, 23, 59, tzinfo=timezone.utc)
 
     station = WeatherStation.from_usaf(usaf_id)
-    df, warnings = station.load_data(
-        start, end, frequency="h", variables=("temperature",),
-        imputation=True, deadline=WEATHER_FETCH_DEADLINE_SECONDS,
-    )
+    df, warnings = _load_within_deadline(station, start, end, usaf_id)
     for warning in warnings:
         logger.warning(
             "eeweather %s for station %s: %s",
             warning.qualified_name, usaf_id, warning.description,
         )
-
-    # eeweather now labels which hours were fabricated by gap interpolation
-    # rather than observed. The interpolated values are still used (the Method
-    # interpolates gaps up to two hours), but a station leaning heavily on
-    # interpolation is worth flagging even when it cleared station selection.
-    fraction = df[imputed_fraction_name("temperature")]
-    fabricated = float((fraction == 1.0).mean())
-    if fabricated > _HIGH_IMPUTED_FRACTION:
-        logger.warning(
-            "Station %s: %.0f%% of outdoor hours %d-%d were gap-interpolated,"
-            " not observed.", usaf_id, 100 * fabricated, start.year, end.year)
 
     tempC = df["temperature"].reindex(index)
     return _convert_to_farenheit(tempC)

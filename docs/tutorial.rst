@@ -63,7 +63,7 @@ Check to make sure you are on the most recent version of the package.
 
     >>> import thermostat; thermostat.get_version()
 
-    '1.8.1'
+    '1.8.2'
 
 If you are not on the correct version, you should upgrade:
 
@@ -179,6 +179,14 @@ logger, which this uses.
     map to the same weather station only pay for the (I/O bound) download
     once. The cache location can be set with the ``EEWEATHER_CACHE_URL``
     environment variable.
+
+    eeweather is installed as ``eeweather-epa``, a frozen snapshot of the
+    upstream eeweather code, until upstream publishes a release of its
+    current API. It installs the same ``eeweather`` package, so do not also
+    install ``eeweather``. Importing thermostat sets
+    ``EEWEATHER_AUTO_UPDATE=0`` unless you have set it yourself, so stations
+    are chosen from the registry the snapshot shipped with and results are
+    reproducible from run to run.
 
     For more information, see the `eeweather package
     <https://github.com/opendsm/eeweather>`_.
